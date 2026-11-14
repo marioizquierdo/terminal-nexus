@@ -10,8 +10,7 @@ registered by id in a content registry (`src/content/index.ts`); behaviour comes
 and bounded rule shapes on the record, never from code written per unit.
 
 **A Grid Nexus is a flag on a content definition**, never a content id the kernel recognises (RULE —
-`tests/ravel.test.ts`, `src/pulse/victory.ts`); see
-[`pulse.md`](pulse.md).
+[`grid-engine.md`](grid-engine.md), invariants).
 
 **A building that carries an upgrade or a mode has a content id of its own** (RULE — `src/content/fitted.ts`,
 `tests/building-upgrades.test.ts`): its base and what it carries, in its card's order
@@ -21,9 +20,9 @@ hash, the regroup and the opening carry it as any content id, and nothing in the
 a building that carries nothing keeps its base id, and a state holds the bytes it always did. Art, card words and the
 build menu read the base.
 
-**Modding is a set of seams, not a feature**: keep the places a mod would plug in (definitions are
-data, the registry is built from a list, the kernel takes the registry as an argument) but build no
-loader and no stable SDK (RULE — `AGENTS.md`, which forbids building a mod loader).
+**Modding is a set of seams, not a feature**: definitions are data, the registry is built from a list and the
+kernel takes the registry as an argument, so a mod could plug in; no loader and no stable SDK is built (RULE —
+[`runtime.md`](runtime.md), tools and modding).
 
 The interfaces below are sketches. Names and shapes will change the first time real content touches
 them, and that is expected; the shape built today is `ContentDef` in `src/content/types.ts`.
@@ -112,30 +111,18 @@ Commander, starting units and structures, blueprints and a tech tree, upgrades, 
 Specials, bounded against its faction's pools (same document). The match, the Pulse, and every
 renderer see an army; none of them ever sees a faction.
 
-**An army is data, not code** (RULE — `armies/`, `stories/`, `src/armies/`, `tests/armies.test.ts`). How to write
-one, field by field, with its conventions and a checklist for a new Commander, is
-[`army-authoring.md`](army-authoring.md); what follows is the shape. Armies stack: `armies/all` holds what any
-Commander may use (the Hatchery, the Turret, War Chest); a faction army (`armies/citizen`, `armies/ravel`) requires
-it and holds that faction's Nexus, units, buildings and powers; a Commander army (`armies/vasse`, `armies/averno`,
-`armies/dob`) requires her faction and holds her unit, her `commanders` entry (her faction, lean, portrait, barks,
-starting package and Nexus Pulse schedule) and her own powers. Stories are their own folders under `stories/`,
-requiring the armies they play; a level may extend another and change its mission. **An army sees what it and the
-armies it requires bring, and nothing else.** A unit or a structure is written in an army's `content` as data —
-its stats, its footprint, its card text and its glyph — with the engine's defaults filled in
-(`src/content/army-content.ts`); a few long-standing ids are still defined in `src/content` and named by id.
-
-What a Nexus power does is one entry of a table (`EFFECTS`, `src/armies/effects.ts`), and what a unit does on its
-own — an aura, a bounty, loaded dice — one entry of another (`ABILITIES`, `src/abilities/`), each with its shape,
-its checks and its card line in one place. The loader (`src/armies/load.ts`, pure) refuses a broken army with
-every problem at once, each naming where by ids, and freezes what it hands the game. A Commander's arsenal is her
-own army and her faction chain: she deals and builds only from those, and a card another Nexus slips into her hand
-is marked `from` that faction. The kernel never reads an army; it reads content definitions, each side's own.
-The game reads only the armies and stories `src/shipped.ts` lists, imported with the code: there is no mod
-loader looking for folders on disk.
+**An army is data, not code** (RULE — `armies/`, `stories/`, `src/armies/`, `tests/armies.test.ts`). The files, every
+field, how armies stack and the checklist for a new Commander are in [`army-authoring.md`](army-authoring.md); the
+shape is this. **An army sees what it and the armies it requires bring, and nothing else.** A unit or a structure is
+written in an army's `content` as data (stats, footprint, card text, glyph) with the engine's defaults filled in
+(`src/content/army-content.ts`); a few long-standing ids are still defined in `src/content` and named by id. The
+loader (`src/armies/load.ts`, pure) refuses a broken army with every problem at once and freezes what it hands the
+game. A Commander's arsenal is her own army and her faction chain: she deals and builds only from those, and a
+card another Nexus slips into her hand is marked `from` that faction. The kernel never reads an army; it reads content definitions, each side's own. The game reads only the armies
+and stories `src/shipped.ts` lists: there is no mod loader looking for folders on disk.
 
 Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,
 radius, restoration, regroup anchor — over inheritance. **Exceptional behaviour is an ability kind** (RULE —
-`src/abilities/`, `src/pulse/abilities.ts`, `tests/abilities.test.ts`): a kind registers narrow hooks (damage
-modifiers decided on a read-only view, a hit dealt, a tick, a death), and each hook changes the world only
-through what it is handed (a seeded draw, a heal, a damage, a note), so the kernel stays pure and every run
+`src/abilities/`, `tests/abilities.test.ts`; the hooks and the kinds are in [`army-authoring.md`](army-authoring.md),
+abilities, and the kernel's calls in [`pulse.md`](pulse.md), tick order), so the kernel stays pure and every run
 hashes the same. The table is a seam, not a security sandbox: installed TypeScript is arbitrary local code.

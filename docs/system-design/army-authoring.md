@@ -162,7 +162,8 @@ the union in `src/armies/types.ts` and its row here.
 An ability is how a Commander or a unit does something besides fighting — an aura, a bounty, a lucky hit — written once
 as an `AbilityKind` (`src/abilities/`) and named by data, `{ "kind": "aura", ... }`. A kind declares its numbers
 (checked when the army is loaded), the sentence its card says, how far it reaches (for the view to draw), and any of
-four **hooks**, which the kernel calls at fixed moments (RULE — `src/pulse/abilities.ts`, `tests/abilities.test.ts`):
+four **hooks**, which the kernel calls at fixed moments (RULE — `src/pulse/abilities.ts`, `tests/abilities.test.ts`;
+the kernel's side of it is in [`pulse.md`](pulse.md), tick order):
 
 | Hook | When | What it may do |
 | --- | --- | --- |
@@ -209,8 +210,8 @@ what it unlocks, a schedule if it bends the default, and a mission (`docs/game-d
   by path. A rule that is only written here is a rule to move into the loader.
 - **Each side owns its content.** What a side's kept powers change is that side's alone (`PulseContext.sides`); two
   armies of one faction never share a change.
-- **Pure.** The loader, the effects, the abilities and the battle's rules read no clock, no disk and no randomness but
-  the battle's seeded stream.
+- **Pure.** The loader, the effects, the abilities and the battle's rules keep to the kernel's purity
+  ([`grid-engine.md`](grid-engine.md)): no clock, no disk, no randomness but the battle's seeded stream.
 - **Numbers carry their reason.** A content entry's `notes` say why each number is what it is, and that it is a first
   guess until it is measured.
 
@@ -227,7 +228,7 @@ what it unlocks, a schedule if it bends the default, and a mission (`docs/game-d
 
 ## 8. What a modder can and cannot do today
 
-Can, with data alone: new units and structures, Commanders, factions, building cards, powers of the kinds above,
-stories and missions. Needs code: a new kind of ability or effect, a new map, a new battle player. Cannot: load files
-from outside the repository (no mod loader, by rule), change the kernel's phases, or read presentation from the
-rules.
+**With data alone:** new units and structures, Commanders, factions, building cards, powers of the kinds above,
+stories and missions. **Needs code:** a new kind of ability or effect, a new map, a new battle player. **Cannot:**
+load files from outside the repository (no mod loader, by rule), change the kernel's phases, or read presentation from
+the rules.

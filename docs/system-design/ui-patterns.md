@@ -1,38 +1,65 @@
 # Terminal Nexus — interface patterns
 
-_How every screen, menu, popup, effect and key behaves; read the goals and the checklist first, then the sections you touch; when two rules disagree the goals decide, and a change that adds, bends or retires a pattern updates this document in the same pull request and names the pattern. The model behind these patterns is [`input.md`](input.md), [`presentation.md`](presentation.md) and [`effects.md`](effects.md). Every unmarked statement is GUIDANCE._
+_How every screen, menu, popup, effect and key behaves. Building or changing one: follow the steps, then read the sections you touch. When two rules disagree the goals decide. The model underneath is [`input.md`](input.md) (commands, adapters, the keymap), [`presentation.md`](presentation.md) (the cell frame, bands, composition) and [`effects.md`](effects.md) (the effect contract and vocabulary). Every unmarked statement is GUIDANCE._
 
-## How to use this document
+## Building or changing a screen, a menu, a popup, an effect or a key
 
-For any agent or person about to build or change a screen, a menu, a popup, an effect or a key. Read
-**the goals and the checklist below first**, then the sections you touch.
+Work these in order; each step ends on a condition you can check.
 
-- **A RULE names the test that holds it**, in parentheses. Changing one is a design change: the sentence,
-  the code and the test change together in one pull request. Unmarked statements are GUIDANCE; depart
-  from them when the work shows better, and say why.
-- **When two rules disagree, or none covers the case, the goals decide.**
-- **A change that breaks a rule or adds a pattern updates this document in the same pull request**, and
-  says why. A new pattern gets a name here — a *hand-off*, a *card reveal*, a *see-through style* — so
-  the next screen reuses it; use the names in code comments and pull requests too.
-- **Numbers live in the code, not here**: the table of tuned values and the Experiments list
-  (`src/build/experiments.ts`). This document says what a number is for.
-- `scripts/playtest.mjs` (the `playtest` skill) presses the keys for you.
+1. **Pick the patterns.** A screen is built from the named patterns below (menu rows, lists, cards,
+   popups, hand-offs, the bottom line); find yours in *Where to find a pattern*. *Done when* every element
+   of the screen is an existing pattern, or a new one named in this document in the same pull request
+   (a *hand-off*, a *card reveal*, a *see-through style*), and the name is used in code comments and the
+   pull request too.
+2. **Make the floor work: keyboard, click, driver.** Every action is a row with a visible `[key]`, and a
+   click on a row sends what its key sends. *Done when* a test drives the real adapters with raw keys and
+   clicks and walks every action with Up, Down and Enter alone (`tests/build-start.test.ts` walks the whole
+   menu).
+3. **Wire the way back.** Esc and `x` go back one level; only the game menu's Quit leaves; the top bar's right
+   end names what Esc does there; a popup that must be answered says so in three places (the top bar offers
+   no close, the bottom line says what to do, Esc says it again instead of closing). *Done when* `x x x`
+   from the deepest state lands on the menu with the keyboard on it.
+4. **Make every list a list.** It stops at its ends; a tap is one row and a hold keeps the game's pace; Shift,
+   PageUp/PageDown and Home/End jump to the ends. *Done when* the list uses the one classifier
+   (`src/terminal/list-keys.ts`) and a test holds the ends.
+5. **Say where the player is and what happens next.** The bottom line has a hint for every situation the
+   screen can be in (one line each in `HINTS`, `src/build/help.ts`); motion explains a change, then the
+   screen is still. *Done when* every state of the screen shows a hint, and an idle screen draws once per
+   input.
+6. **Degrade.** The screen reads under reduced motion, in monochrome, in ASCII and at 80 × 24 (an effect also
+   owes its three forms, see *Effects*). *Done when* you have looked at the playtest script's screens with
+   `--colors monochrome --glyphs ascii` and `--settings reducedMotion=true`, and nothing needed colour,
+   motion or width to be understood.
+7. **Hand the owner only what a person must feel.** A choice he should feel is an Experiment (it names the
+   question it serves); an interaction in doubt logs an event and gets an Activity Logs filter (see
+   *Feedback loops*). *Done when* each Experiment or filter you added is in the pull request with the one
+   line that asks him to flip or export it.
+8. **See it.** `scripts/playtest.mjs` (the `playtest` skill) presses the keys and returns every screen.
+   *Done when* you have read the screen of every state the change can reach, not only the one it was built for.
 
-### Checklist for a new screen
+A rule's test is named in parentheses after it. A RULE names the test that holds it: changing one is a design
+change, so the sentence, the code and the test change together in one pull request. Depart from GUIDANCE when
+the work shows better, and say why. A change that breaks a rule or adds a pattern updates this document in
+the same pull request and says why. **Numbers live in the code, not here** — the tuned values table
+(`src/build/tuning.ts`) and the Experiments (`src/build/experiments.ts`); this document says what a number is for.
 
-- [ ] It can be walked with Up, Down and Enter alone; every action is a row with a visible `[key]`.
-- [ ] A click on a row does what its key does.
-- [ ] Esc and `x` go back one level; only the game menu's Quit leaves.
-- [ ] The top bar's right end names what Esc does there.
-- [ ] The bottom line has a hint for every situation the screen can be in.
-- [ ] Lists stop at their ends; taps and holds move them as they move the map cursor; Shift, PageUp/PageDown and Home/End jump to the ends.
-- [ ] Motion explains a change, then the screen is still.
-- [ ] If a popup must be answered, say so in three places: the top bar offers no close, the bottom line says what to do, and Esc says it again instead of closing.
-- [ ] It works under reduced motion, in monochrome, in ASCII, and at 80 × 24.
-- [ ] Anything the owner should feel rather than read about is an Experiment; an interaction you want
-      reports on logs an event (section 15).
+### Where to find a pattern
 
-## 0. The goals
+| You are building | Read |
+| --- | --- |
+| A key, or a click | *Keys and clicks*, *Back, cancel and close*, and the keymap in [`input.md`](input.md) |
+| A menu or its rows | *Menu rows*, *Moving in lists*, *The Build Phase menu* |
+| A card, or what the panel says | *Cards*, *A selection holds the menu* |
+| A menu row that sends the keyboard to the map | *Hand-offs to the map*, *See-through styles* |
+| A popup, a message, Settings, a dialog | *Popups* |
+| A line the player reads at the bottom | *The bottom line* |
+| What the map shows (ranges, the raid, the cursor) | *The map* |
+| A flash, a glow, a particle, a colour that means something | *Effects*, then [`effects.md`](effects.md) |
+| Anything on the Battle Round screen, a Commander's moment | *The Battle Round on screen* |
+| A question for the owner | *Feedback loops* |
+| A word on screen | *Words*, and the [glossary](../game-design/glossary.md) |
+
+## The goals
 
 The rules are the letter; these are the spirit, read out of the owner's playtests.
 
@@ -61,7 +88,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
    stays legible in monochrome and ASCII first.
 10. **Give him something to feel, not something to judge — and a way to say what happened.** A fork
     ships as an Experiment he can flip; an interaction in doubt records what it did; his exports are the
-    answer, and every build can be played from a link (section 15).
+    answer, and every build can be played from a link (*Feedback loops*).
 11. **Degrade gracefully, enhance progressively.** A bare terminal — ASCII, monochrome, no mouse, no
     key-up — works; Unicode, truecolour, a pointer and key releases make it better, never required.
 12. **Keep what the player made safe.** Leaving asks, a stray key never loses a plan, undo exists.
@@ -69,7 +96,10 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
     and delivers keys and a pointer can run the game, and must do map navigation well
     ([`portability.md`](portability.md)).
 
-## 1. The screen and the keyboard
+
+_The patterns below are reference: one section per family, each rule with the test that holds it._
+
+## The screen and the keyboard
 
 - **Four regions.** The **top bar** (whole width): the title, where the player is, and at its right end
   what Esc does. The **side panel**, on the left because building comes first: the menu, a card, or the
@@ -98,7 +128,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
 - **The Build Phase opens on the menu at Explore Map**, the cursor (not yet drawn) on the player's Grid
   Nexus. (RULE — `tests/build-focus.test.ts`)
 
-## 2. Keys and clicks
+## Keys and clicks
 
 - **Every action is a named command**; keyboard, mouse and a script are adapters onto one vocabulary
   ([`input.md`](input.md)), and tests drive the real adapters with raw keys and clicks. A hotkey that is
@@ -108,7 +138,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
   (RULE — `tests/build-focus.test.ts`)
 - **A click can only choose what it could see**: while a card covers the menu, a click on the panel goes
   back and chooses nothing. **A click outside a popup** closes it and moves focus there, nothing more; over a card it only closes
-  the popup, and the card and its building come back. The dialog is the exception (section 10.4): it is
+  the popup, and the card and its building come back. The dialog is the exception (*The dialog*): it is
   read rather than chosen from, so a click anywhere reads on and a stray click never skips the story. (RULE — `tests/build-card.test.ts`, `tests/build-holds-menu.test.ts`)
 - **Whole rows are targets**, as wide as the highlight bar, and **drawing and hit-testing read one
   geometry** (`buildLayout` in `src/build/layout.ts`, the placed popup in `src/build/popup.ts`).
@@ -116,7 +146,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
 - **A right click is `x`.** **The wheel** moves the map cursor five tiles (never a second camera) and
   walks a popup's list. (RULE for the right click — `tests/build-cancel.test.ts`)
 
-## 3. Back, cancel and close
+## Back, cancel and close
 
 **Esc or `x` closes any popup, or cancels what is under way on the map, one level at a time.** A right
 click is `x`. (RULE — `tests/build-cancel.test.ts`)
@@ -149,7 +179,7 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   saved.") and refused once the plan is locked in for the Battle Round; the save holds the battle as the Build Phase
   opened and the plan so far, and loading it returns to exactly that screen. (RULE — `tests/skirmish-play.test.ts`)
 
-## 4. Menu rows
+## Menu rows
 
 - **A menu can always be walked with Up, Down and Enter alone.** Every action is a row in walking order,
   and Enter (or Space) does what its hotkey and a click do; an action with only a key or a button makes
@@ -234,7 +264,7 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   sequence number (`BuildState.ack`) and `src/view/build-live.ts` shows it from the frame that first
   sees it. Still frames carry none. (RULE — `tests/build-menu.test.ts`, `tests/build-card.test.ts`)
 
-## 5. Moving in lists
+## Moving in lists
 
 **List movement** is the map cursor's movement applied to rows, in every list — the Build Phase menu,
 the Nexus Pulse popup, the game menu, Settings, the export, the Controls page, the Activity logs window, the
@@ -253,9 +283,9 @@ title screen's menu.
 - **Rows that are not choices are skipped**: blank lines, the credits line, section headings.
   (RULE — `tests/build-all-settings.test.ts`, `tests/build-menu.test.ts`)
 
-## 6. The side panel
+## The side panel
 
-### 6.1 The Build Phase menu
+### The Build Phase menu
 
 - **One list**: `[e] Explore Map`, `[n] Nexus Pulse` (picks waiting as `(1)` in the hotkey colour), then **the
   credits line** — the blank line before the buildings, what is left to spend right-aligned in the cost
@@ -308,7 +338,7 @@ title screen's menu.
   on `COMMANDER` and says so first (`Vasse restored beside the Nexus.`, or `Vasse is out; back for round 3.`). (RULE — `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`,
   `tests/mission-loop.test.ts`)
 
-### 6.2 Cards
+### Cards
 
 - **A card replaces the menu while something has the map's attention**: Explore Map's describes what is
   under the cursor as it moves; a building's describes the building being placed.
@@ -345,9 +375,10 @@ title screen's menu.
   25% less damage."); nothing while the Experiment has it off. Hers is the tallest card: at 80 × 24 the blank
   lines before her skill and before her numbers close up rather than lose a number. (RULE —
   `tests/commander-screen.test.ts`, `tests/build-card.test.ts`)
-- It appears with the **card reveal** (see *Motion and transitions*).
+- It appears with the **card reveal** (see *Motion and transitions*). A larger ASCII-art card waits for content that has
+  one, and live numbers wait for the Battle Round's view.
 
-### 6.3 A selection holds the menu
+### A selection holds the menu
 
 While a building is being placed it stays the selection until placed or cancelled: another building's
 digit, `e` and `s` (and `p`) are refused — the header flickers and the bottom line says to place it or
@@ -358,7 +389,7 @@ track of what is armed (`refuseWhileArmed` in `src/build/state.ts`). Explore Map
 while exploring arms from the map, and `n` opens the Nexus Pulse popup.
 (RULE — `tests/build-holds-menu.test.ts`)
 
-## 7. Hand-offs to the map
+## Hand-offs to the map
 
 A **hand-off** is a menu row giving the keyboard to the map — a building armed, or Explore Map opened,
 from the menu. It is shown so the eye travels with the keyboard: something flies from the row's own
@@ -385,7 +416,7 @@ loop times the rest. (RULE — `tests/build-handoff.test.ts`)
   put); opened from the map, the cursor stays where the player put it. (RULE — `tests/build-focus.test.ts`,
   `tests/build-handoff.test.ts`)
 
-## 8. Motion and transitions
+## Motion and transitions
 
 - **Motion explains a change, then the screen is still.** Nothing moves unless something changed, and an idle
   screen draws once per input — save for the two ambient animations below, which ask for a frame only when
@@ -398,11 +429,10 @@ loop times the rest. (RULE — `tests/build-handoff.test.ts`)
   (RULE — `tests/build-motion.test.ts`, `tests/tween.test.ts`)
 - **The card reveal**, about 400 ms in three beats (a tuned value, the owner's): the other rows fade out; the chosen row, now active,
   slides up to the header line; the card fades in, its title, subtitle and description typed out in that order, a
-  building's icon playing its going-up frames. Explore Map's card opens the same way, and a card opened
-  from the map by a digit too; from one card straight to another only the last beat plays, so the menu
-  never flashes back between them. Going back is plain: the menu returns
-  with its row lit. The live loop starts it by watching the state become a card (`cardRevealAt` in
-  `src/view/build-live.ts`); the reducer never hears of it. (RULE — `tests/build-card.test.ts`)
+  building's icon playing its going-up frames. Explore Map's card and a card opened from the map by a digit open the
+  same way; from one card straight to another only the last beat plays, so the menu never flashes back between them.
+  Going back is plain: the menu returns with its row lit. The live loop starts it by watching the state become a card
+  (`cardRevealAt` in `src/view/build-live.ts`); the reducer never hears of it. (RULE — `tests/build-card.test.ts`)
 - **An ambient effect moves slowly and draws less often.** Two never settle: a popup's border breath, and the
   raid's intent trail while no popup is open. While the breath is the only thing moving the screen redraws 20
   times a second instead of 60, and stops the moment the last popup closes; while the trail is, the screen
@@ -419,7 +449,7 @@ loop times the rest. (RULE — `tests/build-handoff.test.ts`)
 - **Reduced motion snaps** — camera, cursor, card, flight — keeping only what is not movement, such as a
   blink. (RULE — `tests/build-motion.test.ts`, `tests/build-card.test.ts`, `tests/build-handoff.test.ts`)
 
-## 9. See-through styles
+## See-through styles
 
 A **see-through style** lays a colour over cells without hiding them. Its **alpha** (0 to 1) mixes the
 style's colour, the cell's background and its glyph's colour, **the glyph taken as a fifth of the
@@ -437,9 +467,9 @@ cell**, as the owner defined it:
 (RULE — `tests/see-through.test.ts`.) Any future see-through element — a travelling highlight, a ghost —
 uses it rather than a new blend.
 
-## 10. Popups
+## Popups
 
-### 10.1 One shape
+### One shape
 
 - **Every popup is one shape** (`src/build/popup.ts`): a title and rows as data, options naming the
   command a click, their hotkey and Enter on them all send (a setting's Left/Right and its value's two
@@ -448,8 +478,7 @@ uses it rather than a new blend.
 - **Unmissable**: a solid border in the map edge's weight, the title in it, a one-cell shadow (`:` or
   `░`), centred over the map, drawn last in the chrome band. (RULE — `tests/build-popups.test.ts`)
 - **It holds the keyboard and the mouse** until it closes; keys it does not use do nothing. **Nothing
-  opens a popup but the player**, except the dialog, which a round with a scene opens itself (section
-  10.4). (RULE — `tests/build-popups.test.ts`, `tests/build-holds-menu.test.ts`, `tests/dialog.test.ts`)
+  opens a popup but the player**, except the dialog, which a round with a scene opens itself (*The dialog*). (RULE — `tests/build-popups.test.ts`, `tests/build-holds-menu.test.ts`, `tests/dialog.test.ts`)
 - **A choice closes its popup**: a Nexus pick returns the player to where they were; the bottom line
   and the menu say what it did. (RULE — `tests/build-nexus.test.ts`)
 - **A popup that belongs to a menu row keeps that row active behind it** (Nexus Pulse, Battle Round); one that
@@ -459,19 +488,18 @@ uses it rather than a new blend.
   Round 1`), its body announces it — data a mission can write per round (`BuildContext.roundText`), one
   sentence to a line — and its one row is the action, highlighted: `[s] Start`. Going back is Esc.
   (RULE — `tests/build-start.test.ts`)
-- **Every popup's border breathes**: while a popup is open its border slowly turns a little lighter
-  and a little darker, a smooth breath whose length is the "Popup pulse" Experiment. Only the border
-  moves, never the title, text or shadow. (RULE — `tests/build-breath.test.ts`)
-- **A popup can have an opening** that plays once from the moment it opens, then gives way to the breath.
-  Which popup has which is a table in the view (`POPUP_OPENINGS`), not code in the drawing. Today only the
-  Battle Round screen has one, a **double flash**: two quick flashes well past the breath's range (the
-  "Battle Round flash" and "Flash strength" Experiments), then the breath from rest. Everything is still
-  under reduced motion and in monochrome; the Popup pulse at 0 stops the breath only. (RULE — `tests/build-breath.test.ts`)
+- ***The popup's breath and opening***: while a popup is open its border slowly turns a little lighter
+  and a little darker, a smooth breath whose length is the "Popup pulse" Experiment (0 stops the breath only).
+  Only the border moves, never the title, text or shadow. A popup can also have an **opening** that plays
+  once from the moment it opens, then gives way to the breath from rest (*Motion and transitions*); which
+  popup has which is a table in the view (`POPUP_OPENINGS`). Today only the Battle Round screen has one, a
+  **double flash** (the "Battle Round flash" and "Flash strength" Experiments). Everything is still under
+  reduced motion and in monochrome. (RULE — `tests/build-breath.test.ts`)
 - **A message is a popup with nothing to choose**: a title and wrapped text, closed only by Esc, `x`, a
   right click or a click outside, over whatever was open. For a warning to read once and act on later
   (`BuildState.message`, `messageSpec`). (RULE — `tests/build-popups.test.ts`)
 
-### 10.2 Scrolling lists and rows
+### Scrolling lists and rows
 
 - **The window follows the highlight**, in the middle while it can, derived and never stored
   (`scrollWindow`), so the reducer knows nothing of the popup's height.
@@ -500,7 +528,7 @@ uses it rather than a new blend.
 - **A line of a list can be clicked to highlight it**, so a phone can read in the note what the list
   cuts short. A note may hold paragraphs, each on its own line. (RULE — `tests/build-activity.test.ts`)
 
-### 10.3 Settings, the export, the Controls page and the Activity logs
+### Settings, the export, the Controls page and the Activity logs
 
 - **Settings**: the game menu's `[s]`, or `d` straight to the first Experiment. One scrolling list in
   **titled sections with a blank line before each** — Display (the player's own: background, colour
@@ -532,7 +560,7 @@ uses it rather than a new blend.
   `activity-export.txt`; on the playtest page, its own box), and a message says how many went where.
   (RULE — `tests/build-activity.test.ts`)
 
-### 10.4 The dialog
+### The dialog
 
 ***The dialog*** (a named pattern: the owner's "perhaps a new type of popup at the bottom that shows
 dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE — `tests/dialog.test.ts`)
@@ -550,24 +578,24 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   back to the same line. The bottom line names its keys: `Line 1 of 4. [enter] next line, [esc] skips
   the rest.`
 - **The camera on whoever is talking**: each line slides the view to its focus (a unit, a group or a
-  region), with the Battle Round's own look-at, and lights it (`fx.focus.light`, section 13); the map cursor is
+  region), with the Battle Round's own look-at, and lights it (`fx.focus.light`, *Effects*); the map cursor is
   hidden and the menu unlit while it is open. After the last line, the round is exactly as it opened:
   the cursor where the round put it, the bottom line the round's own.
 - **Recorded**: every line shown and every skip is an Activity Logs event (the **Intro** filter), so a
   playtest export says whether the intro was read.
 
-### 10.5 A choice that must be made
+### A choice that must be made
 
 A popup the player does not open and cannot dismiss, because what is chosen changes the round it opens on, was the
 retired runs' draft. None is built now; Story's technology choice between missions may bring the shape back: the
 choices as options, a quiet row for one that cannot be taken, Esc and a click outside only saying what to do, and only
 the game menu opening over it. Its design is in the runs' history ([`challenge-runs-design.md`](../history/challenge-runs-design.md)).
 
-### 10.6 A panel over the menu
+### A panel over the menu
 
 A popup may dock over the side panel instead of the map, when what it is about is on the map: the Battle Round panel, moving the banner, choosing the stance. It runs from the rule under the top bar down to the rule over the bottom bar, its shadow on that rule. Rows that do not fit are left off from the end, so such a panel puts its actions before anything that can be dropped. Esc goes back one panel at a time. (GUIDANCE — `tests/battle-banner.test.ts`)
 
-### 10.7 The battle banner
+### The battle banner
 
 Behind the **Battle banner** Experiment (on by default; off keeps the centred start popup). Starting the Battle Round (`s`, or the menu's Start row) centres the camera on the banner and docks a panel: "Start Battle Round 2.", the Target and the Stance, then `[t] Change Target` and `[s] Start Battle`.
 - **The default banner** is the enemy Nexus, aggressive, where the map has one; otherwise the level's own target (PERIMETER's line, defensive, as its troops hold it today), or "the nearest enemy". Planting back on the default with the default stance clears the order, so the round plays as before.
@@ -576,7 +604,7 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
 - **Planting** (Enter, Space, the panel row, or a second click on the same tile) opens a ring outward from the banner and asks `[a] Aggressive — Keep pushing on` or `[d] Defensive — Hold position`. Aggressive adds a fainter line from the banner on to the enemy.
 - The banner carries to the next round until moved; outside the panels a moved banner stays as a dim mark. Under reduced motion the ring is skipped and the pulse holds. (GUIDANCE — `tests/battle-banner.test.ts`)
 
-## 11. The bottom line
+## The bottom line
 
 - **One line: what just happened or why not — and when nothing did, what can be done here.** The last
   command's answer while it has one; otherwise the hint for where the keyboard is, from one list of
@@ -584,8 +612,13 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
   (RULE — `tests/build-help.test.ts`, `tests/build-view.test.ts`)
 - **An answer lapses at the next command that says nothing** (`lapseStatus`); a move is one, so a
   refusal about a tile goes when the cursor leaves it. (RULE — `tests/build-help.test.ts`)
-- **A message is typed** — text, a tone and its tile, never a bare string; hints have the quieter `hint`
-  tone, and tones resolve onto style roles in one place (`src/view/status.ts`).
+- **A message is typed** — text, a tone (`neutral`, `success`, `warning`, `danger`, and the quieter `hint`) and
+  optionally its tile, never a bare string; tones resolve onto style roles in one place (`src/view/status.ts`), never
+  a colour, so monochrome gets the same message by weight alone. **Arming and opening Explore Map put nothing on the
+  line but their hint.**
+- **A hint is written the way the screen writes keys** (`[enter]`, `[esc]`; arrows as plain words), names the
+  situation in its own words rather than opening with the mode's name in capitals, and never names a key the
+  keyboard adapter does not bind. (RULE — `tests/build-view.test.ts`, `tests/build-help.test.ts`)
 - **Say the result and the way back**: `Hatchery placed (credits: 70) - [u] undo`. **A refusal names its
   tile**: affordability comes first, then the build range (a region; with no tile of the building inside it,
   its first tile is named), then the tile's own problem. Buildings may touch: one that makes units sets them on its
@@ -597,7 +630,7 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
 - **During a Battle Round** it says what the battle is doing, unless a popup holds the keyboard. **It fits 80
   columns**; a narrower bar drops whole words, never half of one. (RULE — `tests/build-help.test.ts`)
 
-## 12. The map
+## The map
 
 - **A closed rectangle whose sides say whether there is more**: a thin dim line where the view can
   scroll further, **the map's own edge** where the map ends — the same weight on every side, corners
@@ -609,21 +642,18 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
   grey (`chrome.edge`) so the menu and bars stay the loudest lines. (RULE — `tests/build-edge.test.ts`)
 - **The menu's divider is the map's west side**, and a map shorter than the panel closes directly under
   its own last row. (RULE — `tests/build-focus.test.ts`, `tests/build-edge.test.ts`)
-- **Moving the cursor: taps are counted, a hold has a pace.** A tap is one tile. Taps of one arrow close
-  together are a run that keeps its speed, and the third one since the speed changed, if quick, doubles
-  it (1, 1, 2, then 2, 2, 4), so speed is asked for, never fallen into (a cursor that starts jumping
-  ahead makes the player stop and come back). A held arrow moves at the game's own
-  steady pace, whatever the keyboard's repeat rate, one tile a move and two after a while. A hold ends a
-  run of taps, so adjusting after a hold is precise. **Shift is a jump, not a speed**, repeating no
-  faster than the eye can see it land; Option+Arrow, PageUp/PageDown and Home/End are the same jump,
-  because many terminals send no shifted arrow. The cursor drives the camera at a scroll margin, a share
-  of the view. (RULE — `tests/build-motion.test.ts`, `tests/build-camera.test.ts`)
+- **Moving the cursor: a tap is one tile, a hold keeps the game's pace, and nothing accelerates.** A held
+  arrow moves at the game's own steady pace, whatever the keyboard's repeat rate. **Shift is a jump, not a
+  speed**, repeating no faster than the eye can see it land; Option+Arrow, PageUp/PageDown and Home/End are
+  the same jump, because many terminals send no shifted arrow. The cursor drives the camera at a scroll
+  margin, a share of the view. The numbers and the three tiers (floor, timing, releases) are
+  [`input.md`](input.md), "Taps, holds and releases". (RULE — `tests/build-motion.test.ts`,
+  `tests/build-camera.test.ts`)
 - ***Key releases*** (a named pattern: progressive enhancement for input): where the terminal reports key
-  events (the kitty keyboard protocol, the Key releases Experiment), the game knows a tap from a repeat
-  and when a key is let go; where it cannot, a press within the hold window counts as holding. Asking
-  for more from a host is always undone on the way out, through the one disposer. The input path decides
-  (`src/build/motion.ts`, `src/terminal/key-events.ts`); the reducer sees ordinary moves.
-  (RULE — `tests/key-events.test.ts`, `tests/build-motion.test.ts`, `tests/lifecycle-build-phase.test.ts`)
+  events the game knows a tap from a repeat and when a key is let go; where it cannot, a press within the
+  hold window counts as holding. Asking for more from a host is always undone on the way out, through the
+  one disposer; the reducer sees ordinary moves. (RULE — `tests/key-events.test.ts`,
+  `tests/build-motion.test.ts`, `tests/lifecycle-build-phase.test.ts`; how, in [`input.md`](input.md))
 - **Clicks**: a click moves focus and the cursor to the tile, the ghost with it. **A second click on the
   same tile places** (by tile, never screen cell), and **a quick double click places where its first
   click pointed**, even if the view moved (`BuildSession`). A click near an edge scrolls further the
@@ -654,72 +684,58 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
 - ***The raid's intent*** (a named pattern): in the Build Phase, never during a Battle Round, each coming group has a
   **trail** to what it targets first, and **that target is marked**. The target is the kernel's own choice on
   the Battle Round's first tick, worked out on the plan as it stands (`src/match/intent.ts`), so placing, undoing or
-  removing a building changes it at once: a building nearer the raid becomes its target. The trail is
-  the kernel's own steps, round a ridge, or pressing on it when nothing gets through. Its arrows stand four
-  apart along the way by the Grid's own distance, four columns or two rows (the owner's "1 arrow every 3 tiles",
-  made whole rows), in the glyph pack's arrowheads and strokes, dim and faded, on open ground only and never over
-  a glyph, and **they move** (the owner: "a slow-moving line of arrows ... leaving a transparent arrow behind then
-  moving that fades"): every step, a tuned value about a raider's pace, each arrow goes a column's distance on
-  toward the target, a row taking two steps as it does a unit — the one beside the target going in as a new one
-  comes out of the group — and leaves a copy of itself on each tile it leaves, fainter at once and gone within
-  half a step: blended away where colours blend, the arrow's own dim look and then gone in
-  monochrome, so every depth draws the same glyphs. A popup, reduced motion and a committed plan hold it still,
-  as the still trail, the one beside the target drawn; it moves again from there. The target is underlined under a wash of the raid's colour, never red. Later groups are foreseen
-  against the round's opening. (RULE — `tests/raid-view.test.ts`, `tests/intent.test.ts`)
+  removing a building changes it at once. The trail is the kernel's own steps, round a ridge, or pressing on it when
+  nothing gets through. Its arrows stand four apart along the way by the Grid's own distance, four columns or two rows
+  (the owner's "1 arrow every 3 tiles", made whole rows), in the glyph pack's arrowheads and strokes, dim and faded, on
+  open ground only and never over a glyph, and **they move** (the owner: "a slow-moving line of arrows ... leaving a
+  transparent arrow behind then moving that fades"): every step (a tuned value about a raider's pace) each arrow goes a
+  column's distance on toward the target, a row taking two steps as it does a unit, the one beside the target going in as
+  a new one comes out of the group, and leaves a faint copy on each tile it leaves, gone within half a step (in
+  monochrome the arrow's own dim look, then gone), so every depth draws the same glyphs. A popup, reduced motion and a
+  committed plan hold it still, as the one beside the target drawn; it moves again from there. The target is underlined
+  under a wash of the raid's colour, never red. Later groups are foreseen against the round's opening. (RULE —
+  `tests/raid-view.test.ts`, `tests/intent.test.ts`)
 - ***The build range and a reach*** (named patterns; the owner's "a cool and unobstrussive way to show where the
   turrets will reach ... they also can only be built within the build-range of the other buildings"). Two
   different things get two different marks.
   **The build range is an area.** While a building is armed, every open tile inside it shows the ground's own
-  dot, dim, so where a building may have a tile is the densely dotted ground, and where colours blend it is
-  lit by a faint grey wash; a building may hang over its edge. (A Barracks's room, a ring of dim ticks round
-  every building that made units, went when units came to walk out over the roofs.) **A reach is an outline.** The last tiles a
-  building reaches, as the kernel measures range, are drawn round its ghost in strokes: `-` and `|` along its
-  footprint's sides, `/` and `\` across the corners (`─ │ ╱ ╲` in Unicode). The outline is dim, in the ghost's
-  own look (the hotkey's colour where Enter would place it, grey where it would refuse), moves with the ghost,
-  and in Explore Map and plain navigation is drawn round what the cursor rests on, in the hotkey's colour: a
-  placed building, or a unit of either side that shoots past the tiles touching it (the owner: "exploring a
-  unit should also show thier range"). A unit that fights hand to hand shows none, and that absence is what
-  says "ranged". Never in the raid's own colour: the raid's trail draws its diagonal steps with the same
-  strokes, dim in that colour. A reach is an attack's range today; another kind of range joins it in one place
-  (`reachOf`, `unitReachOf`, `src/view/build-areas.ts`). All three are carried by glyphs, so monochrome and 16
-  colours show them. All are drawn on open ground only, never over anything standing, planned or arriving, nor
-  over the raid's trail — all three give way along the trail's whole way, wherever its moving arrows are, so
-  nothing flickers as they pass and no tile of a room on the way reads as open ground — and nothing claims what a range would catch on the raid's way.
-  Where a reach crosses a room, the reach's strokes are drawn. None shows under a popup, on a committed plan,
-  or during a Battle Round. (RULE — `tests/build-areas.test.ts`, `tests/build-territory.test.ts`)
-  **Measured as the battle will be.** All three are the rules' own, drawn from the same functions the battle
-  counts with (`tilesWithin`, [`grid.md`](grid.md), distance, reach and movement). Build range 6 reaches 6
-  columns across and 3 rows up and down, and what the dots allow is what Enter takes; a Turret's reach of 6 is
-  drawn 13 wide by 7 tall, as tall as it is wide on screen. An outline is the last tiles reached — every tile in
-  reach with a four-way neighbour out of it, never the footprint's own (`outlineWithin`) — so it is two tiles
-  thick on its slants, where each row steps in by two columns, and has no gaps; a blast's ring during a Battle Round is
-  the same outline. (RULE — `tests/rows-view.test.ts`, `tests/build-areas.test.ts`)
+  dot, dim, so the densely dotted ground is where a building may have a tile, lit by a faint grey wash where colours
+  blend; a building may hang over its edge. **A reach is an outline.** The last tiles a building reaches, as the
+  kernel measures range, are drawn round its ghost in strokes: `-` and `|` along the footprint's sides, `/` and `\`
+  across the corners (`─ │ ╱ ╲` in Unicode). The outline is dim, in the ghost's own look (the hotkey's colour where
+  Enter would place it, grey where it would refuse), moves with the ghost, and in Explore Map and plain navigation is
+  drawn round what the cursor rests on, in the hotkey's colour: a placed building, or a unit of either side that shoots
+  past the tiles touching it (the owner: "exploring a unit should also show thier range"). A unit that fights hand to
+  hand shows none, and that absence is what says "ranged". Never in the raid's own colour: the raid's trail draws its
+  diagonal steps with the same strokes, dim in that colour. A reach is an attack's range today; another kind joins it in
+  one place (`reachOf`, `unitReachOf`, `src/view/build-areas.ts`). All are carried by glyphs, so monochrome and 256
+  colours show them; all are drawn on open ground only, never over anything standing, planned or arriving, and give
+  way along the raid trail's whole way, so nothing flickers as its arrows pass (where a reach crosses a room, the
+  reach's strokes are drawn). None shows under a popup, on a committed plan, or during a Battle Round. (RULE —
+  `tests/build-areas.test.ts`, `tests/build-territory.test.ts`)
+  **Measured as the battle will be.** Both are the rules' own, drawn from the functions the battle counts with
+  (`tilesWithin`, [`grid.md`](grid.md), distance, reach and movement). Build range 6 reaches 6 columns across and 3
+  rows up and down, and what the dots allow is what Enter takes; a Turret's reach of 6 is drawn 13 wide by 7 tall, as
+  tall as it is wide on screen. An outline is the last tiles reached — every tile in reach with a four-way neighbour out
+  of it, never the footprint's own (`outlineWithin`) — so it is two tiles thick on its slants and has no gaps; a blast's
+  ring during a Battle Round is the same outline. (RULE — `tests/rows-view.test.ts`, `tests/build-areas.test.ts`)
 
-## 13. Effects
+## Effects
 
-- **Four families** ([`effects.md`](effects.md)), each a pure function of absolute presentation time:
-  **animations** (an entity's own frames — the only family that may change its glyph), **particles**,
-  **shading** (glyphless colour) and **tweens**. An animation's completion is scheduled data, never a
-  callback. (RULE — `tests/effects.test.ts`, `tests/animation.test.ts`)
+What an effect is, its four families, the corruption law, the three forms every effect owes and the
+vocabulary are [`effects.md`](effects.md) and [`presentation.md`](presentation.md) (the bands and the
+compositor). What the interface decides:
+
 - **Effects never touch the plan**: the live loop times them from the frame that first drew their cause;
   undo mid-animation removes the building at once. (RULE — `tests/build-placement.test.ts`)
-- **The corruption law**: an effect may recolour something on the map but never replace its glyph —
-  sparks are dropped on a building's tiles. (RULE — `tests/effects.test.ts`, `tests/see-through.test.ts`)
-- **An effect never carries a cue alone**: the settled screen or the bottom line says it too. **Every
-  effect owes three forms**, authored together — full, reduced motion (keep the cause and the impact,
-  drop the travel) and monochrome ([`effects.md`](effects.md)). (RULE — `tests/effects.test.ts`)
-- **Light is a role pulled toward another role** (`CellStyle.tint`): a blend at 256 colours and up, a
-  step at 16, nothing in monochrome, where a change of weight carries it. (RULE — `tests/effects.test.ts`, `tests/roles.test.ts`)
+- **An effect never carries a cue alone**: the settled screen or the bottom line says it too. (RULE —
+  `tests/effects.test.ts`)
 - **The intro highlight** (`fx.focus.light`): while a dialog line looks at something, a soft light rings
   it on the ground around it, never on it, breathing at the Popup pulse's pace; steady under reduced
-  motion, and in monochrome the focus's own cells invert instead.
-  (RULE — `tests/dialog.test.ts`)
-- **The speaker's light**: as Vasse begins a line during a Battle Round, her own tile is lit a moment with the
-  placement's light (`fx.light.flash`, glyphless, its own three forms); none for her last words, when she is
-  gone from it. (RULE — `tests/voice.test.ts`)
-- **A heal is a cross of light beside the unit it heals**: on the first open tile beside it, rising a row and
-  dimming, never bold, so it is never mistaken for a hit or for the Aid Station that made it; held still under
-  reduced motion. (RULE — `tests/aid-station.test.ts`)
+  motion, and in monochrome the focus's own cells invert instead. (RULE — `tests/dialog.test.ts`)
+- **A heal is a cross of light beside the unit it heals**, never bold, so it is never mistaken for a hit or
+  for the Aid Station that made it. (RULE — `tests/aid-station.test.ts`; its beats are `fx.impact.burst`'s
+  heal form in the vocabulary)
 - **A placement is felt, then settles**: a few frames going up, a moment lit with sparks, then the still
   picture. A removal throws the same sparks. Reduced motion shows the finished building at once, unlit,
   with a still mark for the sparks. (RULE — `tests/build-placement.test.ts`)
@@ -728,7 +744,7 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
   absent under reduced motion. A new warning goes to the timer or the light, never to more red.
   (RULE — `tests/pulse-screen.test.ts`, `tests/ending.test.ts`)
 
-## 14. The Battle Round on screen
+## The Battle Round on screen
 
 - **The Battle Round plays on the Build Phase's screen**; only the panel changes. It opens on the player's
   Nexus, the arrows look around, and the battle never waits for the player.
@@ -804,8 +820,8 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
   line on a row near her `@`, at the place clearest of what stands there for the whole time it is read, held
   still while it is read, never over a unit or a building; and in the panel whenever she or that row is out of
   view, her glyph and name over the quoted line under the feed, never into the controls. A line types in,
-  holds, and thins out; reduced motion shows it whole and steady. As she begins, the effect library's own
-  light lights her tile a moment, none for her last words. Monochrome keeps the words, bold, between quotes.
+  holds, and thins out; reduced motion shows it whole and steady. As she begins, her tile is lit a moment with
+  the placement's light (`fx.light.flash`), none for her last words. Monochrome keeps the words, bold, between quotes.
   Every line is in the Activity Logs, with where it showed. Nothing she says can change what resolves. (RULE —
   `tests/voice.test.ts`)
 - ***Her aura's reach*** (a named pattern; the owner: "Vasse should provide boost to nearby units"): while the
@@ -825,25 +841,24 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
   flicker still; monochrome has the flames alone. (RULE — `tests/burning-ground.test.ts`; how it is drawn is in
   `presentation.md`, "Burning ground is drawn on its own ground")
 
-## 15. Feedback loops
+## Feedback loops
 
 **The game is built to be judged by playing it.** Every pull request ends with a build the owner — and,
 later, friends he shares a link with — can play on a laptop or a phone, and the game carries the tools
-for the answer to come back precise: what to feel, what happened, which build. Feedback itself travels
-the ordinary way — words, screenshots and voice in the pull request or the session. Three tools, all
-sized per pull request by the agent asking:
+for the answer to come back precise. The procedure (logging his words, rounds, how to ask) is
+[`DEVELOPMENT.md`](../../DEVELOPMENT.md), "The feedback loop"; what the game itself carries:
 
-- **Experiments** ask *which feels right?* — a setting he flips (15.1), returned by the settings export.
-- **Activity Logs** answer *what happened?* — events the game records, filtered and exported from the
-  game menu (15.2).
-- **The claude.ai playtest page** is where both meet: the build is a link, both exports land in text
-  boxes under the screen, and a demo button opens the game exactly where the question is (15.3).
+- **Experiments** ask *which feels right?*: a setting he flips, returned by the settings export.
+- **Activity Logs** answer *what happened?*: events the game records, filtered and exported from the game menu.
+- **The note key** (`!`) saves the moment itself.
+- **The claude.ai playtest page** is where they meet: the build is a link, both exports land in text boxes
+  under the screen, and a demo button opens the game exactly where the question is.
 
-The determinism underneath — a seeded kernel, a Build Phase with no clock, every input a named command,
-the build stamped on every export — is what makes a pasted export reproducible with `--settings` and
-`--keys`. Keep it that way.
+The determinism underneath — a seeded kernel, a Build Phase with no clock, every input a named command, the
+build stamped on every export — makes a pasted export reproducible with `--settings` and `--keys`. Keep it
+that way.
 
-### 15.0 The note key
+### The note key
 
 - **`!` on every screen** — the Build Phase (over any popup, the Battle Round included) and every title menu screen —
   opens one line to type: what the player noticed (Enter alone is fine). Every character types into it, Backspace takes
@@ -854,7 +869,7 @@ the build stamped on every export — is what makes a pasted export reproducible
   game and the playtest script ([`skirmish-saves.md`](skirmish-saves.md), notes). The Controls page names it under
   ANYWHERE and the title menu's controls line as `! note`. (RULE — `tests/notes.test.ts`)
 
-### 15.1 Experiments and tuned values
+### Experiments and tuned values
 
 
 - **Every setting is declared once, with its tier** (`src/build/all-settings.ts`): **player** —
@@ -866,20 +881,19 @@ the build stamped on every export — is what makes a pasted export reproducible
   check says so.) A tuned constant that no longer needs tuning can later move next to the code that uses
   it. (RULE — `tests/build-all-settings.test.ts`)
 - **A choice the owner should feel ships as an Experiment**, defaulting to the recommended answer — a
-  timing, a look, a movement rule, or an on/off for a feature whose worth is in doubt. The pull request
-  asks him in plain words to flip it (Settings, or `d`) and paste the export; `--settings` shows what he
-  saw. (RULE for the settings flag and the export — `tests/build-experiments.test.ts`)
+  timing, a look, a movement rule, or an on/off for a feature whose worth is in doubt. (RULE for the
+  settings flag and the export — `tests/build-experiments.test.ts`; how to ask is in the manual.)
 - **Once he settles one it moves to the tuned tier**: his value becomes its default, with who chose it
-  and when, and it leaves Settings, so a new one stands out. It can come back the same way when a later
-  round wants to feel it again — as keyboard navigation's numbers did for the navigation polish round.
-  Some stay on purpose: a number that depends on the player's keyboard (the hold window), a comparison he
-  asked to make (key releases), a look still being felt (the popup pulse and the Battle Round flash), or
-  a feature whose worth is in doubt (the mission's Next round). The Experiment that could hide the incoming raid was settled as shown by
-  his words rather than an export ("the enemy units should be visible without nexus powers"). A renamed setting keeps its old name readable in old
-  exports. (RULE for the old names — `tests/build-all-settings.test.ts`)
+  and when, and it leaves Settings, so a new one stands out; it can come back the same way when a later
+  round wants to feel it again. Some stay on purpose: a number that depends on the player's keyboard (the hold
+  window), a comparison he asked to make (key releases), a look still being felt (the popup pulse and the Battle
+  Round flash), or a feature whose worth is in doubt (the mission's Next round). An Experiment can also be settled
+  by his words rather than an export (the one that could hide the incoming raid: "the enemy units should be
+  visible without nexus powers"). A renamed setting keeps its old name readable in old exports.
+  (RULE for the old names — `tests/build-all-settings.test.ts`)
 - **Never copy a tuned number into prose**; point at the setting.
 
-### 15.2 Activity Logs
+### Activity Logs
 
 - **One structured logger** (`src/log/`): every event is declared before it is logged — its name, its
   default level (error, warn, info, debug), a sentence on what it means, and each property's type and
@@ -888,18 +902,15 @@ the build stamped on every export — is what makes a pasted export reproducible
   (RULE — `tests/log.test.ts`)
 - **A log is a record, never an input**: the kernel and the match layer never reach it, and nothing the
   rules decide reads one. (RULE — `tests/architecture.test.ts`)
-- **The Activity logs window** — the game menu's `[a]` (10.3) — lists them newest first under a filter,
-  shows the highlighted one's every detail, and exports what the filter shows (oldest first) to paste
-  into a pull request. It is deliberately plain. `node scripts/playtest.mjs … --activity [filter]`
-  prints what a scripted run recorded.
+- **The window** is the game menu's `[a]` (*Settings, the export, the Controls page and the Activity logs*), deliberately
+  plain; `node scripts/playtest.mjs … --activity [filter]` prints what a scripted run recorded.
 - **An agent asking about an interaction** adds the event where it happens (never in the kernel), and a
-  filter for its question at the top of `ACTIVITY_FILTERS` (the window opens on the first), then asks in
-  the pull request: "play it, open Esc → Activity logs, export, paste it here". Remove both once
-  answered, as an Experiment is removed.
-- **Movement**: every unit's change of movement state in the Battle Round just ended, march, battle or retreat, with
-  where it stood and the second (`unit.state`, debug), read back from the round once it ends.
+  filter for its question at the top of `ACTIVITY_FILTERS` (the window opens on the first); both are removed
+  once answered, as an Experiment is.
+- **Movement** (`unit.state`, debug): every unit's change of movement state in the Battle Round just ended, read back
+  once it ends ([`movement.md`](movement.md), the three states).
 
-### 15.3 The playtest page
+### The playtest page
 
 - **The build is a link**: the browser playtest page published as a private claude.ai page, the same
   screen loops as the terminal. Tools *around* the screen are fair game there; the game's own screen
@@ -912,7 +923,9 @@ the build stamped on every export — is what makes a pasted export reproducible
   route or key script fails the build. Each demo names what to try. A claude.ai link cannot carry an
   address with `=` in it, which is what the demo's route is for.
 
-## 16. Words
+## Words
+
+The project's words are the [glossary](../game-design/glossary.md); these are the rules for the screen.
 
 - **Plain words on screen**, no internal ids; each Nexus named for its faction ("Citizen Nexus").
 - **The build is named the same way everywhere it appears** — its commit, with `+changes` for a build
@@ -923,13 +936,11 @@ the build stamped on every export — is what makes a pasted export reproducible
 - **Names**: the menu's acknowledgement is *pressed* in code (`ack`, `PRESSED_LOOK`) and a *blink* on screen; the
   building hand-off's traveller is the *focus arrow*; Explore Map's is the *see-through cursor*.
 - **The battle is the Battle Round, never Pulse, on screen** (the owner, 2026-10-04: "Battle Round is better for the player and
-  UI"): the menu's start row, the start screen, the running screen's lines, the popups and the cards say Battle Round
-  (or the battle), and so do the design and the lore. **The Nexus Pulse** is the moment a round opens and the
-  Nexus deals its hand (the owner, 2026-10-07): on screen, the menu row `[n] Nexus Pulse` and the popup it
-  opens, titled `NEXUS PULSE`. The code still calls the battle step `pulse`, the engine's word, which a player
-  never reads. A mission's cycles are **rounds** to the player — "round 2 of 3", "Next round". The words are defined in
-  the [glossary](../game-design/glossary.md); the "Popup pulse" Experiment is a breath of light on a popup's
-  border and has nothing to do with the Nexus Pulse.
+  UI"): the menu's start row, the start screen, the running screen's lines, the popups and the cards. **The Nexus Pulse**
+  is the moment a round opens and the Nexus deals its hand (the owner, 2026-10-07): the menu row `[n] Nexus Pulse` and the
+  popup it opens. The code still calls the battle step `pulse`, which a player never reads. A mission's cycles are
+  **rounds** to the player. The "Popup pulse" Experiment is a breath of light on a popup's border and has nothing to do
+  with the Nexus Pulse.
 
 ## Where the rules came from
 

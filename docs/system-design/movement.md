@@ -40,16 +40,6 @@ troops off the march to fight there, and a line of buildings bends the way they 
 breach. Rule 6 and where production stands are the offensive half: a building's wave comes out a few seconds into
 every round and walks up to the front, sorting itself into the formation as it goes.
 
-## A round, in plain words
-
-The Nexus calls the round. Your troops start where the last round left them, standing in ranks, and each building's wave
-steps out a few seconds in. Everyone walks toward the enemy Nexus by the shortest way round rock and buildings; the
-ranged slow down while blades are near, so the blades end up in front. Anything of the enemy's that comes within 6
-columns is fought, the nearest first, and a troop sticks to its enemy until it falls. A melee troop that cannot get at
-its enemy, because the fight is in the way, lets that enemy go and takes another it can reach, nearby or further off, and
-with none stands as near as it can, ready to step in when a tile frees. If buildings shut every way to the Nexus, the
-troops break the fewest. After 30 seconds the Nexus calls a pause: everyone steps back and forms up again, and the player builds.
-
 ## Build Phase and Battle Round — the will of the Nexus
 
 RULE ([`pulse.md`](pulse.md), match structure; `src/match/regroup.ts`). **In the Battle Round nothing waits for the
@@ -248,12 +238,12 @@ came out the same on every measure (speed, strikes, stalls), so the rule with fe
 unreachable enemy for 2½ seconds, this took no-route standing down by 28% on the Crossing's battles and 69% on the open
 Pocket's, and the blocked unit-ticks of a fair battle through a narrow pass by 11% to 19%.
 
-**Why units used to change target so often** (12 scripted battles on the Crossing: a trooper held a living target a median
-of 4 ticks, and changed away from a still-living one some 3,400 times). Three causes, all in perception: a unit chose
-afresh every tick, so the nearest enemy by range (a marksman's, the Nexus's gun) or by walk (a melee unit's) replaced
-the one it was already striking or walking to; a melee unit at the edge of its reach dropped a candidate whose walk was
-a little longer than its vision and took it up again as the walk crossed the line (about 1,500 cases, 300 of them the
-same target within 12 ticks); and it kept no memory of the old target beyond a tie-break.
+**Why units used to change target so often** (12 scripted battles on the Crossing: a trooper held a living target a
+median of 4 ticks and changed away from a still-living one some 3,400 times). Three causes, all in perception: a unit
+chose afresh every tick, so the nearest enemy by range or by walk replaced the one it was already striking or walking
+to; a melee unit at the edge of its reach dropped a candidate whose walk was a little longer than its vision and took
+it up again as the walk crossed the line (about 1,500 cases); and it kept no memory of the old target beyond a
+tie-break. Commitment is the fix.
 
 **Moving in battle.** A unit in battle walks to where its attack reaches its target, and its route ends exactly there:
 touching for a sword, within range for a gun, so the walk, the shot and the hold never disagree about "close enough".
@@ -388,7 +378,7 @@ Every way a unit moves is one of three things: **a new goal** for the same field
 | The raid's trail in the Build Phase | The same field, walked ahead of time over the plan | Yes |
 | Regrouping between rounds | A goal per unit, its slot in its side's formation across the march line, walked beside the kernel's tick (`src/match/regroup.ts`) | Yes |
 | Making room for a building | The walk to the nearest free ground off every building, pushing on whoever stands there in turn (`src/match/make-room.ts`) | Yes |
-| A banner | A goal: the banner, then the Nexus; or the banner's tiles, held | IDEA |
+| A banner | A goal: the banner, then the Nexus; or the banner's tiles, held | Prototype, behind the Battle banner Experiment ("Banners — prototype" above); a second banner is IDEA |
 | A worker's job | A goal: every free job slot | IDEA (Milestone 7) |
 
 ### Where modifiers plug in

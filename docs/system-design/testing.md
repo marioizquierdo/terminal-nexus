@@ -2,9 +2,49 @@
 
 _What the test suite proves, how a test is named, what only a person can judge, and the balance measures that will matter later; every unmarked statement is GUIDANCE._
 
-The suite lives in `tests/` and runs on Node and on Bun (`scripts/run-tests.sh`); how to run it is in
-`DEVELOPMENT.md`. This page says what it is *for*. Every engine defect should reduce to a state, plan,
-seed or event fixture; every balance claim should identify a reproducible cohort.
+The suite lives in `tests/` and runs on Node and on Bun (`scripts/run-tests.sh`); how to run it, and the order a change
+is developed in, is in `DEVELOPMENT.md`, "Developing and testing a change". This page says what the tests are *for*.
+Every engine defect should reduce to a state, plan, seed or event fixture; every balance claim should identify a
+reproducible cohort.
+
+## Two instruments, two questions
+
+A **sandbox** is a slice of the Grid, like the context of a unit test: one rule, effect, movement or ability on a small
+map, read as damage, deaths, paths and timings. The **`skirmish` command** plays the whole game: the Nexus, credits,
+rounds and who wins. Pick the one whose question the change asks; a change that touches both runs both. Which tool
+answers which question, and how to author a sandbox, is [`sandboxes.md`](sandboxes.md); what a measured battle holds
+and how a result is kept is [`measurement.md`](measurement.md).
+
+## Invariant tests: every reading counted two ways
+
+Most of what a tester has caught could have been caught by one number counted two ways. So **a new reading (a number
+the brief, a report, a log or a measurement states) ships with a second way to count it, and the comparison is a test**:
+an invariant, named for the rule it holds ("an engagement's damage sums to its side's total damage", "the other side's
+private fields are absent from a brief"). Held today in `tests/reading.test.ts`: the damage in a side's engagements against the damage it dealt, and the other side's
+private fields absent from the JSON brief. A blocked count set beside a count of units that struck
+([`measurement.md`](measurement.md), what the numbers say) is the same habit.
+
+Done when the test fails if either count is wrong: break the reading once on purpose and watch it go red.
+
+## Tester agents: one goal each
+
+Tests with an assertion miss what a tester with a goal finds: six agents, one job each, found in an hour two bugs the
+suite passed (engagements that dropped every killing blow; a brief that carried the other side's credits). Each goal
+becomes an invariant, so the next change meets it as a test. The goals worth sending after a step:
+
+| Goal | The tester |
+| --- | --- |
+| Audit a reading | counts it two ways and reports every disagreement |
+| Play to win | plays one side against a script, from the brief alone, and reports what it wanted and could not see |
+| Break the command | gives `skirmish`, `grid` or `measure` odd input: a flag with a value it does not use, a seed or tick out of range, two options that contradict. Every one is refused or says what is not done; a flag that ignores its input is a bug |
+| Check the documents against the code | reads a page and runs what it claims |
+
+Give each tester one goal, one command to start from and the order to report counts, not opinions. **Sonnet for most; one
+Opus at a milestone's end** for contradictions and adversarial play: the quicker model finds the gap (a player that won in round
+3 wanted the enemy's credits and a refusal's reason), the stronger finds the contradiction (a player that won in round 1
+found a brief with no units beside a Nexus at 400). Both readings are worth having; the second costs more.
+Findings are fixed, and the lessons logged in [`docs/history/lessons-learned.md`](../history/lessons-learned.md),
+before Mario is asked to play anything.
 
 ## What the suite proves
 
@@ -144,18 +184,18 @@ a failing test whose name says what broke. A RULE in a design document points at
 that holds it, and the test never points back at a section number, so splitting or moving a document
 never renumbers anything.
 
-The old convention, an `engine-3.3-markers` style prefix for a document section, is retired; fifteen
-tests in `tests/build-camera.test.ts` and `tests/build-view.test.ts` still carry it and are being renamed.
+A prefix naming a document section (`engine-3.3-markers`) is retired and no test carries one.
 
 ## Human playtests
 
 A passing test is not proof of how something feels, and a screen that is correct can still read badly.
 Only a person can judge recognition (does a letter read as a soldier), emotional impact, comprehension
 of what a screen is asking, strategy, and whether they want to watch again; and only Mario can judge a
-timing, a look or whether a feature should exist. Those judgements are kept apart from automated
-results: a settings export or playtest note is feedback to settle, never a test result, and no
-automated check stands in for it. The scripted playtest returns every screen as text and pictures so a
-change can be seen before it is claimed, and agents can act as invariant hunters and replay critics.
+timing, a look or whether a feature should exist: whether the banner feels strategic, whether a screen reads, whether a
+battle is fun. Those judgements are kept apart from automated results: a settings export or playtest note is feedback to
+settle, never a test result, and no automated check stands in for it. Numbers and testers reach everything else
+first, so Mario's time goes only where they cannot. The scripted playtest returns every screen as text and pictures so a
+change can be seen before it is claimed.
 
 ## Balance metrics
 

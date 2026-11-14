@@ -1,6 +1,6 @@
 # Terminal Nexus — the scripted opponent: raids, intentions, and what the player can see coming
 
-_A working design for how a mission's opponent arrives and says what it means to do, and where a planner for missions and Skirmish could come from. GUIDANCE and IDEA throughout; nothing here is built beyond what section 2 says. Mechanical definitions are Apache-2.0; the fiction is CC BY-SA 4.0._
+_A working design for how a mission's opponent arrives and says what it means to do, and where a planner for missions and Skirmish could come from. GUIDANCE and IDEA throughout; nothing here is built beyond what "What is built" says. Mechanical definitions are Apache-2.0; the fiction is CC BY-SA 4.0._
 
 ## 1. What the opponent must do
 
@@ -8,7 +8,7 @@ A mission's opponent has to meet three requirements, and they are one design:
 
 1. **The mission defines the round** — nothing arrives "out of nowhere"; what the Battle Round starts with is the mission's data, readable before it starts. A sandbox may spawn units freely; a mission fully defines the initial state of the round, so the player can Explore the map and see what is coming.
 2. **The player can see it coming** — the Build Phase is planning against a known threat, the way PERIMETER's own briefing already says the Nexus "has already assigned the contact a name, a heraldry, and an estimated time of arrival".
-3. **Incoming groups say what they mean to do** — an *intention*, in optional words on each group, which is also the seed of an opponent AI the player can read, so people can properly plan for what is coming. How a raid's groups are configured in the mission files is deliberately left undetailed (section 3.4).
+3. **Incoming groups say what they mean to do** — an *intention*, in optional words on each group, which is also the seed of an opponent AI the player can read, so people can properly plan for what is coming. How a raid's groups are configured in the mission files is deliberately left undetailed ("How a mission file might say it").
 
 ## 2. What is built
 
@@ -17,7 +17,7 @@ A mission's opponent has to meet three requirements, and they are one design:
 - **RULE — what a group goes for first is the kernel's own choice** (`src/match/intent.ts`, `tests/intent.test.ts`: the prediction equals what the kernel targets on the first tick of the real Battle Round, in all three of PERIMETER's rounds, with and without a plan). It is worked out on the plan as it stands, so placing a building nearer the raid makes that building what it goes for, and undoing it moves the target back; the trail is the kernel's own steps toward it. A later group is foreseen against the round's opening.
 - **RULE — nothing about the forecast is hidden or random.** The same function that starts the round's battle computes the forecast, so what is shown is what will come — except where the player builds on an arrival's tile, which moves it aside when the round starts (`src/match/mission.ts`, where the forecast is the same function asked with the plan as it stands; `tests/mission.test.ts`: "a later arrival comes at its tick, with the kernel's own spawn event").
 
-What it does **not** do yet is the part that needs the kernel for one group: the kernel knows two things a unit does — engage the nearest enemy, or, for a side its level gives a target, head there and engage only what comes within reach ([`pulse.md`](../system-design/pulse.md), a side's target). The raid has no target, so its intention is still a sentence the mission writes, and it comes true because the nearest enemy happens to be where the sentence says; the player's troops do have one: PERIMETER sends them to the line. What the map draws is that nearest enemy, the group's first target, not the sentence's destination; after the first contact the raid retargets, and where the fight then goes is not shown. The report that recorded this is [`2026-09-30-round-loop-and-missions.md`](../history/reports/2026-09-30-round-loop-and-missions.md).
+What it does **not** do yet is the part that needs the kernel for one group: the kernel knows two things a unit does — engage the nearest enemy, or, for a side its level gives a target, head there and engage only what comes within reach ([`pulse.md`](../system-design/pulse.md), a side's target). The raid has no target, so its intention is still a sentence the mission writes, and it comes true because the nearest enemy happens to be where the sentence says; the player's troops do have one: PERIMETER sends them to the line. What the map draws is that nearest enemy, the group's first target, not the sentence's destination; after the first contact the raid retargets, and where the fight then goes is not shown. History: [`2026-09-30-round-loop-and-missions.md`](../history/reports/2026-09-30-round-loop-and-missions.md).
 
 ## 3. The shape to grow it into — IDEA
 
@@ -47,7 +47,7 @@ Two ways to get the sentence the player reads, and both are worth having:
 - **Written** — the mission author's own line, in the mission's voice ("Knock knock, bureaucrats!" is a bark; "Wait for the flank, then hit the east gate" is an intention). Today's `intent`.
 - **Derived** — a plain sentence built from the plan itself ("Holds at the ridge for 5 s, then advances on the east gate; prefers turrets."), so an intention can never lie about what the group will do, and a mission author who writes nothing still gets one. This is the one to lean on for a planner (below), because a generated plan has no author to write its sentence.
 
-On the map the plan could be drawn too, not only said: a faint path from the group to its next region, or an arrow at its destination, in the raid's colour, see-through like the group itself. Half of this is built, with no Experiment, because Mario asked for the intent to be read at a glance: a trail to each group's first target, drawn in arrowheads that read in monochrome too (section 2). What waits for a plan is drawing its later steps.
+On the map the plan could be drawn too, not only said: a faint path from the group to its next region, or an arrow at its destination, in the raid's colour, see-through like the group itself. Half of this is built, with no Experiment, because Mario asked for the intent to be read at a glance: a trail to each group's first target, drawn in arrowheads that read in monochrome too ("What is built"). What waits for a plan is drawing its later steps.
 
 ### 3.3 Where an opponent planner comes from
 
@@ -68,7 +68,7 @@ Not detailed on purpose. The direction: a mission's raids live beside its map as
 
 ## 4. The names
 
-The battle has had several names (Pulse, Battle step, round, Nexus Pulse). Mario settled it: the player reads **Battle Round** wherever the interface names the battle (2026-10-04), and since 2026-10-07 the design and the lore call it the Battle Round too, while the **Nexus Pulse** is the moment that opens each round, when the Nexus deals its hand of powers. The code still calls the battle step `pulse`, the engine's word (the words are defined in the [glossary](glossary.md)). A mission's cycle is a round to the player: "round 2 of 3", "Next round", "Battle Round 2".
+The player reads **Battle Round** wherever the interface names the battle; a mission's cycle is a round to the player ("round 2 of 3", "Next round"). The code's `pulse` is the engine's word ([glossary](glossary.md)).
 
 ## 5. A sensible order — IDEA
 

@@ -1,6 +1,6 @@
 ---
 name: playtest
-description: Press keys on the Terminal Nexus screens — the title menu, the Skirmish setup screen and the Build Phase — without a terminal and get back every step's screen as text, PNGs and an animated GIF (scripts/playtest.mjs). Use to see a change working, to check a flow someone described ("Down, Down, Space, Space"), to reproduce a playtest report, and to make the before/after pictures or GIF a pull request shows. Prefer it over tmux screenshots for anything about layout or a flow; it cannot capture one key early.
+description: Scripted playtest (scripts/playtest.mjs): press keys on the title menu, the Skirmish setup screen and the Build Phase without a terminal, and get every step's screen as text, PNGs and a GIF. Use to see a change working, to check or reproduce a described flow ("Down, Down, Space, Space"), to open a playtest note, and to make a pull request's before and after pictures. Preferred over tmux for layout and flows.
 ---
 
 # Scripted playtests
@@ -9,8 +9,21 @@ description: Press keys on the Terminal Nexus screens — the title menu, the Sk
 mouse adapters (`BuildSession.handleData` on a Build Phase, `TitleScreens.handleKey` on the title menu) as the exact
 bytes a terminal sends, and composes the frame after every key with the same composer the live screen uses. It follows
 the game from screen to screen: New game's Start (or a loaded save's Open) hands the rest of the script to that
-battle's Build Phase, and a result's `[m] Setup screen` hands it back to New game (`src/playtest/game.ts`). No
-terminal, no timing, no race.
+battle's Build Phase, and a result's `[m] Setup screen` hands it back to New game (`src/playtest/game.ts`). With no
+terminal and no timing, a picture can never be captured one key early.
+
+## Workflow
+
+1. **Text first.** Run with the default `--print final` (or `all`) until the screen says what you expect; the per-step
+   summary prints focus and the bottom line for each key.
+2. **Then pictures**: `--png final` or `--gif`. Done when you have opened the image and the picture itself, not only
+   the text, shows the change.
+3. **For a pull request**, re-run with `--out docs/pr-pictures --name <descriptive-name>` and commit the one or two
+   pictures in one commit; the description links them by that commit's SHA, and the branch's last commit removes
+   `docs/pr-pictures/` (the `pr-description` skill, "Pictures that display on a phone"). A picture worth keeping for the
+   record goes in `docs/history/screenshots/`, as that folder's README says.
+4. **A before/after pair**: the same script on `origin/main` (a worktree) and on the branch, with different `--name`s.
+   [`DEVELOPMENT.md`](../../../DEVELOPMENT.md), "Seeing a change", sizes the Demo to the change.
 
 ## Commands
 
@@ -132,21 +145,6 @@ opened by `--at` starts). `--at 'story?mission=vasse-test-1&round=2' --keys "wai
 yourself, or step `BuildAnimation` (`src/view/build-live.ts`) with a fake clock: `slideGif`,
 `placementGif` and `placementSheet` in `scripts/capture-build-phase-screenshots.mjs` do exactly that.
 
-## Workflow
-
-1. Iterate in text: run with the default `--print final` (or `all`) until the screen says what you
-   expect. The per-step summary prints focus and the bottom line for each key.
-2. Then pictures: `--png final` or `--gif`. **Read the image before using it** — the text being right
-   does not mean the picture is.
-3. For a pull request: re-run with `--out docs/pr-pictures --name <descriptive-name>` and commit
-   the one or two pictures to the pull request's branch in one commit; the description links them by
-   that commit's SHA, and the branch's last commit removes `docs/pr-pictures/` before merge (the
-   `pr-description` skill has the exact steps, "Pictures that display on a phone"). A picture worth
-   keeping for the record goes in `docs/history/screenshots/` instead, as that folder's README says.
-4. A before/after pair: run the same script on `origin/main` (a worktree) and on the branch, with
-   different `--name`s. See [`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 3 for how to size
-   the Demo to the change.
-
 ## Tests and screenshots built on it
 
 - `tests/playtest.test.ts` is the pattern for asserting a flow in the test suite: `parseKeyScript` +
@@ -159,7 +157,6 @@ yourself, or step `BuildAnimation` (`src/view/build-live.ts`) with a fake clock:
 
 ## Extending to another screen
 
-The title menu and the Build Phase are wired (`src/playtest/game.ts` runs `TitleScreens` and a `BuildDriver`,
-`src/playtest/build.ts`, and hands the script between them). Another screen gets a driver of the same shape (take a
-step, return its frame) and a place in `runGamePlaytest`'s hand-over. A `grid` battle is not a place in the game and
-would take its own option. The key grammar and the image code (`scripts/lib/frame-capture.mjs`) do not change.
+Another screen gets a driver of the shape `src/playtest/build.ts` has (take a step, return its frame) and a place in
+`runGamePlaytest`'s hand-over (`src/playtest/game.ts`). The key grammar and the image code
+(`scripts/lib/frame-capture.mjs`) stay as they are.

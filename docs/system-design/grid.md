@@ -6,8 +6,7 @@ _The play surface: its size and shape, orientation, the viewport and scrolling, 
 
 The **Grid** is the rectangular integer playfield a match is fought on. The replica of a Nexus that
 sits on it is a **Grid Nexus**; the one that stays home is a **Prime Nexus**. A Grid Nexus is a flag
-on a content definition, never a content id the kernel recognises (RULE — `src/content/types.ts`,
-the `nexus` field).
+on a content definition, the `nexus` field (RULE — `src/content/types.ts`; [`grid-engine.md`](grid-engine.md)).
 
 ## 2. Size and shape
 
@@ -51,14 +50,12 @@ tile is one column ([`presentation.md`](presentation.md)), so 48 tiles + 2 borde
 
 A preset is a convenience, not a constraint. A sandbox may declare explicit dimensions.
 
-**The vertical chrome budget in the Build Phase is 6 rows**: 2 border, a 2-row header (the top bar's
-own line, and the rule that closes the Grid's top) and a 2-row footer (the rule that closes the Grid's
-bottom, then one line of contextual help). **The floor measures against 8 rows** (RULE —
-`tests/build-camera.test.ts`): the resize gate uses the old 8-row budget, so 16 + 8 = **24 rows** and
-80 × 24 stays a literal floor, and the two rows the one-line footer saves go to the Grid: 18 rows of
-Grid at 80 × 24. Whether 80 × 24 is a hard minimum, and how many rows belong to the frame, is still
-settled (Q12, answered). It is the same arrangement as the side panel's shared divider column below.
-`grid watch`'s own view, not built on the Build Phase's frame, uses 8 rows, split 3 and 3.
+**The Build Phase's vertical chrome is 6 rows**: 2 border, a 2-row header (the top bar's line and the rule that
+closes the Grid's top) and a 2-row footer (the rule that closes the Grid's bottom, then one line of contextual
+help). **The floor measures against 8 rows** (RULE — `tests/build-camera.test.ts`): the resize gate keeps the old
+8-row budget, so 16 + 8 = **24 rows** and 80 × 24 stays a literal floor, and the two rows the one-line footer saves
+go to the Grid: 18 rows of Grid at 80 × 24 (whether 80 × 24 is a hard minimum was Q12, answered). `grid watch`'s own
+view, not built on the Build Phase's frame, uses 8 rows, split 3 and 3.
 
 ## 3. Orientation is a rendering choice — RULE
 
@@ -127,7 +124,7 @@ There is no minimap.**
   view's width for the sides and of its height for the top and bottom, **30%** (GUIDANCE, a tuned value
   in `src/build/tuning.ts`; `--scroll-margin <percent>` sets it), rounded, and capped so an axis's two
   margins never meet (`tests/build-motion.test.ts`). That a margin exists, and that the cursor drives
-  it, is the rule; the number is not. The exact speed tiers and timings were settled by tap counting and a hold pace (Q54, answered); the tap counting was later removed: an arrow never accelerates.
+  it, is the rule; the number is not.
 - **The margin is a follow rule, not an invariant** (RULE — `tests/build-camera.test.ts`). It says
   where the camera must be relative to the cursor *when it can be*. At the Grid's own edge the camera
   has nowhere left to go, so the cursor legitimately reaches the edge of the screen, which is correct
@@ -140,67 +137,49 @@ There is no minimap.**
   reads as the map's edge. Tutorials and opening missions should use them deliberately: `small` and
   `medium` presets fit the minimum viewport, so a new player meets the game without ever learning to
   scroll.
-- **The Grid pane is a closed rectangle of its own** (RULE — `tests/build-edge.test.ts`). A line runs
-  directly above the Grid's first visible row and directly below its last, and down both sides, never
-  a line with a header or a footer between it and the Grid. Otherwise the player cannot tell where the
-  Grid ends: whatever the sides say about scrolling, they would say it rows away from the edge they are
-  about.
-- **The edge marker is the weight of that rectangle's sides** (RULE — `tests/build-edge.test.ts`,
-  `src/view/edge.ts`). A side with **more Grid to scroll to** is the frame's own line drawn dim (`-`,
-  `|`); a side that has **reached the Grid's own edge** is drawn in **the map's own edge style**, named
-  in the map's definition (a solid bar, an inverse-video cell, for a map that names none; a dashed fence
-  for the starter map), in the quieter edge colour (`chrome.edge`), the same weight along the
-  top and bottom as down the sides, in every glyph pack and in monochrome, with no colour needed to
-  read it. A corner takes the edge wherever an edge side runs into it; a patterned edge is fixed to the
-  map and scrolls with it. When the whole Grid fits, every side and all four corners are the edge at
-  once: "this is the whole map". The frame's outer border and the rules where they cross the side panel
-  never scroll, and stay plain. The style vocabulary a map may name is solid, half, heavy, double, shade
-  and fence. A `[m] Map` popup that shows the whole Grid at once is a separate idea, not built
-  (**IDEA**, an open question, Q59).
-- **The side panel's divider is the Grid's west side** (RULE — `tests/build-edge.test.ts`,
-  `src/build/layout.ts`). One column: a plain line beside the menu's own rows and rules, and a light or
-  map-edge side beside the Grid's rows. The column goes to the Grid: 49 tiles at 80 × 24, while
-  `FLOOR_PANEL_COLUMNS` in `src/build/camera.ts` keeps the floor measured against 30 columns.
-- **A Grid shorter than the pane closes directly under its own last row** (RULE —
-  `tests/build-edge.test.ts`). The Grid pane keeps the minimum viewport's 16 rows while the terminal
-  has them, because the side panel is designed at that height (see [`presentation.md`](presentation.md)),
-  and a shorter Grid sits at the top of it with its own bottom edge drawn across the Grid pane alone:
-  the rectangle stays closed at the Grid's real edge, never at the pane's.
-- **An arrow moves the same distance however it is pressed, a hold keeps its own pace, and the fast move
-  jumps** (GUIDANCE; the timing is held by `tests/build-motion.test.ts`, the numbers are Experiments
-  in Settings' Keyboard navigation section, from `src/build/all-settings.ts`). A tap moves one tile (the arrow's
-  step), and nothing accelerates: quick taps and long holds go no further. A held key moves at the game's own pace
-  rather than the operating system's repeat rate: at most one move every 60 ms (on average exactly that
-  when the keyboard repeats faster), one tile a move (first guesses). Where the terminal reports key events (the kitty keyboard
-  protocol, behind the Key releases Experiment, on by default), it says which presses are repeats and
-  when a key is let go; where it does not, a press of the same arrow within the hold window (an
-  Experiment, 200 ms) of the one before is a repeat, and anything slower a tap. The fast move (Shift
-  and its fallbacks) is not a speed but a **jump of nine tiles across and six up or down** (a row is about twice as tall on screen as a column is wide; below the arrow's step, the slow move instead), the view following by the ordinary
-  margin rather than re-centring; held, it jumps again at most every 100 ms, so each jump is seen to
-  land. **RULE — `tests/build-motion.test.ts`: timing lives in the input path (`src/build/motion.ts`);
-  the reducer receives an ordinary `move-cursor` of the chosen size and stays a pure function of
-  commands.** Every list moves the same way: no wrapping, a first tap one row, taps and holds
-  at the same pace, clamped at the ends, and the fast move going to the first or last row
+- **The Grid pane is a closed rectangle of its own** (RULE — `tests/build-edge.test.ts`). A line runs directly above
+  the Grid's first visible row and directly below its last, and down both sides, with no header or footer between it
+  and the Grid, so the sides say whether there is more Grid at the edge they are about.
+- **The edge marker is the weight of that rectangle's sides** (RULE — `tests/build-edge.test.ts`, `src/view/edge.ts`).
+  A side with **more Grid to scroll to** is the frame's own line drawn dim (`-`, `|`); a side that has **reached the
+  Grid's own edge** is drawn in **the map's own edge style** (solid, half, heavy, double, shade or fence; a solid bar
+  for a map that names none, a fence for the starter map) in the quieter edge colour (`chrome.edge`), the same weight
+  on every side, in every glyph pack and in monochrome. A corner takes the edge wherever an edge side runs into it; a
+  patterned edge is fixed to the map and scrolls with it. When the whole Grid fits, every side and all four corners
+  are the edge: "this is the whole map". The outer border and the rules where they cross the side panel stay plain.
+  How each style draws is in [`ui-patterns.md`](ui-patterns.md), the map. A `[m] Map` popup showing the whole Grid is
+  an **IDEA**, not built (Q59).
+- **The side panel's divider is the Grid's west side** (RULE — `tests/build-edge.test.ts`, `src/build/layout.ts`): one
+  column, a plain line beside the menu's rows and a light or map-edge side beside the Grid's rows. The column goes to
+  the Grid, 49 tiles at 80 × 24, while `FLOOR_PANEL_COLUMNS` in `src/build/camera.ts` keeps the floor measured against
+  30 columns.
+- **A Grid shorter than the pane closes directly under its own last row** (RULE — `tests/build-edge.test.ts`). The pane
+  keeps the minimum viewport's 16 rows while the terminal has them, because the side panel is designed at that height
+  ([`presentation.md`](presentation.md)); a shorter Grid sits at the top with its own bottom edge drawn across the Grid
+  pane alone.
+  (GUIDANCE; held by `tests/build-motion.test.ts`; the numbers, the hold window and the key-release tiers are in
+  [`input.md`](input.md), the Experiments in Settings' Keyboard navigation section, `src/build/all-settings.ts`).
+  Nothing accelerates: quick taps and long holds go no further. The fast move (Shift and its fallbacks) is a
+  **jump of nine tiles across and six up or down** (a row is about twice as tall on screen as a column is wide), the
+  view following by the ordinary margin rather than re-centring. **RULE — `tests/build-motion.test.ts`: timing lives
+  in the input path (`src/build/motion.ts`); the reducer receives an ordinary `move-cursor` of the chosen size and
+  stays a pure function of commands.** Every list moves the same way: no wrapping, a first tap one row, taps and
+  holds at the same pace, clamped at the ends, the fast move going to the first or last row
   (`tests/build-lists.test.ts`).
-- **A click scrolls the view the same way, armed or not** (RULE — `tests/build-motion.test.ts`). A
-  click inside an edge zone (a third of the view to start; the depth is a tuned value) carries the
-  clicked tile toward the middle in proportion to its depth: all the way to the middle at the very
-  edge, not at all at the zone's inner boundary. With a structure armed, the preview follows the click,
-  so the player can keep clicking on the Grid with the ghost building to keep scrolling. **A double
-  click places where its first click pointed**: two left clicks on the same screen cell within 400 ms
-  (a tuned value) are one "here", even if the first scrolled the view. The input path reads the clicks'
-  timing, as it reads keys', and sends the reducer an ordinary click on the first click's tile, so a
-  driver script means the same thing. A slow second click on a spot the view moved away from is a fresh
-  first click, never a placement on a tile nobody pointed at.
+- **A click scrolls the view the same way, armed or not** (RULE — `tests/build-motion.test.ts`). A click inside an
+  edge zone (a third of the view to start; a tuned value) carries the clicked tile toward the middle in proportion to
+  its depth: all the way at the very edge, not at all at the zone's inner boundary. With a structure armed, the
+  preview follows the click. **A double click places where its first click pointed** (two left clicks on the same
+  screen cell within 400 ms, a tuned value, even if the first scrolled the view): the input path reads the clicks'
+  timing and sends the reducer an ordinary click on the first click's tile, so a driver script means the same thing.
+  A slow second click on a spot the view moved away from is a fresh first click.
 - **Everything that moves is interpolated: the camera slides and the cursor glides** (RULE —
-  `tests/build-motion.test.ts`). Every change of camera, however caused, eases over a few frames
-  (100 ms), and every cursor move glides from the tile it was drawn on (100 ms), whole tiles at a time,
-  on the screen's frame timer, which runs only while something animates. Both are **tweens** (see
-  [`effects.md`](effects.md)): pure functions of time, and a move in the middle of another continues
-  from wherever things are drawn. The cursor glides across the view, so it rides along when only the
-  map scrolls and is never drawn outside it; the armed preview travels with it. Only a resize snaps,
-  and reduced motion snaps both. State, commands and scripted playtests hold the destination; the mouse
-  hit-tests the drawn camera, so a click lands on the tile under the pointer.
+  `tests/build-motion.test.ts`). Every camera change eases over a few frames (100 ms) and every cursor move glides
+  from the tile it was drawn on (100 ms), on the screen's frame timer, which runs only while something animates. Both
+  are **tweens** ([`effects.md`](effects.md)): pure functions of time, and a move in the middle of another continues
+  from wherever things are drawn. The cursor is never drawn outside the view; the armed preview travels with it. Only
+  a resize snaps, and reduced motion snaps both. State, commands and scripted playtests hold the destination; the
+  mouse hit-tests the drawn camera, so a click lands on the tile under the pointer.
 
 ## 5. Layers and collision masks
 
@@ -321,9 +300,9 @@ interface Placement {
   because it is large, which is the intuitive answer.
 - **Facing is presentation-only for now** (RULE for now; whether it should ever affect rules is an open
   question, Q9, answered as no). It is derived from the last movement step, or from the current target when
-  stationary. Nothing in the rules reads it. It exists in state because a renderer that has to guess
-  facing produces jitter, and because arcs may want it later. It is the one deliberate exception to
-  "state carries nothing only presentation reads" (see [`grid-engine.md`](grid-engine.md)).
+  stationary. Nothing in the rules reads it; it is in state so that a renderer does not guess and jitter, and
+  because arcs may want it later. It is the one deliberate exception to "state carries nothing only presentation
+  reads" ([`grid-engine.md`](grid-engine.md)).
 
 ## 7. Distance, reach and movement
 
@@ -555,10 +534,9 @@ its side facing the fight.
 ### 7.6 Where a route cannot reach
 
 A unit walks a route (the Pulse's routes, [`pulse.md`](pulse.md)), so it goes round a wall or out of a pocket however
-it meets it. Where no way exists at all — a body three tiles wide before every gap two wide, a target walled in — it
+it meets it. Where no way exists at all (a body three tiles wide before every gap two wide, a target walled in) it
 walks to the anchor it can reach nearest its goal and stands there, saying it has no route (`move.blocked`, reason
-`no-route`). Before routes, units took only steps that brought them strictly closer, and stood for good before an
-obstacle straight between them and their goal.
+`no-route`).
 
 ### 7.7 Terrain and positions
 

@@ -1,12 +1,11 @@
 # Terminal Nexus — engine design
 
-_The shape of the engine: the three worlds, the responsibility layers, the architectural invariants and the vocabulary, with a map to the documents that hold each part._
+_The shape of the engine: the three worlds, the responsibility layers, the architectural invariants and the vocabulary, with a map to the documents that hold each part. This page owns the rules other pages repeat; they point here._
 
 ## 0. How to read this document
 
 This is a **design document, not a rulebook.** Most of it is a recommendation written before the
-thing existed. It is here so that a session facing a fork has something better than a coin flip,
-not so that a session builds an interface nobody has needed yet.
+thing existed, so that a session facing a fork has something better than a coin flip.
 
 Every statement is one of three kinds:
 
@@ -19,21 +18,18 @@ Every statement is one of three kinds:
 Two rules apply everywhere and outrank convenience:
 
 1. **Descriptive completeness is not authorization.** A shape described here is not a shape you may
-   build today. The current milestone step decides what gets built.
+   build today; the current milestone step decides what gets built. Building something because it is
+   described here is the signal to stop.
 2. **Direct code beats a framework.** Write the specific thing the current proof needs. Extract a
-   general contract only after a *second* real use shows you where the seam actually is. Most of the
-   interfaces in these documents are sketches of seams we have not found yet.
-
-If you find yourself building something here because it is described here, stop.
+   general contract only after a *second* real use shows where the seam is. Most interfaces in these
+   documents are sketches of seams not yet found.
 
 ---
 
 ## 1. The three worlds — RULE
 
 **RULE — `tests/architecture.test.ts`, `tests/determinism.test.ts`, `tests/rng.test.ts`.** This is the
-separation the whole engine exists to protect. Everything else is detail.
-
-Terminal Nexus keeps three things apart that most games blend together:
+separation the whole engine exists to protect.
 
 ```text
 ┌─ STATE ────────────────────────────────────────────────────────────┐
@@ -61,32 +57,30 @@ Terminal Nexus keeps three things apart that most games blend together:
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-The three laws that follow from this:
+Three laws follow:
 
-1. **Only the Pulse mutates state.** Nothing else writes to it. Not presentation, not input, not a
-   mission script, not a content hook.
+1. **Only the Pulse mutates state.** Not presentation, not input, not a mission script, not a content hook.
 2. **Presentation cannot influence the Pulse.** Frame rate, dropped frames, playback speed, pause,
-   window size, colour depth, and reduced motion are all invisible to it. A Pulse resolved on a
-   machine with no screen at all resolves identically.
-3. **The two random streams never touch.** Gameplay randomness is seeded, serialized, and replayed.
-   Cosmetic randomness is whatever it wants to be. A particle must never consume a draw from the
-   gameplay stream, and the gameplay stream must never be asked for something a particle needs.
+   window size, colour depth and reduced motion are invisible to it. A Pulse resolved with no screen
+   at all resolves identically.
+3. **The two random streams never touch.** Gameplay randomness is seeded, serialized and replayed;
+   cosmetic randomness is whatever it wants to be. A particle never consumes a gameplay draw, and the
+   gameplay stream is never asked for something a particle needs.
 
-The practical test: **you must be able to resolve an entire match with the renderer deleted**, and
-you must be able to rewrite the entire renderer without a single simulation test changing.
+The test of all three: **resolve an entire match with the renderer deleted**, and rewrite the entire
+renderer without a single simulation test changing.
 
-One corollary, because it is the seam most likely to erode quietly: **canonical state carries nothing
-that only presentation reads.** Facing (see [`grid.md`](grid.md)) is the single deliberate exception,
-until the open question of whether facing affects the rules is answered (Q9): it is in state so that
-a renderer does not have to guess a direction and produce jitter. Do not add a second one.
-Interpolation hints, animation state and camera position are presentation's, and they belong in the
-presentation model (below), not in the state the Pulse hashes.
+**Canonical state carries nothing that only presentation reads**, the seam most likely to erode
+quietly. Facing ([`grid.md`](grid.md)) is the one deliberate exception, so that a renderer does not
+guess a direction and jitter (whether facing affects the rules was Q9, answered as no). Add no second
+one: interpolation hints, animation state and camera position belong in the presentation model, not in
+the state the Pulse hashes.
 
 ---
 
 ## 2. Responsibility layers
 
-The boundaries are right; the exact module names will move as code arrives. **RULE —
+The boundaries are right; the module names will move as code arrives. **RULE —
 `tests/architecture.test.ts`: the layers stay separate.** The kernel, content, opening, projection,
 presentation, adapters and shell never reach into one another against the arrows below.
 
@@ -99,8 +93,6 @@ presentation, adapters and shell never reach into one another against the arrows
 | Presentation | semantic cues, animation state, portraits, cell frames or graphical scenes, accessibility | damage, targeting, legal placement, victory |
 | Platform adapters | terminal, browser, native input, output, resize, streams, device lifecycle; the keyboard, mouse and driver input adapters that turn events into shell commands ([`input.md`](input.md)) | interpreting ANSI or pixels as game state; giving one adapter a command another cannot issue |
 | Application shell | CLI, configuration, content selection, saves, replays, diagnostics, composition, the command vocabulary every input adapter feeds | secret rule changes |
-
-Runtime flow:
 
 ```text
 content + opening + committed plans
@@ -117,28 +109,26 @@ content + opening + committed plans
                  └─ accessibility or spectator renderer
 ```
 
-Shared contracts stay leaves of the import graph. Nothing downstream of the kernel may be imported
-by the kernel (RULE — `tests/architecture.test.ts`).
+Shared contracts stay leaves of the import graph: nothing downstream of the kernel is imported by the
+kernel (RULE — `tests/architecture.test.ts`).
 
 **The renderer boundary** (RULE — `tests/architecture.test.ts`, `tests/backend-opentui.test.ts`): the
 simulation emits visibility-filtered semantic views and events; the terminal compositor emits an
-engine-owned cell frame; platform backends (OpenTUI, direct ANSI, the browser page, and any future
+engine-owned cell frame; platform backends (OpenTUI, direct ANSI, the browser page, any future
 graphical or networked renderer) are adapters that draw that frame and carry input back. The kernel
 never reaches the view, and the view never reaches the kernel.
 
 **Language and runtime.** The engine and its content are TypeScript-first (RULE — `tsconfig.json`,
 `npm run typecheck`). **The terminal library and the JavaScript runtime are independent choices;
 neither implies the other** (RULE — `src/view/backends/ports.ts`: every backend implements the same
-ports, and the suite runs on Node and on Bun). The runtime direction is in
-[`runtime.md`](runtime.md).
+ports, and the suite runs on Node and on Bun). Direction: [`runtime.md`](runtime.md).
 
 ---
 
 ## 3. The invariants
 
-The architectural commitments every session needs, one line each, with the part that holds the detail.
-Each is a RULE; the test or module that holds it is beside it, or the line says that no code holds it yet. The three worlds above and the layers
-are not repeated here.
+Each is a RULE; the test or module that holds it is beside it, or the line says no code holds it yet.
+The three worlds and the layers above are not repeated here.
 
 | Invariant | Held by | Detail |
 | --- | --- | --- |
@@ -175,8 +165,7 @@ Design commitments the game documents own, GUIDANCE until built and played:
   a mission exists only inside Story ([`game-modes.md`](../game-design/game-modes.md)).
 - A Nexus power is a name and one plain line, with no player-facing classification, and, for now, a dealt one
   may be left unpicked; a mission has goals rather than a fixed length
-  ([`commander-armies.md`](../game-design/commander-armies.md),
-  [`story.md`](../game-design/story.md)).
+  ([`commander-armies.md`](../game-design/commander-armies.md), [`story.md`](../game-design/story.md)).
 - Each Nexus is named for the faction that holds it, with Prime or Grid appended where it matters;
   Prime Nexuses stay home and replicate Grid Nexuses ([`lore.md`](../game-design/lore.md)).
 - Lore is a platform, not a plot: when clearer ASCII and a richer story compete, the Grid wins
@@ -185,62 +174,35 @@ Design commitments the game documents own, GUIDANCE until built and played:
 
 ## 4. Vocabulary
 
-Every word the project made its own is defined once, in the [glossary](../game-design/glossary.md): the words of a
-battle (round, Nexus Pulse, Build Phase, Battle Round, tick, regroup, wave, group), of movement, of the ground, of the
-universe, of armies, of the modes, of setting up a Skirmish, of testing (sandbox, trial, battle, measurement), of
-settings and feedback, of the screen and of effects, and the words the engine keeps that a player never reads (the
-Pulse, match); then the words that do two jobs and the words we stopped using. A new word goes there in the pull
-request that brings it in.
+Every word the project made its own is defined once, in the [glossary](../game-design/glossary.md).
+A new word goes there in the pull request that brings it in.
 
 ## 5. How troops move
 
-The owner, 2026-10-21: "Make sure we have a dedicated section on the grid architecture spec about pathfinding ... is
-it defined in a way that can explain the default units behavior?" And 2026-10-26: "in this game 'pathfinding' is more
-than just moving, it is 'troops movement'". This section is the summary; the chapter, with what a player should be
-able to predict, every number and its pictures, is [`movement.md`](movement.md), and the rules with their tests are in
-[`pulse.md`](pulse.md), routes. GUIDANCE unless marked.
+The chapter is [`movement.md`](movement.md): what a player should be able to predict, every number, the
+three states, the building blocks and their pictures. The rules with their tests are in
+[`pulse.md`](pulse.md), routes. GUIDANCE unless marked. Three commitments belong here, because they
+shape the architecture:
 
-**What a player should be able to predict** is seven rules: troops fight only in a Battle Round and regroup where they
-fought between rounds; the army marches on the enemy Nexus by the shortest walk; a troop marches, fights or retreats;
-its vision is 6 columns by default and sees buildings too, the nearest first; it commits to its target until it falls
-or it has gone 2½ seconds unable to strike it; the formation sorts itself on the march, flankers, melee, then ranged by
-range, a troop walking at half speed while one that should be ahead of it is in its vision; buildings are walked round
-until there is none, then the troops breach the fewest; workers run. Building placement is both halves of the game: a
-building near the enemy's way bends it or baits it, and where a producer stands decides how soon its wave joins the
-front.
+- **A unit is in one of three states, worked out fresh every tick** (`MoveState`, `src/pulse/march.ts`):
+  march, battle or retreat.
+- **Routes are small parts, each tested alone** (`src/routing/`): ground, goals, the distance field,
+  step choice and arbitration. One field serves every unit heading for the same goal with the same body,
+  worked out every tick from that tick's Grid and only as far as asked, so a fallen building or a moved
+  crowd is in the next tick's routes with nothing kept up to date.
+- **Every tie is broken by what a unit faces and then the seeded stream, never by reading order**, so a
+  mirrored battle stays a mirror (RULE — [`pulse.md`](pulse.md), no side wins by where it stands).
 
-**A unit is in one of three states**, worked out fresh every tick (`MoveState`, `src/pulse/march.ts`):
-
-1. **March.** No enemy in its vision: it walks for its side's goal (the level's target, or the enemy's Grid Nexus),
-   stepping off its roof first, keeping its place in the formation by the half-speed rule, and holding once it has
-   arrived at its side's target.
-2. **Battle.** An enemy in its vision, or a target it is committed to: it walks to where its attack reaches, then
-   stands and strikes, and is a wall to everyone's routes.
-3. **Retreat.** The rules pull it back: a worker from every threat, every survivor in a fight during the regroup's step
-   back.
-
-**How it gets there** is five building blocks, each tested alone (`src/routing/`): *ground* (where a body may stand:
-rock and whatever stands still are walls, a walker is not), *goals* (where the walk ends: where its attack reaches, or
-inside its target), the *distance field* (the walk from every tile to the nearest goal, a row counting two columns,
-slow ground and burning ground weighed in), *step choice* (the four steps ranked by the walk each leaves, ties by the
-turn and then a seeded draw), and *arbitration* (who gets a tile two want, and allies swapping). One field serves every
-unit heading for the same goal with the same body, worked out every tick from that tick's Grid and only as far as
-asked, so a fallen building or a moved crowd is in the next tick's routes with nothing kept up to date.
-
-**What makes it the game's**: the general path is the field, not a line; the central path an army keeps to is the line
-from its own Nexus to its goal, and the Commander is a troop like any other; rock is never broken but an enemy building in the
-only way is; and every tie is broken by what a unit faces and then the seeded stream, never by reading order, so a
-mirrored battle stays a mirror (RULE — [`pulse.md`](pulse.md), no side wins by where it stands). A new way of
-moving — stepping back from damage, leaping forward, a beacon to gather at — is a new goal, a new field or a move that
-is not a step, on the same parts ([`movement.md`](movement.md), where modifiers plug in).
+A new way of moving (stepping back from damage, leaping forward, a beacon to gather at) is a new goal, a
+new field or a move that is not a step, on the same parts ([`movement.md`](movement.md), where modifiers
+plug in). "Pathfinding" in this game means troop movement (the owner, 2026-10-26: "in this game
+'pathfinding' is more than just moving, it is 'troops movement'").
 
 ## 6. The parts
 
-This document is the overview. The design is in its parts, one document each:
-
 - [`grid.md`](grid.md) — the Grid: size and shape, orientation, viewport and scrolling, layers and collision masks, placement and footprints, distance.
 - [`pulse.md`](pulse.md) — the Pulse: logical time, movement credit, tick order, determinism and replay, routes, match structure, economy, events.
-- [`movement.md`](movement.md) — troop movement: what a player should be able to predict, the Build Phase and the Battle Round, where an army goes, banners (an idea), spawning, the three states, formation, targeting and attacking, breaching, workers, the machinery underneath, what is still to smooth, and strategies.
+- [`movement.md`](movement.md) — troop movement, from what a player predicts to the machinery underneath.
 - [`measurement.md`](measurement.md) — how a battle is measured, so results before and after a rule change compare.
 - [`content.md`](content.md) — content interfaces.
 - [`presentation.md`](presentation.md) — the cell frame, composition, the tile, bands, effects, accessibility.

@@ -7,22 +7,22 @@ version of the design beyond git.
 
 ## Current — what the game is (`game-design/`)
 
-- [`glossary.md`](game-design/glossary.md) — every word the project made its own, one line each: what earns an entry, then four layers (the game, the world, making and testing, the engine and the code), alphabetical within each, with the page that holds its rules; the words that do two jobs and the words we stopped using. Check it before naming anything.
-- [`concept.md`](game-design/concept.md) — the game in one page: who it is for, how a battle works, the three modes, the promise.
-- [`lore.md`](game-design/lore.md) — the universe, the Nexuses, the factions, voice and visual language.
-- [`game-modes.md`](game-design/game-modes.md) — Skirmish, Story and Versus: the words they share, every way a Skirmish is set up, save files, how each mode is tested.
-- [`commander-armies.md`](game-design/commander-armies.md) — factions, Commanders and the shape of a playable army.
-- [`story.md`](game-design/story.md) — a Commander's story (tutorial, technology missions, endless stand, final battle), what a mission is, Vasse's story and PERIMETER, cutscenes, testing a mission.
-- [`play-strategies.md`](game-design/play-strategies.md) — what battles have taught about playing a Build Phase well, as advice a model player reads in its brief.
-- [`scripted-opponent.md`](game-design/scripted-opponent.md) — raids, intentions, and where an opponent planner for missions and Skirmish comes from (working design).
-- [`ascii-art-references.md`](game-design/ascii-art-references.md) — where to learn terminal art and what to take from each source.
+- [`glossary.md`](game-design/glossary.md) — the project's general words, one line each, in four layers, plus the words that do two jobs and the words we stopped using. Check it before naming anything.
+- [`concept.md`](game-design/concept.md) — the game in one page: who it is for, how a battle and a round work, the promise. Start here for what the game is.
+- [`lore.md`](game-design/lore.md) — the universe, the Nexuses, the factions, voice and visual language. Read before writing any fiction.
+- [`game-modes.md`](game-design/game-modes.md) — Skirmish, Story and Versus: why Skirmish comes first, every way a Skirmish is set up, how each mode is tested. Reach for it to place a change in a mode.
+- [`commander-armies.md`](game-design/commander-armies.md) — the shape of a playable army: parts, tech tree, power curve, the Nexus Pulse's dealing, faction rules and the three Commanders. Reach for it when designing or changing an army or a Nexus power.
+- [`story.md`](game-design/story.md) — a Commander's story, what a mission is as data, Vasse's story and PERIMETER, cutscenes, testing a mission. Reach for it when touching a mission or a story file.
+- [`play-strategies.md`](game-design/play-strategies.md) — advice on playing a Build Phase well, read by a model player in its brief; add an entry when a measured battle teaches one.
+- [`scripted-opponent.md`](game-design/scripted-opponent.md) — raids, intentions and the opponent planner to come (working design). Reach for it when a mission's enemy or a planner changes.
+- [`ascii-art-references.md`](game-design/ascii-art-references.md) — where to learn terminal art. Reach for it before drawing.
 - [`concept-art/`](game-design/concept-art/README.md) — early concept art and the first prototype captures.
 
 ## Current — how the software is shaped (`system-design/`)
 
 - [`grid-engine.md`](system-design/grid-engine.md) — the engine design: the three worlds, the Grid, the Pulse, content, presentation, input, runtime. Start at its first section; every statement is RULE, GUIDANCE or IDEA.
 - [`effects.md`](system-design/effects.md) — animations, particles, shading and tweens: the contract and the vocabulary.
-- [`ui-patterns.md`](system-design/ui-patterns.md) — how every screen, menu, popup, effect and key behaves; read its goals and checklist before interface work.
+- [`ui-patterns.md`](system-design/ui-patterns.md) — how every screen, menu, popup, effect and key behaves; follow its steps for a new screen, then read its goals, before interface work.
 - [`testing.md`](system-design/testing.md) — what the suite proves and how.
 - [`replay-format.md`](system-design/replay-format.md) — the unbuilt replay file design (GUIDANCE).
 - [`portability.md`](system-design/portability.md) — what a host must provide to run the game elsewhere (working design).
@@ -37,7 +37,7 @@ version of the design beyond git.
 ## Planning — what is next (`milestones/`)
 
 - [`README.md`](milestones/README.md) — the milestone sequence, each one's status, the build order and why.
-- `milestone-NN-*.md` — the current milestone and the planned ones, each with its question, what it depends on and its steps; [`completed/`](history/milestones) holds the finished ones.
+- `milestone-NN-*.md` — the current milestone and the planned ones, each with its question, what it depends on and its steps; finished ones are in [`history/milestones/`](history/milestones/).
 - [`next-steps.md`](milestones/next-steps.md) — what waits on Mario, carry-over, the cleanup queue.
 - [`open-questions.md`](milestones/open-questions.md) — decisions waiting on Mario, each with options and a recommendation.
 - [`core-loop.md`](milestones/core-loop.md) — the core loop, decided: the front stays between rounds with a regroup, 30-second rounds, orders from a stance to banners; the experiment behind it.

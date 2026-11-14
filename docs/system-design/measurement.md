@@ -1,12 +1,18 @@
 # Terminal Nexus — measurement
 
-_How a battle is measured, so that a result taken before a rule changes and one taken after compare like with like: what a battle's record holds, which battles are played, over which seeds, how a result is written down, what the numbers can say, and the command. Every unmarked statement is GUIDANCE._
+_How a battle is measured, so that a result taken before a rule changes and one taken after compare like with like: what a battle's record holds, which battles are played, over which seeds, how a result is written down, what the numbers can say, how Story levels are played, and the command. Every unmarked statement is GUIDANCE._
+
+**Where to measure what.** The game's gameplay and balance are measured in Skirmish (the duels below, and the
+`skirmish` command), the ground that tests the real game: the Grid Nexus, credits, rounds, who wins. A sandbox measures one
+rule on a slice of the Grid ([sandboxes and trials](sandboxes.md)). Story levels are played by fixed plans only so a rule change is seen
+on them too; they serve Story's puzzles and intros, built on what Skirmish settles (section 7). How to start a change
+from its measurement is in `DEVELOPMENT.md`, "Developing and testing a change".
 
 The owner, 2026-10-20, when pathfinding was planned: "We should also invalidate the older maps and the data we have
 on them that decide what something is better than another thing. Maybe this is time to write a summary in some design
 file, a spec, and just forget about that old data." Every result before the pathfinding milestone was measured on units
 that stood behind rocks; they are kept in [one history report](../history/reports/2026-10-20-measured-before-routing.md)
-and no current document states them as fact. This is the spec every later result is measured by.
+and no current document states them as fact. This page is the spec every later result is measured by.
 
 ## 1. What a battle's record holds
 
@@ -53,8 +59,8 @@ was wiped out, time ran out). For each side:
   each slot seated with `script:<player>`, every round played by `playOn`, `src/skirmish/play.ts`), so what a
   measurement says of a battle is what `skirmish --p1 script:<player> --p2 script:<player> --play-to end` plays.
   Every map is played the way `grid` plays it (`playSandboxRound`, `src/skirmish/sandbox-round.ts`).
-- **Every mission** played to its end by fixed plans: **nothing built**, and **a defended base** (a Barracks
-  and a Supply Depot near the Grid Nexus each round, as far as the credits go). Each round records its battle.
+- **Every Story level** played to its end by two fixed plans, **nothing built** and **a defended base**, each round
+  recording its battle (section 7).
 
 ## 3. Seeds and specs
 
@@ -72,14 +78,13 @@ shape against every shape from both ends and each against a blast, saying how ti
 wins. The first run is [a report of its own](../history/reports/2026-10-20-formations.md).
 
 **Formations in a duel** (`--formations`, `src/measure/spec.ts`, `tests/battle-formation.test.ts`): the same question
-asked of whole duels, where each side's scripted player builds its army's own buildings by a formation
-([`battles.md`](battles.md), formations). `measure run --parts duels --players rush --formations block,apart` plays,
-for each player, every ordered pair of two different formations named (`rush-block` on side A against `rush-apart`
-on side B, then the other way round), over every pair of Commanders and every seed; with one formation named, both
-sides play it. A player named with a formation (`--players rush-block`) plays it on both sides. The summary then says,
-for each two players that met, who won and how many by a Nexus falling, and for each player how tight its army met
-the enemy and what it lost a battle. A spec that names no formation plays every player by its bare name, against
-itself, exactly as before formations: the quick spec's duels replay byte for byte.
+asked of whole duels, where each scripted player builds its army's buildings by a formation ([`battles.md`](battles.md),
+formations). `measure run --parts duels --players rush --formations block,apart` plays every ordered pair of two different
+formations named (`rush-block` on side A against `rush-apart` on side B, then the other way round) over every pair of
+Commanders and every seed; one formation named, both sides play it, as `--players rush-block` does. The summary says,
+for each two players that met, who won and how many by a Nexus falling, and for each player how tight its army met the
+enemy and what it lost a battle. A spec naming no formation plays each player by its bare name against itself, so the
+quick spec's duels replay byte for byte.
 
 ## 4. How a result is written down
 
@@ -146,7 +151,36 @@ measurement file with no row in the index.
 - **A tick's time is the machine's.** It compares two runs on one machine, played the same way (one process, or the
   same number side by side), never two machines.
 
-## 7. The battles the tests pin
+## 7. Story levels and the curve planner
+
+Story levels are scripted missions: Story's puzzles and intros, built on the battle Skirmish tests. Balance and
+gameplay are not settled on them, which is why the duels carry that weight and a level is measured only to see a rule
+change reach it. Their code lives with the command-line layer (`src/cli/levels.ts`, `src/cli/curve-measure.ts`) and
+`src/measure/` imports from it (a type and the planner): a layering break, known and accepted for now.
+
+- **A level** (`PlayableLevel`, `src/cli/levels.ts`): the mission a route's `story?mission=<id>` names, with its
+  rounds, its first Build Phase and how a round's Pulse starts and the next round opens (`levelById`, `openRound`).
+  `LEVELS` is every level of every shipped story, in story order. A Skirmish is also a `PlayableLevel` for the screen,
+  but only story levels are in that list, and only they are measured here.
+- **The curve planner** (`planRound`, `src/cli/curve-measure.ts`): a scripted player's Build Phase. A `CurvePlan` lists
+  what it buys round by round (content ids of the build menu's rows; the last list serves every later round) and the
+  tile `near` it builds. In turn it takes the next row on the round's list that the level's menu offers, that is
+  unlocked and that the round's credits afford, places it on the legal tile nearest `near` (a row counts two columns),
+  and goes on until nothing fits. A row the menu does not offer or has not unlocked is skipped without a word.
+- **The two fixed plans** (`LEVEL_PLANS`, `src/measure/spec.ts`): *nothing built*, and *a defended base* (a Barracks and a
+  Supply Depot each round, as far as the credits go), each near the centre of the level's Grid Nexus. `measureLevel`
+  (`src/measure/suites.ts`) plays a level by one: plan, start the Pulse, record the round's battle, open the next
+  round. It says how the level ended: the round, and the mission's verdict (`won` or `lost`; `none` when the rounds ran
+  out with the mission undecided; `unplayed` when no round ran).
+- **The curve level** (`vasse-test-3`, six rounds; `measureCurve`, `src/cli/curve-measure.ts`, played by
+  `tests/curve-level.test.ts` and `tests/averno.test.ts`, never by `measure run`): the same loop, counting each round's
+  army by the round that bought its units. A unit's strength is its health times its damage a tick, the Commander
+  left out since she is not bought; a unit counts for the round its building was bought, or, with no building, the
+  round it first stood. The number to watch is the opening's share: what the first three rounds bought, of the last
+  round's army. What the design expects of it and what was measured are in
+  [`commander-armies.md`](../game-design/commander-armies.md), the expected power curve.
+
+## 8. The battles the tests pin
 
 Some tests hold one battle's outcome or hash, so a change that moves it is seen. A change that moves them re-pins
 them knowingly, each with a clause in its comment saying why it moved, and drops a claim that only held for the old

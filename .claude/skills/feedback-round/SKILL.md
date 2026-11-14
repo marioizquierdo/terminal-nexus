@@ -1,132 +1,126 @@
 ---
 name: feedback-round
-description: Run one round of owner (Mario) feedback end to end — log his words item by item, add the round as a step on the current milestone, split the work across parallel agents in worktrees, merge and reconcile it, update the design documents, regenerate the screenshots, republish the playable page, and rewrite the pull request. Use whenever Mario sends playtest feedback, a pasted settings export, an Activity Logs export or playtest note files, or when a change is big enough to split across several agents. Read it before spawning your first worktree agent.
+description: A feedback round, end to end: log Mario's words, schedule the work as a milestone step, split it across parallel worktree agents, merge, update the design documents, remake the pictures and playable page, rewrite the pull request. Use when Mario sends playtest feedback, a pasted settings export, an Activity Logs export or playtest note files, and before spawning the first worktree agent of any change big enough to split.
 ---
+
 # A feedback round, start to finish
 
-The exact procedure and its traps, in the order you meet them. What the practice is and why it works
-is [`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 6 (log his words, turn them into steps, ask
-him to feel a choice through an Experiment, settle each Experiment his export answers); how each
-trap was found is in [`docs/history/lessons-learned.md`](../../../docs/history/lessons-learned.md).
+This is the procedure and its traps. The practice and why it works are in [`DEVELOPMENT.md`](../../../DEVELOPMENT.md),
+"The feedback loop" (log his words, turn them into steps, ask him to feel a choice through an Experiment, settle each
+Experiment his export answers). How each trap was found is in
+[`docs/history/lessons-learned.md`](../../../docs/history/lessons-learned.md).
 
-## 0. Read what he sent, twice, and log it
+## 1. Read what he sent, twice, and log it
 
-The second reading finds what the first skipped. Look for: an item that contradicts a rule in the
-design documents (say so, and reverse it by his words, not yours); an item that *sounds* built but
-only half is (round 3's "keep scrolling while armed": the agent built "a click activates" and missed
-the scrolling half); a **pasted settings export** (answers, not description: start the game with it,
-`--settings "<text>"`); a **pasted Activity Logs export** (its header names the build and the filter,
-each line is one event, oldest first: replay the moment with his settings and the keys it implies, and
-read it against the event's description in `src/log/activity.ts`); **playtest notes** (`*.note.json`, from
-`~/.terminal-nexus/notes/`, or pasted from the browser page's text box: the `!` key writes one, on any
-screen); an ambiguity to register rather than guess ("press `b`": a letter, or the building's digit?).
-Screenshots and voice notes arrive as ordinary text and pictures: log them the same way.
+Done when every item is in the log with a status, the round is a step on the current milestone, and
+`./scripts/check-repository.sh` passes.
 
-**A note is the moment itself**, not a description of how to reach it (`src/cli/notes.ts`). Read its `line` (his words:
-log it verbatim like any other item), its `screen` (what he was looking at, as text), its `activity` (the last events,
-oldest first) and its `pressed` (every named command since the round opened, with milliseconds). Then open it:
-`node scripts/playtest.mjs --note <file> --print final` shows that exact screen, the round opened from the note's
-`save` (a Skirmish) or its `at` route (a story mission) with its `settings`, its commands replayed at their times; add
-`--keys` to go on from there, and `--png final` for the picture the log quotes. `terminal-nexus --note <file>` opens it
-live. A title menu note has no commands: it opens on its screen (`at`). A note is not the replay format: only the
-build that wrote it (`build`) promises to replay it, so open it on that commit when the rules have moved since.
+The second reading finds what the first skipped. Look for:
 
-Log it before building: `docs/history/feedback/<date>-<round>.md`, one `### F<n>` per point, numbered
-on from the last log, his words verbatim in a blockquote, then a status (**Built**, **Scheduled**,
-**Open**, **Contested**) and, once done, one plain paragraph of what now happens. Add the round as a
-step on the current milestone (`docs/milestones/`) with its definition of done as checkboxes, then run
-`./scripts/check-repository.sh`. The `F<n>` numbers are for agents: in anything Mario reads, name the
-request in a few words and link the log.
+- An item that contradicts a rule in the design documents: say so, and reverse the rule by his words, not yours.
+- An item that *sounds* built but is half built ("keep scrolling while armed" read as only "a click activates"): list
+  each half it names.
+- An ambiguity to register rather than guess ("press `b`": a letter, or the building's digit?).
+- A **pasted settings export**: answers, not description. Start the game with it (`--settings "<text>"`).
+- A **pasted Activity Logs export**: its header names the build and the filter, each line is one event, oldest first.
+  Replay the moment with his settings and the keys it implies, and read it against the event's description in
+  `src/log/activity.ts`.
+- **Playtest notes** (`*.note.json`, from `~/.terminal-nexus/notes/` or pasted from the browser page's text box; `!`
+  writes one on any screen). A note is the moment itself (`src/cli/notes.ts`): its `line` is his words (log them
+  verbatim), `screen` what he saw as text, `activity` the last events oldest first, `pressed` every named command since
+  the round opened with milliseconds. Open it with `node scripts/playtest.mjs --note <file> --print final`; add
+  `--keys` to go on from there and `--png final` for the picture the log quotes. `terminal-nexus --note <file>` opens it
+  live. Only the build that wrote it (`build`) promises to replay it, so open it on that commit when the rules have
+  moved.
+- Screenshots and voice notes arrive as text and pictures: log them the same way.
 
-## 1. Split the work by files, not by feature
+The log is `docs/history/feedback/<date>-<round>.md`: one `### F<n>` per point, numbered on from the last log, his words
+verbatim in a blockquote, a status (**Built**, **Scheduled**, **Open**, **Contested**) and, once done, one plain
+paragraph of what now happens. The milestone step (`docs/milestones/`) carries its definition of done as checkboxes.
+The `F<n>` numbers are for agents: anything Mario reads names the request in a few words and links the log.
 
-Group items that touch the same code into **one** agent; put items on different files in parallel.
-Round 4 was three agents: placement and focus (reducer, menu rows), Settings and popups (overlay,
-top bar), and the export adoption (defaults and deletions). Tell each agent, in its prompt:
+## 2. Split the work by files, not by feature
 
-- `git reset --hard <sha>` **first** — a worktree may start from `main`, not your branch. Pin the SHA.
-- Read `AGENTS.md`, `CLAUDE.md`, `docs/system-design/ui-patterns.md` and the feedback items, whose quoted words are
-  the spec.
-- **Which files are its own and which belong to the other agents.** Ask for new Experiments as a block
-  of their own at the end of `ALL_SETTINGS` in `src/build/all-settings.ts`, and never to reorder or
-  reformat existing entries.
-- **Do not edit `docs/game-design/`, `docs/system-design/`, `docs/milestones/`, `docs/history/`,
-  `AGENTS.md` or `docs/pr-pictures/`.** It returns *proposed design-document text*, plain English,
-  ready to paste. You apply it (one voice).
-- Commit on the worktree branch with the attribution lines; do not push.
-- Definition of finished: `npm run typecheck`, `npm test`, `npm run test:bun`,
-  `./scripts/check-repository.sh`, and the changed flows looked at with the `playtest` skill.
-- Report: SHAs, what changed and every decision in plain words, tests whose *meaning* (not just
-  numbers) changed, proposed design-document text, and what is left or surprising.
+Done when every item sits with exactly one agent and no file belongs to two agents.
 
-## 2. Merge in order, verify, and send conflicts home
+Group items that touch the same code into one agent; items on different files go in parallel. An agent's prompt carries:
 
-`git cherry-pick <sha>...` the smallest, most disjoint work first. When one agent's work conflicts in
-more than three or four files, **do not resolve it yourself** — `SendMessage` the agent that wrote it,
-give it the merged head SHA and a list of what landed meanwhile, and ask it to rebase and keep both
-sides. It knows both intents; you do not. After every merge: typecheck, the full test run, and play
-the flow yourself with `node scripts/playtest.mjs` — a merge that passes tests can still be wrong.
-Clean each worktree (`git worktree remove --force`, `git branch -D`) as its agent finishes.
+- `git reset --hard <sha>` first, with the SHA pinned: a worktree may start from `main`, not your branch.
+- Read `AGENTS.md`, `CLAUDE.md`, `docs/system-design/ui-patterns.md` and the feedback items, whose quoted words are the spec.
+- Which files are its own and which belong to the other agents. New Experiments go in a block of their own at the end
+  of `ALL_SETTINGS` in `src/build/all-settings.ts`, with existing entries left in order and format. When agents share
+  a need in a folder none owns, write the helper yourself before splitting (two agents once wrote the same
+  colour-depth table), or name the one agent that writes it.
+- Design documents (`docs/game-design/`, `docs/system-design/`, `docs/milestones/`, `docs/history/`, `AGENTS.md`,
+  `docs/pr-pictures/`) are yours: the agent returns proposed text in plain English, ready to paste, and you apply it
+  in one voice.
+- Scratch output goes in a `tmp/` in its worktree, since a capture can otherwise land in the filesystem root. Pictures
+  made in a worktree stay in its git-ignored `.playtest/`, so the agent returns the key script that reaches the state
+  and you make the pictures on the merged branch.
+- Commit on the worktree branch with the attribution lines; never push.
+- Definition of finished: `npm run typecheck`, `npm test`, `npm run test:bun`, `./scripts/check-repository.sh`, and the
+  changed flows looked at with the `playtest` skill.
+- Report: SHAs, what changed and every decision in plain words, tests whose meaning (not just numbers) changed,
+  proposed design-document text, what is left or surprising.
 
-## 3. Update the documents
+## 3. Merge in order, verify, and send conflicts home
 
-Apply the agents' proposed text to the design documents (`docs/system-design/` and
-`docs/game-design/`; `ui-patterns.md` for any screen, menu or key) and to
-`docs/milestones/open-questions.md`. In one pass:
+Done when every agent's work is on the branch, typecheck and both test runtimes are green, and you have played the
+changed flows with `node scripts/playtest.mjs`: a merge that passes tests can still be wrong.
 
-- Move answered questions from `open-questions.md` to `docs/history/answered-questions.md`, and
-  register new ones with a recommendation.
-- Tick the step's checkboxes in its milestone file.
-- Rewrite "Waiting on Mario" in `docs/milestones/next-steps.md`: retire the asks this round answered or made
-  stale, and keep it at five or fewer, each opening with Play, Watch, Decide or Do (the validator checks both).
-- Add one line to the timeline in `docs/history/README.md`.
-- Settle each Experiment his export answers (his value becomes the default, its tier becomes *tuned*,
-  the Experiment is deleted), as DEVELOPMENT.md section 6 says.
-- Write the pull request description with the `pr-description` skill.
+`git cherry-pick <sha>...` the smallest, most disjoint work first. A conflict across more than three or four files goes
+back to the agent that wrote it (`SendMessage`, with the merged head SHA and what landed meanwhile, asking it to rebase
+and keep both sides): it knows both intents. Remove each worktree as its agent finishes (`git worktree remove --force`,
+`git branch -D`).
 
-Nothing else is needed: there is no version to bump and no separate report. **When a rule is reversed, grep the old sentence**
-(`grep -rn "never scrolls"`) — the same fact lives in several documents and the stale copy is always
-the one you did not think of.
+## 4. Update the documents
 
-## 4. Pictures, page, pull request
+Done when each of these holds:
 
-- Make the pictures with the `playtest` skill into `docs/pr-pictures/` (one or two, one commit, linked
-  by that commit's SHA; the branch's last commit removes the folder: the `pr-description` skill's
-  "Pictures that display on a phone"). `node scripts/capture-build-phase-screenshots.mjs` writes the
-  fuller set to `.playtest/screenshots/`; open the images and look at them before linking any. Prefer
-  `--settings` over key counts to set an Experiment in a capture flow, because every added or removed
-  Experiment shifts a "Down*6". A picture for the record goes in `docs/history/screenshots/` with a
+- The agents' proposed text is in `docs/system-design/` and `docs/game-design/` (`ui-patterns.md` for any screen, menu
+  or key).
+- Answered questions moved from `docs/milestones/open-questions.md` to `docs/history/answered-questions.md`; new ones
+  registered with a recommendation.
+- The step's checkboxes are ticked in its milestone file.
+- "Waiting on Mario" in `docs/milestones/next-steps.md` retires the asks this round answered or made stale and stays at
+  five or fewer, each opening with Play, Watch, Decide or Do (the validator checks both).
+- One line is added to the timeline in `docs/history/README.md`.
+- Each Experiment his export answers is settled (DEVELOPMENT.md, "The feedback loop").
+- A reversed rule has its old sentence grepped (`grep -rn "never scrolls"`): the same fact lives in several documents
+  and the stale copy is the one you did not think of.
+
+There is no version to bump and no separate report.
+
+## 5. Pictures, page, pull request
+
+Done when the pictures are looked at, the playable page is republished, and the pull request body is read back from
+GitHub.
+
+- Make the pictures with the `playtest` skill into `docs/pr-pictures/` (one or two, one commit, linked by that commit's
+  SHA; the branch's last commit removes the folder: the `pr-description` skill, "Pictures that display on a phone").
+  `node scripts/capture-build-phase-screenshots.mjs` writes the fuller set to `.playtest/screenshots/`; open every
+  image before linking it. Set an Experiment in a capture flow with `--settings`, since every added or removed
+  Experiment shifts a key count like "Down*6". A picture for the record goes in `docs/history/screenshots/` with a
   dated name and a row in its README.
-- `bun scripts/build-web.mjs`, copy `dist/terminal-nexus-playtest.html` to your scratchpad, and
-  publish it to the **same** artifact URL. The Artifact tool refuses until you have read the live
-  version; read it, confirm nothing on the live page is missing from yours (a rebuild of the previous
-  commit should equal it apart from the build time), then publish.
-- Rewrite the pull request with the `pr-description` skill — **against `main`**, the whole change, not
-  the last round. Run its Demo steps exactly as written; the last round's "Esc, then `s`" did not work
-  from the map (it is "Esc, Esc, then `s`" there). The connector appends a second footer: read the body back.
+- `bun scripts/build-web.mjs`, copy `dist/terminal-nexus-playtest.html` to your scratchpad, and publish it to the same
+  artifact URL. The Artifact tool refuses until you have read the live version: read it, confirm nothing on the live
+  page is missing from yours (a rebuild of the previous commit equals it apart from the build time), then publish.
+- Rewrite the pull request with the `pr-description` skill, against `main`, the whole change. Run its Demo steps
+  exactly as written, because a step like "Esc, then `s`" can be wrong from the map ("Esc, Esc, then `s`" there).
 
-## 5. Then wait, lightly
+## 6. Then wait, lightly
 
-Subscribe to the pull request, set an hourly `send_later` check-in, and **do not start the next
-step**. Stop the check-in when it merges, delete the trigger, and reset the branch:
-`git checkout -B <branch> origin/main`.
+Subscribe to the pull request, set an hourly `send_later` check-in, and leave the next step unstarted. When it merges,
+stop the check-in, delete the trigger, and reset the branch: `git checkout -B <branch> origin/main`.
 
-## Traps worth naming
+## Traps
 
-- **Time-based tests flake while agents build in parallel** (the machine load reached 10). Rerun the
-  file alone; measure the frame cost before and after; never loosen a test to make a busy machine pass.
-- **A bulk edit of a long register can eat it.** Assert the size of what you cut and stop if it is
-  off; find a block's end with the *nearer* of `\n### ` and `\n## `.
-- **A parser that treats unknown options as flags drops a new option silently.** Register every
-  value-taking option (`src/cli/args.ts`) and test that it arrives.
-- **A default that suits one input device can fail on another.** A 150 ms hold window is right for a
-  fast OS key repeat and turns a slow one's first repeat into a tap. Say which device a number was
-  tuned on (`docs/milestones/next-steps.md` records it).
-- **Two agents will each write the helper neither owns.** Both agents of the Activity Logs round needed
-  a colour-depth name for the logs and each wrote the same table in its own file. When agents share a
-  need in a folder neither owns, write the helper yourself before splitting, or name in the prompts which
-  agent writes it.
-- **Tell an agent where its scratch output goes** (a `tmp/` in its worktree, never `/`), or it may write
-  captures into the filesystem root.
-- **Pictures made in a worktree stay in that worktree's `.playtest/`** (git-ignored). Ask the agent
-  for the key script that reaches the state, and make the pictures yourself on the merged branch.
+- **Time-based tests flake while agents build in parallel** (machine load reached 10). Rerun the file alone and measure
+  the frame cost before and after; a busy machine is never a reason to loosen a test.
+- **A bulk edit of a long register can eat it.** Assert the size of what you cut and stop if it is off; find a block's
+  end with the nearer of `\n### ` and `\n## `.
+- **A value-taking option missing from `VALUE_OPTIONS` (`src/cli/args.ts`) is read as a flag and its text dropped.**
+  Register every new one and test that it arrives.
+- **A default tuned on one input device can fail on another.** A 150 ms hold window suits a fast OS key repeat and
+  turns a slow one's first repeat into a tap. Say which device a number was tuned on (`docs/milestones/next-steps.md`
+  records it).

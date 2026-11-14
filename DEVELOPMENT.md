@@ -1,9 +1,9 @@
 # Developing Terminal Nexus
 
-The practices manual: how to run, test and see the game, how work is planned and tried, how Mario's
-feedback flows back in, and how a design change lands. Each section says what the practice is and why
-it is shaped that way; the exact runnable procedures are the skills under `.claude/skills/`, linked
-from the practice they serve. Nothing here is history; the dated record is `docs/history/`.
+The practices manual: how to run, develop, test and see the game, how work is planned and tried, how Mario's
+feedback flows back in, and how a design change lands. Start at section 2, the order a change is developed in. Each
+section says what the practice is and why it is shaped that way; the exact runnable procedures are the skills under
+`.claude/skills/`, linked from the practice they serve. Nothing here is history; the dated record is `docs/history/`.
 
 ## 1. Toolchain and commands
 
@@ -23,12 +23,9 @@ npm run verify-sandboxes # every sandbox resolves to the same hashes twenty time
 
 # grid — the engine, editor and replay tool. <save> is a sandbox (sandboxes/): its path, suffix optional, or its id.
 ./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish                       # watch (the default)
-./bin/grid.ts sandboxes/showcase/citizens-versus-ravels --glyphs unicode --colors truecolor
 ./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish --headless --log-level info --ticks 120
 ./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish --headless --events events.jsonl --json
 ./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
-./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish --headless --from-tick 90 # jump straight to tick 90
-npm run sandboxes                                                 # every sandbox
 ./bin/grid.ts engage-gap2-melee-vs-mix --seeds 1-12 --swap --army-a trooper:6,skyraider:6   # a trial: as built vs a variant
 ./bin/grid.ts engage-bench                                             # a trial file (sandboxes/trials/), with what it expects
 
@@ -43,36 +40,27 @@ npm run sandboxes                                                 # every sandbo
 ./bin/terminal-nexus.ts --note ~/.terminal-nexus/notes/<note>.note.json     # a playtest note (!), at its moment
 ./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1'                   # PERIMETER's Build Phase
 ./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1&round=3'           # its round 3, no keys to walk there
-./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --settings "$(pbpaste)"   # start from a pasted settings export
-./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --settings 'jumpStep=12&reducedMotion=true'
+./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --settings "$(pbpaste)"   # start from a pasted settings export (or 'jumpStep=12&reducedMotion=true')
 ./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --keys "Esc n 1 1 Enter"  # open already in a state (Esc skips the intro)
 
 bun scripts/build-web.mjs                                             # the browser playtest page
 ```
 
-**A route** names a place in the game the way a web address names a page, without the site: the place,
-then `?` and `name=value` pairs joined by `&`. The title menu's places are `menu`, `settings`, `about`,
-`story` and the Skirmish screens (`skirmish?setup`, `skirmish?setup=new`, `skirmish?setup=load`); a Skirmish is `skirmish`, `skirmish?seed=<n>` or `skirmish?load=<file>`; a mission is `story?mission=<id>`, with `&round=<n>` counting Battle
-Rounds from 1 as the screen does. Quote a route on a command line, since the shell reads `?` and `&` itself. The
-same routes serve the game's `--at`, the scripted playtest's `--at`, the browser page's `#at=` and a
-demo's `at`; each title menu row names the route it opens; a route that is not a place is refused with
-every problem at once and what exists instead. The grammar and its table, where adding a place is one
-entry, are `src/cli/route.ts`; a route is read with the settings text and the key script as one launch, the
-same way for all four (`src/cli/launch.ts`). A bare launch opens the title menu; Save game (Esc, `v`, on a Skirmish) writes a
-save into `~/.terminal-nexus/saves/` (or the folder its name gives), and `--load <file>` opens it again. An argument the game does not read is refused, and the removed
-`--build-phase` says that `--at 'story?mission=vasse-test-1'` replaced it.
+**A route** names a place in the game the way a web address names a page, without the site: the place, then `?` and
+`name=value` pairs joined by `&`. The title menu's places are `menu`, `settings`, `about`, `story` and the Skirmish screens
+(`skirmish?setup`, `skirmish?setup=new`, `skirmish?setup=load`); a Skirmish is `skirmish`, `skirmish?seed=<n>` or
+`skirmish?load=<file>`; a mission is `story?mission=<id>`, with `&round=<n>` counting Battle Rounds from 1 as the screen
+does. Quote a route on a command line, since the shell reads `?` and `&` itself. The same routes serve the game's `--at`,
+the scripted playtest's `--at`, the browser page's `#at=` and a demo's `at`; each title menu row names the route it opens; a route that is not a place is refused with
+every problem at once and what exists instead. The grammar and its table, where adding a place is one entry, are
+`src/cli/route.ts`; a route is read with the settings text and the key script as one launch, the same way for all four
+(`src/cli/launch.ts`). Save game (Esc, `v`, on a Skirmish) writes a save into `~/.terminal-nexus/saves/` (or the folder its
+name gives), and `--load <file>` opens it again. An argument the game does not read is refused.
 
-Pinned versions, re-checked rather than remembered:
-
-| | Version | Note |
-| --- | --- | --- |
-| Node.js | 22.22.2 | Runs TypeScript with no build step from 22.18 |
-| Bun | 1.3.11 | Same sources, same hashes |
-| `typescript` | 7.0.2 | Type checking only |
-| `@types/node` | 22.20.1 | Type checking only |
-| `@opentui/core` | 0.5.6 | Terminal backend. Its native core loads under Bun, not under Node |
-| `gifenc` | 1.0.3 | Dev only: GIFs of a scripted playtest |
-| `pngjs` | 7.0.0 | Dev only: reads Chromium's PNGs for GIFs and "is this shot unchanged?" |
+Versions are pinned in `package.json` and `.github/workflows/ci.yml`. Notes that no file confesses: Node runs
+TypeScript with no build step from 22.18; Bun runs the same sources to the same hashes; `typescript` and `@types/node`
+are for type checking only; `@opentui/core` is the terminal backend and its native core loads under Bun, not Node;
+`gifenc` and `pngjs` are dev-only (GIFs of a scripted playtest; "is this shot unchanged?").
 
 The `grid` skill (`.claude/skills/grid/SKILL.md`) has the full command line, the report grammar and
 how to author a map.
@@ -118,19 +106,53 @@ it does not. There are three colour depths (monochrome, 256 colours, truecolor) 
 a change is looked at in truecolor, and in 256 colours and monochrome now and then (see
 [`presentation.md`](docs/system-design/presentation.md)).
 
-## 2. Testing
+## 2. Developing and testing a change
 
-Run both runtimes before every push. Node's runner takes the whole glob at once and isolates each
-file; `bun test` runs one file at a time through `scripts/run-tests.sh`, because its `node:test` shim
-rejects a test registered while another file is running and lacks `t.skip()`. Cross-runtime agreement
-is the only cheap test of the serialization and iteration assumptions many runs on one runtime never
-catch.
+A change is developed in this order: its measurement first, the build with a second count beside it, the same
+measurement after, testers with a goal, and only then Mario. Each step ends on a condition you can check.
 
-What the suite proves, by area, is in [`docs/system-design/testing.md`](docs/system-design/testing.md):
-determinism (identical hashes across runs and runtimes, one call equals tick by tick, the kernel
-imports no renderer and calls no clock), the Grid's occupancy and collision masks, every rule with a
-named sandbox, structured-cell snapshots across backends, the terminal lifecycle through one
-disposer, and the browser page held to the terminal's characters, colours and keys.
+1. **Write the measurement before the change.** Write down the number it should move or the rule it must not break,
+   with a threshold: "the side ahead after round 2 wins less than 70%", "engagement damage equals total damage". Pick the
+   instrument by the question: a **sandbox** is a slice of the Grid for one rule, effect, movement or ability (damage,
+   deaths, paths, timings); the **`skirmish` command** plays the whole game (Nexus, credits, rounds, who wins)
+   ([`testing.md`](docs/system-design/testing.md), two instruments; [`sandboxes.md`](docs/system-design/sandboxes.md), which
+   tool answers which question). *Done when* the sentence, the threshold and the command that counts it are written in the
+   step's notes or the pull request, before any code.
+2. **Take the before.** Commit first, then measure with the instrument step 1 named, on its own record:
+   - **Whole game:** both maps, `crossing` and `pocket`, over seeds: `npm run skirmish -- --map <map> --p1 script:steady
+     --p2 script:steady --commanders all --seeds 1-12 --play-to end > <date>-<what>-<map>-before.txt` (the `skirmish`
+     skill). The tally is the record: the file name carries the date, and its first line the commit (`git rev-parse --short HEAD`).
+   - **One rule, effect, movement or ability:** a sandbox or a trial, `npm run grid -- <trial> --out before.json` (the
+     `grid` skill).
+   - **The power curve or a route:** the kept run, `node bin/measure.ts run --out before.json` (the
+     [`remeasure`](.claude/skills/remeasure/SKILL.md) skill, [`measurement.md`](docs/system-design/measurement.md)).
+   *Done when* the before is saved with its date and the commit it ran on (no `+uncommitted`), for both maps when it is a
+   whole-game measurement. Records kept for history go in `docs/history/measurements/`.
+3. **Build it with its second count.** Each new reading comes with a second way to count it, and that check is an
+   invariant test ([`testing.md`](docs/system-design/testing.md), invariant tests). Every option you add refuses a value it
+   does not use, or says what is not done, and is registered in `src/cli/args.ts` with a test that it arrives. *Done when*
+   each new reading has a test that goes red when you break the reading, and each option refuses odd input.
+4. **Take the after and compare**, with the same instrument, commands and seeds: two skirmish tallies side by side; a trial
+   with `--baseline before.json`; a kept run with `node bin/measure.ts compare <before> <after>`. Sort what the change broke
+   before fixing any test (the `remeasure` skill; "Things that bite" below). *Done when* the number from step 1 met its
+   threshold (on both maps, for the whole game), or the notes say what moved instead and why; a result the change makes stale
+   is marked superseded ([`measurement.md`](docs/system-design/measurement.md), when a measurement goes stale).
+5. **Send testers with a goal.** After the step, run three or four tester agents, each with one goal: audit a reading by
+   counting it two ways, play to win against a script, break the command with odd input, check the documents against the
+   code. Sonnet for most; one Opus at a milestone's end, for contradictions and adversarial play. The briefs, and what each
+   model is good at, are in [`testing.md`](docs/system-design/testing.md), tester agents. *Done when* every finding is
+   fixed or registered with a recommendation, each fixed one is held by an invariant test, and what was learned is in
+   `docs/history/lessons-learned.md`.
+6. **Hand Mario a build that works.** Only now play it yourself (section 3), then ask, and only for what numbers cannot
+   reach: whether the banner feels strategic, whether the screen reads, whether a battle is fun (section 6). *Done when* the
+   pull request carries the numbers that held, the testers' findings that were fixed, and the asks, each tagged play,
+   watch, decide or do.
+
+**Run both runtimes before every push** (`npm run test:all`). Node's runner takes the whole glob at once and isolates each
+file; `bun test` runs one file at a time through `scripts/run-tests.sh`, because its `node:test` shim rejects a test
+registered while another file is running and lacks `t.skip()`. Cross-runtime agreement is the only cheap test of the
+serialization and iteration assumptions many runs on one runtime never catch. What the suite proves, by area, is in
+[`testing.md`](docs/system-design/testing.md).
 
 Things that bite:
 
@@ -138,19 +160,19 @@ Things that bite:
   count (`for (const name of sandboxFiles())`) creeps up on it silently. Give it an explicit
   `{ timeout: 120_000 }` (third-argument form; identical under Node). Run the Bun suite once before
   adding a sandbox.
-- **Timing tests flake under load.** With agents building in parallel the frame-budget tests have
-  failed once and passed alone. Re-run the file alone and measure before and after; never loosen a
-  test to make a busy machine pass.
+- **Timing tests flake under load.** With agents building in parallel, or a measurement playing in the background,
+  the frame-budget tests fail and pass alone. Re-run the file alone after the load ends; never loosen a test to make a
+  busy machine pass.
 - **A rule change can fail dozens of tests at once.** Sort them before fixing any: a pin that moved is re-pinned
   with its reason in its comment, a test whose premise the change broke gets a fixture that isolates its rule, a
   test whose inputs no longer reach its meaning gets new inputs from a probe; none is loosened or skipped (the
-  [`remeasure`](.claude/skills/remeasure/SKILL.md) skill). Run timing tests after a background measurement ends,
-  not while it plays.
+  `remeasure` skill).
 - **A red assertion in the live-loop test looks like a hang.** `tests/lifecycle-build-phase.test.ts` leaves
   the terminal loop running when an assertion throws, so Node never exits. Run it alone with
   `node --test --test-timeout=30000`.
-- **Silent parsers.** The shared parser takes an unknown option for a flag; both command lines refuse what they
-  do not read, but register every value-taking option in `src/cli/args.ts` and test that it arrives.
+- **A flag that ignores its input is a bug.** The shared parser takes an unknown option for a flag; both command lines
+  refuse what they do not read, but every value-taking option is registered in `src/cli/args.ts`.
+- **Probe on a copy.** `git checkout <file>` undoes everything uncommitted in it, a whole rewrite included; commit first.
 
 The validator, `./scripts/check-repository.sh`, is the cheapest reviewer and runs in CI. It checks
 the required files, that exactly one milestone is current and names its step, that every question
@@ -224,45 +246,35 @@ prove. An unchanged shot is not rewritten: every image records a hash of the pag
 regeneration touches only the pictures a change shows up in. Set an Experiment by name with
 `--settings`, never by counting rows.
 
-**The browser playtest page** (`bun scripts/build-web.mjs`, one self-contained HTML file) runs the
-real menu, Build Phase and Battle Round through a stand-in terminal, opening on a Skirmish,, painted on a canvas, with an on-screen
-key bar for the keys a phone lacks. It is a development tool, never a platform: the build fails if
-anything the page reaches imports a Node-only module, and a terminal at 80 × 24 stays the acceptance
-target. It cannot show raw keyboard mode, terminal cleanup, signals, a real terminal's own key
-encodings, the OpenTUI backend or frame timing. Published as a private claude.ai page on a pull
-request only when a change must be played to be judged. Beside the screen it has a text box for each
-export (the settings, the Activity Logs), and `bun scripts/build-web.mjs --demos <file>` adds a button
-per demo, each opening the game at a route (a level at a round, with no key script walking there) from a
-key script with given settings, and saying what to try (`scripts/build-web.mjs` describes the file; a bad
-route or key script fails the build; keep a pull request's file in `scripts/demos/` until its question is
-answered). Its mode buttons that are game screens open their routes, and a copy on disk opens wherever its
-address says: `#at=story?mission=vasse-test-1&round=3`, with `&settings=` and `&keys=` after it. A
-claude.ai link cannot carry an address with `=` in it, so a published page opens at a place through a demo.
+**The browser playtest page** (`bun scripts/build-web.mjs`, one self-contained HTML file) runs the real menu, Build Phase
+and Battle Round through a stand-in terminal, opening on a Skirmish, painted on a canvas, with an on-screen key bar for the
+keys a phone lacks. It is a development tool, never a platform: the build fails if anything the page reaches imports a
+Node-only module, and a terminal at 80 × 24 stays the acceptance target. It cannot show raw keyboard mode, terminal
+cleanup, signals, a real terminal's own key encodings, the OpenTUI backend or frame timing. Publish it as a private
+claude.ai page on a pull request only when a change must be played to be judged. It has a text box for each export (the
+settings, the Activity Logs), and `--demos <file>` adds a button per demo, each opening the game at a route from a key
+script with given settings and saying what to try (`scripts/build-web.mjs` describes the file; a bad route or key script
+fails the build; keep a pull request's file in `scripts/demos/` until its question is answered). A copy on disk opens
+wherever its address says: `#at=story?mission=vasse-test-1&round=3`, with `&settings=` and `&keys=` after it. A claude.ai
+link cannot carry an address with `=` in it, so a published page opens at a place through a demo.
 
-**Skirmishes put two armies against each other** (`npm run skirmish -- ...`, the `skirmish` skill). Headless: each
-round both sides keep a Nexus power and plan a Build Phase blind, then a Battle Round plays between them
+**Skirmishes put two armies against each other** (`npm run skirmish -- ...`, the `skirmish` skill): each round both
+sides keep a Nexus power and plan a Build Phase blind, then a Battle Round plays between them
 ([`battles.md`](docs/system-design/battles.md)). Scripts play in one process; a model writes each round's build actions
-from its brief. Use them to see how an army spends its power curve, never as a verdict on balance.
+from its brief (the task to give it is in [`sandboxes.md`](docs/system-design/sandboxes.md), testing through Skirmishes: a small,
+cheap model, each pairing from both sides, every round's report read for why).
 
 ```bash
 npm run skirmish -- --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --rounds 8 --play-to end
 npm run skirmish -- --map crossing --p1 script:agro --p2 script:defensive --play-to end --out .playtest/rounds --log .playtest/battle.log
-npm run skirmish -- --map crossing --p1 build: --p2 build: --seed 11 --save .playtest/m1.save.json   # one model agent a slot:
-npm run skirmish -- -f .playtest/m1.save.json      # both briefs; each agent answers with its build actions, then
-npm run skirmish -- -f .playtest/m1.save.json --p1 build:.playtest/p1.json --p2 build:.playtest/p2.json --play-to next
+npm run skirmish -- --map crossing --p1 build: --p2 build: --seed 11 --save .playtest/m1.save.json   # one model agent a slot
 ```
 
-Model against model, with the task to give each agent, is in [`sandboxes.md`](docs/system-design/sandboxes.md),
-testing through Skirmishes: use a small, cheap model, play each pairing from both sides, and read every round's report
-for why.
-
 **Measuring a change plays the same battles before and after it** (`node bin/measure.ts`,
-[`measurement.md`](docs/system-design/measurement.md), the [`remeasure`](.claude/skills/remeasure/SKILL.md) skill):
-the route saves and every map, battles between every Commander, and every mission by fixed plans, written
-down as one JSON file per run and compared in plain words. Play only what the change can move, written down with
-the one question it must answer; after a power-curve change, mark what the new result supersedes rather than
-leaving old numbers to read as current; and check every sentence that tells Mario where to look against the events
-(`measure who <content id>`) before writing it.
+[`measurement.md`](docs/system-design/measurement.md), the [`remeasure`](.claude/skills/remeasure/SKILL.md) skill),
+written down as one JSON file per run and compared in plain words. Play only what the change can move, with the one
+question it must answer; mark what a power-curve change supersedes; check every sentence that tells Mario where to look
+against the events (`measure who <content id>`) before writing it.
 
 ```bash
 node bin/measure.ts run --spec quick --jobs 4 --question "<what it must answer>"   # a look while working
@@ -318,21 +330,17 @@ thing is what says which part deserved the polish.
 
 ## 5. Spikes
 
-A **spike** is a small, throwaway build that answers one question reading cannot: does this
-architecture absorb fourteen new unit designs, is the menu clearer when every row does something on
-the map, can the page run in a browser at all. Use one when the design documents disagree, when a
-recommendation was written before the thing existed, or when the cheapest way to settle an argument
-is to build both sides.
+A **spike** is a small, throwaway build that answers one question reading cannot: does this architecture absorb fourteen
+new unit designs, can the page run in a browser at all. Use one when the design documents disagree, when a recommendation
+was written before the thing existed, or when building both sides is the cheapest way to settle an argument.
 
-- Keep it to the smallest thing that answers the question, on its own branch, with the question
-  written at the top of the pull request.
-- Its code is disposable by default. Promote what survives into the real place with its tests;
-  delete the rest rather than leaving a second way of doing things.
-- Its findings are the deliverable. The pull request description carries them; when they need more
-  than a page (a measurement series, a design the next milestone builds on), write a report in
-  `docs/history/reports/` named by date and subject and link it. Put surprises and discarded
-  approaches first; that is the part the next reader wants.
-- If it changes the design, change the design document in the same pull request (§7).
+- Keep it to the smallest thing that answers the question, on its own branch, with the question written at the top of the
+  pull request.
+- Promote what survives into the real place with its tests; delete the rest rather than leaving a second way of doing
+  things.
+- Its findings are the deliverable: the pull request description carries them, and a report in `docs/history/reports/`
+  (named by date and subject) when they need more than a page. Surprises and discarded approaches come first.
+- If it changes the design, change the design document in the same pull request (section 7).
 
 The unit-architecture spike and the menu spike in `docs/history/reports/` are the pattern.
 
@@ -379,9 +387,10 @@ skill; the ideas behind it:
 "human testing is very slow… once I do it, I will find many small details and start correcting which takes a long
 time"). So the loop spends it only on what a person alone can judge — is it fun, is it clear, does he want another:
 
-- **An agent plays it first.** Before anything reaches him, play the flow yourself with the playtest script (and, once
-  Milestone 20 builds it, the player's diary): the keys a task takes, what reads badly, what does nothing. A
-  flow an agent could have found broken never reaches him broken.
+- **Testers and measurements reach him first.** Before anything reaches him, play the flow yourself with the playtest script
+  (and, once Milestone 20 builds it, the player's diary): the keys a task takes, what reads badly, what does nothing; and
+  finish section 2, so he receives a build that already works and numbers that already hold. His time goes where numbers
+  cannot reach: whether the banner feels strategic, whether the screen reads, whether a battle is fun.
 - **Every ask says what kind it is**: *play* (needs his hands, the only expensive kind), *watch* (a picture, a GIF or one
   command, readable on a phone), *decide* (one line, with a recommendation), or *do* (a chore only he can do), and about
   how long it takes. Batch the *play* asks into one Skirmish session.
@@ -391,7 +400,7 @@ time"). So the loop spends it only on what a person alone can judge — is it fu
   note files that replay their moment; the fixing is a feedback round's agents. Never ask him to verify a detail an
   agent can verify.
 
-What four rounds taught is in `docs/history/lessons-learned.md`.
+What the rounds taught is in `docs/history/lessons-learned.md`.
 
 ## 7. Changing the design
 
@@ -469,7 +478,7 @@ no person has tried yet and what is known to be broken. Internal shorthand is fi
 is the next agent: a note in a design document for the next session, a code comment.
 
 Interface work has its own rulebook: read [`docs/system-design/ui-patterns.md`](docs/system-design/ui-patterns.md),
-its goals and its checklist for a new screen, before changing a screen, a menu, a popup, an effect or
+its steps for a new screen, then its goals, before changing a screen, a menu, a popup, an effect or
 a key; when two rules disagree, the goals decide; a change that adds, bends or retires a pattern
 updates that document in the same pull request and names the pattern so the next screen reuses it.
 
