@@ -16,6 +16,8 @@ export { actionsFor, entryFits, readBuildActions, readBuildFile } from "./build-
 export type { BuildEntry, ReadBuildActions, ReadBuildFile, RoundSelector } from "./build-actions.ts"
 export { inFormation, SCRIPTED, scriptedName, scriptedNames, scriptedPlayer } from "./players.ts"
 export type { Player } from "./players.ts"
+export { restoredOf, roundOpening } from "./round-opening.ts"
+export type { Callup, Restored, RoundOpeningInput } from "./round-opening.ts"
 export { checkBuildActions, handOf, incomeOf, mapOf, musterOf, beginBattle, placementsOf, playRound, standingOf, titleOf, zonePoint } from "./round.ts"
 export { armyOf, battleArmy, loadoutOf, restrictedTo } from "./sides.ts"
 export type { BattleArmy } from "./sides.ts"

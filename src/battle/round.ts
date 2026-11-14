@@ -20,8 +20,9 @@ import { baseContentId, fittedId, fittingsOf } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { footprintDistance, footprintExtent, footprintSteps, tilesOf } from "../grid/coords.ts"
 import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
-import { centreTile, creditsEarned, fallen, opening, regroup, restoreCommanders, spawningRegistry, standDown } from "../match/index.ts"
-import type { Force, RegroupResult, StructurePlacement } from "../match/index.ts"
+import { centreTile, creditsEarned, fallen, regroup, spawningRegistry, standDown } from "../match/index.ts"
+import type { RegroupResult, StructurePlacement } from "../match/index.ts"
+import { roundOpening } from "./round-opening.ts"
 import { contextFor, stepTick } from "../pulse/index.ts"
 import { TICKS_PER_SECOND } from "../state/types.ts"
 import type { MatchState, TargetArea } from "../state/types.ts"
@@ -474,41 +475,17 @@ export function playRound(
 
   // The Battle Round's opening: what the regroup left, with every Commander due back set down beside her Nexus; both
   // plans revealed together; the first round's Nexuses, Commanders and starting packages; this round's call-ups.
-  const restored = state.carried === null
-    ? null
-    : restoreCommanders(state.carried, [...state.sides.A.absent, ...state.sides.B.absent], round, sides.A, sides)
-  const structures: StructurePlacement[] = []
-  if (state.carried === null) for (const side of SIDES) structures.push(...standingOf(state, side))
+  const built: StructurePlacement[] = []
   // The two plans' buildings in turns, a building of each side at a time, the side going first alternating, so neither
   // side's buildings make room (`makeRoom`) before the other's by a rule of order.
   const longest = Math.max(phases.A.placed.planned.length, phases.B.placed.planned.length)
   for (let index = 0; index < longest; index += 1) {
     for (const side of index % 2 === 0 ? SIDES : [...SIDES].reverse()) {
       const placed = phases[side].placed.planned[index]
-      if (placed !== undefined) structures.push({ contentId: placed.contentId, player: side, anchor: placed.anchor })
+      if (placed !== undefined) built.push({ contentId: placed.contentId, player: side, anchor: placed.anchor })
     }
   }
-  const forces: Force[] = []
-  for (const side of SIDES) {
-    const muster = musterOf(state, side, sides[side])
-    const units: string[] = []
-    if (state.carried === null) {
-      units.push(phases[side].army.commander.unit)
-      for (const { unit, count } of phases[side].army.commander.start) for (let n = 0; n < count; n += 1) units.push(unit)
-    }
-    for (const { unit, count } of phases[side].callups) for (let n = 0; n < count; n += 1) units.push(unit)
-    if (units.length > 0) forces.push({ player: side, muster, units })
-  }
-  const opened = opening({
-    grid,
-    registry: sides.A,
-    sides,
-    structures,
-    setup: { seed: state.setup.seed, pulseTicks: state.setup.pulseTicks, forces },
-    ...(restored === null ? {} : { carried: restored.state }),
-    ...heldBy(state, plans, phases),
-    ...refitsOf(phases),
-  }).state
+  const { state: opened, restored } = roundOpening(state, { sides, callups: { A: phases.A.callups, B: phases.B.callups }, built, ...heldBy(state, plans, phases), ...refitsOf(phases) })
   const targets: Record<Side, TargetArea> = { A: targetOf(state, "A", plans.A.stance, sides), B: targetOf(state, "B", plans.B.stance, sides) }
   const start: MatchState = { ...opened, targets }
 

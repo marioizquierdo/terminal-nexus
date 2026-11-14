@@ -35,9 +35,9 @@ import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { tilesOf } from "../grid/coords.ts"
 import type { BattleState, Player, RoundReport, Side, BuildActions } from "../battle/index.ts"
-import { SIDES, armyOf, briefOf, battleGrid, handOf, loadoutOf, mapOf, musterOf, beginBattle, placementsOf, standingOf } from "../battle/index.ts"
-import type { Force, RegroupResult, Restoration } from "../match/index.ts"
-import { centreTile, opening, restoreCommanders, standDown } from "../match/index.ts"
+import { SIDES, armyOf, briefOf, battleGrid, handOf, loadoutOf, mapOf, beginBattle, placementsOf, restoredOf, roundOpening, standingOf } from "../battle/index.ts"
+import type { RegroupResult } from "../match/index.ts"
+import { centreTile, standDown } from "../match/index.ts"
 import { spawnEvents } from "../pulse/index.ts"
 import type { Profiles, SaveFile, SaveSetup, Slot } from "../skirmish/save.ts"
 import { controllerKind, battleOf, battleSetupOf, newSetup, saveOf, SLOTS } from "../skirmish/save.ts"
@@ -75,45 +75,20 @@ function contentOf(battle: BattleState): Record<Side, ContentRegistry> {
   }
 }
 
-/** The Grid as the Battle Round will open on it before any plan: where the regroup left everyone, with every Commander
- *  due back set down beside her Nexus (as `playRound` will), and who was set down — `null` before a battle's first round. */
-function restoredOf(battle: BattleState, content: Readonly<Record<Side, ContentRegistry>>): Readonly<{ state: MatchState; restored: Restoration[]; absent: BattleState["sides"]["A"]["absent"] }> | null {
-  if (battle.carried === null) return null
-  return restoreCommanders(battle.carried, [...battle.sides.A.absent, ...battle.sides.B.absent], battle.round, content.A, content)
-}
-
 /**
- * **What arrives as the round starts**, set down as the battle's opening will set it down without a plan: in a battle's
- * first round each side's Commander and her starting package beside its Nexus, and the units a power kept this round
- * calls up for the player. The Build Phase draws them see-through where they arrive. Nothing when none comes, or when
- * there is no room.
+ * **What arrives as the round starts**, set down by the battle's own `roundOpening` without a plan: in a battle's first
+ * round each side's Commander and her starting package beside its Nexus, and the units a power kept this round calls up
+ * for the player. The Build Phase draws them see-through where they arrive. Nothing when none comes, or when there is
+ * no room.
  */
 function arrivalsOf(battle: BattleState, callups: BuildContext["callups"]): IncomingEntity[] {
+  const called = (callups ?? []).reduce((total, { count }) => total + Math.max(0, count), 0)
+  if (battle.carried !== null && called === 0) return []
   const content = contentOf(battle)
-  const forces: Force[] = []
-  for (const side of SIDES) {
-    const units: string[] = []
-    if (battle.carried === null) {
-      const { commander } = armyOf(battle, side)
-      units.push(commander.unit)
-      for (const { unit, count } of commander.start) for (let n = 0; n < count; n += 1) units.push(unit)
-    }
-    if (side === "A") for (const { unit, count } of callups ?? []) for (let n = 0; n < count; n += 1) units.push(unit)
-    if (units.length > 0) forces.push({ player: side, muster: musterOf(battle, side, content[side]), units })
-  }
-  if (forces.length === 0) return []
-  const restored = restoredOf(battle, content)
   try {
-    const opened = opening({
-      grid: battleGrid(mapOf(battle)),
-      registry: content.A,
-      sides: content,
-      structures: restored === null ? SIDES.flatMap((side) => standingOf(battle, side)) : [],
-      setup: { seed: battle.setup.seed, pulseTicks: battle.setup.pulseTicks, forces },
-      ...(restored === null ? {} : { carried: restored.state }),
-    }).state
-    const before = new Set((restored?.state.entities ?? []).map((entity) => entity.id))
-    return opened.entities
+    const opened = roundOpening(battle, { sides: content, callups: { A: callups ?? [], B: [] } })
+    const before = new Set((opened.restored?.state.entities ?? []).map((entity) => entity.id))
+    return opened.state.entities
       .filter((entity) => !before.has(entity.id) && content[entity.player].get(entity.contentId).layer !== "obstacles")
       .map((entity) => ({ contentId: entity.contentId, anchor: entity.anchor, player: entity.player, tick: 0, intent: null }))
   } catch {
