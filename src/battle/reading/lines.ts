@@ -40,10 +40,7 @@ export function readingLines(reading: RoundReading, side: Side): string[] {
   const theirs = reading.sides[other(side)]
   const lines: string[] = []
   // Units trained during the round are in neither the army it opened with nor, once lost, the one it ended with.
-  const trained = (army: SideReading["army"]): string => {
-    const count = army.end.count - army.start.count + army.lost.count
-    return count > 0 ? `; ${count} more trained during it` : ""
-  }
+  const trained = (army: SideReading["army"]): string => (army.trained.count > 0 ? `; ${army.trained.count} more trained during it` : "")
   lines.push(`Your army: ${said(mine.army.start)} as it opened${trained(mine.army)}; ${said(mine.army.end)} as it ended; lost ${said(mine.army.lost)}.`)
   lines.push(`Their army: ${said(theirs.army.start)} as it opened${trained(theirs.army)}; ${said(theirs.army.end)} as it ended; lost ${said(theirs.army.lost)}.`)
   const damaged = mine.buildings.damaged.map((building) => `${nameOf(building.contentId)} at ${building.at.x},${building.at.y} ${building.hp}/${building.most}`)

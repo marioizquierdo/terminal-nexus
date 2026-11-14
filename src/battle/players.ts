@@ -21,6 +21,7 @@
 import type { BriefBuilding, BriefCard, BriefData } from "./brief.ts"
 import type { BuildingOrder, Formation, Placement, BuildActions, Stance, Zone } from "./types.ts"
 import { FORMATIONS } from "./types.ts"
+import { dealtOf } from "./reading/index.ts"
 
 /** A player: a plan from a brief. */
 export type Player = (brief: BriefData) => BuildActions
@@ -118,7 +119,7 @@ export const turtle: Player = (brief) => {
 export const reactive: Player = (brief) => {
   const enemy = brief.side === "A" ? "B" : "A"
   const last = brief.last
-  const read = last?.reading?.sides[brief.side]
+  const read = last?.reading.sides[brief.side]
   const enemyShare = brief.enemy.nexus.most === 0 ? 1 : brief.enemy.nexus.health / brief.enemy.nexus.most
   const lastRound = brief.round >= brief.rounds
   // How each stance has traded over the battle: what it dealt for each point it took, in the rounds it was played and
@@ -128,8 +129,8 @@ export const reactive: Player = (brief) => {
     let taken = 0
     for (const report of brief.reports) {
       if (report.sides[brief.side].stance !== stance) continue
-      const d = report.sides[brief.side].dealt.units + report.sides[brief.side].dealt.buildings + report.sides[brief.side].dealt.nexus
-      const t = report.sides[enemy].dealt.units + report.sides[enemy].dealt.buildings + report.sides[enemy].dealt.nexus
+      const d = dealtOf(report.reading.sides[brief.side])
+      const t = dealtOf(report.reading.sides[enemy])
       if (d + t < 50) continue
       dealt += d
       taken += t

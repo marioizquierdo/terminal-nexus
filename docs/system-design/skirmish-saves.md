@@ -137,7 +137,7 @@ on any slot: there is no difficulty setting, and both sides start on equal groun
   (`credits`, its share of the income). Elimination is the only goal.
 - **`state`** is written by the game: the battle's own state between rounds (`BattleState`, `src/battle/types.ts`), in the
   engine's words, where side A is `p1` and side B is `p2`: the round to play, each side's credits, kept powers and
-  absent Commander, every round's report, the result once there is one, and `carried`, what stands on the Grid. The
+  absent Commander, every round's report (its Build Phase half) with its reading (the Battle Round's numbers, [`battles.md`](battles.md), "Reading a battle"), the result once there is one, and `carried`, what stands on the Grid. The
   Grid's ground is never in it: the map has it.
 - **`draft`** is a slot's build actions so far for the round it is at ([`battles.md`](battles.md), the brief and the build
   actions), so a load returns to where it stopped: half made, as Save game leaves them mid-Build Phase, or whole, handed in
@@ -146,6 +146,8 @@ on any slot: there is no difficulty setting, and both sides start on equal groun
 - **`start`** is what each slot has on the Grid before round 1, placed by hand: a save with one is a **sandbox**
   (section 5). A side's credits and roster in `start` are not built: no sandbox needs them yet.
 - **The log is never in a save** (the owner: "Logging is a separate concern").
+- **A save from before a round's report carried its reading is refused**, by the round (`state.history[0]`); the format
+  stays `/1` until the game is public, and the examples are written again by `node scripts/make-example-saves.ts`.
 - **A save the loader refuses is refused whole**, every problem named at once, by its place in the file
   (`setup.slots.p2.controller: no script "aggro"`).
 - **Written to be read**: indented, with each unit, round's report and planned building on one line, so a battle of a

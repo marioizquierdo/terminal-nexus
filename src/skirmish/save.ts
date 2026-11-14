@@ -361,6 +361,11 @@ export function readSave(text: string, profiles: Profiles = NO_PROFILES): ReadSa
   if (state !== undefined) {
     if (!isRecord(state) || !isWhole(state["round"]) || !isRecord(state["sides"]) || !Array.isArray(state["history"]) || !("carried" in state) || !("result" in state)) {
       problems.push("state: the battle as the game wrote it ({ round, carried, sides, history, result }); remove it to start from round 1")
+    } else {
+      // Every round's report carries its reading (the battle's numbers live there); a save from before that is written again.
+      state["history"].forEach((report, index) => {
+        if (!isRecord(report) || !isRecord(report["reading"])) problems.push(`state.history[${index}]: a round's report with its "reading" (a save from before the one battle reader: play it again, or remove state to start from round 1)`)
+      })
     }
   }
   const draft = value["draft"]

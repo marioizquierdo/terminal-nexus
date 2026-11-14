@@ -392,13 +392,6 @@ function battleContent(registry: ContentRegistry, catalog: readonly ConstructIte
   return spawningRegistry(registry, spawns, defaultValue("firstWave") * TICKS_PER_SECOND)
 }
 
-/** Counts of things by their card's name. */
-function tally(contentIds: readonly string[]): Record<string, number> {
-  const counts: Record<string, number> = {}
-  for (const contentId of contentIds) counts[titleOf(contentId)] = (counts[titleOf(contentId)] ?? 0) + 1
-  return counts
-}
-
 /** A side's Build Phase as its plan played it, before the other side's plan is revealed. */
 type Planned = Readonly<{
   army: BattleArmy
@@ -545,7 +538,7 @@ export function playRound(
       credits: next[side].credits + incomeOf(state.setup, side, round + 1) + earned,
       absent: [...stillOut, ...fell.filter((absence) => absence.player === side)],
     }
-    reports[side] = sideReport(side, phases[side], plans[side], state.sides[side].credits, earned, start, current, events, sides, fell.some((absence) => absence.player === side))
+    reports[side] = sideReport(phases[side], plans[side], state.sides[side].credits, earned)
   }
   const ended = current.outcome?.reason === "nexus-destroyed" ? "nexus" : "time"
   const report: RoundReport = { round, sides: reports, ticks: current.tick, ended, reading: reader.reading(current) }
@@ -643,47 +636,14 @@ function targetOf(state: BattleState, side: Side, stance: BuildActions["stance"]
   return { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs) + 1, height: Math.max(...ys) - Math.min(...ys) + 1 }
 }
 
-/** What one side did and suffered in the round, from its phase, the opening, the end and the events. */
+/** What one side planned and spent in the round, from its phase: the Build Phase's private record. What the Battle Round
+ *  did to it is the round's reading (`RoundReport.reading`). */
 function sideReport(
-  side: Side,
   phase: Readonly<{ army: BattleArmy; hand: PowerCard[]; pick: PowerCard | null; placed: ReturnType<typeof placeAll>; acted: Acted }>,
   plan: BuildActions,
   credits: number,
   earned: number,
-  start: MatchState,
-  end: MatchState,
-  events: readonly DomainEvent[],
-  sides: Readonly<Record<Side, ContentRegistry>>,
-  commanderFell: boolean,
 ): SideReport {
-  const enemy = other(side)
-  const definition = (player: Side, contentId: string) => sides[player].get(contentId)
-  const nexusOf = (state: MatchState, player: Side) => state.entities.find((entity) => entity.player === player && definition(player, entity.contentId).nexus === true)
-  const before = nexusOf(start, side)
-  const after = nexusOf(end, side)
-  const ownerOf = new Map(start.entities.map((entity) => [entity.id, entity.player] as const))
-  const nexusIds = new Set(start.entities.filter((entity) => definition(entity.player, entity.contentId).nexus === true).map((entity) => entity.id))
-  const layerOf = new Map(start.entities.map((entity) => [entity.id, definition(entity.player, entity.contentId).layer] as const))
-  const dealt = { units: 0, buildings: 0, nexus: 0 }
-  const lost: string[] = []
-  const killed: string[] = []
-  const trained: string[] = []
-  const abilities: Record<string, number> = {}
-  for (const event of events) {
-    if (event.kind === "entity.spawned") {
-      ownerOf.set(event.entity, event.player)
-      layerOf.set(event.entity, definition(event.player, event.contentId).layer)
-      if (event.player === side) trained.push(event.contentId)
-    }
-    if (event.kind === "damage.applied" && event.source.startsWith(`${side}:`) && ownerOf.get(event.entity) === enemy) {
-      if (nexusIds.has(event.entity)) dealt.nexus += event.amount
-      else if (layerOf.get(event.entity) === "obstacles") dealt.buildings += event.amount
-      else dealt.units += event.amount
-    }
-    if ((event.kind === "entity.died" || event.kind === "structure.destroyed") && event.player === side) lost.push(event.contentId)
-    if ((event.kind === "entity.died" || event.kind === "structure.destroyed") && event.player === enemy) killed.push(event.contentId)
-    if (event.kind === "ability.triggered" && event.player === side) abilities[event.name ?? event.ability] = (abilities[event.name ?? event.ability] ?? 0) + 1
-  }
   return {
     commander: phase.army.commander.id,
     credits,
@@ -697,14 +657,6 @@ function sideReport(
     stance: plan.stance,
     ...(plan.formation === undefined ? {} : { formation: plan.formation }),
     ...(plan.note === undefined ? {} : { note: plan.note }),
-    fielded: tally(start.entities.filter((entity) => entity.player === side && definition(side, entity.contentId).layer !== "obstacles").map((entity) => entity.contentId)),
-    trained: tally(trained),
-    lost: tally(lost),
-    killed: tally(killed),
-    dealt,
-    nexus: { before: before?.hp ?? 0, after: after?.hp ?? 0, most: before === undefined ? 0 : definition(side, before.contentId).maxHp },
-    commanderFell,
-    abilities,
   }
 }
 

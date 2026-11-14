@@ -17,7 +17,8 @@ import type { BattleArmy } from "./sides.ts"
 import { armyOf, loadoutOf, powerOf } from "./sides.ts"
 import { handOf, other, standingOf, titleOf, zonePoint } from "./round.ts"
 import type { Score } from "./reading/index.ts"
-import { readingLines, scoreLine, scoreOf } from "./reading/index.ts"
+import type { SideReading } from "./reading/index.ts"
+import { dealtOf, lostCount, lostOf, namedCounts, readingLines, scoreLine, scoreOf } from "./reading/index.ts"
 import type { BattleState, RoundReport, Side, SideReport } from "./types.ts"
 import { APART_GAP, FORMATIONS, STANCES, ZONES } from "./types.ts"
 
@@ -149,15 +150,14 @@ export function seenBy(report: RoundReport, side: Side): SeenReport {
   return { ...report, sides: { ...report.sides, [enemy]: theirs } as SeenReport["sides"] }
 }
 
-function reportLine(label: string, report: SeenReport["sides"][Side]): string {
-  const counts = (record: Readonly<Record<string, number>>): string =>
-    Object.entries(record)
-      .map(([name, count]) => `${count} ${name}`)
-      .join(", ") || "none"
+function reportLine(label: string, report: SeenReport["sides"][Side], read: SideReading): string {
+  const counts = (record: Readonly<Record<string, number>>): string => namedCounts(record) || "none"
+  const { dealt } = read.damage
+  const { nexus } = read.buildings
   return [
     `${label} (${report.commander}): kept ${report.kept ?? "nothing"}; built ${report.built.length === 0 ? "nothing" : report.built.join(", ")}${report.formation === undefined ? "" : ` (formation ${report.formation})`}${report.actions === undefined ? "" : `; took ${report.actions.join(", ")}`}${(report.refused ?? []).length === 0 ? "" : `; refused ${(report.refused ?? []).join("; ")}`}; stance ${report.stance}.`,
-    `  fielded ${counts(report.fielded)}; trained ${counts(report.trained)}; lost ${counts(report.lost)}.`,
-    `  dealt ${report.dealt.units} to units, ${report.dealt.buildings} to buildings, ${report.dealt.nexus} to the Nexus; Nexus ${report.nexus.before} -> ${report.nexus.after} of ${report.nexus.most}${report.commanderFell ? "; the Commander fell" : ""}${(report.earned ?? 0) > 0 ? `; earned ${report.earned} credits` : ""}${Object.keys(report.abilities).length === 0 ? "" : `; abilities ${counts(report.abilities)}`}.`,
+    `  fielded ${counts(read.army.start.counts)}; trained ${counts(read.army.trained.counts)}; lost ${counts(lostOf(read))}.`,
+    `  dealt ${dealt.units} to units, ${dealt.buildings} to buildings, ${dealt.nexus} to the Nexus; Nexus ${nexus.before} -> ${nexus.after} of ${nexus.most}${read.army.commanderFell ? "; the Commander fell" : ""}${(report.earned ?? 0) > 0 ? `; earned ${report.earned} credits` : ""}${Object.keys(read.army.abilities).length === 0 ? "" : `; abilities ${counts(read.army.abilities)}`}.`,
   ].join("\n")
 }
 
@@ -283,9 +283,9 @@ export function briefOf(state: BattleState, side: Side, strategies?: string, dra
     last: last === null ? null : seenBy(last, side),
     reports: state.history.map((report) => seenBy(report, side)),
     history: state.history.map((report) => {
-      const ours = report.sides[side]
-      const theirs = report.sides[enemy]
-      return `round ${report.round}: you dealt ${ours.dealt.units + ours.dealt.buildings + ours.dealt.nexus} and lost ${Object.values(ours.lost).reduce((sum, count) => sum + count, 0)} things; they dealt ${theirs.dealt.units + theirs.dealt.buildings + theirs.dealt.nexus} and lost ${Object.values(theirs.lost).reduce((sum, count) => sum + count, 0)}; your Nexus ${ours.nexus.after}, theirs ${theirs.nexus.after}.`
+      const ours = report.reading.sides[side]
+      const theirs = report.reading.sides[enemy]
+      return `round ${report.round}: you dealt ${dealtOf(ours)} and lost ${lostCount(ours)} things; they dealt ${dealtOf(theirs)} and lost ${lostCount(theirs)}; your Nexus ${ours.buildings.nexus.after}, theirs ${theirs.buildings.nexus.after}.`
     }),
   }
   return { data, text: briefText(data, strategies) }
@@ -352,9 +352,9 @@ export function briefText(data: BriefData, strategies?: string): string {
     lines.push("")
     lines.push(`## Last round (round ${data.last.round}, ended ${data.last.ended === "nexus" ? "when a Nexus fell" : "on time"})`)
     const enemy = data.side === "A" ? "B" : "A"
-    lines.push(reportLine("You", data.last.sides[data.side]))
-    lines.push(reportLine("They", data.last.sides[enemy]))
-    if (data.last.reading !== undefined) lines.push(...readingLines(data.last.reading, data.side))
+    lines.push(reportLine("You", data.last.sides[data.side], data.last.reading.sides[data.side]))
+    lines.push(reportLine("They", data.last.sides[enemy], data.last.reading.sides[enemy]))
+    lines.push(...readingLines(data.last.reading, data.side))
   }
   if (data.history.length > 1) {
     lines.push("")

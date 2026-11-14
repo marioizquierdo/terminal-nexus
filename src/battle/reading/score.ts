@@ -11,13 +11,16 @@ export type Score = Readonly<{
   by: "health" | "damage" | "even"
 }>
 
-const dealtIn = (report: RoundReport, side: Side): number => report.sides[side].dealt.units + report.sides[side].dealt.buildings + report.sides[side].dealt.nexus
+const dealtIn = (report: RoundReport, side: Side): number => {
+  const { units, buildings, nexus } = report.reading.sides[side].damage.dealt
+  return units + buildings + nexus
+}
 
 /** **The score**, from every round so far. Before any round, even. */
 export function scoreOf(history: readonly RoundReport[]): Score {
   const last = history.at(-1)
   const share = (side: Side): number => {
-    const nexus = last?.sides[side].nexus
+    const nexus = last?.reading.sides[side].buildings.nexus
     return nexus === undefined || nexus.most === 0 ? 1 : nexus.after / nexus.most
   }
   const dealt = { A: 0, B: 0 }

@@ -4,7 +4,7 @@
 
 import type { BattleState, RoundReport } from "../battle/index.ts"
 import { SIDES } from "../battle/index.ts"
-import { roundReadingLines } from "../battle/reading/index.ts"
+import { lostOf, namedCounts, roundReadingLines } from "../battle/reading/index.ts"
 import type { SaveSetup, Slot } from "./save.ts"
 import { SLOT_OF } from "./save.ts"
 import { mapNameOf } from "./words.ts"
@@ -29,16 +29,17 @@ export function standing(setup: SaveSetup, state: BattleState): string {
 /** One round's report in a few lines a slot: what each side had, kept, built, fielded, lost and dealt. */
 export function roundLines(report: RoundReport): string[] {
   const lines = [`round ${report.round}: ended ${report.ended === "nexus" ? "when a Nexus fell" : "on time"} at tick ${report.ticks}`]
-  const counts = (record: Readonly<Record<string, number>>): string => Object.entries(record).map(([name, count]) => `${count} ${name}`).join(", ") || "none"
+  const counts = (record: Readonly<Record<string, number>>): string => namedCounts(record) || "none"
   for (const side of SIDES) {
     const own = report.sides[side]
+    const read = report.reading.sides[side]
     lines.push(
       `  ${SLOT_OF[side]} ${own.commander}: ${own.credits} credits, spent ${own.spent}${own.earned > 0 ? `, earned ${own.earned}` : ""}; kept ${own.kept ?? "nothing"}; built ${own.built.length}${own.formation === undefined ? "" : ` (${own.formation})`}${own.actions === undefined ? "" : `; ${own.actions.join(", ")}`}${own.refused.length > 0 ? `; refused: ${own.refused.join("; ")}` : ""}; ${own.stance}`,
-      `     fielded ${counts(own.fielded)}; trained ${counts(own.trained)}; lost ${counts(own.lost)}`,
-      `     dealt ${own.dealt.units}/${own.dealt.buildings}/${own.dealt.nexus} (units/buildings/Nexus); Nexus ${own.nexus.after}/${own.nexus.most}${own.commanderFell ? "; Commander fell" : ""}${Object.keys(own.abilities).length > 0 ? `; ${counts(own.abilities)}` : ""}`,
+      `     fielded ${counts(read.army.start.counts)}; trained ${counts(read.army.trained.counts)}; lost ${counts(lostOf(read))}`,
+      `     dealt ${read.damage.dealt.units}/${read.damage.dealt.buildings}/${read.damage.dealt.nexus} (units/buildings/Nexus); Nexus ${read.buildings.nexus.after}/${read.buildings.nexus.most}${read.army.commanderFell ? "; Commander fell" : ""}${Object.keys(read.army.abilities).length > 0 ? `; ${counts(read.army.abilities)}` : ""}`,
     )
   }
-  if (report.reading !== undefined) lines.push(...roundReadingLines(report.reading))
+  lines.push(...roundReadingLines(report.reading))
   return lines
 }
 
