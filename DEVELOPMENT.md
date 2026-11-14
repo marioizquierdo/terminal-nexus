@@ -472,7 +472,7 @@ no person has tried yet and what is known to be broken. Internal shorthand is fi
 is the next agent: a note in a design document for the next session, a code comment.
 
 Interface work has its own rulebook: read [`docs/system-design/ui-patterns.md`](docs/system-design/ui-patterns.md),
-its goals and its checklist for a new screen, before changing a screen, a menu, a popup, an effect or
+its steps for a new screen, then its goals, before changing a screen, a menu, a popup, an effect or
 a key; when two rules disagree, the goals decide; a change that adds, bends or retires a pattern
 updates that document in the same pull request and names the pattern so the next screen reuses it.
 
