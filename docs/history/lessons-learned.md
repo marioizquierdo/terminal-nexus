@@ -753,3 +753,9 @@ rewrite of the same file; a backup taken before the probe saved it. Probe on a c
   wanted what it could not see (the enemy's credits, a refusal's reason); the Opus player won in round 1 and found the
   brief contradicting itself (no units in round 1, a Nexus at 400 beside a score at 97%, JSON that would not parse).
   Both readings were worth having; the second costs more.
+
+- **Walk the instructions as a fresh agent before calling a rewrite done.** After the writing pass, a tester given two
+  made-up tasks and only AGENTS.md's pointers found what no editor saw from inside one file: the manual's before step
+  named the skirmish tally while its after step compared with `measure compare`, which reads only `measure run` files;
+  and the "Waiting on Mario" list read as the agent's own work. Each editor had made its own page right; only a reader
+  crossing the pages found the seam.
