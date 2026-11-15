@@ -4,7 +4,7 @@
 // a loaded save's Open) hands the terminal to its Build Phase (`runBuildPhase`); a battle's result offers the setup
 // screen again, which comes back here, on New game with that battle's setup.
 //
-// The event loop here is deliberately unlike `watch.ts`'s: a menu has no ticks and nothing animates,
+// The event loop here is deliberately unlike a Battle Round's playback: a menu has no ticks and nothing animates,
 // so there is no per-frame timer — a redraw happens only in response to input or a resize.
 //
 // It records into the Activity Logs (`src/log/activity.ts`): `session.start` once, `menu.select` for
@@ -55,7 +55,7 @@ export type MenuOptions = Readonly<{
   stdin: TerminalInput
   /** Interrupts, exit and error reporting; a terminal program's `process` unless given. */
   host?: Host
-  /** Injectable for the same reason `watch.ts`'s is: a test drives quit paths through real code. */
+  /** Injectable so a test drives quit paths through real code. */
   exit?: (code: number) => void
   /** The commit this build is — `terminal-nexus.ts` reads the checkout, the browser page its build
    *  stamp — shown on the About screen and recorded at `session.start`. Absent: not known. */

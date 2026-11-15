@@ -59,7 +59,7 @@ export function openSkirmish(ask: Omit<SkirmishDestination, "kind">, options: Op
   } else {
     save = newBattle({ ...newBattleOf(ask, read), seed: ask.seed ?? clockSeed(now()) }, profiles)
   }
-  if (save.start !== undefined) throw new Error(`${ask.load ?? "this save"} is a sandbox: it plays one Battle Round in grid (grid <file>), not on the game's screen`)
+  if (save.start !== undefined) throw new Error(`${ask.load ?? "this save"} is a sandbox: its one Battle Round plays with the skirmish command (skirmish --load <file> --play-to next --show 0,end), not on the game's screen`)
   // The command line's --p1/--p2 over the route's p1/p2; then who plays each slot, read as the command reads it.
   const written: SkirmishAsk = { ...ask, slots: { ...ask.slots, ...options.slots } }
   const changes = slotChangesOf(written, profiles, (word) => `--${word}`)

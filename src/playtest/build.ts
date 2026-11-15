@@ -6,7 +6,7 @@
 // frame is exactly what a player would see after pressing step N's key.
 //
 // `scripts/playtest.mjs` wraps this with a command line and turns frames into text, PNGs and a GIF.
-// Another screen (the main menu, a `grid` battle) would get a sibling of this file with the same
+// Another screen (the main menu) would get a sibling of this file with the same
 // shape: take steps, return frames.
 
 import { STARTER_START_CURSOR } from "../build/catalog.ts"

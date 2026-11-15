@@ -8,7 +8,7 @@ import { listKeyOf } from "../terminal/list-keys.ts"
 import type { MenuCommand } from "./types.ts"
 
 /** `q` and Ctrl+C — the same quit keys `controlForKey` binds during a Pulse (one keymap across
- *  `grid` and `terminal-nexus` for the controls they share). */
+ *  the Battle Round and the title menu for the controls they share). */
 const QUIT_KEYS = new Set(["q", String.fromCharCode(3)])
 /** Raw mode delivers Enter as CR; LF is accepted too so a driver script (or a pasted line) using
  *  "\n" for readability needs no translation layer of its own. */

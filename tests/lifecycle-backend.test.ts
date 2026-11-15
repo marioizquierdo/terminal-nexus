@@ -49,7 +49,7 @@ function fakes(): { stdout: FakeStdout; stdin: FakeStdin } {
   return { stdout: new FakeStdout(), stdin: new FakeStdin() }
 }
 
-// The shared disposer itself (src/cli/lifecycle.ts) — extracted out of `watch.ts` so `grid watch` and `terminal-nexus`'s menu build on one implementation, not two.
+// The shared disposer itself (src/cli/lifecycle.ts) — so every screen of `terminal-nexus` builds on one implementation, not two.
 
 test("createTerminalSession runs every dispose step exactly once, in order, no matter how many times dispose() is called", async () => {
   const order: string[] = []

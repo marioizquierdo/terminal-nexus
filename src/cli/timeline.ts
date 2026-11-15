@@ -3,7 +3,7 @@
 // This lives in the application shell rather than in `src/view`, because it is where the kernel and
 // the presentation meet: the view never imports the kernel, and the kernel never hears about the
 // view. The shell resolves the Pulse, keeps the state settled at every tick, and hands the pair
-// (states, events) to the view — which is why `watch` and `run` can be asserted to agree.
+// (states, events) to the view, so what is drawn and what is reported can be asserted to agree.
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../engine/events/types.ts"
@@ -21,7 +21,7 @@ export function buildTimeline(
   pulseTicks: number,
   seed: number,
 ): PulseTimeline {
-  // The sandbox's own run, every state it reaches kept: the same events and hashes `grid --headless` reports.
+  // The run, every state it reaches kept: the same events and hashes its report gives.
   const states: MatchState[] = []
   const run = resolvePulse({ initialState, registry, pulseTicks, seed, watch: (state) => states.push(state) })
   return {

@@ -1,5 +1,5 @@
 // Log levels — one vocabulary for every log in the project: the Activity Logs (`src/log/activity.ts`)
-// and `grid`'s battle report (`src/report/log.ts`, which prints them in capitals in its fixed columns).
+// and a battle's report (`src/report/log.ts`, which prints them in capitals in its fixed columns).
 //
 //   error  something failed that the player saw, or that stopped something working
 //   warn   something odd that did not stop anything — worth a look

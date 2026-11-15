@@ -1,10 +1,10 @@
-// A sandbox's one Battle Round, played (docs/system-design/sandboxes.md): its opening opened on the content
-// it is played with, and the kernel run from it to its end or its ticks. The one path every door plays a sandbox
-// by: `grid --headless`, the `skirmish` command (`src/cli/skirmish-sandbox.ts`), a measurement (`measureSave`,
-// `src/measure/suites.ts`) and the formations bench, so a sandbox says the same through each.
+// A sandbox's one Battle Round (docs/system-design/skirmish-saves.md, a board written by hand): its board opened on
+// the content it is played with, and the battle engine run from it to its end or its ticks. The one path every door
+// plays a sandbox by: the `skirmish` command (`src/cli/skirmish-sandbox.ts`), a measurement (`measureSave`,
+// `src/measure/suites.ts`), the formations bench and the tests, so a sandbox says the same through each.
 //
-// Not the battle: a sandbox tests one rule on the bench's content, with no Commander, Build Phase or wave a battle
-// adds, so it starts the kernel straight from the units its `start` places. Pure: the save is already read.
+// The same engine as a battle's Battle Round, from a board written by hand rather than one a Build Phase built: no
+// Commander, Nexus Pulse or credits unless the board places them. Pure: the save is already read.
 
 import type { ContentRegistry } from "../content/index.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"

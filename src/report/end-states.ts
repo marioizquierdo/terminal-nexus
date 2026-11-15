@@ -1,5 +1,5 @@
 // What each entity became: one line each, hp and tile at the start and at the end of a run. Read from two states, never
-// from the kernel, and printed before the report line. `--end-states` asks for it of a Battle Round (grid --help).
+// from the kernel, and printed before the report line. Tests ask for it of a Battle Round.
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { MatchState } from "../engine/state/types.ts"

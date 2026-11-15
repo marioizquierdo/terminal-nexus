@@ -524,7 +524,7 @@ export class TitleScreens {
     const loading = this.loading
     if (loading === null) return
     if (loading.save.start !== undefined) {
-      this.noticeNow = "A sandbox plays one Battle Round in grid: grid <file>, not here."
+      this.noticeNow = "A sandbox plays with the skirmish command (skirmish --load <file> --play-to next), not here."
       return
     }
     const problem = startProblem(loading.setup)
@@ -547,7 +547,7 @@ export class TitleScreens {
     if (this.screenNow === "new-game" || this.screenNow === "load-edit") {
       const setup = this.screenNow === "new-game" ? this.setup : (this.loading?.setup ?? this.setup)
       if (item.id === "start" || item.id === "open") {
-        const problem = this.screenNow === "load-edit" && this.loading?.save.start !== undefined ? "A sandbox plays in grid, not here." : startProblem(setup)
+        const problem = this.screenNow === "load-edit" && this.loading?.save.start !== undefined ? "A sandbox plays with the skirmish command, not here." : startProblem(setup)
         if (problem !== null) return problem
         const watching = SLOTS.every((slot) => controllerKind(setup.slots[slot].controller) !== "player")
         return `${commanderNameOf(setup.slots.p1.commander)} against ${commanderNameOf(setup.slots.p2.commander)} on ${mapNameOf(setup.map)}, seed ${setup.seed}${watching ? ": both scripts, a battle to watch." : "."}`

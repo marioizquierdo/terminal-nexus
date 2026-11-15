@@ -239,7 +239,7 @@ export type BuildCommand =
   | Readonly<{ kind: "export-activity" }>
   /**
    * A Battle Round playback control — Space, `[`, `]`, `.`, `,` and `r` while a Pulse is on screen, or a
-   * click on the panel's control rows: the same vocabulary `grid watch` has, one keymap across
+   * click on the panel's control rows: the playback's vocabulary, one keymap across
    * both. The reducer has nothing to change for it — the Pulse's clock is the presenter's, never the
    * state's — so it passes through like `quit`, and the session hands it to the Pulse it belongs to.
    */

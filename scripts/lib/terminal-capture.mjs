@@ -1,7 +1,5 @@
-// Shared plumbing for driving `./bin/grid.ts watch` inside a real pseudo-terminal and turning
-// what it drew into a PNG. Used by capture-screenshots.mjs (one chosen frame per shot) and
-// capture-engagement.mjs (a run of consecutive frames around one engagement) — extracted here once a
-// second script needed the identical pipeline, rather than kept as two copies to drift apart.
+// Shared plumbing for driving the game inside a real pseudo-terminal and turning what it drew into a PNG,
+// used by the capture scripts (capture-build-phase-screenshots.mjs, capture-menu-screenshot.mjs).
 //
 // The pipeline, and why each step is what it is:
 //
@@ -150,60 +148,6 @@ export function settledPane(repoRoot, session, { intervalSeconds = 0.2, timeoutM
     if (Date.now() > deadline) throw new Error("the pane never stopped changing")
     previous = current
   }
-}
-
-/** The tick readout in the footer, e.g. "tick 0143/0480". */
-export function tickOf(text) {
-  const match = /tick (\d{4})\//.exec(text)
-  return match === null ? null : Number(match[1])
-}
-
-/** Start `watch` (grid's default action) on a map, in its own session, at the given terminal size. */
-export function startWatch(repoRoot, session, mapFile, cols, rows, extraArgs = []) {
-  killSession(repoRoot, session)
-  const command = ["./bin/grid.ts", mapFile, ...extraArgs].join(" ")
-  tmux(repoRoot, ["new-session", "-d", "-s", session, "-x", String(cols), "-y", String(rows), command])
-  waitFor(repoRoot, session, (text) => text.includes("TERMINAL NEXUS"), "the first frame")
-  sendKeys(repoRoot, session, " ")
-  waitFor(repoRoot, session, (text) => text.includes("[hold]"), "the paused indicator")
-}
-
-/** Step forward from wherever playback is paused to exactly `tick`, by whole ticks. */
-export function stepToTick(repoRoot, session, tick) {
-  for (let attempt = 0; attempt < 200; attempt += 1) {
-    const current = tickOf(pane(repoRoot, session))
-    if (current === null) throw new Error("could not read the tick readout")
-    const remaining = tick - current
-    if (remaining <= 0) break
-    sendKeys(repoRoot, session, ",".repeat(Math.min(remaining, 120)))
-    pause(0.2)
-  }
-  const landed = tickOf(pane(repoRoot, session))
-  if (landed !== tick) {
-    throw new Error(`wanted tick ${tick}, the session is showing ${String(landed)}`)
-  }
-}
-
-/**
- * Step to a presentation instant *past* a Pulse's own last resolved tick - deliberately reachable,
- * not a bug: `snapshot.ts` hands every recipe an unclamped `context.timeMs` even once `tick` and
- * every entity's own position have frozen on the final resolved state (`clampTick`), so an effect
- * long enough to outlast the deciding blow - this round's whole point - keeps animating on a frame
- * whose footer no longer changes. `stepToTick` cannot confirm arrival there, because the one signal
- * it reads (the footer's tick readout) is exactly the thing that stops moving; this steps to
- * `lastResolvedTick` with it (still verified), then sends the remaining ticks directly. That is safe
- * without a read-back because `Playback.apply`'s "step-tick" case (src/terminal/playback.ts) advances
- * presentation time by exactly one tick's worth per keypress, unconditionally, gate aside - counting
- * presses is exact, not a guess.
- */
-export function stepPastEnd(repoRoot, session, lastResolvedTick, tick) {
-  stepToTick(repoRoot, session, lastResolvedTick)
-  const extra = tick - lastResolvedTick
-  for (let sent = 0; sent < extra; sent += 120) {
-    sendKeys(repoRoot, session, ",".repeat(Math.min(extra - sent, 120)))
-    pause(0.05)
-  }
-  pause(0.2)
 }
 
 /** How much of a faint glyph's own colour is left, as a whole percentage for CSS. */

@@ -1,7 +1,6 @@
 // One real screenshot of `terminal-nexus`'s top-level menu, first made for the menu's first report
 // (docs/history/reports/2026-09-13-menu.md). Not a blocking human check, but the project's
-// own habit is a screenshot for every screen, and the pipeline already exists for `grid`
-// (capture-screenshots.mjs): tmux (a real PTY, so the ANSI backend takes the same path a person
+// own habit is a screenshot for every screen, and the pipeline is shared (scripts/lib/terminal-capture.mjs): tmux (a real PTY, so the ANSI backend takes the same path a person
 // gets) -> capture-pane -e -> HTML -> headless Chromium.
 //
 //   node scripts/capture-menu-screenshot.mjs [--out some/folder]   # default .playtest/screenshots/ (ignored by git)
@@ -66,8 +65,7 @@ function shoot(
     rows: ROWS,
     scratchDir: scratch,
     targetPath: join(outputDirectory, `${name}.png`),
-    // Matches the page wrapper to whichever theme this shot actually demonstrates — the same thing
-    // capture-screenshots.mjs does for grid's own light-theme shots: the page around the game's own
+    // Matches the page wrapper to whichever theme this shot actually demonstrates: the page around the game's own
     // background, so a light shot does not sit in a dark frame.
     background,
   })

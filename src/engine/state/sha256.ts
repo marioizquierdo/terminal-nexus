@@ -4,7 +4,7 @@
 // simulation, and its fingerprints must be the terminal's, byte for byte.
 //
 // Checked against `node:crypto` in `tests/sha256.test.ts`, on the published test vectors and on real
-// canonical state. Measured before the switch (2026-09-27, `grid --verify --runs 20` on every map):
+// canonical state. Measured before the switch (2026-09-27, twenty runs of every sandbox):
 // the pure version is well within the time the simulation itself takes; see that test's header.
 
 const K = new Uint32Array([

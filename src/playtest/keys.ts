@@ -1,6 +1,6 @@
 // The key-script language a scripted playtest is written in: readable key names in, the exact bytes a
 // real terminal sends out. Kept apart from any one screen, so the same script grammar can later drive
-// the main menu or a `grid` battle as well as the Build Phase.
+// the main menu as well as the Build Phase.
 //
 // The bytes matter more than the names. A playtest is only worth anything if it goes through the
 // real keyboard and mouse adapters the way a terminal would reach them (the driver rule in `input.md`),

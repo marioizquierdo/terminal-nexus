@@ -116,7 +116,7 @@ export const keepOf = (request: SkirmishRequest, more: Partial<Keep> = {}): Keep
   ...more,
 })
 
-/** The battle's log for a round played, as `grid` writes one (`buildLog`). */
+/** The battle's levelled log for a round played (`buildLog`). */
 function roundLog(played: Played, setup: SaveSetup, round: number, level: LogLevel): string[] {
   if (played.final === null || played.registry === null) return []
   const lines = buildLog(

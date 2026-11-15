@@ -96,7 +96,7 @@ export class MenuSession {
   /**
    * The driver's raw-bytes path — a scripted list of raw key and mouse events (`input.md`) —
    * and what a live terminal's `stdin.on("data", ...)` handler calls too, for the common case of one
-   * screen handling its own whole chunk. `keysFromChunk` is the same split `grid watch` already uses
+   * screen handling its own whole chunk. `keysFromChunk` is the same split the Battle Round's playback uses
    * (`src/terminal/playback.ts`).
    */
   handleData(rawChunk: string, layout: MenuLayout): void {
