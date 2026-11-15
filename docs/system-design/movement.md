@@ -315,8 +315,8 @@ It is the "flow field" of crowd games (Supreme Commander 2 made it known) and th
 worked out lazily, from the goal outward, only as far as the furthest unit asking needs, with a bucket for each
 distance since steps cost small whole numbers, and it says at once, from the patch of ground a unit stands on, whether
 it can reach the goal at all. About 200 units and buildings in an eighth-round battle cost about 5½ ms a tick
-([`scripts/profile-routes.ts`](../../scripts/profile-routes.ts), 2026-10-21); the same script fingerprints every battle
-it plays, so a change meant to make routes faster is proved to change no outcome.
+(profiled on 2026-10-21); a change meant to make routes faster is proved to change no outcome by the determinism tests'
+hashes.
 
 ### The building blocks
 

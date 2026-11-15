@@ -21,7 +21,7 @@ a real Commander in Level 1. What does and does not change because of that is sp
 
 Can Commander Edda Vasse exist as a real, persistent frontline unit, with the death, absence and
 restoration mechanic that the Commander section of
-[`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) describes and nothing has built
+[`docs/system-design/grid-engine.md`](../../system-design/architecture.md) describes and nothing has built
 yet? And can the player pick from a small, real Nexus upgrade draft during the Build Phase, without
 this becoming "author the Citizens Commander Army" ahead of Milestone 12?
 

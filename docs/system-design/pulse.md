@@ -404,8 +404,7 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   field walked downhill over the terrain and the buildings, ending beside what the raid goes for.
 
 What a tick's routes cost is measured in `tests/routing.test.ts`: twelve fields worked out over the whole starter
-map take a third of a frame at most, and a battle's stop far sooner. A whole tick's is profiled by
-`scripts/profile-routes.ts` ([`movement.md`](movement.md), the general path).
+map take a third of a frame at most, and a battle's stop far sooner ([`movement.md`](movement.md), the general path).
 
 ## 2. Match structure
 

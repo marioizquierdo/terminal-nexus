@@ -95,7 +95,7 @@ recommendation rather than treating it as answered.
 2. [`docs/game-design/commander-armies.md`](../../game-design/commander-armies.md) Section 4.1 (Citizens' mechanical
    identity: standards propagate, alignment bonus, shared cadence) and 4.4 (Commander Edda Vasse:
    "fortify, verify, then advance").
-3. [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 5 (Build Phase, Commander, structures, automatic
+3. [`docs/system-design/grid-engine.md`](../../system-design/architecture.md) Section 5 (Build Phase, Commander, structures, automatic
    production) and Section 6 (economy) — GUIDANCE, mostly unbuilt, and what docs/milestones 5-8 build from.
 4. The existing fixture content: `src/content/citizen.ts` (`unit.citizen.worker`, `.trooper`,
    `.marksman`, `structure.citizen.nexus`, `structure.citizen.barracks`) and `src/content/ravel.ts`
@@ -257,7 +257,7 @@ cannot settle alone. Each is stated with what this document proceeds under.
 
 Mario's own description of milestone 6 ("Nexus Pulse") settles Q29 outright: "instantly recall all
 units back to their proper location next to their home buildings." That is precisely
-[`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 5's existing end-of-Pulse regroup rule, named
+[`docs/system-design/grid-engine.md`](../../system-design/architecture.md) Section 5's existing end-of-Pulse regroup rule, named
 **Recall**, confirmed to mean exactly what Q29's Option A recommended — not a new mid-Pulse mechanic.
 Moved to Answered in [`docs/milestones/open-questions.md`](../../milestones/open-questions.md).
 

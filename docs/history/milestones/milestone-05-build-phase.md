@@ -208,7 +208,7 @@ map scrolling — before handing off into Milestone 6's Pulse?
 
 - **Placement and spending**, per Milestone 2's own decision (Section 4.2 there): a short, fixed
   construct menu, cost/effect shown per item, a legality panel that says *why* an illegal placement
-  failed — exactly [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 9.2's already-specified side
+  failed — exactly [`docs/system-design/grid-engine.md`](../../system-design/architecture.md) Section 9.2's already-specified side
   panel shape, built for the first time, at the smallest scope PERIMETER actually needs (no radius
   preview unless something placed has a radius worth previewing).
 - **One Nexus upgrade slot**, picked during Build Phase. Milestone 8 is what populates this with a
@@ -234,7 +234,7 @@ map scrolling — before handing off into Milestone 6's Pulse?
   decision a session may make alone (`docs/game-design/decisions.md` Section 2) — pick something,
   ship it, and record why in the gate report rather than treating it as a blocker.
 - **All three input adapters, on the screen that needs them most** — per
-  [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 9.7 (canon 2.10), which supersedes an earlier
+  [`docs/system-design/grid-engine.md`](../../system-design/architecture.md) Section 9.7 (canon 2.10), which supersedes an earlier
   draft of this line that left the mouse optional. Keyboard: digits arm a construct-menu item, arrows
   move the cursor one tile and Shift+Arrow five, Enter places, Esc disarms, `p` commits after one
   confirmation, and the armed item stays armed so a run of placements is one digit then arrows and

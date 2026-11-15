@@ -199,4 +199,3 @@ the failures):
 | `tests/mission.test.ts`, `tests/mission-loop.test.ts` | PERIMETER: who wins and loses it with which plan |
 | `tests/lifecycle-build-phase.test.ts`, `tests/playtest.test.ts` | how long PERIMETER's first round runs with the defence plan, on the clock the screen shows |
 | `tests/fairness.test.ts`, `tests/route-saves.test.ts` | mirrors split evenly between the two ends; the route saves are walked |
-| `tests/engage-bench.test.ts` | the engage bench's trial holds what it expects ([sandboxes and trials](skirmish-saves.md)) |
