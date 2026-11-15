@@ -43,8 +43,10 @@ everything above at once.
 | **The game** | The battle as a player has it: the Nexus Pulse's hand, the Build Phase's build actions and credits, rounds and who wins, the brief and the battle reading; the save file, the setup, who plays each slot | keys, terminals, files on disk | `src/battle/`, `src/skirmish/` |
 | **The doors** | Everything that runs the game for someone. **The game itself** (`bin/terminal-nexus.ts`) draws it on a screen, tick by tick, for a person. **The `skirmish` command** (`bin/skirmish.ts`) plays the same Skirmish headless for an agent: a save or a new setup, build files or scripts, a round or the whole battle, many seeds, ASCII screenshots. **The `measure` command** (`bin/measure.ts`) plays many battles the same way before and after a change. The scripted playtest and the browser page press keys on the game's own screens | the rules: a door adds only what it is for | `src/cli/`, `src/view/`, `src/terminal/`, `scripts/`, `src/web/` |
 
-**A Battle Round is the engine run from a state.** The Build Phase is apart from it: it builds the state (what each side
-built, kept and called up, laid on what the last round left) and the engine plays it until the round ends. The game, the
+**A Battle Round is the engine run from a state** (RULE — one entry, `resolvePulse`, `src/engine/pulse/resolve.ts`): a
+state on a map, its content, a seed and a number of ticks in; every tick's state and events out, until a Nexus falls,
+one side is gone or the ticks run out. The Build Phase is apart from it: it builds the state (what each side built,
+kept and called up, laid on what the last round left) and the engine plays it until the round ends. The game, the
 `skirmish` command, the measurement and a unit test all play a Battle Round on the same engine, so a test through the
 `skirmish` command exercises the code a player's battle runs. A **sandbox** (a save whose `start` draws the board by hand,
 [`skirmish-saves.md`](skirmish-saves.md)) is the same engine started from a board nobody built: no Nexus Pulse, credits or

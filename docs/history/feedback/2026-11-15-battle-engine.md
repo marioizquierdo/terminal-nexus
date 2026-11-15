@@ -57,3 +57,20 @@ needs several rounds starts a real Skirmish from a save.
   good). The sandbox page folded into the save page, and the `grid` skills into the `skirmish` skill.
 - The old watch screen's frame, which only tests still used, is retired, and those tests now run on the frame the game
   draws.
+
+### F301 — a sandbox is a setup and a timer; and does the lore still need the Grid?
+
+> So why do you think it is a sandbox now? Is it just a concept? [...] a battle round is actually a different concept.
+> It's just basically the concept of here is the setup that was prepared by previous rounds and by previous building.
+> However it got there, doesn't matter. And then you start a timer and you run the battle simulation through it. [...]
+> the skirmish tool is basically only concerned about parsing input parameters and then relying into the engines [...]
+> It just needs to be clear and share as much code as possible so we are not reinventing the wheel over and over.
+
+> what do you think is the grid that we mentioned on the lore? [...] can you write a paragraph that describes what
+> could make for a really cool Nexus grid idea in the lore? And then just be frank and think, do we still need this?
+
+**Built.** A sandbox is only a way to write the setup by hand; the Battle Round it plays is the battle engine's one
+entry (`resolvePulse`), which a battle's Battle Round now runs through too, where it used to drive the tick itself (a
+whole battle's report is identical before and after). The Grid stays: it is the word a player reads on screen, and
+the lore now says what it is, ground the ancient protocol has squared off, where things move cell by cell, time moves
+in pulses and the same plans play out the same way, which is the game's own rules told as fiction.

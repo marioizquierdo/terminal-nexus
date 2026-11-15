@@ -60,13 +60,16 @@ export type ResolveOptions = Readonly<{
   /** Shown every state as it is reached, the opening first (with no events), then each tick with its own events: what
    *  a measurement records a battle from. It sees; it changes nothing. */
   watch?: (state: MatchState, events: readonly DomainEvent[]) => void
+  /** Whether the run's events open with an `entity.spawned` for each entity already on the board (true, the default).
+   *  A battle's Battle Round says no: what stood at its opening was already reported when it arrived. */
+  openingSpawns?: boolean
 }> &
   PulseOptions
 
 export function resolvePulse(options: ResolveOptions): PulseRun {
   const { initialState, registry, pulseTicks, seed, sides, abilities, watch } = options
   const context = createContext(initialState, registry, pulseTicks, { ...(sides === undefined ? {} : { sides }), ...(abilities === undefined ? {} : { abilities }) })
-  const events: DomainEvent[] = spawnEvents(initialState, registry)
+  const events: DomainEvent[] = options.openingSpawns === false ? [] : spawnEvents(initialState, registry)
 
   let state = initialState
   watch?.(state, [])
