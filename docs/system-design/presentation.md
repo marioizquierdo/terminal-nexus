@@ -190,7 +190,7 @@ reach*, *Her aura's reach*). Two things of the frame's own: a popup and the card
 
 **Burning ground is drawn on its own ground, under what stands on it** (RULE — `tests/burning-ground.test.ts`). A
 patch a mortar's shell sets alight (`MatchState.burning`) is every tile within its radius of its centre by the Grid's
-own test (`tilesWithin`, which is the kernel's `withinArea`), so the patch drawn and the patch that burns cannot
+own test (`tilesWithin`, which is the battle engine's `withinArea`), so the patch drawn and the patch that burns cannot
 disagree, and it is drawn in the state of the tick shown, from the tick it was lit to its last. It has four roles of its own, red and
 yellow (the owner, 2026-10-21: "that red seems too intense ... red and yellow, more transparent and use flashing
 effect instead of constant color"): **`fx.fire.ground`**, the faint scorch every burning tile takes where colours are
@@ -232,11 +232,11 @@ acceptance target**; a larger terminal shows more of the same Grid, up to 72 × 
 
 **A picture of an area the rules decide draws the rules' own tiles**: a building's or a unit's reach, the build
 range, Vasse's aura, a blast and burning ground are each drawn from the Grid's own sets of tiles (`tilesWithin`,
-`src/grid/reach.ts`; a reach's outline, the last tiles it covers, is `outlineWithin`, `src/view/reach-outline.ts`), so what the screen shows
+`src/engine/geometry/reach.ts`; a reach's outline, the last tiles it covers, is `outlineWithin`, `src/view/reach-outline.ts`), so what the screen shows
 as a reach is what the rules count. A picture that claims no area — death debris and its shockwave, the tracer's
 line, the intro highlight's ring — may take a shape of its own.
 
-**What reads a slope off the map weighs a row as two columns** (`inColumns`, `src/grid/coords.ts`): the raid
+**What reads a slope off the map weighs a row as two columns** (`inColumns`, `src/engine/geometry/coords.ts`): the raid
 panel's compass point, the focus arrow, and the raid trail's arrows, each the glyph nearest its way on screen and
 looking a whole stair on (two across, one down) along the way, so a way down the screen's diagonal is one steady
 stroke. Arming looks for the nearest free spot with a row costing the tuned `armVerticalCost`, a cost of the
@@ -295,7 +295,7 @@ victory (RULE — `tests/effects.test.ts`: turning effects off changes only the 
 **absolute presentation time**, so the frame at time *t* is identical whether every earlier frame
 rendered or most were skipped. Cosmetic randomness never touches the gameplay stream; it is a hash of an
 effect instance's identity, never a stream (RULE — `tests/effects.test.ts`: the same instance always
-scatters the same way, and the cosmetic seed cannot reach the kernel).
+scatters the same way, and the cosmetic seed cannot reach the battle engine).
 
 The particle system, its contract, its starter vocabulary, and the craft rules that make ASCII motion
 read as weight are specified in [`effects.md`](effects.md).

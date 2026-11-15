@@ -196,6 +196,17 @@ retired_terms=(
   'script:reader\b'
   'battle/reading\.ts'
   'battle/picture\.ts'
+  'grid-engine\.md'
+  'system-design/sandboxes\.md'
+  '(^|[^-])\bsandboxes\.md'
+  'bin/grid\.ts'
+  'npm run grid\b'
+  '\bgrid --'
+  '\bkernel'
+  '\btrial files?\b'
+  'sandboxes/trials'
+  'src/(pulse|state|grid|events|rng|routing|abilities)\b'
+  'grid-screenshots'
 )
 
 # Scan for one pattern; extra arguments go to grep (e.g. -i). Prints the surviving hits.

@@ -24,7 +24,7 @@ three adapters onto that one vocabulary**, and all three are first-class:
 | **Driver** | a scripted list of commands, or of raw key and mouse events, from a file or a test | agents and tests: playtesting the game without a terminal, and every input assertion the project makes |
 
 The driver is not a test-only afterthought. It is the practical test in
-[`grid-engine.md`](grid-engine.md) (resolve an entire match with the renderer deleted) applied to the
+[`architecture.md`](architecture.md) (resolve an entire match with the renderer deleted) applied to the
 shell: the whole game, menus and Build Phase included, must be playable from a command stream, and its
 output read back as the engine-owned cell frame (see [`presentation.md`](presentation.md)) and structured
 snapshots rather than as pixels or ANSI. Two things follow:
@@ -97,7 +97,7 @@ terminals send and the fallbacks they need are RULE, marked where they appear.
 | `q` | open the game menu | never quits outright, so a stray press cannot lose a plan; only the game menu's own `[q]` (or Enter or a click on its Quit row) quits. The top bar's `menu [esc]` is Esc, which on the menu opens it |
 | Ctrl+C | quit at once | the one immediate way out, from anywhere |
 | `?` | the **Controls and hotkeys** page — every key and click, grouped by where the player is; also the game menu's `[c]` row | one scrolling popup, from one table (`src/build/help.ts`); opened from the game menu, Esc goes back to it; opened with `?`, Esc closes it |
-| `q`, Space, `.`, `,`, `[`, `]`, `r` | unchanged from `grid` during a Battle Round: quit, pause, step, speed, restart | one keymap across `grid` and `terminal-nexus` |
+| `q`, Space, `.`, `,`, `[`, `]`, `r` | during a Battle Round: quit, pause, step, speed, restart | one playback keymap |
 | Mouse: click a menu row | **activate at once**, whatever had focus: the row's hotkey. While a card covers the menu, a click on the panel only gives the menu back | **RULE: a click activates what it lands on** (`tests/build-focus.test.ts`, `tests/build-menu.test.ts`). The selected state only makes sense with the keyboard: after the mouse works the menu no highlight bar is drawn, and the first menu key only shows it again, on the row it remembers. The whole row is the target, the width its highlight bar is drawn; the pattern is *Keys and clicks* in [`ui-patterns.md`](ui-patterns.md) |
 | Mouse: click a Grid tile | move focus to the Grid and the cursor to the tile, the armed preview with it; **a second click on the same tile places it, and so does a quick double click on the same spot**. With nothing armed it only moves the cursor: in Explore Map the panel follows it; from the menu, the menu stays drawn beside the map | see "A second click on the same tile" below. A click near an edge scrolls in proportion to how near it is, armed or not (the settled answer, Q62). A `Shift+click` to place in one click is planned |
 | Mouse: click outside an open popup | close the popup and move focus to where the click landed — and nothing more | **RULE: a dismissing click never also places, picks or activates** (`tests/build-nexus.test.ts`, `tests/build-holds-menu.test.ts`): a player who clicked a button, missed the popup in the middle of the screen and clicked again must not have the second click do anything else. A click on the top bar's `close [esc]` goes back one level, as Esc does, where a click outside closes every popup at once; a click on one of its options chooses it |

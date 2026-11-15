@@ -24,7 +24,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 
 ## The game
 
-- **ability** — what a unit does on its own, by a kind from one table (`src/abilities/`): an aura, a bounty, loaded
+- **ability** — what a unit does on its own, by a kind from one table (`src/engine/abilities/`): an aura, a bounty, loaded
   dice. A Commander's own ability is her **skill** (Vasse's By the Book, Dob's Bounty and Loaded Dice).
 - **advance** — how far each side's army moved toward the enemy Nexus during a round; a battle reading
   ([`battles.md`](../system-design/battles.md)).
@@ -44,7 +44,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   damage taken by source; and the engagements. Every reading is **public** (what the Battle Round shows both sides); the Build Phase's
   credits, hand and build actions are private, and no reading touches them ([`battles.md`](../system-design/battles.md)).
 - **Battle Round** — the fixed-tick, deterministic battle that ends each round and plays both sides' build actions out
-  in ASCII; the player's word everywhere. The code calls it the Pulse (`src/pulse/`).
+  in ASCII; the player's word everywhere. The code calls it the Pulse (`src/engine/pulse/`).
 - **build actions** — a side's answer for one round: the power it keeps, what it builds and where, its building
   actions, its formation and its stance; both sides answer blind. The code and a few screen lines still say *plan*.
 - **Build Phase** — the hidden, simultaneous, untimed phase where each player makes their build actions; saving and
@@ -303,7 +303,7 @@ Say which job, every time.
 | battle | a whole fight, rounds until a result | a unit's movement state, fighting what it sees |
 | goal | what wins a battle (elimination) | where a unit's walk ends (`goalsNear`) |
 | target | where a side's troops head (`target` in a trigger) | the enemy one unit is fighting |
-| route | a place in the game (`skirmish?seed=1`, `src/cli/route.ts`) | a unit's walk round rock and buildings (`src/routing/`, the `route-*` sandboxes) |
+| route | a place in the game (`skirmish?seed=1`, `src/cli/route.ts`) | a unit's walk round rock and buildings (`src/engine/routing/`, the `route-*` sandboxes) |
 | hold | the ground a slot's troops stand on in a map | the `hold` stance; *Hold production* |
 | draft | choosing a power from a hand | the save's field for build actions handed in so far |
 | card | a building or power an army offers | the side panel's description of what has the map's attention |
@@ -347,7 +347,7 @@ the words it was written with. A line that quotes one on purpose ends with `<!--
 | gate, gate report, `GATED` | milestone step, the pull request, `PLANNED` | Milestones and steps replaced gates | <!-- stale-ok -->
 | `specs/`, `evidence/` | `docs/game-design/`, `docs/system-design/`; screenshots on the pull request | The folders were dissolved | <!-- stale-ok -->
 | `grid` (the command), `bin/grid.ts`, the engine tool, `grid-engine.md` | the `skirmish` command, `architecture.md` | A sandbox is a save the `skirmish` command plays and draws; one command for one game. The Grid stays the playfield's name | <!-- stale-ok -->
-| kernel, `src/pulse/`, `src/state/`, `src/grid/` | battle engine, `src/engine/` | Named for what it does: plays a Battle Round from a state | <!-- stale-ok -->
+| engine, `src/engine/pulse/`, `src/engine/state/`, `src/engine/geometry/` | battle engine, `src/engine/` | Named for what it does: plays a Battle Round from a state | <!-- stale-ok -->
 | trial, trial file, variant | `skirmish --seeds`, or a copy of the sandbox changed for the question | One way to play a board, not a second tool | <!-- stale-ok -->
 | `sandboxes.md` | `skirmish-saves.md` (a board written by hand), `testing.md` | A sandbox is a save; testing is one page | <!-- stale-ok -->
 | `--capability`, `CapabilityMode` | `--colors`, `ColorDepth` | One name for the colour depth everywhere |

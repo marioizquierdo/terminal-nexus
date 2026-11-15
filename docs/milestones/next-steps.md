@@ -24,8 +24,8 @@ A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and
   10 seconds), a building's actions (`e` onto a Barracks, then `c`), and the Nexus shooting back. In Settings, under
   Experiments, try the keyboard's Arrow step, Shift step, Shift pace and Hold pace, then export the settings and paste
   them with your notes.
-- **Watch, five minutes: troops at a narrow door.** `./bin/grid.ts sandboxes/engage/engage-gap2-melee-vs-mix`, then
-  `./bin/grid.ts sandboxes/engage/engage-gap2-airmix-vs-mix`: twelve troopers lose at a door two rows wide, and the same
+- **Watch, five minutes: troops at a narrow door.** `npm run skirmish -- --load sandboxes/engage/engage-gap2-melee-vs-mix.save.json --play-to next --show 0,60,120,240,end`,
+  then the same with `engage-gap2-airmix-vs-mix`: twelve troopers lose at a door two rows wide, and the same
   number with half of them in the air win. Does that read as good ground (a choice that matters) or as air too strong
   where the ground is tight? Does a unit that keeps its target read as commitment or as stubbornness?
 - **Decide, one line: letter keys for buildings.** Your notes once said "press 'b' to build a barracks". Was `b` an

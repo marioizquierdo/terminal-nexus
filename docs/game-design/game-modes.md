@@ -56,7 +56,7 @@ when "A Skirmish worth showing" (Milestone 20) ends: comfortable to play, the ba
 that stays open past its second round, and a few ways to set it up. New effects, art and terminology wait behind that.
 
 **A mode is data over one battle** (RULE — `tests/architecture.test.ts`: a mode's code never reaches the view or the shell). A mode chooses battles and what carries between them; nothing below the mode
-— the kernel, the Battle Round, the Build Phase screen, the renderer — knows which mode it is serving.
+— the battle engine, the Battle Round, the Build Phase screen, the renderer — knows which mode it is serving.
 
 ## 3. Skirmish
 
@@ -138,7 +138,7 @@ the same save, seed and plans give the same battle, hash for hash, on Node and B
 screen or the `skirmish` command plays it headless. That is what makes it the place every change is tried: headless
 script against script, an agent planning round by round, the playtest pressing keys, an agent's player's diary
 (Milestone 20), then a person, with `!` saving the moment as a note that opens again where it was. How a test does
-each is [`sandboxes.md`](../system-design/sandboxes.md), testing through Skirmishes.
+each is [`testing.md`](../system-design/testing.md), verifying through the `skirmish` command.
 
 A Skirmish is the default place to see a change: the browser page and the playtest script open on a save, and the
 Build Phase pictures of a battle start from one. PERIMETER is opened only for a change about missions.

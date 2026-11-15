@@ -17,9 +17,9 @@ Two different kinds of material, both kept for reference:
 When a picture and a design document disagree, the document wins. If the disagreement looks like a
 real decision, it becomes a row in [`docs/milestones/open-questions.md`](../../milestones/open-questions.md).
 
-For what `grid` looks like now, prefer [`docs/screenshots/`](../../history/screenshots/README.md), captured by
-`.claude/skills/grid-screenshots`, current, and reproducible on demand, over the dated snapshots
-here, which age the moment the tool's presentation changes again.
+For what the game looks like now, prefer [`docs/screenshots/`](../../history/screenshots/README.md) and the
+scripted playtest's pictures, current and reproducible on demand, over the dated snapshots here, which age
+the moment the presentation changes again.
 
 ## Files
 

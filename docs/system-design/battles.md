@@ -5,7 +5,7 @@ by a script, a person or a model. How its rounds play, the brief a player reads 
 formation a player builds by, and what its numbers can and cannot say. The code is `src/battle/`, pure; a person plays it
 as a Skirmish ([`game-modes.md`](../game-design/game-modes.md)), the `skirmish` command plays it headless
 ([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts), whose opening comment is its manual), and how a test uses that
-is [`sandboxes.md`](sandboxes.md), testing through Skirmishes._
+is [`testing.md`](testing.md), verifying through the `skirmish` command._
 
 It began as the development bench for armies (the owner, 2026-10-17: "put each commander nexus on one side of the map
 and play a pvp ... script vs script", and a model planning each side from "the relevant logs plus current map state,
@@ -23,7 +23,7 @@ sides A and B; a Skirmish calls them slots `p1` (west) and `p2` (east).
    room round a building that trains, rock, cost; the tech tree as the round opens). The two sides' build actions are blind to each
    other and revealed together; a building both sides put on the same ground is built by neither, and paid back.
 3. **The Battle Round**: each side's troops take its stance — `attack` marches on the enemy Nexus, `hold` gathers in
-   front of its own — and the kernel runs it, **each side on its own content** (`PulseContext.sides`): what one side's
+   front of its own — and the battle engine runs it, **each side on its own content** (`PulseContext.sides`): what one side's
    powers changed is that side's alone, though both may field troopers.
 4. **Between rounds**: survivors stay on the Grid and regroup across their march line (`src/match/regroup.ts`), a Commander who fell is out by her own rule, credits carry over,
    and each side adds the curve's credits for the round and what its abilities earned (Dob's bounty).
@@ -149,7 +149,7 @@ them in first (a building on the same ground, above; no turns, in [`concept.md`]
 
 A cheap model plays a side well enough to put an army through its paces: each round, each model reads its brief and
 answers with its build actions, and the round plays both. The recipe, its cost and how to read what it shows are
-[`sandboxes.md`](sandboxes.md), testing through Skirmishes. A scripted or small-model player is not a good
+[`testing.md`](testing.md), verifying through the `skirmish` command, and the `skirmish` skill. A scripted or small-model player is not a good
 player: its games show what an army does in the hands of a plain plan, not balance.
 
 ## 6. What a battle measures, and what biases it
@@ -216,8 +216,7 @@ one, between rounds. `skirmish --show 0,120,end` takes one of each Battle Round 
 from the same view the screen plays (so a unit mid-step stands where the screen shows it), after the round's report;
 `--show-effects` adds the effects on screen at that instant. Played from any kept round (`--out` keeps each round's
 save), that is the inspection a test needs: load the round, give its build actions, `--play-to next --show <ticks>`,
-and nothing is saved over. It is not a **screenshot**, which is an image of the screen (PNG: `scripts/playtest.mjs`,
-the grid-screenshots skill): an agent reads the one as text and looks at the other.
+and nothing is saved over. It is not a **screenshot**, which is an image of the screen (PNG: `scripts/playtest.mjs`): an agent reads the one as text and looks at the other.
 
 **A script that reacts** (`reactive`, `src/battle/players.ts`): builds as `balanced`, then plays the stance that has
 traded better over the battle, trying each once (every round's report is in the brief's data, `reports`), attacks when

@@ -36,8 +36,8 @@ Round starts, and the rules settle each clash gracefully, as a chance to make pl
 error: a building both sides put on the same ground is built by neither, and paid back. **Upgrades and Nexus powers
 are designed the same way**: each takes effect at the start of the Battle Round, and when two would clash on the same
 tick they apply together, damage resolved as unit attacks are; two powers that each "deal 100 damage to the enemy
-Nexus as the round starts" and so destroy both Nexuses on that tick make a draw, rare and fair (the kernel already
-scores two Nexuses falling on one tick as a draw: `src/pulse/victory.ts`).
+Nexus as the round starts" and so destroy both Nexuses on that tick make a draw, rare and fair (the battle engine already
+scores two Nexuses falling on one tick as a draw: `src/engine/pulse/victory.ts`).
 
 After a Battle Round, surviving units stay on the Grid and regroup where they fought, facing the enemy. Casualties and destroyed buildings remain consequential. The next round begins from the new public state. The battle ends when one Grid Nexus is destroyed, or after its last round. One Nexus Pulse, one Build Phase and one Battle Round make a **round**, the unit the player counts.
 

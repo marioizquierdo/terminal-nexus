@@ -3,7 +3,7 @@
 Skirmish and Story are built one step at a time, and a step pulls in only the piece of this list it needs, the
 day its own battle or mission needs it. Nothing here is more authorized than it was; it is guidance, not a plan.
 
-## Completing the Pulse kernel
+## Completing the Pulse engine
 
 ### What is not built yet
 
@@ -67,8 +67,8 @@ day its own battle or mission needs it. Nothing here is more authorized than it 
 - **Replay format.** The full game log: content locks, hashes, versions, committed plans per Build Phase,
   and a `verify` path that re-simulates recorded inputs rather than re-running a sandbox.
   [`replay-format.md`](../system-design/replay-format.md) is the starting design and works through why a
-  persisted recording replays soundly. `grid` today hashes final state and the ordered event stream and
-  `grid --verify` re-resolves a sandbox, which proves the kernel is deterministic but not that a
+  persisted recording replays soundly. Today a Battle Round's report hashes final state and the ordered event stream,
+  and the determinism tests re-resolve every sandbox, which proves the battle engine is deterministic but not that a
   *recording* can be replayed. It is the first thing worth doing once a level's own save or replay needs
   force the question.
 
@@ -134,7 +134,7 @@ The raid's intent is built (a trail to each group's first target, the target mar
 Mario liked it; the next pass is his ([his words](../history/feedback/2026-10-04-commander-round-3.md)):
 
 - **Your own units' targets.** "Your units should also have a clear target to property be an auto-battler":
-  show what each of the player's groups goes for first. The prediction already has it: the first kernel tick
+  show what each of the player's groups goes for first. The prediction already has it: the first engine tick
   the raid's forecast runs (`src/match/intent.ts`) chooses a target for every unit on both sides.
 - **Intent that does not look like a tower defence.** "We will iterate more about how to show intent without
   lookong like a tower defense game": lanes of arrows read as a tower defence. Ideas to try, each an Experiment:
@@ -182,7 +182,7 @@ Small things noticed while the Skirmish milestone was built and tested, none nee
 - **A note's settings as lines**: a playtest note keeps the settings export as one JSON string; its lines would read
   better.
 - **The battle log's spawn lines**: at `info` a 100-round log is about 3 MB, most of it units coming out of buildings. A
-  spawn could log at `debug`, if the grid reports' tests allow it.
+  spawn could log at `debug`, if the report tests allow it.
 - **Carrying on the last save** from a bare launch: still the open idea in the routing page, the owner's call.
 
 ## Units circling in a lane (found 2026-11-12)

@@ -10,7 +10,7 @@ direction, not a plan.
 ## 1. What runs where today
 
 ```text
-kernel (src/pulse, src/state)          the rules; no terminal, no clock          portable
+engine (src/engine/pulse, src/engine/state)          the rules; no terminal, no clock          portable
 reducer (src/build/state.ts)           state + commands -> state; no clock       portable
 adapters (keyboard.ts, mouse.ts,       raw bytes -> named commands               terminal-shaped input
   session.ts, src/title-menu/*)

@@ -78,9 +78,9 @@ One structured shape serves every log (`src/log/`). RULE — `tests/log.test.ts`
   number, a timestamp, a level, the event and its plain JSON properties (string, number, boolean,
   null), kept in memory with the oldest dropped past a limit. A logger takes its clock as an argument,
   and logging never throws.
-- **The kernel and the match layer never log, and nothing the rules decide reads a log.** RULE —
-  `tests/architecture.test.ts`. The kernel has no clock; its record is its ordered events
-  ([`pulse.md`](pulse.md)), from which `grid`'s battle report is derived afterwards, at the same levels.
+- **The battle engine and the rules between rounds never log, and nothing the rules decide reads a log.** RULE —
+  `tests/architecture.test.ts`. The battle engine has no clock; its record is its ordered events
+  ([`pulse.md`](pulse.md)), from which a Battle Round's report is derived afterwards, at the same levels.
 - **The Activity Logs** record what a player did and what the game answered — commands, refusals,
   placements, settings, a Battle Round's start and result, errors — from the shells and the Build Phase's
   session, never from inside a reducer. The Build Phase's state reads them only to show them in the
@@ -94,19 +94,15 @@ plus metadata; armies, units, structures, upgrades, themes and glyphs as validat
 as typed functions; cutscenes as tableaux and timelines; missions as map, army, objective, trigger and
 scene definitions.
 
-**`grid`** — a sandbox (`sandboxes/`) plus a CLI that defines a Grid, places entities, takes a seed and a
-tick count, runs or steps a Pulse, and reports what happened — is permanent infrastructure, not spike
-residue: it is the fastest feedback loop the project has, for humans and agents alike, and every future
-unit gets tested on it. `grid` is the editor and replay tool, not the game; the `terminal-nexus`
-executable is what launches the game built on it. What "replay tool" means concretely — reading and
-writing a persisted, levelled game log rather than only resolving a map fresh each time — is designed,
+**The `skirmish` command** is the game played headless, the fastest feedback loop the project has for humans and
+agents alike: a battle from a save or a new setup, or one Battle Round from a board written by hand (a sandbox), every
+round on the battle engine the game runs on ([`skirmish-saves.md`](skirmish-saves.md), [`testing.md`](testing.md)).
+Reading and writing a persisted, levelled game log, rather than only resolving a battle fresh each time, is designed,
 not built, in [`replay-format.md`](replay-format.md).
 
-RULE — `tests/grid-cli.test.ts`. `grid` has no subcommand: `grid <save>` takes a sandbox by path or id and
-defaults to `watch`, the ASCII view; the flags (`--headless`, `--verify`, `--save-log`, `--from-tick`) are in
-`grid --help`. **One output stream, not two:** a headless run's **levelled log** (default `WARN`) carries the story in
-fixed, greppable columns, closed by a `report` line with the outcome, the losses and the hashes, so an agent can
-assert on behaviour without parsing prose.
+RULE — `tests/skirmish-command.test.ts`, `tests/report.test.ts`. **One output stream, not two:** a Battle Round's
+**levelled log** (`--log-level`, default `WARN`) carries the story in fixed, greppable columns, closed by a `report`
+line with the outcome, the losses and the hashes, so an agent can assert on behaviour without parsing prose.
 
 **Modding-first architecture, not mod-loader-first development.** Seams are kept so that content,
 themes and maps could one day be extended from outside; no public SDK, remote loader, marketplace,
@@ -116,20 +112,20 @@ font, so every pack keeps an ASCII-safe fallback.
 
 ### Scaling toward hundreds or thousands of units
 
-The sandboxes top out at a few dozen actors on a preset Grid. Whether the kernel holds at "hundreds or
+The sandboxes top out at a few dozen actors on a preset Grid. Whether the battle engine holds at "hundreds or
 thousands of units, and possible future epic-large maps" is unmeasured. This section records where a code review
 found cost would appear first, and which moves are cheap now and expensive to retrofit later.
 
-Grid size (`A`, tile count) and actor count (`N`) are different axes, and the kernel does not couple
+Grid size (`A`, tile count) and actor count (`N`) are different axes, and the battle engine does not couple
 them uniformly:
 
 | Phase | Cost | Coupled to |
 | --- | --- | --- |
-| Occupancy rebuild (`OccupancyIndex`, `src/grid/occupancy.ts`) | O(A) | map area: four `Int32Array`s sized to `width * height`, rebuilt every tick (`src/pulse/tick.ts`) |
+| Occupancy rebuild (`OccupancyIndex`, `src/engine/geometry/occupancy.ts`) | O(A) | map area: four `Int32Array`s sized to `width * height`, rebuilt every tick (`src/engine/pulse/tick.ts`) |
 | Collision queries (`CollisionMask`, see [`grid.md`](grid.md)) | O(1) per query | neither: a lazy view, allocates nothing |
-| Movement and routing (distance fields, `src/pulse/routes.ts`; intents) | O(F × A) at worst, F the tick's fields, usually far less | map area and distinct goals: a field stops once it has its answer, and is shared by every unit heading for the same goal with the same body |
+| Movement and routing (distance fields, `src/engine/pulse/routes.ts`; intents) | O(F × A) at worst, F the tick's fields, usually far less | map area and distinct goals: a field stops once it has its answer, and is shared by every unit heading for the same goal with the same body |
 | Arbitration (contested tiles) | O(N) typical, O(C²) at one chokepoint | contestants at a single tile, bounded and self-reporting (`arbitration.bounded`) |
-| **Perception and targeting** (`hostilesOf` + `selectTarget`, `src/pulse/perception.ts`) | **O(N²), every tick, unconditionally** | actor count: the confirmed primary risk |
+| **Perception and targeting** (`hostilesOf` + `selectTarget`, `src/engine/pulse/perception.ts`) | **O(N²), every tick, unconditionally** | actor count: the confirmed primary risk |
 | Attacks | O(N × T), T = distinct speed tiers | small today, not architecturally bounded |
 | Death resolution | O(N) per death, O(N·D) for D simultaneous deaths | actor count × deaths in one tick: a volley or a detonation chain is exactly this |
 

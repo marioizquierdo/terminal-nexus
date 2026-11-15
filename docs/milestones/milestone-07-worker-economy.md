@@ -25,7 +25,7 @@ content, for the first time?
   menu Milestone 5 built. The build menu's list in
   `docs/history/milestones/milestone-02-campaign-design.md` is amended to include it.
 - **Job assignment.** Workers pick the closest available job by deterministic path distance (the
-  worker rules in [`docs/system-design/grid-engine.md`](../system-design/grid-engine.md), still
+  worker rules in [`docs/system-design/architecture.md`](../system-design/architecture.md), still
   unbuilt). The only job is harvesting a map's deposit tiles.
 - **Harvesting.** Workers produce in place, continuously, with no bundles carried home (the
   recommendation in Q7, adopted here). A deposit is finite and depletes for good. Up to five workers
@@ -68,9 +68,9 @@ Terminal Nexus, not what makes it playable, and Story's endless stand asks the p
 
 ## How it is judged
 
-Automated: the kernel-change checklist. Determinism holds across many runs and both runtimes, there is
+Automated: the battle engine-change checklist. Determinism holds across many runs and both runtimes, there is
 no clock or `Math.random`, a named sandbox exercises worker production and harvesting, and
-`src/pulse` still imports nothing from `src/view`.
+`src/engine/pulse` still imports nothing from `src/view`.
 
 Human: a fresh viewer can watch a worker get produced, walk to the deposit and start gathering, and can
 tell the resource total is moving because of that worker, not by coincidence.
