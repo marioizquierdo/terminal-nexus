@@ -14,7 +14,7 @@ import {
   STARTER_NEXUS_DRAFT,
   STARTER_STANDING,
   STARTER_START_CURSOR,
-  starterGrid,
+  starterTerrain,
 } from "../src/build/catalog.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { missionPlay, nextRound, startPulse } from "../src/cli/pulse-run.ts"
@@ -38,7 +38,7 @@ function perimeter(experiments: BuildContext["experiments"] = {}): BuildSide {
 function fixture(mission: MissionDefinition = COMMANDER_FALLS, registry: ContentRegistry = FIXTURE_REGISTRY): BuildSide {
   const play = missionPlay(mission)
   const context = play.firstRound({
-    grid: starterGrid(),
+    terrain: starterTerrain(),
     registry,
     catalog: STARTER_CATALOG,
     standing: STARTER_STANDING,

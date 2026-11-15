@@ -1,7 +1,7 @@
 {
   "format": "terminal-nexus.save/1",
   "name": "Route: the breach - buildings close the only way, far from the straight line",
-  "notes": "A ridge of rock the whole height of the map with one gap at its top, and the enemy's Barracks standing just past the gap, closing it. Four troopers west of the ridge, the enemy's Grid Nexus east, level with them and far below the gap. Walking as near as they can get would leave them at the rock straight across from the Nexus, where the Barracks is beyond their reach; a unit that tells rock from buildings goes up to the gap and breaks the Barracks. Done when the Barracks falls and then the Nexus.",
+  "notes": "A ridge of rock the whole height of the map with one gap at its top, and the enemy's Barracks standing just past the gap, closing it. Four troopers west of the ridge, the enemy's Nexus east, level with them and far below the gap. Walking as near as they can get would leave them at the rock straight across from the Nexus, where the Barracks is beyond their reach; a unit that tells rock from buildings goes up to the gap and breaks the Barracks. Done when the Barracks falls and then the Nexus.",
   "setup": {
     "map": {
       "id": "route-breach",

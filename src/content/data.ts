@@ -169,7 +169,7 @@ export function entryProblems(entry: ContentEntry): string[] {
   if (entry.roundsOut !== undefined && entry.commander !== true) problems.push(`${whose} sits rounds out, and only a Commander does`)
   if (entry.layer === "obstacles" && entry.movementRate !== undefined) problems.push(`${whose} is a structure, and a structure does not move`)
   ;(entry.abilities ?? []).forEach((ability, index) => problems.push(...abilityProblems(ability, `${whose}'s ability ${index + 1}`)))
-  // Whole rows (grid.md): a reach of R covers R / 2 rows up and down, so an odd reach above 1 buys a column at each
+  // Whole rows (battlefield.md): a reach of R covers R / 2 rows up and down, so an odd reach above 1 buys a column at each
   // end of its rows and no row. Every reach is 1, which is touching, or even; a melee range is 1.
   const reaches: Readonly<Record<string, number | undefined>> = {
     "attack range": entry.attack?.range,

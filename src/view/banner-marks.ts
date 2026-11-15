@@ -12,7 +12,7 @@
 // - **Planting** it plays a ring that opens out from the banner over the first `DROP_MS`: a style-only write, inverse
 //   in the player's colour, so it reads in monochrome too — the building placement's light, for a banner.
 
-import { gridDistance, inBounds } from "../engine/geometry/coords.ts"
+import { tileDistance, inBounds } from "../engine/geometry/coords.ts"
 import type { Coord } from "../engine/geometry/types.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile } from "../build/layout.ts"
@@ -25,7 +25,7 @@ import { BANDS } from "./frame.ts"
 import { chromeGlyph, playerRole } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { BuildCompositionInput } from "./build.ts"
-import { inView, takenTiles, trailGlyph, trailMarks } from "./build-grid.ts"
+import { inView, takenTiles, trailGlyph, trailMarks } from "./build-map.ts"
 
 /** How long the banner's planting plays, and how long a ring step lasts. */
 export const DROP_MS = 640
@@ -78,9 +78,9 @@ export function drawBanner(cells: BandCell[], input: BuildCompositionInput, pack
       for (const mark of trailMarks(path, [end], elapsedMs, { spacing: 3, stepMs: 120 })) {
         const { tile } = mark
         if (mark.ghost !== undefined) continue
-        if (!inBounds(context.grid, tile) || !inView(range, tile) || taken.has(`${tile.x},${tile.y}`)) continue
+        if (!inBounds(context.terrain, tile) || !inView(range, tile) || taken.has(`${tile.x},${tile.y}`)) continue
         if (tile.x === shown.tile.x && tile.y === shown.tile.y) continue
-        if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain") continue
+        if (context.terrain.tiles[tile.y * context.terrain.width + tile.x] !== "terrain.plain") continue
         const cell = cellForTile(layout, state.camera, tile)
         const style: CellStyle = { fgRole: player, fade }
         cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: trailGlyph(pack, mark.dx, mark.dy), style } })
@@ -98,7 +98,7 @@ export function drawBanner(cells: BandCell[], input: BuildCompositionInput, pack
     const ring = 1 + Math.floor(drop / DROP_STEP_MS)
     for (let y = range.firstY; y <= range.lastY; y += 1) {
       for (let x = range.firstX; x <= range.lastX; x += 1) {
-        const distance = gridDistance({ x, y }, dropTile)
+        const distance = tileDistance({ x, y }, dropTile)
         if (distance < ring * 2 - 1 || distance > ring * 2) continue
         const cell = cellForTile(layout, state.camera, { x, y })
         cells.push({ band: BANDS.highlights, x: cell.x, y: cell.y, style: { inverse: true, bold: true, fgRole: player } })

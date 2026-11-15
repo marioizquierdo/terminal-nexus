@@ -1,9 +1,9 @@
-// The Grid as a round opens, as an ASCII screenshot (`asciiScreenshot`, `src/view/ascii-screenshot.ts`): what the
+// The battlefield as a round opens, as an ASCII screenshot (`asciiScreenshot`, `src/view/ascii-screenshot.ts`): what the
 // game's screen draws, cell for cell, with its ruler, legend and overlaps beside it. The brief's map for whoever prints
 // it (the `skirmish` command); the battle itself never reaches the view (`DrawMap`, `src/battle/brief.ts`).
 
 import type { BattleState, DrawMap, Side } from "../battle/index.ts"
-import { battleGrid, mapOf, standingOf, titleOf } from "../battle/index.ts"
+import { battleTerrain, mapOf, standingOf, titleOf } from "../battle/index.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { asciiScreenshot, asciiScreenshotLines } from "../view/ascii-screenshot.ts"
 
@@ -20,7 +20,7 @@ export const drawBattleMap: DrawMap = (state: BattleState, registry: (side: Side
   return asciiScreenshotLines(
     asciiScreenshot(
       {
-        grid: battleGrid(mapOf(state)),
+        terrain: battleTerrain(mapOf(state)),
         registry: both,
         state: { entities: entities.map((entity, ordinal) => ({ ...entity, ordinal })), groundItems: state.carried?.groundItems ?? [] },
         positions: new Map(),

@@ -10,7 +10,7 @@ import type { BuildingCard, Offer } from "../armies/types.ts"
 import { CARD_TEXT } from "../content/cards.ts"
 import type { ConstructItem, NexusPowerOption } from "./types.ts"
 
-export { STARTER_EDGE_STYLE, STARTER_GRID_SIZE, STARTER_STANDING, STARTER_START_CURSOR, starterGrid } from "./maps.ts"
+export { STARTER_EDGE_STYLE, STARTER_MAP_SIZE, STARTER_STANDING, STARTER_START_CURSOR, starterTerrain } from "./maps.ts"
 
 /**
  * An offer's build menu: its buildings in the order they were unlocked, each row's digit its place in that

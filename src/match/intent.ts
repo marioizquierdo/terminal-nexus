@@ -169,18 +169,18 @@ function chosenTarget(arrivals: readonly Arrival[], after: ReadonlyMap<number, E
 function walk(structures: OccupancyIndex, registry: ContentRegistry, walker: ContentDef, from: Coord, target: IntentTarget): Coord[] {
   const footprint = registry.get(target.contentId).footprint
   const blocked: Coord[] = []
-  for (let y = 0; y < structures.grid.height; y += 1) {
-    for (let x = 0; x < structures.grid.width; x += 1) {
+  for (let y = 0; y < structures.terrain.height; y += 1) {
+    for (let x = 0; x < structures.terrain.width; x += 1) {
       const tile = { x, y }
       if (walker.collidesWith.some((layer) => structures.occupantAt(layer, tile) !== null)) blocked.push(tile)
     }
   }
-  const ground = groundFor(wallsOf(structures.grid, walker.layer === "air" ? "ignore" : "impassable", blocked), walker.footprint)
+  const ground = groundFor(wallsOf(structures.terrain, walker.layer === "air" ? "ignore" : "impassable", blocked), walker.footprint)
   const field = new DistanceField(ground, goalsNear(ground, walker.footprint, target.anchor, footprint, { kind: "touch", steps: 1 }))
   const path: Coord[] = []
   let at = from
   let facing: Direction = "s"
-  while (footprintSteps(at, walker.footprint, target.anchor, footprint) > 1 && path.length < structures.grid.width * structures.grid.height) {
+  while (footprintSteps(at, walker.footprint, target.anchor, footprint) > 1 && path.length < structures.terrain.width * structures.terrain.height) {
     const nose = nearestFootprintTile(nearestFootprintTile(at, target.anchor, footprint), at, walker.footprint)
     facing = directionOf(nose, nearestFootprintTile(nose, target.anchor, footprint), facing)
     const next = rankSteps(field, at, facing).flat().find((choice) => choice.downhill)
@@ -202,7 +202,7 @@ export function foreseeIntents(input: MissionPulseInput, side: PlayerId = "B"): 
 
 /**
  * Where a side's troops head this round: the target its level names for it (a `target` action, by the region
- * the mission names), and who goes — every unit of the side that follows a target, standing on the Grid as the
+ * the mission names), and who goes — every unit of the side that follows a target, standing on the battlefield as the
  * round opens, and every one its buildings will spawn in the round's waves, which head there the moment they
  * are set down. Not a forecast of the way: the battle engine walks them there and has them fight what comes within
  * reach on it (`src/engine/pulse/target.ts`), and that is not foreseen; nor is a round that ends before a wave comes.
@@ -213,7 +213,7 @@ export type TroopsIntent = Readonly<{
   region: string
   name: string
   tiles: readonly Coord[]
-  /** Who heads there this round, kind by kind, with how many: the kinds on the Grid as it starts, in the order
+  /** Who heads there this round, kind by kind, with how many: the kinds on the battlefield as it starts, in the order
    *  they stand there, then any kind only a wave brings; a wave's units are counted with their kind. */
   units: readonly Readonly<{ contentId: string; count: number }>[]
   /** Every tile they stand on as the round starts (a wave's units stand nowhere yet). */
@@ -281,7 +281,7 @@ export function foreseeRound(input: MissionPulseInput, side: PlayerId = "B"): Re
   const after = new Map(stepTick(state, contextFor(state, registry, mission.pulseTicks)).state.entities.map((entity) => [entity.ordinal, entity]))
   const before = new Map(state.entities.map((entity) => [entity.ordinal, entity]))
   // What a way goes round: the terrain and the structures as the round starts. Units move, so none blocks it.
-  const structures = new OccupancyIndex(state.grid)
+  const structures = new OccupancyIndex(state.terrain)
   for (const entity of state.entities) {
     const definition = registry.get(entity.contentId)
     if (definition.layer === "obstacles") structures.add(definition.layer, entity.ordinal, entity.anchor, definition.footprint)
@@ -325,7 +325,7 @@ export function foreseeRound(input: MissionPulseInput, side: PlayerId = "B"): Re
  * left pressing on a ridge that others walk round or come through the gap in (PERIMETER's raiders on the
  * ridge's north face, while its runners go round the west end): the trail shows the way the attack gets
  * there, and only a group that cannot get there at all is shown pressing on what stops it. Nearest by the
- * Grid's own distance (`footprintDistance`); a way reaches the target when it ends touching it along a side.
+ * battlefield's own distance (`footprintDistance`); a way reaches the target when it ends touching it along a side.
  */
 function pathOf(structures: OccupancyIndex, registry: ContentRegistry, arrivals: readonly Arrival[], target: IntentTarget): Coord[] {
   const footprint = registry.get(target.contentId).footprint

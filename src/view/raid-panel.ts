@@ -242,7 +242,7 @@ export function drawRaidPanel(cells: BandCell[], input: BuildCompositionInput): 
   if (raid === undefined || raid.length === 0) return
   const rows = raidRows(layout, context.catalog)
   if (rows === null) return
-  const from = nexusTile(context) ?? { x: Math.floor(context.grid.width / 2), y: Math.floor(context.grid.height / 2) }
+  const from = nexusTile(context) ?? { x: Math.floor(context.terrain.width / 2), y: Math.floor(context.terrain.height / 2) }
   const width = layout.panelLimit - 1
   raidLines(context, raid, from, width, rows.last - rows.first + 1).forEach((line, index) => {
     let at = layout.panelColumn + line.indent

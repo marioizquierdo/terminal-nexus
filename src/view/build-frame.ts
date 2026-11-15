@@ -1,5 +1,5 @@
-// The Build Phase's frame: the lines that close the Grid pane into a rectangle of its own and carry the
-// "more Grid this way" signal as their weight, and the two bars — the top bar (the title, where the
+// The Build Phase's frame: the lines that close the map into a rectangle of its own and carry the
+// "more map this way" signal as their weight, and the two bars — the top bar (the title, where the
 // player is, what Esc does) and the bottom line.
 
 import { edgeMarkers } from "../build/camera.ts"
@@ -36,26 +36,26 @@ function lineGlyph(pack: GlyphPack, { n, s, e, w }: Joins): string {
 
 /**
  * The frame: an outer border, a rule under the top bar and another over the bottom bar (both the
- * whole width), and the divider between the side panel and the Grid pane, which runs only between
+ * whole width), and the divider between the side panel and the map, which runs only between
  * those two rules so both bars run the whole width (`docs/system-design/presentation.md`). Together they close the
- * Grid pane into **a rectangle of its own** — the owner's 2026-09-26 playtest could not tell where the
- * Grid ended, because two blank header rows sat between its top edge and the nearest line, and the
+ * map into **a rectangle of its own** — the owner's 2026-09-26 playtest could not tell where the
+ * battlefield ended, because two blank header rows sat between its top edge and the nearest line, and the
  * footer sat against its bottom edge with no line at all.
  *
- * The "there is more Grid" signal `docs/system-design/grid.md` requires is drawn as the weight of that rectangle's
- * four sides, not overlaid on them: a side with more Grid to scroll to is the frame's own line drawn
- * dim, and a side that has actually reached the Grid's own edge is drawn in **the map's own style**
+ * The "there is more map" signal `docs/system-design/battlefield.md` requires is drawn as the weight of that rectangle's
+ * four sides, not overlaid on them: a side with more map to scroll to is the frame's own line drawn
+ * dim, and a side that has actually reached the battlefield's own edge is drawn in **the map's own style**
  * — a **solid bar** when the map names none: an inverse-video cell, a wall rather than
  * merely a border, the same weight in every glyph pack and in monochrome — in the quieter edge
  * colour, each style the same weight on all four sides (`src/view/edge.ts` draws them). The menu's
- * divider **is** the Grid's west side, one shared column, plain beside the menu's rules and a
- * light or map-edge side beside the Grid's rows.
+ * divider **is** the battlefield's west side, one shared column, plain beside the menu's rules and a
+ * light or map-edge side beside the battlefield's rows.
  * Everything else — the outer border, the rules where they cross the side panel — never scrolls and
  * is drawn plain.
  */
 export function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
   const { layout, state, context } = input
-  const box = layout.gridBox
+  const box = layout.mapBox
   const left = layout.offset.column
   const right = layout.offset.column + layout.composition.width - 1
   const top = layout.offset.row
@@ -85,15 +85,15 @@ export function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack
   verticalLine(right, top, bottom)
   horizontalLine(box.top, left, right)
   horizontalLine(layout.paneBottom, left, right)
-  // A Grid shorter than the pane still closes directly under its last row (`grid.md`), across
-  // the Grid pane alone — the panel beside it runs on down to the bottom bar.
+  // A battlefield shorter than the pane still closes directly under its last row (`battlefield.md`), across
+  // the map alone — the panel beside it runs on down to the bottom bar.
   if (box.bottom < layout.paneBottom) horizontalLine(box.bottom, box.left, box.right)
   // The divider runs only between the two rules, so the top bar and the bottom bar each run the
-  // whole width: at 80 columns the Grid pane is 49 columns, and the bottom bar's contextual line is
+  // whole width: at 80 columns the map is 49 columns, and the bottom bar's contextual line is
   // longer than that.
   verticalLine(layout.dividerColumn, box.top, layout.paneBottom)
 
-  const markers = edgeMarkers(state.camera, state.viewport, context.grid)
+  const markers = edgeMarkers(state.camera, state.viewport, context.terrain)
   const heavy = { north: !markers.north, south: !markers.south, west: !markers.west, east: !markers.east }
   // The rectangle the four sides run along. Its west side is the menu's divider (`box.left` is
   // `layout.dividerColumn`; Mario's choice).
@@ -157,7 +157,7 @@ export function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack
       put(cells, BANDS.chrome, x, y, drawn.glyph, drawn.role, drawn.extra)
       continue
     }
-    // A side with more Grid beyond it is the frame's own line drawn dim — beside the Grid only; the
+    // A side with more map beyond it is the frame's own line drawn dim — beside the battlefield only; the
     // corners where it meets the frame, and the rules above and below the panel, stay plain.
     const alongTopOrBottom = (y === rect.top || y === rect.bottom) && x > rect.left && x < rect.right
     const alongLeftOrRight = (x === rect.left || x === rect.right) && y > rect.top && y < rect.bottom
@@ -213,7 +213,7 @@ export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositi
   const pulse = state.popup !== null ? undefined : input.pulse
   const shown = pulse === undefined ? bottomLine(context, state, preview) : pulseStatus(pulse)
   const style = statusStyle(shown.tone)
-  // Whole words only: on a bar narrower than the line (a Grid smaller than the view) the words that do
+  // Whole words only: on a bar narrower than the line (a battlefield smaller than the view) the words that do
   // not fit are left off, never cut in half.
   const line = shown.text.length <= layout.footerLimit ? shown.text : (wrapWords(shown.text, layout.footerLimit)[0] ?? "")
   text(cells, band, left, layout.footerRow, line, style.role, {

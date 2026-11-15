@@ -7,7 +7,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { tilesOf } from "../src/engine/geometry/coords.ts"
-import type { Coord, GridTerrain, TerrainId } from "../src/engine/geometry/types.ts"
+import type { Coord, MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { buildLayout, cellForTile } from "../src/build/layout.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { createBuildState, legalityAt, nexusTile, withoutScene } from "../src/build/state.ts"
@@ -56,16 +56,16 @@ test("a building may go where units stand, the player's or the enemy's: they wal
   assert.ok(legalityAt(withUnit("B", SKYRAIDER), [], BARRACKS, spot).ok, "under a flyer")
 })
 
-function gridOf(rows: readonly string[]): GridTerrain {
+function terrainOf(rows: readonly string[]): MapTerrain {
   const ids: Record<string, TerrainId> = { ".": "terrain.plain", "#": "terrain.rock" }
   return { width: rows[0]?.length ?? 0, height: rows.length, tiles: rows.flatMap((row) => [...row].map((character) => ids[character] as TerrainId)) }
 }
 
-const OPEN = gridOf(Array.from({ length: 16 }, () => ".".repeat(40)))
+const OPEN = terrainOf(Array.from({ length: 16 }, () => ".".repeat(40)))
 
 test("troops under a new building walk out to the nearest free ground as the round begins, the same way every time", () => {
   const carried = openingState({
-    grid: OPEN,
+    terrain: OPEN,
     registry: FIXTURE_REGISTRY,
     structures: [
       { contentId: NEXUS, player: "A", anchor: { x: 2, y: 7 } },
@@ -77,7 +77,7 @@ test("troops under a new building walk out to the nearest free ground as the rou
   const footprint = FIXTURE_REGISTRY.get(BARRACKS).footprint
   const first = troopers[0] as EntityState
   const barracks = { contentId: BARRACKS, player: "A" as const, anchor: first.anchor }
-  const next = (): MatchState => openingState({ grid: OPEN, registry: FIXTURE_REGISTRY, structures: [barracks], carried, setup: { seed: 3, pulseTicks: 360, forces: [] } })
+  const next = (): MatchState => openingState({ terrain: OPEN, registry: FIXTURE_REGISTRY, structures: [barracks], carried, setup: { seed: 3, pulseTicks: 360, forces: [] } })
   const opened = next()
   assert.deepEqual(next().entities, opened.entities, "the same every time")
   const building = new Set(tilesOf(first.anchor, footprint).map((tile) => `${tile.x},${tile.y}`))
@@ -101,7 +101,7 @@ test("a building on a crowd walks everyone out by the way, friend and foe alike,
     { player: "A", muster: { x: 18, y: 8 }, units: Array.from({ length: 12 }, () => TROOPER) },
     { player: "B", muster: { x: 22, y: 8 }, units: Array.from({ length: 12 }, () => TROOPER) },
   ]
-  const state = openingState({ grid: OPEN, registry: FIXTURE_REGISTRY, structures: [{ contentId: NEXUS, player: "A", anchor: { x: 2, y: 7 } }], setup: { seed: 3, pulseTicks: 360, forces: block } })
+  const state = openingState({ terrain: OPEN, registry: FIXTURE_REGISTRY, structures: [{ contentId: NEXUS, player: "A", anchor: { x: 2, y: 7 } }], setup: { seed: 3, pulseTicks: 360, forces: block } })
   const barracks = { contentId: BARRACKS, player: "A" as const, anchor: { x: 19, y: 7 } }
   const made = makeRoom(state, [barracks], FIXTURE_REGISTRY)
   assert.deepEqual(makeRoom(state, [barracks], FIXTURE_REGISTRY), made, "the same every time")
@@ -185,7 +185,7 @@ test("the Build Phase draws a regrouping survivor where its walk has it, and whe
   const from = { x: nexus.x + 4, y: nexus.y + 3 }
   const to = { x: nexus.x + 8, y: nexus.y + 3 }
   const context: BuildContext = withoutScene({ ...plain, field: [{ contentId: TROOPER, anchor: to, player: "A", hp: 10, walk: { from, steps: [{ tick: 60, to }] } }] })
-  const layout = buildLayout({ columns: 80, rows: 24 }, context.grid)
+  const layout = buildLayout({ columns: 80, rows: 24 }, context.terrain)
   const state = createBuildState(context, nexus, layout.viewport)
   const glyphAt = (frame: ReturnType<typeof composeBuildFrame>, tile: Coord): string => {
     const cell = cellForTile(layout, state.camera, tile)
@@ -233,7 +233,7 @@ test("the Build Phase draws the units a planned building stands on walking out, 
   const carried: MatchState = { ...(opened.carried as MatchState), entities: (opened.carried as MatchState).entities.map((entity) => (entity.ordinal === unit.ordinal ? { ...entity, anchor: at } : entity)) }
   const next: BuildContext = { ...opened, carried, field: (opened.field ?? []).map((entity) => (entity === unit ? { contentId: unit.contentId, anchor: at, player: unit.player, hp: unit.hp, ordinal: unit.ordinal as number } : entity)) }
   const target = { anchor: at, ordinal: unit.ordinal as number }
-  const layout = buildLayout({ columns: 104, rows: 32 }, next.grid)
+  const layout = buildLayout({ columns: 104, rows: 32 }, next.terrain)
   const state = { ...createBuildState(next, target.anchor, layout.viewport), planned: [{ ordinal: 0, contentId: turret, anchor: target.anchor }], nextOrdinal: 1 }
   const made = makeRoom(carried, [{ contentId: turret, player: "A", anchor: target.anchor }], next.registry)
   const path = made.paths.find((each) => each.ordinal === target.ordinal)

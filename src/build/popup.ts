@@ -104,7 +104,7 @@ export type PopupRow =
   | Readonly<{ kind: "keys"; keys: string; text: string; highlighted?: boolean }>
 
 /**
- * A popup's one run of one-line rows that scrolls when the popup is taller than the Grid pane can
+ * A popup's one run of one-line rows that scrolls when the popup is taller than the map can
  * hold (Settings and the export). **A popup has at most one** (the owner: "We can safely allow only
  * one scrolling section on the whole popup"), so the scroll bar has
  * one place to be: the right border beside it. `from` and `to` (exclusive) index `rows`; `highlight`
@@ -515,7 +515,7 @@ function commanderRows(context: BuildContext): PopupRow[] {
     ...out.map(
       (absence): PopupRow => ({
         kind: "text",
-        // Due back already and still out: the Nexus had nowhere to set her down (no Grid Nexus, or no room by it).
+        // Due back already and still out: the Nexus had nowhere to set her down (no Nexus, or no room by it).
         text:
           absence.returnsInRound <= now
             ? `${commanderName(absence.contentId)} is out; nowhere to return to.`
@@ -732,7 +732,7 @@ export type PlacedPopup = Readonly<{
 }>
 
 /** Wider than the first popup was (the owner: "the popup probably larger too"), never wider than
- *  the Grid pane it sits over, less a column for its shadow. */
+ *  the map it sits over, less a column for its shadow. */
 const POPUP_WIDTH = 52
 
 // Splitting text at words lives with the drawing helpers (`src/view/draw.ts`), where the title menu and
@@ -779,14 +779,14 @@ function scrollBarFor(column: number, top: number, bottom: number, window: Scrol
 }
 
 export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
-  const paneWidth = layout.gridBox.right - layout.gridBox.left - 1
-  const paneHeight = layout.paneBottom - layout.gridBox.top - 1
+  const paneWidth = layout.mapBox.right - layout.mapBox.left - 1
+  const paneHeight = layout.paneBottom - layout.mapBox.top - 1
   // Over the side panel: the frame's left border to the divider, from the rule under the top bar down.
   const overPanel = spec.dock === "panel"
   const width = overPanel ? layout.dividerColumn - layout.offset.column + 1 : Math.min(POPUP_WIDTH, Math.max(24, paneWidth - 3))
   const textLimit = width - 4
   const allLines = spec.rows.reduce((count, row) => count + linesOf(row, textLimit).length, 0)
-  // The border, the rows, a blank row of padding, the border, and a row of shadow must fit the Grid
+  // The border, the rows, a blank row of padding, the border, and a row of shadow must fit the battlefield
   // pane; a list that would not is scrolled to fit.
   const room = paneHeight - 4
   const scroll = spec.scroll
@@ -806,14 +806,14 @@ export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
   const docked = spec.dock === "bottom"
   // Over the panel it never runs past the rule over the bottom bar, its shadow on that rule: rows that would are left
   // off, so a panel puts what must show first.
-  const height = overPanel ? Math.min(lines + fill + 3, layout.paneBottom - layout.gridBox.top) : lines + fill + (docked ? 2 : 3)
-  const left = overPanel ? layout.offset.column : layout.gridBox.left + 1 + Math.floor((paneWidth - width - 1) / 2)
+  const height = overPanel ? Math.min(lines + fill + 3, layout.paneBottom - layout.mapBox.top) : lines + fill + (docked ? 2 : 3)
+  const left = overPanel ? layout.offset.column : layout.mapBox.left + 1 + Math.floor((paneWidth - width - 1) / 2)
   // Docked at the bottom of the map, its shadow on the map's last row and the bottom line clear below it.
   const top = overPanel
-    ? layout.gridBox.top
+    ? layout.mapBox.top
     : docked
-    ? Math.max(layout.gridBox.top + 1, layout.paneBottom - 1 - height)
-    : Math.max(layout.offset.row + 1, layout.gridBox.top + 1 + Math.floor((paneHeight - height - 1) / 2))
+    ? Math.max(layout.mapBox.top + 1, layout.paneBottom - 1 - height)
+    : Math.max(layout.offset.row + 1, layout.mapBox.top + 1 + Math.floor((paneHeight - height - 1) / 2))
   const right = left + width - 1
   const placed: PlacedRow[] = []
   let row = top + 1

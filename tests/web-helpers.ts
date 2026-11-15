@@ -47,7 +47,7 @@ export function sameness(opening: BattleOpening): Sameness {
   }
 
   const context = starterContext()
-  const layout = buildLayout({ columns: 80, rows: 24 }, context.grid)
+  const layout = buildLayout({ columns: 80, rows: 24 }, context.terrain)
   const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })
   const buildFrames = [print(composeBuildFrame({ context, state: build.state, layout }, "truecolor"))]
   for (const name of BUILD_SCRIPT) {

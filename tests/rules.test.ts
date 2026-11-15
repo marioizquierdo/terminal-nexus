@@ -366,7 +366,7 @@ test("a multi-tile mover blocked inside its own footprint reports the real block
   // A three-tile raider crowded by an ally's tail, mid-parade, surfaced this: the report only
   // checked the mover's single anchor tile, which can be perfectly clear while a different tile in
   // its footprint is what is actually occupied - and a clear single tile fell through
-  // blockReasonFor's cases to its "edge" fallback, misreporting a crowded ally as the Grid's border.
+  // blockReasonFor's cases to its "edge" fallback, misreporting a crowded ally as the battlefield's border.
   // raider-tail-crowded.save.json builds the same case by construction rather than relying on
   // a speed parade's emergent timing (a demo map, since retired), which drifted out from under this test twice - once
   // per movement-speed pass - since a demo save's job is showing every rate side by side, not
@@ -381,8 +381,8 @@ test("a multi-tile mover blocked inside its own footprint reports the real block
     assert.notEqual(
       event.reason,
       "edge",
-      `${event.entity} reported blocked by the Grid's edge at ${event.desired.x},${event.desired.y}, ` +
-        "which a 48-wide Grid never puts a raider anywhere near",
+      `${event.entity} reported blocked by the battlefield's edge at ${event.desired.x},${event.desired.y}, ` +
+        "which a 48-wide battlefield never puts a raider anywhere near",
     )
   }
   const byEntity = blocked.filter((event) => event.kind === "move.blocked" && event.reason === "entity")
@@ -392,7 +392,7 @@ test("a multi-tile mover blocked inside its own footprint reports the real block
 test("a 3x3 and a 5x2 unit fight, range-gated by footprint distance, not anchor distance", async () => {
   // heavies-clash.save.json is the multi-tile showcase - a colossus (3x3) and a leviathan (5x2)
   // walking at each other across open ground. The thing worth pinning down automatically, since
-  // nobody watches every run: footprintDistance (grid/coords.ts) measures to the *nearest occupied
+  // nobody watches every run: footprintDistance (engine/geometry/coords.ts) measures to the *nearest occupied
   // tile* of each footprint, not anchor to anchor, so two bodies this size should start trading
   // blows well before their anchors are within melee range of one another.
   // The two heavies alone: with their escorts about, each commits to the nearest small unit it meets (a unit keeps the
@@ -446,10 +446,10 @@ test("an air unit crosses terrain a ground unit could never enter, end to end in
   // air-crossing.save.json walls a buzzard (unit.ravel.buzzard, layer "air") into a 1x1 rock room -
   // every neighbouring tile is rock, so a ground unit placed there could never take a single step
   // (maskForActor gives it terrain: "impassable"). The buzzard's mask ignores terrain entirely
-  // (shared.ts), which tests/grid.test.ts already proves for one call to maskFrom directly; this
+  // (shared.ts), which tests/layers.test.ts already proves for one call to maskFrom directly; this
   // proves the same claim the way it actually matters, by watching a full Pulse resolve.
   const resolved = await playSandbox("air-crossing.save.json")
-  const { width, tiles } = resolved.run.initialState.grid
+  const { width, tiles } = resolved.run.initialState.terrain
   const impassableAt = (x: number, y: number): boolean => {
     const terrainId = tiles[y * width + x]
     return terrainId !== undefined && TERRAIN[terrainId].impassable

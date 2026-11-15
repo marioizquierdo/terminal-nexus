@@ -5,7 +5,7 @@
 // Built on the same pieces as `src/cli/menu.ts`: the shared idempotent disposer (`lifecycle.ts`),
 // the same backend selection, the same opt-in SGR mouse reporting switched off on every exit path.
 // What differs is that the frame's size follows the terminal's, because a bigger terminal shows more
-// Grid — up to the 72 x 24 ceiling and not one tile past it.
+// battlefield — up to the 72 x 24 ceiling and not one tile past it.
 
 import { appearanceLengthMs, appearanceLine, appearing } from "../view/commander-moments.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../title-menu/mouse.ts"
@@ -16,7 +16,7 @@ import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { nexusTile } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
-import { hasTrail } from "../view/build-grid.ts"
+import { hasTrail } from "../view/build-map.ts"
 import { BuildAnimation, livePresentation, nextFrameDelay } from "../view/build-live.ts"
 import { KeyReader } from "../terminal/key-reader.ts"
 import { KeyboardProtocol, terminalReplyOf } from "../terminal/key-events.ts"
@@ -177,7 +177,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
   })
 
   // Laid out by the terminal's size, a tile to a column.
-  let layout = buildLayout(terminalSize(), context.grid)
+  let layout = buildLayout(terminalSize(), context.terrain)
   const backend = await selectBackend(options.backend, {
     stdout,
     stdin,
@@ -406,13 +406,13 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
       log.log("session.resize", { columns: size.columns, rows: size.rows })
     }
     const wasGated = gated
-    gated = isGated(size, context.grid)
+    gated = isGated(size, context.terrain)
     // A Battle Round holds still while the terminal is too small to draw it, and resumes from the same
     // instant (see `runtime.md`). No frame timer runs behind the gate, so nothing would tell the Pulse the
     // time had passed: the moment the gate closes or opens, the clock is moved on without the Pulse.
     if (wasGated || gated) build.advance(clock(), true)
     if (!gated) {
-      layout = buildLayout(size, context.grid)
+      layout = buildLayout(size, context.terrain)
       build.resize(layout.viewport)
       animation.snap(build.state, clock())
     }

@@ -9,7 +9,7 @@ import assert from "node:assert/strict"
 import { STARTER_CATALOG, STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { tilesOf } from "../src/engine/geometry/coords.ts"
-import type { GridTerrain, TerrainId } from "../src/engine/geometry/types.ts"
+import type { MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { hint } from "../src/build/help.ts"
 import { EXPLORE_ROW, NEXUS_ROW, cellForTile, menuEntryRow } from "../src/build/layout.ts"
 import type { BuildContext } from "../src/build/state.ts"
@@ -64,17 +64,17 @@ function cursorDrawn(side: Side): boolean {
 
 // --- The screen ----------------------------------------------------------------------------------
 
-test("the side panel is on the left of the Grid at every size in the supported range, and the divider is the Grid's west side", () => {
+test("the side panel is on the left of the battlefield at every size in the supported range, and the divider is the battlefield's west side", () => {
   for (const terminal of [MINIMUM, MAXIMUM, WIDE, { columns: 92, rows: 28 }]) {
     const { layout } = buildSide({ terminal })
     assert.ok(layout.panelColumn < layout.dividerColumn, `panel left of the divider at ${terminal.columns}`)
     // The map's edge, drawn quietly in the map's own style, is the line beside the menu (owner, 2026-09-29).
-    assert.equal(layout.gridBox.left, layout.dividerColumn, "the Grid's west side is the divider")
-    assert.equal(layout.origin.column, layout.gridBox.left + 1)
-    assert.equal(layout.gridBox.right, layout.offset.column + layout.composition.width - 1)
+    assert.equal(layout.mapBox.left, layout.dividerColumn, "the battlefield's west side is the divider")
+    assert.equal(layout.origin.column, layout.mapBox.left + 1)
+    assert.equal(layout.mapBox.right, layout.offset.column + layout.composition.width - 1)
     assert.equal(layout.panelRow, layout.origin.row)
-    // The Grid page's floor arithmetic, 1 + 30 + 48 + 1 = 80, with the shared west side's column
-    // given to the Grid: 1 + 29 + 49 + 1 at 80 columns, a column a tile.
+    // The battlefield page's floor arithmetic, 1 + 30 + 48 + 1 = 80, with the shared west side's column
+    // given to the battlefield: 1 + 29 + 49 + 1 at 80 columns, a column a tile.
     assert.equal(layout.composition.width, 31 + layout.viewport.width)
   }
 })
@@ -95,18 +95,18 @@ test("the top bar and the bottom bar run the whole width — the divider stops a
   }
 })
 
-test("a Grid shorter than the panel still closes directly under its last row", () => {
-  const small: GridTerrain = { width: 20, height: 10, tiles: new Array<TerrainId>(200).fill("terrain.plain") }
-  const side = buildSide({ context: { ...starterContext(), grid: small, standing: [] } })
+test("a battlefield shorter than the panel still closes directly under its last row", () => {
+  const small: MapTerrain = { width: 20, height: 10, tiles: new Array<TerrainId>(200).fill("terrain.plain") }
+  const side = buildSide({ context: { ...starterContext(), terrain: small, standing: [] } })
   const { layout } = side
   const frame = compose(side)
-  assert.equal(layout.gridBox.bottom, layout.origin.row + 10)
-  assert.ok(layout.paneBottom > layout.gridBox.bottom)
-  for (let x = layout.gridBox.left + 1; x < layout.gridBox.right; x += 1) {
-    assert.equal(cellAt(frame, x, layout.gridBox.bottom).style.fgRole, "chrome.edge", "the whole map is visible: the map's edge")
+  assert.equal(layout.mapBox.bottom, layout.origin.row + 10)
+  assert.ok(layout.paneBottom > layout.mapBox.bottom)
+  for (let x = layout.mapBox.left + 1; x < layout.mapBox.right; x += 1) {
+    assert.equal(cellAt(frame, x, layout.mapBox.bottom).style.fgRole, "chrome.edge", "the whole map is visible: the map's edge")
   }
   assert.match(screenText(side).split("\n")[menuEntryRow(layout, STARTER_CATALOG, { kind: "construct", index: 2 })!] as string, /\[3\] Turret/)
-  // The bottom bar is as narrow as this small Grid's composition: its line keeps whole words and
+  // The bottom bar is as narrow as this small battlefield's composition: its line keeps whole words and
   // leaves off the ones that do not fit.
   assert.ok(layout.footerLimit < hint(side.context, side.build.state).text.length, "the bar is not narrower than the hint here")
   assert.match(screenText(side).split("\n")[layout.footerRow] as string, /\| Explore Map: look around and read what is on +\|/)
@@ -114,7 +114,7 @@ test("a Grid shorter than the panel still closes directly under its last row", (
 
 // --- Focus: three plain modes ---------------------------------------------------------------------
 
-test("the Build Phase opens on the menu, on its first entry, Explore Map, with no cursor on the Grid", () => {
+test("the Build Phase opens on the menu, on its first entry, Explore Map, with no cursor on the battlefield", () => {
   const side = buildSide()
   assert.equal(side.build.state.focus, "menu")
   assert.equal(side.build.state.menuHighlight, EXPLORE_ENTRY)
@@ -128,7 +128,7 @@ test("e and Enter on Explore Map's row arrive in Explore Map: the keyboard on th
   for (const sequence of [["e"], [ENTER]]) {
     const side = buildSide()
     keys(side, ...sequence)
-    assert.equal(side.build.state.focus, "grid")
+    assert.equal(side.build.state.focus, "map")
     assert.equal(side.build.state.armed, null)
     assert.equal(side.build.state.exploreMap, true, `${JSON.stringify(sequence)} did not open Explore Map`)
     assert.equal(side.build.state.returnTo, "menu")
@@ -141,7 +141,7 @@ test("e and Enter on Explore Map's row arrive in Explore Map: the keyboard on th
 test("Tab arrives in plain navigation: the bare cursor, the menu still drawn beside it; Enter there is Explore Map, begun on the map", () => {
   const side = buildSide()
   keys(side, TAB)
-  assert.equal(side.build.state.focus, "grid")
+  assert.equal(side.build.state.focus, "map")
   assert.equal(side.build.state.armed, null)
   assert.equal(side.build.state.exploreMap, false, "Tab opened Explore Map")
   assert.equal(bottomLineText(side), "Arrows move the cursor, [enter] explores here, a number selects a building.")
@@ -149,15 +149,15 @@ test("Tab arrives in plain navigation: the bare cursor, the menu still drawn bes
   assert.ok(cursorDrawn(side), "the cursor is not drawn")
   keys(side, ENTER)
   assert.equal(side.build.state.exploreMap, true)
-  assert.equal(side.build.state.returnTo, "grid")
+  assert.equal(side.build.state.returnTo, "map")
 })
 
 test("placing: the bottom line says how to place, and Tab back to the menu disarms", () => {
   const side = buildSide()
   keys(side, "1")
-  assert.equal(side.build.state.focus, "grid")
+  assert.equal(side.build.state.focus, "map")
   // A command that says nothing lets whatever arming said lapse; the bottom line then says how to place.
-  side.build.run([{ kind: "focus", target: "grid" }])
+  side.build.run([{ kind: "focus", target: "map" }])
   assert.equal(bottomLineText(side), "Place the Barracks: arrows move, [enter] places, [1] or [esc] cancels.")
   keys(side, TAB)
   assert.equal(side.build.state.focus, "menu")
@@ -165,13 +165,13 @@ test("placing: the bottom line says how to place, and Tab back to the menu disar
 })
 
 test("a digit arms its row from either focus, where the cursor is when it fits there, and remembers which focus", () => {
-  for (const start of ["menu", "grid"] as const) {
+  for (const start of ["menu", "map"] as const) {
     const side = buildSide()
     side.build.dispatch({ kind: "focus", target: start })
     const cursor = side.build.state.cursor
     keys(side, "3")
     assert.equal(side.build.state.armed, 2)
-    assert.equal(side.build.state.focus, "grid")
+    assert.equal(side.build.state.focus, "map")
     assert.equal(side.build.state.returnTo, start)
     assert.deepEqual(side.build.state.cursor, cursor, "the Turret fits where the cursor is, and the cursor moved")
     assert.equal(side.build.state.menuHighlight, entryOfConstruct(2))
@@ -203,13 +203,13 @@ test("a click on a building's row arms it at once, whatever had focus, and its g
   // looking — the cursor stays put, since the building fits there, inside the build range.
   const side = buildSide()
   clickTile(side, { x: 26, y: 13 })
-  assert.equal(side.build.state.focus, "grid")
+  assert.equal(side.build.state.focus, "map")
   assert.equal(side.build.state.exploreMap, false, "a click on the map from the menu hid the menu")
   assert.match(screenText(side), /\[1\] Barracks/)
   assert.equal(bottomLineText(side), "Arrows move the cursor, [enter] explores here, a number selects a building.")
   clickPanelRow(side, barracksRow(side))
   assert.equal(side.build.state.armed, 0, "the click only highlighted the row")
-  assert.equal(side.build.state.focus, "grid")
+  assert.equal(side.build.state.focus, "map")
   assert.deepEqual(side.build.state.cursor, { x: 26, y: 13 }, "arming by click moved the cursor off the map spot")
   assert.match(hint(side.context, side.build.state).text, /^Place the Barracks:/)
   assert.equal(side.build.state.returnTo, "menu", "a click on a row is the menu's, whatever had focus")
@@ -323,7 +323,7 @@ test("a run of the same building lays each one a free tile from the last, never 
   const height = 10
   const context: BuildContext = {
     ...starterContext(),
-    grid: { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") },
+    terrain: { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") },
     standing: [
       { contentId: "structure.citizen.nexus", anchor: { x: 0, y: 3 } },
       ...[4, 8, 12, 16, 20, 24].map((x) => ({ contentId: "structure.bench.beamturret", anchor: { x, y: 3 } })),
@@ -409,7 +409,7 @@ test("where it does not fit, the nearest spot within reach that leaves a free ti
   const height = 3
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.rock")
   for (let x = 0; x < width; x += 1) tiles[1 * width + x] = "terrain.plain"
-  const corridor: BuildContext = { ...starterContext(), grid: { width, height, tiles }, standing: [] }
+  const corridor: BuildContext = { ...starterContext(), terrain: { width, height, tiles }, standing: [] }
   const planned = [{ ordinal: 1, contentId: "structure.bench.beamturret", anchor: { x: 3, y: 1 } }]
   assert.deepEqual(armingSpot(corridor, planned, footprintOf("structure.bench.beamturret"), { x: 3, y: 1 }), { tile: { x: 5, y: 1 }, found: true })
   const full = [0, 1, 2, 4, 5, 6, 7].map((x, index) => ({ ordinal: index + 2, contentId: "structure.bench.beamturret", anchor: { x, y: 1 } }))
@@ -424,7 +424,7 @@ test("sideways is cheaper than up or down, and ties go the same way every time: 
   const height = 11
   const open: BuildContext = {
     ...starterContext(),
-    grid: { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") },
+    terrain: { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") },
     standing: [],
   }
   const turret = footprintOf("structure.bench.beamturret")
@@ -434,7 +434,7 @@ test("sideways is cheaper than up or down, and ties go the same way every time: 
   const rocky = (blocked: readonly { x: number; y: number }[]): BuildContext => {
     const tiles = new Array<TerrainId>(width * height).fill("terrain.plain")
     for (const tile of blocked) tiles[tile.y * width + tile.x] = "terrain.rock"
-    return { ...open, grid: { width, height, tiles } }
+    return { ...open, terrain: { width, height, tiles } }
   }
   const eastRock = rocky([{ x: 7, y: 5 }, { x: 7, y: 4 }, { x: 7, y: 6 }, { x: 8, y: 5 }, { x: 8, y: 4 }, { x: 8, y: 6 }])
   assert.deepEqual(armingSpot(eastRock, planned, turret, { x: 5, y: 5 }).tile, { x: 3, y: 5 })
@@ -468,12 +468,12 @@ test("with nothing in reach, arming steps one tile right and down, drawn as the 
   const height = 30
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.rock")
   tiles[10 * width + 10] = "terrain.plain"
-  const solid: BuildContext = { ...starterContext(), grid: { width, height, tiles }, standing: [] }
+  const solid: BuildContext = { ...starterContext(), terrain: { width, height, tiles }, standing: [] }
   assert.deepEqual(armingSpot(solid, [], footprintOf("structure.citizen.barracks"), { x: 10, y: 10 }), { tile: { x: 11, y: 11 }, found: false })
   // Room for a Barracks one tile beyond reach does not count; from four tiles nearer it does.
   const far = [...tiles]
   for (let y = 9; y < 12; y += 1) for (let x = 10 + reach; x < 10 + reach + 5; x += 1) far[y * width + x] = "terrain.plain"
-  const beyond: BuildContext = { ...solid, grid: { width, height, tiles: far } }
+  const beyond: BuildContext = { ...solid, terrain: { width, height, tiles: far } }
   assert.equal(armingSpot(beyond, [], footprintOf("structure.citizen.barracks"), { x: 10, y: 10 }).found, false)
   assert.equal(armingSpot(beyond, [], footprintOf("structure.citizen.barracks"), { x: 14, y: 10 }).found, true)
 
@@ -505,7 +505,7 @@ test("with nothing in reach, arming steps one tile right and down, drawn as the 
   assert.equal(tried.build.state.noSpotFound, false)
 })
 
-test("the cursor opens on the Grid Nexus, and the first building armed finds the nearest good spot around it", () => {
+test("the cursor opens on the Nexus, and the first building armed finds the nearest good spot around it", () => {
   const context = starterContext()
   assert.deepEqual(nexusTile(context), STARTER_START_CURSOR)
   const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("1") })
@@ -527,7 +527,7 @@ test("a building armed on the map goes back to the map after a placement: plain 
   const side = buildSide()
   keys(side, TAB, "1", ENTER)
   assert.equal(side.build.state.planned.length, 1)
-  assert.equal(side.build.state.focus, "grid")
+  assert.equal(side.build.state.focus, "map")
   assert.equal(side.build.state.armed, null)
   assert.equal(side.build.state.exploreMap, false)
   assert.deepEqual(side.build.state.cursor, OPEN_GROUND, "the cursor left the building just placed")
@@ -539,7 +539,7 @@ test("a building armed on the map goes back to the map after a placement: plain 
   // From Explore Map too: a digit there is the map's.
   const exploring = buildSide()
   keys(exploring, TAB, "e", "3", ENTER)
-  assert.equal(exploring.build.state.focus, "grid")
+  assert.equal(exploring.build.state.focus, "map")
   assert.equal(exploring.build.state.exploreMap, false)
 })
 
@@ -556,7 +556,7 @@ test("a mouse placement goes back to the menu, focused but unselected", () => {
   keys(map, TAB, "1")
   clickTile(map, map.build.state.cursor)
   assert.equal(map.build.state.planned.length, 1)
-  assert.equal(map.build.state.focus, "grid")
+  assert.equal(map.build.state.focus, "map")
 })
 
 // --- Same plan, every adapter ---------------------------------------------------------------------
@@ -619,7 +619,7 @@ test("clicks as a terminal sends them and the driver's click commands are the sa
   clickTile(byMouse, { x: 26, y: 13 })
   clickTile(byMouse, { x: 26, y: 13 }) // placed; the menu is back
   clickPanelRow(byMouse, panelRow(byMouse, EXPLORE_ROW)) // Explore Map
-  clickTile(byMouse, { x: 18, y: 11 }) // the card shows the Grid Nexus
+  clickTile(byMouse, { x: 18, y: 11 }) // the card shows the Nexus
   clickCell(byMouse, byMouse.layout.panelColumn + 2, panelRow(byMouse, 2)) // the panel: closes it
   clickPanelRow(byMouse, panelRow(byMouse, NEXUS_ROW)) // the Nexus Pulse popup
 

@@ -3,7 +3,7 @@ import type { ContentRegistry } from "../../content/index.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
 
 export type Roster = Readonly<{
-  /** Whether the player started the Pulse with a Grid Nexus that can be destroyed. */
+  /** Whether the player started the Pulse with a Nexus that can be destroyed. */
   hasNexus: boolean
   /** Whether the player started with anything on `workers`, `units`, or `air`. */
   hasMobile: boolean

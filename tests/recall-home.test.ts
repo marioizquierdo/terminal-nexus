@@ -3,7 +3,7 @@
 // "queue" a unit that spawned but has no space yet because there are other units on top"); the next round opens with a
 // unit where it stood, a roof included, and a building planned on it moves it.
 //
-// Survivors once came home to their building's roof between rounds (Recall); since 2026-10-26 they stay on the Grid and
+// Survivors once came home to their building's roof between rounds (Recall); since 2026-10-26 they stay on the battlefield and
 // regroup (src/match/regroup.ts, tests/regroup.test.ts), and the tests of the walk home went with it. The file keeps
 // its name while the design documents cite it.
 
@@ -12,7 +12,7 @@ import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY, withProduction } from "../src/content/index.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
 import { tilesOf } from "../src/engine/geometry/coords.ts"
-import type { Coord, GridTerrain, TerrainId } from "../src/engine/geometry/types.ts"
+import type { Coord, MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { openingState, standDown } from "../src/match/index.ts"
 import type { Force, StructurePlacement } from "../src/match/index.ts"
 import { resolvePulse } from "../src/engine/pulse/index.ts"
@@ -39,10 +39,10 @@ const RECIPE = { output: TROOPER, perWave: 4, waves: 1, firstTicks: 12, interval
 const registry = withProduction(FIXTURE_REGISTRY, { [BARRACKS]: RECIPE })
 
 const WIDTH = 40
-const OPEN: GridTerrain = { width: WIDTH, height: 24, tiles: Array.from({ length: WIDTH * 24 }, () => "terrain.plain" as TerrainId) }
+const OPEN: MapTerrain = { width: WIDTH, height: 24, tiles: Array.from({ length: WIDTH * 24 }, () => "terrain.plain" as TerrainId) }
 
 function open(structures: readonly StructurePlacement[], forces: readonly Force[], content: ContentRegistry = registry): MatchState {
-  return openingState({ grid: OPEN, registry: content, structures, setup: { seed: 7, pulseTicks: 240, forces } })
+  return openingState({ terrain: OPEN, registry: content, structures, setup: { seed: 7, pulseTicks: 240, forces } })
 }
 
 const key = (tile: Coord): string => `${tile.x},${tile.y}`
@@ -121,7 +121,7 @@ test("the next round opens with a unit where it stood, on its own building's roo
   const trained = trainedBy(before, find(before, TROOPER).map((unit) => unit.ordinal), barracks.ordinal, roofTiles)
   const onRoof = new Set(find(trained, TROOPER).slice(0, 2).map((unit) => unit.ordinal))
   const back: MatchState = { ...trained, entities: trained.entities.map((entity) => (onRoof.has(entity.ordinal) ? { ...entity, anchor: entity.homeAt as Coord } : entity)) }
-  const next = openingState({ grid: OPEN, registry, structures: [], carried: back, setup: { seed: 7, pulseTicks: 240, forces: [] } })
+  const next = openingState({ terrain: OPEN, registry, structures: [], carried: back, setup: { seed: 7, pulseTicks: 240, forces: [] } })
   for (const unit of find(back, TROOPER)) {
     const opened = next.entities.find((entity) => entity.ordinal === unit.ordinal) as EntityState
     assert.deepEqual(opened.anchor, unit.anchor, `${unit.id} was moved off where it stood`)
@@ -130,7 +130,7 @@ test("the next round opens with a unit where it stood, on its own building's roo
   assertHomeIsLegal(next, "round 2 opens")
   // A Barracks planned on a trooper out on the ground moves the trooper: it walks out from under it (makeRoom).
   const beside = find(back, TROOPER).find((unit) => !onRoof.has(unit.ordinal)) as EntityState
-  const planned = openingState({ grid: OPEN, registry, structures: [{ contentId: BARRACKS, anchor: beside.anchor }], carried: back, setup: { seed: 7, pulseTicks: 240, forces: [] } })
+  const planned = openingState({ terrain: OPEN, registry, structures: [{ contentId: BARRACKS, anchor: beside.anchor }], carried: back, setup: { seed: 7, pulseTicks: 240, forces: [] } })
   const moved = planned.entities.find((entity) => entity.ordinal === beside.ordinal) as EntityState
   assert.notDeepEqual(moved.anchor, beside.anchor)
   assertHomeIsLegal(planned, "a Barracks planned on a survivor")
@@ -155,7 +155,7 @@ test("a wave owed onto a roof full of standing allies comes out within a few tic
   }
   const roof = roofOf(barracks)
   assert.equal(find(carried, TROOPER).filter((unit) => roof.has(key(unit.anchor))).length, 6, "the roof is not full")
-  const initialState = openingState({ grid: OPEN, registry, structures: [], carried, setup: { seed: 7, pulseTicks: 60, forces: [] } })
+  const initialState = openingState({ terrain: OPEN, registry, structures: [], carried, setup: { seed: 7, pulseTicks: 60, forces: [] } })
   const run = resolvePulse({ initialState, registry, pulseTicks: 60, seed: 7 })
   const ticks = run.events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined).map((event) => event.tick)
   assert.equal(ticks.length, 4, `the wave did not all come out: ${JSON.stringify(ticks)}`)

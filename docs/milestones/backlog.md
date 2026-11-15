@@ -9,7 +9,7 @@ day its own battle or mission needs it. Nothing here is more authorized than it 
 
 - **Routing** was built by its own milestone, [`milestone-16-pathfinding.md`](../history/milestones/milestone-16-pathfinding.md);
   the routes still unbuilt are the IDEA rows of [`movement.md`](../system-design/movement.md).
-- **Banners.** A rally point a player plants for their troops to head for before the enemy's Grid Nexus. The owner,
+- **Banners.** A rally point a player plants for their troops to head for before the enemy's Nexus. The owner,
   2026-10-20: set in the Build Phase, as part of the plan, "when we can prove there is a good plan for it" on
   screen; until then there is no banner. The pathfinding milestone leaves the goal a banner would be: one more place
   a side heads for, like a mission's target. The owner, 2026-10-26, added attack and hold banners, the
@@ -75,7 +75,7 @@ day its own battle or mission needs it. Nothing here is more authorized than it 
 The contracts Milestone 1 built and tested (the named PRNG, stable entity ordering and tie-breaks,
 canonical hashing, the tick and event order, the recalculation bound, 12 Hz and movement credit, mutual
 destruction and victory ordering, death cascades, collision masks) are RULEs in
-[`pulse.md`](../system-design/pulse.md) and [`grid.md`](../system-design/grid.md), each with its test.
+[`pulse.md`](../system-design/pulse.md) and [`battlefield.md`](../system-design/battlefield.md), each with its test.
 Build on them; do not re-litigate them here.
 
 ### Questions that land in this backlog
@@ -97,7 +97,7 @@ then measures an orbit rather than a route.
 ### What a pull-in should prove
 
 - Replaying a complete recorded input produces identical final-state and ordered-event hashes.
-- Property tests over generated Grids and seeds find no duplicate occupancy within a layer, no illegal
+- Property tests over generated battlefields and seeds find no duplicate occupancy within a layer, no illegal
   settled cell, no unresolved claim, no unbounded recalculation, no presentation dependency, and no
   cosmetic draw taken from the gameplay stream.
 - Soak runs over many maps and seeds terminate, stay within a time budget, and never deadlock a contested

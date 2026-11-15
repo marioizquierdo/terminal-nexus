@@ -87,9 +87,9 @@ does), but:
 | `card` | `title`, `subtitle`, `description`; a Commander's also `pronouns`. |
 | `glyph` | Rows north to south, one character per tile, as wide and tall as `size`. Author lower case: side B is drawn upper case. |
 
-**The loader holds an entry to the Grid's rules** (RULE — `tests/armies.test.ts`): every number a whole number; a
+**The loader holds an entry to the battlefield's rules** (RULE — `tests/armies.test.ts`): every number a whole number; a
 glyph exactly its size, plain ASCII, no spaces; **every reach 1 or even** (an attack's range, a radius, a build
-range — a reach of R covers R / 2 rows, so an odd reach above 1 buys a column and no row, grid.md); a melee range of
+range — a reach of R covers R / 2 rows, so an odd reach above 1 buys a column and no row, battlefield.md); a melee range of
 1; `vision` (how far a unit sees, in columns, an even number or 1: 6 when it says nothing, Averno's 12; never less than its attack's
 range) held to the same rule; `roundsOut` only on a Commander; a structure never moves; every ability a kind the game has, with its numbers.
 

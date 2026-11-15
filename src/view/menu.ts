@@ -19,7 +19,7 @@ import type { ColorDepth, StyleRole } from "./roles.ts"
 import { chromeGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 
-/** The 80x24 RULE floor (`docs/system-design/grid.md`) — the same floor as the Build Phase's, so the terminal
+/** The 80x24 RULE floor (`docs/system-design/battlefield.md`) — the same floor as the Build Phase's, so the terminal
  *  never needs resizing when the game moves from the menu into a match. */
 export const MENU_SIZE = { width: 80, height: 24 } as const
 
@@ -49,7 +49,7 @@ export type MenuCompositionInput = Readonly<{
   detail?: string
 }>
 
-/** The border only — no inner divider, unlike the Grid screen's Grid/panel split, because a menu has
+/** The border only — no inner divider, unlike the battlefield screen's battlefield/panel split, because a menu has
  *  one pane, not two. */
 function drawBorder(cells: BandCell[], size: { width: number; height: number }, pack: GlyphPack): void {
   const band = BANDS.chrome
@@ -69,7 +69,7 @@ function drawBorder(cells: BandCell[], size: { width: number; height: number }, 
   put(cells, band, size.width - 1, size.height - 1, chromeGlyph(pack, "bottomRight"), "chrome.frame")
 }
 
-/** The row the tagline lives on (`grid.md`) — the concept doc's own emotional loop, quoted rather than
+/** The row the tagline lives on (`battlefield.md`) — the concept doc's own emotional loop, quoted rather than
  *  invented, since a stub screen still owes the player something true about the game. */
 const TAGLINE = "Build. Commit. Battle. Understand. Adapt."
 

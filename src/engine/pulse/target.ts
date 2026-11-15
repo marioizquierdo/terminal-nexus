@@ -1,7 +1,7 @@
 // A side's target (pulse.md, perception and intents): the region a story level names for a side's troops,
 // so where they move can be read before the battle (the owner: "the story levels should have a target well
 // defined"). Before targets every unit did one thing — engage the nearest enemy, wherever it was. A side with no
-// target now heads for the enemy's Grid Nexus in the same way, the Nexus standing in for the region
+// target now heads for the enemy's Nexus in the same way, the Nexus standing in for the region
 // (`headsForNexus`, `perception.ts`).
 //
 // A side's **fighting units** (on the move, `advance` behaviour: not a worker that flees, not a healer, not
@@ -16,7 +16,7 @@
 //   leaving them pressing on each other.
 //
 // Read from the state the tick began with, like every phase before the moves settle; the battle engine never
-// changes a target (`MatchState.targets`). The nearest tile is nearest by the Grid's own distance (`gridDistance`:
+// changes a target (`MatchState.targets`). The nearest tile is nearest by the battlefield's own distance (`tileDistance`:
 // a row counts two columns), and "beside" is touching along a side (`stepsBetween`); integers, reading and
 // ordinal order: nothing here can make two runs differ.
 
@@ -78,7 +78,7 @@ export function areaTiles(area: TargetArea): Coord[] {
 /**
  * The tile of the area a mover walks toward: the nearest one its own mask leaves clear — no building, no
  * unit it would bump, no rock — the first in reading order on a tie; and when none is clear, the nearest of
- * all, nearest by the Grid's own distance (`gridDistance`). A mover aims at it as it aims at the nearest tile of
+ * all, nearest by the battlefield's own distance (`tileDistance`). A mover aims at it as it aims at the nearest tile of
  * an enemy's footprint (`movementGoal`).
  */
 export function areaGoal(anchor: Coord, footprint: Footprint, area: TargetArea, mask: CollisionMask): Coord {

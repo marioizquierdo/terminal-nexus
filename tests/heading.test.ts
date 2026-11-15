@@ -1,5 +1,5 @@
 // Where a side heads when its level names nowhere (docs/system-design/pulse.md, a side's target): its fighting units
-// head for the enemy's Grid Nexus and fight what comes within their reach on the way (`headsForNexus`,
+// head for the enemy's Nexus and fight what comes within their reach on the way (`headsForNexus`,
 // `src/engine/pulse/perception.ts`). The owner, 2026-10-20: "It's just going to be going to the enemy nexus." Before, they
 // went for the nearest enemy wherever it was; with no enemy Nexus to strike they still do.
 
@@ -33,7 +33,7 @@ function block(placed: readonly Placed[]): PlacementBlock {
   return { rows: rows.map((row) => row.join("")), legend }
 }
 
-/** A 24 x 12 open Grid with each side placed as given and no target for either, after its first tick. */
+/** A 24 x 12 open battlefield with each side placed as given and no target for either, after its first tick. */
 function firstTick(sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>): MatchState {
   const placements: Partial<Record<PlayerId, PlacementBlock>> = {}
   for (const side of ["A", "B"] as const) {
@@ -43,7 +43,7 @@ function firstTick(sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>
   const opening: BattleOpening = {
     id: "heading",
     name: "heading",
-    grid: { preset: "small-wide" },
+    size: { preset: "small-wide" },
     seed: 1,
     pulseTicks: 60,
     terrain: Array.from({ length: 12 }, () => ".".repeat(24)),

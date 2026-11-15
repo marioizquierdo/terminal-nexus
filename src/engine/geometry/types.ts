@@ -1,6 +1,6 @@
-// The Grid: coordinates, layers, footprints, and placement.
+// The battlefield: coordinates, layers, footprints, and placement.
 //
-// The design is in grid.md: layers are render order, collision is a composed mask, coordinates have an
+// The design is in battlefield.md: layers are render order, collision is a composed mask, coordinates have an
 // anchor, a footprint and a facing, movement is four-way, and a row counts two columns in every distance
 // (`ROW_DISTANCE`, coords.ts).
 //
@@ -15,10 +15,10 @@ export type Footprint = readonly Coord[]
 export type Direction = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw"
 
 /** The five layers, in render order. Lower numbers draw first. */
-export type GridLayer = "terrain" | "obstacles" | "workers" | "units" | "air"
+export type Layer = "terrain" | "obstacles" | "workers" | "units" | "air"
 
 /** Layers that can hold entities. `terrain` is a property of a tile, not an entity slot. */
-export type EntityLayer = Exclude<GridLayer, "terrain">
+export type EntityLayer = Exclude<Layer, "terrain">
 
 export const ENTITY_LAYERS: readonly EntityLayer[] = ["obstacles", "workers", "units", "air"]
 
@@ -28,7 +28,7 @@ export type TerrainKind = Readonly<{
   id: TerrainId
   /** A ground mover can never enter an impassable tile. */
   impassable: boolean
-  /** Immutable terrain cannot be attacked (grid.md). */
+  /** Immutable terrain cannot be attacked (battlefield.md). */
   destructible: boolean
   /** What a step onto it costs against a step onto open ground: 1 for open ground, more for ground that slows a unit
    *  down. A walk across it takes that many times as long, and a route counts it so (pulse.md, routes). Air ignores
@@ -47,8 +47,8 @@ export function isTerrainId(value: string): value is TerrainId {
   return Object.prototype.hasOwnProperty.call(TERRAIN, value)
 }
 
-/** The immutable part of the Grid: its size and its terrain, row-major from the north-west. */
-export type GridTerrain = Readonly<{
+/** The immutable part of the battlefield: its size and its terrain, row-major from the north-west. */
+export type MapTerrain = Readonly<{
   width: number
   height: number
   /** Row-major, `y * width + x`. */

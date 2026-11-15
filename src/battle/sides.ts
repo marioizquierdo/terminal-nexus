@@ -21,7 +21,7 @@ export type BattleArmy = Readonly<{
   /** The powers a hand is dealt from: its arsenal's, but the ones offered beside every hand (War Chest, the owner's
    *  testing tool, has no place in a battle). */
   powers: readonly PowerCard[]
-  /** The content id of its Grid Nexus: the one her faction brings. */
+  /** The content id of its Nexus: the one her faction brings. */
   nexus: string
 }>
 
@@ -35,7 +35,7 @@ export function battleArmy(id: string, armies: Armies = ARMIES): BattleArmy {
   // Her faction's Nexus: the one the army she names as her faction brings.
   const faction = armies.armies.find((army) => army.id === commander.faction)
   const nexus = (faction?.content ?? []).flatMap((entry) => (typeof entry === "string" ? entry : entry.id)).find((contentId) => armies.registry.has(contentId) && armies.registry.get(contentId).nexus === true)
-  if (nexus === undefined) throw new Error(`the Commander "${id}"'s army sees no Grid Nexus to build from`)
+  if (nexus === undefined) throw new Error(`the Commander "${id}"'s army sees no Nexus to build from`)
   return { commander, buildings: arsenal.buildings, powers: arsenal.powers.filter((card) => card.always !== true), nexus }
 }
 

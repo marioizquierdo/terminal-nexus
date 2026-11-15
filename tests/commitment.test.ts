@@ -1,7 +1,7 @@
 // Commitment (docs/system-design/pulse.md, "A unit holds its target"; movement.md, "Targeting and attacking"): a unit
 // that has an enemy to strike keeps it until it falls, stops being a target it may choose, or goes `COMMIT_TICKS`
 // unable to strike it. And a candidate within sight is not dropped at the edge of its reach because the walk to it is
-// a little longer than the sight. The rule's edges, on constructed Grids.
+// a little longer than the sight. The rule's edges, on constructed battlefields.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -38,7 +38,7 @@ function block(placed: readonly Placed[]): PlacementBlock {
   return { rows: rows.map((row) => row.join("")), legend }
 }
 
-/** A 24 x 12 Grid, `rock` tiles raised, each side placed as given, and A's target if given. */
+/** A 24 x 12 battlefield, `rock` tiles raised, each side placed as given, and A's target if given. */
 function load(
   sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>,
   options: Readonly<{ rock?: readonly (readonly [number, number])[]; target?: TargetArea; ticks?: number }> = {},
@@ -54,7 +54,7 @@ function load(
   const opening: BattleOpening = {
     id: "commitment",
     name: "commitment",
-    grid: { preset: "small-wide" },
+    size: { preset: "small-wide" },
     seed: 1,
     pulseTicks: options.ticks ?? 200,
     terrain,
@@ -85,7 +85,7 @@ const byContent = (state: MatchState, contentId: string, player: PlayerId): Enti
   state.entities.find((candidate) => candidate.contentId === contentId && candidate.player === player) as EntityState
 const wall = (x: number): readonly (readonly [number, number])[] => Array.from({ length: 12 }, (_, y) => [x, y] as const)
 
-/** How far apart (the Grid's distance: a row counts two columns) two entities stand. */
+/** How far apart (the battlefield's distance: a row counts two columns) two entities stand. */
 const gap = (a: EntityState, b: EntityState): number => Math.abs(a.anchor.x - b.anchor.x) + 2 * Math.abs(a.anchor.y - b.anchor.y)
 
 test("a unit keeps the enemy it holds while a nearer one walks past", () => {
@@ -178,7 +178,7 @@ test("a unit goes COMMIT_TICKS unable to strike the one it holds, and then lets 
 })
 
 test("a held target that is walled in is let go at once, for the nearest the unit can reach", () => {
-  // The wall runs the Grid's height, so the marksman behind it cannot be walked to, and the trooper is not in its range:
+  // The wall runs the battlefield's height, so the marksman behind it cannot be walked to, and the trooper is not in its range:
   // holding it would be standing beside the wall for COMMIT_TICKS. The enemy trooper on its own side can be reached.
   const start = load({ A: [[4, 5, TROOPER]], B: [[8, 5, MARKSMAN], [3, 9, TROOPER]] }, { rock: wall(6), ticks: 120 })
   const walled = byContent(start, MARKSMAN, "B")

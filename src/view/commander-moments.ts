@@ -9,7 +9,7 @@
 //   her face changing as she falls (her army's `portraitFalls`), then the whole of it evaporating (`VIGNETTE`).
 //   A window, not an effect: like a popup it is drawn over the map, so it is small, short and placed where it covers
 //   least of the fight.
-// - **She is out.** A dim `@` — her own glyph, nothing else — on the free tile nearest her side's Grid Nexus: in a
+// - **She is out.** A dim `@` — her own glyph, nothing else — on the free tile nearest her side's Nexus: in a
 //   Build Phase she sits out, and in a Battle Round from the moment she falls.
 // - **She is explored.** Explore Map on her lights a ring round her, as the dialog's focus does, and her card shows
 //   her portrait (`build-card.ts`).
@@ -28,8 +28,8 @@ import type { BuildLayout } from "../build/layout.ts"
 import { cellForTile } from "../build/layout.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { cardShowing, nexusTile } from "../build/state.ts"
-import { gridDistance, inBounds, tilesOf } from "../engine/geometry/coords.ts"
-import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import { tileDistance, inBounds, tilesOf } from "../engine/geometry/coords.ts"
+import type { Coord, MapTerrain } from "../engine/geometry/types.ts"
 import { TERRAIN } from "../engine/geometry/types.ts"
 import type { PlayerId } from "../engine/state/types.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
@@ -118,7 +118,7 @@ export function appearanceRing(at: Coord, sinceMs: number, reducedMotion: boolea
     for (let dy = -radius; dy <= radius; dy += 1) {
       for (let dx = -2 * radius - 1; dx <= 2 * radius + 1; dx += 1) {
         const tile = { x: at.x + dx, y: at.y + dy }
-        const distance = gridDistance(at, tile)
+        const distance = tileDistance(at, tile)
         if (distance === 2 * radius || distance === 2 * radius + 1) tiles.push(tile)
       }
     }
@@ -151,7 +151,7 @@ export function drawAppearance(cells: BandCell[], input: BuildCompositionInput):
   const taken = takenOnMap(context, state)
   const side = playerRole("A")
   for (const { tile, glyph, bold } of appearanceRing(now.at, since, reduced)) {
-    if (!inBounds(context.grid, tile) || !inView(tile) || taken.has(`${tile.x},${tile.y}`)) continue
+    if (!inBounds(context.terrain, tile) || !inView(tile) || taken.has(`${tile.x},${tile.y}`)) continue
     const cell = cellForTile(layout, state.camera, tile)
     put(cells, BANDS.effects, cell.x, cell.y, glyph, side, bold ? { bold: true } : {})
   }
@@ -184,7 +184,7 @@ function drawLineBeside(cells: BandCell[], input: BuildCompositionInput, at: Coo
   const row = rows.reduce((best, y) => (covered(y) < covered(best) ? y : best), rows[0] ?? at.y - 1)
   ;[...label].forEach((glyph, index) => {
     const tile = { x: left + index, y: row }
-    if (tile.x > range.lastX || !inBounds(context.grid, tile) || taken.has(`${tile.x},${tile.y}`)) return
+    if (tile.x > range.lastX || !inBounds(context.terrain, tile) || taken.has(`${tile.x},${tile.y}`)) return
     const cell = cellForTile(layout, state.camera, tile)
     put(cells, BANDS.effects, cell.x, cell.y, glyph, playerRole("A"), fading ? { dim: true } : { bold: true })
   })
@@ -272,7 +272,7 @@ export function vignettePlace(
 }
 
 /** The scene's view a Battle Round draws through. */
-type SceneView = Readonly<{ camera: Camera; viewport: Viewport; layout: BuildLayout; grid: GridTerrain }>
+type SceneView = Readonly<{ camera: Camera; viewport: Viewport; layout: BuildLayout; terrain: MapTerrain }>
 
 /**
  * ***Her vignette*** over the battle, while it is open: the window beside where she fell, her face going through
@@ -301,7 +301,7 @@ export function drawVignette(
   // Her last words beside her stay readable: the window keeps off their row's span.
   const said = voice === undefined || voice.where !== "map" ? null : { y: voice.place.y, half: Math.ceil((voice.text.length + 4) / 2), x: voice.place.x }
   const keepClear = (tile: Coord): boolean => said !== null && tile.y === said.y && Math.abs(tile.x - said.x) <= said.half
-  const corner = vignettePlace(fall.at, size, range, (tile) => inBounds(view.grid, tile) && occupied.has(tile.y * view.grid.width + tile.x), keepClear)
+  const corner = vignettePlace(fall.at, size, range, (tile) => inBounds(view.terrain, tile) && occupied.has(tile.y * view.terrain.width + tile.x), keepClear)
   const side = playerRole(fall.player)
   glyphs.forEach((line, dy) => {
     ;[...line].forEach((glyph, dx) => {
@@ -324,20 +324,20 @@ export function drawVignette(
 
 // --- She is out ---------------------------------------------------------------------------------------
 
-/** The free tile nearest a side's Grid Nexus, outside it, by the Grid's own distance — east, then the top, first
+/** The free tile nearest a side's Nexus, outside it, by the battlefield's own distance — east, then the top, first
  *  among equals — or `null` with none within four rows. */
-export function besideNexus(grid: GridTerrain, nexus: Coord, taken: (tile: Coord) => boolean): Coord | null {
+export function besideNexus(terrain: MapTerrain, nexus: Coord, taken: (tile: Coord) => boolean): Coord | null {
   const free: Coord[] = []
   for (let dy = -4; dy <= 4; dy += 1) {
     for (let dx = -8; dx <= 8; dx += 1) {
       const tile = { x: nexus.x + dx, y: nexus.y + dy }
-      if (!inBounds(grid, tile) || taken(tile)) continue
-      const terrain = grid.tiles[tile.y * grid.width + tile.x]
-      if (terrain !== undefined && TERRAIN[terrain].impassable) continue
+      if (!inBounds(terrain, tile) || taken(tile)) continue
+      const ground = terrain.tiles[tile.y * terrain.width + tile.x]
+      if (ground !== undefined && TERRAIN[ground].impassable) continue
       free.push(tile)
     }
   }
-  free.sort((a, b) => gridDistance(nexus, a) - gridDistance(nexus, b) || b.x - a.x || a.y - b.y)
+  free.sort((a, b) => tileDistance(nexus, a) - tileDistance(nexus, b) || b.x - a.x || a.y - b.y)
   return free[0] ?? null
 }
 
@@ -368,7 +368,7 @@ export function drawOutInBuild(cells: BandCell[], input: BuildCompositionInput):
   const nexus = nexusTile(context)
   if (nexus === null) return
   const taken = takenOnMap(context, state)
-  const at = besideNexus(context.grid, nexus, (tile) => taken.has(`${tile.x},${tile.y}`))
+  const at = besideNexus(context.terrain, nexus, (tile) => taken.has(`${tile.x},${tile.y}`))
   if (at === null) return
   const range = visibleRange(state.camera, state.viewport)
   if (at.x < range.firstX || at.x > range.lastX || at.y < range.firstY || at.y > range.lastY) return
@@ -376,10 +376,10 @@ export function drawOutInBuild(cells: BandCell[], input: BuildCompositionInput):
   cells.push({ band: BANDS.units, x: cell.x, y: cell.y, cell: { glyph: entityGlyph(contentId, "A", { x: 0, y: 0 }), style: outLook("A") } })
 }
 
-/** A Battle Round after she falls: her dim glyph beside her side's Grid Nexus, on a tile nothing stands on now. */
+/** A Battle Round after she falls: her dim glyph beside her side's Nexus, on a tile nothing stands on now. */
 export function drawOutInBattle(cells: BandCell[], view: SceneView, fall: FallFrame | undefined, timeMs: number, nexus: Coord | null, occupied: ReadonlySet<number>): void {
   if (fall === undefined || nexus === null || timeMs < fall.atMs) return
-  const at = besideNexus(view.grid, nexus, (tile) => occupied.has(tile.y * view.grid.width + tile.x))
+  const at = besideNexus(view.terrain, nexus, (tile) => occupied.has(tile.y * view.terrain.width + tile.x))
   if (at === null) return
   const range = visibleRange(view.camera, view.viewport)
   if (at.x < range.firstX || at.x > range.lastX || at.y < range.firstY || at.y > range.lastY) return

@@ -1,5 +1,5 @@
 // Putting a glyph, or a string of them, into a band — shared by every screen: the menu (`menu.ts`), the
-// Build Phase and its Battle Round (`build.ts`), and the board alone (`grid-layer.ts`).
+// Build Phase and its Battle Round (`build.ts`), and the battlefield alone (`map-layers.ts`).
 //
 // A band write, an optional style role, four attribute flags, a column limit, and the guarantee that
 // authored text is transliterated to ASCII before it can put a two-column glyph in a one-column cell.

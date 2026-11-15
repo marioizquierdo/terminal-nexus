@@ -47,7 +47,7 @@ and **Versus** (two people, later); runs of many battles were retired ([`game-mo
 ## 1. The question (as it was asked)
 
 Today a round is: a Nexus Pulse, a Build Phase, then a Battle Round of up to 50 seconds; then **Recall** sends every
-survivor home, onto the roof of the building that trained it or beside the Grid Nexus, and the next Build Phase opens on
+survivor home, onto the roof of the building that trained it or beside the Nexus, and the next Build Phase opens on
 an empty middle. So every Battle Round starts from the bases, and an attack has to cross the map again each round. The
 owner is weighing three rules for that moment between rounds:
 
@@ -64,16 +64,16 @@ With it come three ideas that stand on their own:
   dynamic)." It is the same rule as a building's order: given between rounds, carried out during the round, never
   touched while it plays.
 - **The march line, shown.** The Commander's line to the enemy Nexus is the line every other unit marches by; it is
-  drawn on the Build Phase map so the player sees the way the army will go. Without her on the Grid it is the line
+  drawn on the Build Phase map so the player sees the way the army will go. Without her on the battlefield it is the line
   from Nexus to Nexus; later, the line to a banner or an outpost.
-- **The genre.** "Lean into the RTS genre": an army that lives on the Grid between rounds, built in timed phases
+- **The genre.** "Lean into the RTS genre": an army that lives on the battlefield between rounds, built in timed phases
   instead of in real time, and told in ASCII.
 
 ## 2. What already exists
 
 So a decision here is mostly about rules, not new machinery:
 
-- **The guide line is built.** While a side's Commander stands on the Grid she is its guide: its line runs from her
+- **The guide line is built.** While a side's Commander stands on the battlefield she is its guide: its line runs from her
   to the march's goal, from the side's own Nexus without her, and marchers keep within a band of it and form up
   behind her by line (the march, [`movement.md`](../system-design/movement.md)). Drawing it in the Build Phase is
   presentation only.
@@ -138,7 +138,7 @@ keeps them decisive, and a run of eight short rounds a battle is closer to the 5
 
 **What to watch.** Reinforcements walking out behind a forward line (an army that arrives in two pieces); a stalemate at a
 choke where both fronts sit at each other's Turrets; the snowball once players adapt; the Build Phase drawing many units
-mid-Grid at 80 × 24; enemy units inside your build range (placement refuses occupied ground, but nothing else changes).
+mid-battlefield at 80 × 24; enemy units inside your build range (placement refuses occupied ground, but nothing else changes).
 
 ## 5. Against the milestone plan
 

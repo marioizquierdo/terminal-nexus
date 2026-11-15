@@ -30,7 +30,7 @@ headless with scripts on either side.
 | **Modifier** | A named rule laid over the battle: `fast-rounds`, `double-income`. A playground for experiments; the good ones are kept |
 | **Setup** | The map, the seed, the slots, the goal, the modifiers, the round limit and the Battle Round's ticks: everything chosen before round 1 (the settings text travels beside it) |
 | **Save file** | A setup, and the battle as it stands at the opening of a Build Phase (`*.save.json`) |
-| **Sandbox** | A save whose `start` draws the board by hand: one Battle Round of the battle engine from that board, both slots planning nothing. A rule, a unit, a kind of ground or a showcase, in `sandboxes/` |
+| **Sandbox** | A save whose `start` sets the battlefield up by hand: one Battle Round of the battle engine from that battlefield, both slots planning nothing. A rule, a unit, a kind of ground or a showcase, in `sandboxes/` |
 | **Spectating** | A battle with no `player:` slot: the Build Phase has nothing to build, only Explore Map and Start next round |
 
 The code's word for the two-sided battle stays *battle* (as the engine's word for a battle is *match*); a person reads
@@ -67,7 +67,7 @@ What follows from it:
   `skirmish --map pocket --p2-commander averno`, `terminal-nexus --map pocket --p2-commander averno` and
   `--at 'skirmish?map=pocket&p2-commander=averno'` are one battle, refused for the same reasons. The save's names are
   the setup screen's.
-- **A sandbox is the engine from a board nobody built.** Its Battle Round is the same engine a battle's is, started from
+- **A sandbox is the engine from a battlefield nobody built.** Its Battle Round is the same engine a battle's is, started from
   the units its `start` places, with no Build Phase, Nexus Pulse or credits around it. It has one path,
   `playSandboxRound` (`src/skirmish/sandbox-round.ts`), which the `skirmish` command, the measurement and the tests play
   it by.
@@ -138,13 +138,13 @@ on any slot: there is no difficulty setting, and both sides start on equal groun
   (`credits`, its share of the income). Elimination is the only goal.
 - **`state`** is written by the game: the battle's own state between rounds (`BattleState`, `src/battle/types.ts`), in the
   engine's words, where side A is `p1` and side B is `p2`: the round to play, each side's credits, kept powers and
-  absent Commander, every round's report (its Build Phase half) with its reading (the Battle Round's numbers, [`battles.md`](battles.md), "Reading a battle"), the result once there is one, and `carried`, what stands on the Grid. The
-  Grid's ground is never in it: the map has it.
+  absent Commander, every round's report (its Build Phase half) with its reading (the Battle Round's numbers, [`battles.md`](battles.md), "Reading a battle"), the result once there is one, and `carried`, what stands on the battlefield. The
+  battlefield's ground is never in it: the map has it.
 - **`draft`** is a slot's build actions so far for the round it is at ([`battles.md`](battles.md), the brief and the build
   actions), so a load returns to where it stopped: half made, as Save game leaves them mid-Build Phase, or whole, handed in
   by one slot before the other's.
   It is cleared when the round is played.
-- **`start`** is what each slot has on the Grid before round 1, placed by hand: a save with one is a **sandbox**
+- **`start`** is what each slot has on the battlefield before round 1, placed by hand: a save with one is a **sandbox**
   (section 5). A side's credits and roster in `start` are not built: no sandbox needs them yet.
 - **The log is never in a save** (the owner: "Logging is a separate concern").
 - **A save from before a round's report carried its reading is refused**, by the round (`state.history[0]`); the format
@@ -177,13 +177,13 @@ screen moves during a Build Phase (a regroup still animating, a unit stepping of
 presentation: the Battle Round opens from the saved places, so a battle loaded from a save plays as the one played
 straight through (tested on Node and Bun).
 
-## 5. A board written by hand: sandboxes
+## 5. A battlefield set up by hand: sandboxes
 
-**A sandbox is a save whose `start` draws the board by hand** (RULE — `src/skirmish/start.ts`,
+**A sandbox is a save whose `start` sets the battlefield up by hand** (RULE — `src/skirmish/start.ts`,
 `src/skirmish/sandboxes.ts`, `tests/skirmish-save.test.ts`, `tests/sandboxes.test.ts`): its one Battle Round is the
-battle engine run from that board, to test one rule, effect, movement or ability without the game around it, like the
+battle engine run from that battlefield, to test one rule, effect, movement or ability without the game around it, like the
 context of a unit test. The checked-in ones are in [`sandboxes/`](../../sandboxes), a folder for each purpose (`rules/`,
-`units/`, `movement/`, `engage/`, `showcase/`), most of them the boards of unit tests; a session writes its own in the
+`units/`, `movement/`, `engage/`, `showcase/`), most of them the battlefields of unit tests; a session writes its own in the
 scratchpad for a question it asks once. A file may be named anything; its id is its file name.
 
 ```json
@@ -206,7 +206,7 @@ scratchpad for a question it asks once. A file may be named anything; its id is 
 - **The map is drawn inline**, its rows one character a tile, north to south; `legend` names the ground of each
   character (`.` open, `#` rock, `*` a deposit unless given; `,` scrub needs it). `nexus` and `hold` may be left out:
   the start places the Nexuses.
-- **A slot's start** is a picture of what it places, `rows` from `at` (the Grid's north-west corner unless given), a
+- **A slot's start** is a picture of what it places, `rows` from `at` (the battlefield's north-west corner unless given), a
   space nothing, each character the **centre tile** of what the `legend` names, `hp` when it starts hurt; and its
   `target`, where its troops head (none: the enemy Nexus). `p1` is the engine's side A, `p2` side B.
 - **One Battle Round, nothing planned**: `rounds` is 1, both slots `script:idle`, no `state` and no `draft`; a slot
@@ -217,11 +217,11 @@ scratchpad for a question it asks once. A file may be named anything; its id is 
   the same way; nothing is saved after it, since the file is the battle. Another seed or more ticks is a copy of the
   file with `seed` or `roundTicks` changed.
 - **Refused whole**, as any save: every problem at once, by its place in the file, and once the shape is right the first
-  unit that does not fit the ground (off the Grid, on rock, on another) as `start: ...`.
+  unit that does not fit the ground (off the battlefield, on rock, on another) as `start: ...`.
 
 The built-in maps are files in `maps/` (`crossing.map.json`, `pocket.map.json`), read by `src/battle/maps.ts` and named by id.
 
-### What a board leaves out
+### What a battlefield leaves out
 
 **Any unit or building the game has stands in a sandbox with none of the game around it** (RULE —
 `tests/sandbox-spawn.test.ts`). The test loops over every content id the registry holds, each on either side, alone,
@@ -234,13 +234,13 @@ What the game builds around a unit, and what the unit does without it:
 
 | What is absent | What happens | Where |
 | --- | --- | --- |
-| **Banner** (the stance's rally point) | A side with no target heads for the enemy's Grid Nexus, and with none engages the nearest enemy. A sandbox that wants a banner writes a `target` in a start: that is the banner, mocked as the area the side heads for and holds. A stance's second leg (aggressive: there, then on) is the match layer's (`src/match/banner.ts`) and a sandbox has none. | the engine reads `targets` (`src/engine/pulse/target.ts`) and never a banner |
-| **Own Grid Nexus** | The side's march has no guide line (the band) and its units march from where they stand. A Nexus is only a building here; it is placed like one. | `src/engine/pulse/march.ts` |
-| **Enemy Grid Nexus** | Units engage the nearest enemy. With no enemy at all they stand, and the round ends on its ticks, a draw. | `src/engine/pulse/perception.ts` |
-| **Commander** | A Commander is a regular troop. A Commander's content id (`unit.citizen.vasse`) is placed like any unit and fights with its own attack and abilities; nothing else needs her on the Grid. | `src/engine/pulse/abilities.ts` reads `commander` for abilities only |
+| **Banner** (the stance's rally point) | A side with no target heads for the enemy's Nexus, and with none engages the nearest enemy. A sandbox that wants a banner writes a `target` in a start: that is the banner, mocked as the area the side heads for and holds. A stance's second leg (aggressive: there, then on) is the match layer's (`src/match/banner.ts`) and a sandbox has none. | the engine reads `targets` (`src/engine/pulse/target.ts`) and never a banner |
+| **Own Nexus** | The side's march has no guide line (the band) and its units march from where they stand. A Nexus is only a building here; it is placed like one. | `src/engine/pulse/march.ts` |
+| **Enemy Nexus** | Units engage the nearest enemy. With no enemy at all they stand, and the round ends on its ticks, a draw. | `src/engine/pulse/perception.ts` |
+| **Commander** | A Commander is a regular troop. A Commander's content id (`unit.citizen.vasse`) is placed like any unit and fights with its own attack and abilities; nothing else needs her on the battlefield. | `src/engine/pulse/abilities.ts` reads `commander` for abilities only |
 | **Credits** | A bounty or a salvage drop is noted as an event with its credits; the rules between rounds add them up. The engine never reads credits, so a sandbox earns none and loses nothing. | `src/engine/abilities/`, `src/match/earnings.ts` |
 | **Round number, Nexus Pulse, hand, cards** | The engine has none: the round count, the hand and the cards are the match layer's and the Build Phase's. A sandbox is one round with no hand dealt. | `src/match/` |
-| **Lane** | The Grid has none. What the engine calls a lane (`march.ts`) is a side's guide line, absent without a Nexus. | `src/engine/pulse/march.ts` |
+| **Lane** | The battlefield has none. What the engine calls a lane (`march.ts`) is a side's guide line, absent without a Nexus. | `src/engine/pulse/march.ts` |
 | **A building's wave** | **A building in a Battle Round sandbox does what its army's card says** (decided by Mario, [his words](../history/feedback/2026-11-14-cleanup.md): "if you are testing a building, you are placing it in there in battle mode, and the sandbox has enough resources, then the buildings will start doing its thing"). Every placed building whose content id has a card with `spawns` in the armies is given the card's wave, the first one `firstWave` seconds in and its units leaving along their route, as a battle gives it (`src/skirmish/opening/training.ts`); a Barracks trains its four troopers, the bench Hatchery its three swarmers in place of its own spawner. Nothing is checked about resources: a wave costs no credits in a battle, so a sandbox always has enough. A building with no such card trains nothing. A recipe the caller already gave a building (`measure formations`) is kept, never doubled. A sandbox that uses a building as ground (a wall, a thing to break) places the bench's Practice Barracks (`structure.bench.barracks`), the same body with no card. | `src/skirmish/opening/training.ts`, called by `openBattle` before the entities are made, so every door gets it |
 | **A fitted building** (an upgrade or mode, `structure.x+fitting`) | Not placed: only the loader's registry resolves one, and a sandbox's is the fixture registry. | `src/content/fitted.ts` |
 

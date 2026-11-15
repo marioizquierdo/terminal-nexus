@@ -1,22 +1,22 @@
 // The maps a level can name, by id — the small map table a story's levels point into (`map: "starter"` in
-// `armies/vasse/army.json`) — and the one map there is: the Build Phase's starter map, a Grid big enough that
+// `armies/vasse/army.json`) — and the one map there is: the Build Phase's starter map, a battlefield big enough that
 // scrolling is unavoidable, with two structures already standing on it.
 //
 // Still code, not data: a map in an army is a later step. It lives here rather than beside the menu it is
 // shown with (`./catalog.ts`, which re-exports it) because the armies name it and that menu is built from the
 // armies: one file holding both would be a circular import.
 
-import type { Coord, GridTerrain, TerrainId } from "../engine/geometry/types.ts"
+import type { Coord, MapTerrain, TerrainId } from "../engine/geometry/types.ts"
 import type { MapEdgeStyle, StandingStructure } from "./types.ts"
 
 /**
- * 96 x 40 tiles — larger than the **maximum** viewport (72 x 24) on both axes, deliberately. A Grid
+ * 96 x 40 tiles — larger than the **maximum** viewport (72 x 24) on both axes, deliberately. A battlefield
  * merely larger than the minimum viewport would stop scrolling the moment somebody opened a big
  * terminal, and the whole question this map asks is what scrolling feels like.
  */
-export const STARTER_GRID_SIZE = { width: 96, height: 40 } as const
+export const STARTER_MAP_SIZE = { width: 96, height: 40 } as const
 
-/** Where the cursor opens: on the Grid Nexus, its centre tile (the owner: "on
+/** Where the cursor opens: on the Nexus, its centre tile (the owner: "on
  *  top of the nexus by default"), so the first thing a player sees is their own base, everything else
  *  is somewhere to scroll to, and the first building armed lands on the nearest good spot beside it.
  *  `nexusTile(starterContext())` says the same; a test holds the two together. */
@@ -62,11 +62,11 @@ const DEPOSITS: readonly Readonly<{ x: number; y: number }>[] = [
 
 /**
  * Built by a function rather than checked in as a sandbox (`.save.json`): a sandbox is
- * simulation input and the determinism suite replays every one of them twenty times. This Grid never
+ * simulation input and the determinism suite replays every one of them twenty times. This battlefield never
  * reaches the battle engine. Deterministic all the same — no randomness, no clock, the same tiles each run.
  */
-export function starterGrid(): GridTerrain {
-  const { width, height } = STARTER_GRID_SIZE
+export function starterTerrain(): MapTerrain {
+  const { width, height } = STARTER_MAP_SIZE
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.plain")
   const set = (x: number, y: number, id: TerrainId): void => {
     if (x < 0 || y < 0 || x >= width || y >= height) return
@@ -101,7 +101,7 @@ export function starterGrid(): GridTerrain {
 /**
  * This map's own border (the owner: "I wonder if the map can define different borders to give it
  * personality"): a dashed heavy line, a wire fence round a military perimeter — PERIMETER's register
- * is "plain, military, correct". Drawn wherever the Grid reaches the map's edge. A proof of the hook,
+ * is "plain, military, correct". Drawn wherever the battlefield reaches the map's edge. A proof of the hook,
  * not map design: a real map would carry this in its own definition, beside its tiles.
  */
 export const STARTER_EDGE_STYLE: MapEdgeStyle = "fence"
@@ -113,10 +113,10 @@ export const STARTER_STANDING: readonly StandingStructure[] = [
   { contentId: "structure.citizen.barracks", anchor: { x: 25, y: 10 } },
 ]
 
-/** A map a level is played on: its Grid, built fresh each time it is asked for; what already stands on it; its
+/** A map a level is played on: its battlefield, built fresh each time it is asked for; what already stands on it; its
  *  edge; and where the Build Phase's cursor opens on it. */
 export type MapDefinition = Readonly<{
-  grid: () => GridTerrain
+  terrain: () => MapTerrain
   standing: readonly StandingStructure[]
   edgeStyle: MapEdgeStyle
   startCursor: Coord
@@ -124,13 +124,13 @@ export type MapDefinition = Readonly<{
 
 /** The starter map, whole. */
 export const STARTER_MAP: MapDefinition = {
-  grid: starterGrid,
+  terrain: starterTerrain,
   standing: STARTER_STANDING,
   edgeStyle: STARTER_EDGE_STYLE,
   startCursor: STARTER_START_CURSOR,
 }
 
-/** The starter map with its Grid Nexus alone: no Barracks standing, so the tech tree is climbed from its first
+/** The starter map with its Nexus alone: no Barracks standing, so the tech tree is climbed from its first
  *  building (the power curve's test level, Commander Armies). */
 export const STARTER_OPEN_MAP: MapDefinition = {
   ...STARTER_MAP,

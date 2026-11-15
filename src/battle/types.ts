@@ -167,7 +167,7 @@ export type BattleResult = Readonly<{
   round: number
 }>
 
-/** A battle between rounds: what it is, the round to play next, what the last round left on the Grid (after the regroup), each
+/** A battle between rounds: what it is, the round to play next, what the last round left on the battlefield (after the regroup), each
  *  side, every round so far, and how it ended once it has. */
 export type BattleState = Readonly<{
   setup: BattleSetup

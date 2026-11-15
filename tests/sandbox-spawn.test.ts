@@ -1,4 +1,4 @@
-// A sandbox is a testing ground, like a unit test's context (docs/system-design/skirmish-saves.md): a slice of the Grid,
+// A sandbox is a testing ground, like a unit test's context (docs/system-design/skirmish-saves.md): a slice of the battlefield,
 // not the game. So every unit and building the game has must stand in the smallest slice there is, with none of what
 // the game builds around it (a banner, a Nexus, an enemy Nexus, a Commander, credits, a round number, a lane), and
 // run for some ticks without throwing, leaving a state hash that is the same every run. A new content id is covered
@@ -7,11 +7,11 @@
 // Why no dependency needs a mock (each is a case here, and the page says how it is handled):
 //   banner         the match layer sets a side's target from it (`src/match/banner.ts`); the battle engine reads `targets`, and a side
 //                  with none heads for the enemy Nexus, else engages the nearest enemy
-//   Nexus          its march line starts at its Grid Nexus, and a side with none marches from where it stands
+//   Nexus          its march line starts at its Nexus, and a side with none marches from where it stands
 //   enemy Nexus    a side with none engages the nearest enemy
 //   Commander      a Commander is a regular troop; `Body.commander` is read by abilities only
 //   credits        an ability `note`s them as an event; the rules between rounds add them up, the battle engine never reads them
-//   round, lane    the battle engine has neither: a round is the match layer's count, and the Grid has no lanes
+//   round, lane    the battle engine has neither: a round is the match layer's count, and the battlefield has no lanes
 //   Pulse          a sandbox's state starts the battle engine directly
 
 import { test } from "node:test"
@@ -37,7 +37,7 @@ function slice(id: string, sides: Readonly<Partial<Record<PlayerId, readonly Sid
   for (const player of ["A", "B"] as const) {
     const given = sides[player]
     if (given === undefined) continue
-    // A legend of one symbol each, so the block needs no shared grid.
+    // A legend of one symbol each, so the block needs no shared rows.
     const legend: Record<string, PlacementEntry> = {}
     const rows: string[][] = Array.from({ length: HEIGHT }, () => Array.from({ length: WIDTH }, () => " "))
     given.forEach((entry, index) => {
@@ -50,7 +50,7 @@ function slice(id: string, sides: Readonly<Partial<Record<PlayerId, readonly Sid
   return {
     id,
     name: id,
-    grid: { width: WIDTH, height: HEIGHT },
+    size: { width: WIDTH, height: HEIGHT },
     seed: 7,
     pulseTicks: TICKS,
     terrain: Array.from({ length: HEIGHT }, () => ".".repeat(WIDTH)),
@@ -63,7 +63,7 @@ function slice(id: string, sides: Readonly<Partial<Record<PlayerId, readonly Sid
 /** What a sandbox without the game around it can be missing, as the slice each case builds for `content` on side `side`. */
 function cases(content: string, side: PlayerId): ReadonlyArray<readonly [string, BattleOpening]> {
   const other: PlayerId = side === "A" ? "B" : "A"
-  // Side A stands west of the middle, side B east of it, each with its Nexus behind it and the other's across the Grid.
+  // Side A stands west of the middle, side B east of it, each with its Nexus behind it and the other's across the battlefield.
   const at = { x: side === "A" ? 16 : 31, y: 12 }
   const enemyAt = { x: side === "A" ? 28 : 19, y: 12 }
   const home = { x: side === "A" ? 6 : 41, y: 12 }
@@ -118,7 +118,7 @@ test("every content id stands in a sandbox with nothing of the game around it, o
           ordinals.add(entity.ordinal)
           const definition = FIXTURE_REGISTRY.get(entity.contentId)
           assert.ok(entity.hp > 0 && entity.hp <= definition.maxHp, `${where}: ${entity.id} has ${entity.hp} health`)
-          assert.ok(entity.anchor.x >= 0 && entity.anchor.y >= 0 && entity.anchor.x < WIDTH && entity.anchor.y < HEIGHT, `${where}: ${entity.id} left the Grid`)
+          assert.ok(entity.anchor.x >= 0 && entity.anchor.y >= 0 && entity.anchor.x < WIDTH && entity.anchor.y < HEIGHT, `${where}: ${entity.id} left the battlefield`)
         }
       }
     }

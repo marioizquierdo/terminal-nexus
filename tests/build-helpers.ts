@@ -48,7 +48,7 @@ export const CTRL_C = String.fromCharCode(3)
 
 // --- Terminal sizes --------------------------------------------------------------------------------
 
-/** The floor and the acceptance target: 49 x 18 tiles of Grid. */
+/** The floor and the acceptance target: 49 x 18 tiles of battlefield. */
 export const MINIMUM = { columns: 80, rows: 24 }
 /** Where the viewport reaches its largest, 72 x 24 tiles. */
 export const MAXIMUM = { columns: 104, rows: 32 }
@@ -60,8 +60,8 @@ export const ROOMY = { columns: 120, rows: 40 }
 // --- A Build Phase ---------------------------------------------------------------------------------
 
 /**
- * Open ground three tiles south of the Grid Nexus, where each building fits as it is armed. The real
- * screen opens on the Grid Nexus (`STARTER_START_CURSOR`), where arming moves the cursor to the nearest
+ * Open ground three tiles south of the Nexus, where each building fits as it is armed. The real
+ * screen opens on the Nexus (`STARTER_START_CURSOR`), where arming moves the cursor to the nearest
  * good spot; a test that is not about that rule starts here, so a building armed stays where the cursor
  * is and the test can say where it goes. A test about the opening passes `cursor: STARTER_START_CURSOR`.
  */
@@ -100,7 +100,7 @@ export function buildSide(options: SideOptions = {}): BuildSide {
   // unless its context names it (tests/battle-banner.test.ts turns it on; the export's tests keep the default).
   const context: BuildContext =
     logged.experiments?.battleBanner === undefined ? { ...logged, experiments: { ...logged.experiments, battleBanner: "off" } } : logged
-  const layout = buildLayout(terminal, context.grid)
+  const layout = buildLayout(terminal, context.terrain)
   let quits = 0
   const build = new BuildSession({
     ...rest,
@@ -134,7 +134,7 @@ export function clickCell(side: Pick<Side, "build" | "layout">, column: number, 
   side.build.handleData(formatMouseEvent(button, column + 1, row + 1), side.layout, now === undefined ? {} : { now })
 }
 
-/** A click on the cell a Grid tile is drawn on, through the state's camera. */
+/** A click on the cell a tile is drawn on, through the state's camera. */
 export function clickTile(side: Side, tile: Coord, button: number = MOUSE_LEFT): void {
   const cell = cellForTile(side.layout, side.build.state.camera, tile)
   clickCell(side, cell.x, cell.y, button)

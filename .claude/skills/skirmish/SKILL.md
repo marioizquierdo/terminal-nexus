@@ -1,6 +1,6 @@
 ---
 name: skirmish
-description: The skirmish command (bin/skirmish.ts), the game played headless: a Battle Round from a board written by hand (a sandbox), a battle from a save or a new setup, every Commander pairing, many seeds, build actions by script or model agent. Use to verify a rule, unit, ability or army change, to debug a Battle Round from its log, to write a sandbox, to play a person's save on, and when Mario asks how armies compare.
+description: The skirmish command (bin/skirmish.ts), the game played headless: a Battle Round from a battlefield set up by hand (a sandbox), a battle from a save or a new setup, every Commander pairing, many seeds, build actions by script or model agent. Use to verify a rule, unit, ability or army change, to debug a Battle Round from its log, to write a sandbox, to play a person's save on, and when Mario asks how armies compare.
 ---
 
 # The `skirmish` command: the game, headless
@@ -17,17 +17,17 @@ This page is the procedure; the owners of each meaning:
 - **Which check at which layer, and the shapes a verifier takes**: [`testing.md`](../../../docs/system-design/testing.md).
 - **The rules, the brief, the build actions, formations, biases, the maps for testing and how a battle is read**:
   [`battles.md`](../../../docs/system-design/battles.md).
-- **The save file, and a board written by hand (a sandbox) with what it leaves out**:
+- **The save file, and a battlefield set up by hand (a sandbox) with what it leaves out**:
   [`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md).
 
-## 0. One Battle Round from a board written by hand
+## 0. One Battle Round from a battlefield set up by hand
 
 For an engine question (a hit, a death, a step, an ability, an effect on state, how units engage on a kind of ground):
 a sandbox, the engine with nothing of the game around it. Done when the log shows the decision that produced the
 outcome and the pictures show where it happened.
 
 ```bash
-npm run sandboxes                                                         # the checked-in boards
+npm run sandboxes                                                         # the checked-in sandboxes
 npm run skirmish -- --load sandboxes/rules/melee-kill.save.json --play-to next --show 0,20,end
 npm run skirmish -- --load <sandbox> --play-to next --log-level debug --log run.log   # every decision, per tick
 ```
@@ -36,9 +36,9 @@ npm run skirmish -- --load <sandbox> --play-to next --log-level debug --log run.
   `sandboxes/showcase/heavies-clash.save.json`) into the scratchpad, `notes` saying the one thing it shows. Draw only
   what the question needs: the map inline, both slots `script:idle`, `rounds` 1, a box of units per slot; a symbol is a
   unit's centre tile, `(0,0)` the north-west tile, `p1` side A (west). Give each side that fights somewhere to go: a
-  `target`, or an enemy Nexus. A wrong board is refused whole, naming slot, symbol and tile.
+  `target`, or an enemy Nexus. A wrong setup is refused whole, naming slot, symbol and tile.
 - **Another seed, more ticks, another unit** is a copy with `seed`, `roundTicks` or a legend changed: one way to play a
-  board, no second tool.
+  battlefield, no second tool.
 - **The log**: one stream, `[tick] LEVEL kind subject [-> object] detail`, fixed columns, closed by the `report` line
   (outcome, losses, state and event hashes). Levels add up: `warn` (the default: stuck actors, arbitration at its bound,
   and the report), `info` (spawns, engagements, attacks that landed, deaths, victory), `debug` (target scoring,
@@ -85,7 +85,7 @@ Mechanics worth knowing:
 - Load any kept round and play it again to see a moment; nothing is saved over without `--save`.
 - `--json` writes only data on stdout, one brief a line with its `slot`; everything else goes to stderr, so it pipes
   into a parser.
-- `--show 0,120,end` is an **ASCII screenshot** of the Battle Round at those ticks: the Grid as the screen draws it,
+- `--show 0,120,end` is an **ASCII screenshot** of the Battle Round at those ticks: the battlefield as the screen draws it,
   then its legend, the overlaps (what stands under a unit on a roof) and a standing line (each Nexus's health and
   units). Ticks past the round's end are named, not drawn. It takes one battle or a sandbox, never `--seeds`.
 

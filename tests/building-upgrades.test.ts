@@ -18,7 +18,7 @@ import { DEFAULT_LEVEL } from "../src/cli/levels.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
 import { FIXTURE_REGISTRY, baseContentId, fittedId } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/engine/events/types.ts"
-import type { Coord, GridTerrain } from "../src/engine/geometry/types.ts"
+import type { Coord, MapTerrain } from "../src/engine/geometry/types.ts"
 import { opening } from "../src/match/index.ts"
 import { contextFor, stepTick } from "../src/engine/pulse/index.ts"
 import type { MatchState } from "../src/engine/state/types.ts"
@@ -133,7 +133,7 @@ test("removing or undoing a planned building takes what was bought on it with it
 
 test("a production line on one Barracks makes its wave five, and a Barracks beside it still sends four", { timeout: 120_000 }, () => {
   const context = withoutScene(DEFAULT_LEVEL.firstRound())
-  const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
+  const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
   const opened = createBuildState(context, STARTER_START_CURSOR, viewport)
   // A second Barracks planned below the standing one, and the standing one given its production line.
   const second = { ordinal: 1, contentId: BARRACKS, anchor: { x: 25, y: 13 } }
@@ -159,7 +159,7 @@ test("a production line on one Barracks makes its wave five, and a Barracks besi
   const standing = next.standing.find((structure) => structure.anchor.x === 25 && structure.anchor.y === 10)
   assert.equal(standing?.contentId, `${BARRACKS}+production-line`)
   const round2 = createBuildState(withoutScene(next), { x: 26, y: 10 }, viewport)
-  const explored: BuildState = { ...round2, exploreMap: true, focus: "grid" }
+  const explored: BuildState = { ...round2, exploreMap: true, focus: "map" }
   const card = currentCard(next, explored)
   assert.ok(card?.stats.some((stat) => stat.label === "UPGRADE" && stat.value === "Production line"))
   assert.equal(card?.stats.find((stat) => stat.label === "WAVE")?.value, "5 troopers at 5s")
@@ -170,8 +170,8 @@ test("a production line on one Barracks makes its wave five, and a Barracks besi
   assert.equal(trainedBy(again.timeline.events).get(carried?.id ?? ""), 5)
 })
 
-/** An open Grid, `width` by `height`, all plain ground. */
-function plainGrid(width: number, height: number): GridTerrain {
+/** An open battlefield, `width` by `height`, all plain ground. */
+function plainTerrain(width: number, height: number): MapTerrain {
   return { width, height, tiles: Array.from({ length: width * height }, () => "terrain.plain" as const) }
 }
 
@@ -181,9 +181,9 @@ function plainGrid(width: number, height: number): GridTerrain {
  * every one of its attacks, in order.
  */
 function turretFires(turret: string, registry: ContentRegistry, shots: number, structure = "structure.citizen.depot"): Extract<DomainEvent, { kind: "attack.launched" }>[] {
-  const grid = plainGrid(24, 11)
+  const terrain = plainTerrain(24, 11)
   const start: MatchState = opening({
-    grid,
+    terrain,
     registry,
     structures: [
       { contentId: turret, anchor: { x: 4, y: 5 }, player: "A" },
@@ -252,11 +252,11 @@ test("a mode switched on the screen stays switched the round after, and switchin
   const standing = next.standing.find((structure) => baseContentId(structure.contentId) === TURRET)
   assert.equal(standing?.contentId, `${TURRET}+units-first`)
   // The round after, with nothing taken: still Units first.
-  const viewport = buildLayout({ columns: 80, rows: 24 }, next.grid).viewport
+  const viewport = buildLayout({ columns: 80, rows: 24 }, next.terrain).viewport
   const round2 = createBuildState(withoutScene(next), standing?.anchor ?? STARTER_START_CURSOR, viewport)
   const later = DEFAULT_LEVEL.play.startPulse(next, round2)
   assert.ok(later?.timeline.states[0]?.entities.some((entity) => entity.contentId === `${TURRET}+units-first`))
-  const explored = currentCard(next, { ...round2, exploreMap: true, focus: "grid" })
+  const explored = currentCard(next, { ...round2, exploreMap: true, focus: "map" })
   assert.deepEqual(explored?.actions?.slice(1), [{ hotkey: "v", label: "Nearest first" }, { hotkey: "b", label: "Units first", value: "on" }])
 })
 
@@ -299,9 +299,9 @@ test("a fitted id resolves from its base, in its card's order only, and a regist
 
 test("the opening sets a carried building down as the content its Build Phase gave it, health and place its own, and leaves the units on its roof alone", () => {
   const registry = ARMIES.registry
-  const grid = plainGrid(20, 10)
+  const terrain = plainTerrain(20, 10)
   const first = opening({
-    grid,
+    terrain,
     registry,
     structures: [{ contentId: BARRACKS, anchor: { x: 4, y: 4 }, player: "A" }],
     setup: { seed: 1, pulseTicks: 10, forces: [{ player: "A", muster: { x: 12, y: 4 }, units: ["unit.citizen.trooper"] }] },
@@ -312,7 +312,7 @@ test("the opening sets a carried building down as the content its Build Phase ga
     entities: first.entities.map((entity) => (entity.contentId === BARRACKS ? { ...entity, hp: 70 } : { ...entity, anchor: { x: 4, y: 4 } })),
   }
   const at: Coord = { x: 4, y: 4 }
-  const next = opening({ grid, registry, structures: [], setup: { seed: 1, pulseTicks: 10, forces: [] }, carried: hurt, refits: [{ anchor: at, contentId: `${BARRACKS}+production-line` }] }).state
+  const next = opening({ terrain, registry, structures: [], setup: { seed: 1, pulseTicks: 10, forces: [] }, carried: hurt, refits: [{ anchor: at, contentId: `${BARRACKS}+production-line` }] }).state
   const barracks = next.entities.find((entity) => baseContentId(entity.contentId) === BARRACKS)
   assert.equal(barracks?.contentId, `${BARRACKS}+production-line`)
   assert.equal(barracks?.hp, 70)

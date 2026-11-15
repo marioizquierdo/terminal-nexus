@@ -35,7 +35,7 @@ function block(placed: readonly Placed[]): PlacementBlock {
   return { rows: rows.map((row) => row.join("")), legend }
 }
 
-/** A 24 x 12 open Grid with each side placed as given and A's target, resolved tick by tick. */
+/** A 24 x 12 open battlefield with each side placed as given and A's target, resolved tick by tick. */
 function run(sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>, target: TargetArea, ticks: number): Readonly<{ states: MatchState[]; events: DomainEvent[] }> {
   const placements: Partial<Record<PlayerId, PlacementBlock>> = {}
   for (const side of ["A", "B"] as const) {
@@ -45,7 +45,7 @@ function run(sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>, targ
   const opening: BattleOpening = {
     id: "target-edges",
     name: "target edges",
-    grid: { preset: "small-wide" },
+    size: { preset: "small-wide" },
     seed: 1,
     pulseTicks: ticks,
     terrain: Array.from({ length: 12 }, () => ".".repeat(24)),
@@ -140,15 +140,15 @@ test("a state carries a side's target only when it has one, round-trips it byte 
   const broken = (targets: unknown): string => JSON.stringify({ ...JSON.parse(text), targets })
   assert.throws(() => parseState(broken({})), /state targets is empty/)
   assert.throws(() => parseState(broken({ C: { x: 1, y: 1, width: 1, height: 1 } })), /unknown side C/)
-  assert.throws(() => parseState(broken({ A: { x: 23, y: 1, width: 2, height: 1 } })), /reaches off the 24x12 Grid/)
+  assert.throws(() => parseState(broken({ A: { x: 23, y: 1, width: 2, height: 1 } })), /reaches off the 24x12 battlefield/)
   assert.throws(() => parseState(broken({ A: { x: 1, y: 1, width: 0, height: 1 } })), /not a rectangle of whole tiles/)
 })
 
-test("a map's target is checked when it loads: on the Grid, whole tiles, and ground its units can stand on", () => {
+test("a map's target is checked when it loads: on the battlefield, whole tiles, and ground its units can stand on", () => {
   const opening = (targets: BattleOpening["targets"], terrain = Array.from({ length: 12 }, () => ".".repeat(24))): BattleOpening => ({
     id: "target-load",
     name: "target load",
-    grid: { preset: "small-wide" },
+    size: { preset: "small-wide" },
     seed: 1,
     pulseTicks: 12,
     terrain,
@@ -158,7 +158,7 @@ test("a map's target is checked when it loads: on the Grid, whole tiles, and gro
   })
   assert.equal(openBattle(opening(undefined)).state.targets, undefined)
   assert.deepEqual(openBattle(opening({ A: { x: 3, y: 3, width: 2, height: 2 } })).state.targets, { A: { x: 3, y: 3, width: 2, height: 2 } })
-  assert.throws(() => openBattle(opening({ A: { x: 23, y: 3, width: 2, height: 2 } })), (error: unknown) => error instanceof OpeningError && /reaches off the 24x12 Grid/.test(error.message))
+  assert.throws(() => openBattle(opening({ A: { x: 23, y: 3, width: 2, height: 2 } })), (error: unknown) => error instanceof OpeningError && /reaches off the 24x12 battlefield/.test(error.message))
   assert.throws(() => openBattle(opening({ A: { x: 3, y: 3, width: 0, height: 2 } })), /whole tiles, at least one wide and tall/)
   const rocky = Array.from({ length: 12 }, (_, y) => (y === 4 ? "....#..................." : ".".repeat(24)))
   assert.throws(() => openBattle(opening({ A: { x: 3, y: 3, width: 2, height: 2 } }, rocky)), /covers \(4,4\), which is impassable terrain.rock/)

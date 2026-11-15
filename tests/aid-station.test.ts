@@ -75,12 +75,12 @@ function block(placed: readonly Placed[]): PlacementBlock {
 /** The raid's Nexus, alone in the far corner: it keeps a battle going to its last tick and is in nobody's reach. */
 const FAR_NEXUS: Placed = [16, 8, "structure.ravel.nexus"]
 
-/** A small Grid with each side placed as given, resolved tick by tick for `ticks`: every event, and every state. */
+/** A small battlefield with each side placed as given, resolved tick by tick for `ticks`: every event, and every state. */
 function run(sides: Readonly<Record<PlayerId, readonly Placed[]>>, ticks: number): { events: DomainEvent[]; states: MatchState[] } {
   const opening: BattleOpening = {
     id: "aid-station-edges",
     name: "aid station edges",
-    grid: { width: 20, height: 10 },
+    size: { width: 20, height: 10 },
     seed: 1,
     pulseTicks: ticks,
     terrain: Array.from({ length: 10 }, () => ".".repeat(20)),
@@ -255,14 +255,15 @@ test("the bench medic, the one healer before buildings could heal, heals exactly
   assert.deepEqual([battle.stateHash, battle.eventsHash], PINNED_MEDIC)
 })
 
-// Pinned again when the Grid Nexus came to fight back: its shots are among the battle's.
+// Pinned again when the Nexus came to fight back: its shots are among the battle's.
 // Pinned again when a unit came to keep the target it holds until it falls, or goes 30 ticks unable to strike it
 // (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
 // Its state's hash pinned again when every map came to give each side that fights a goal: the raid now has a target
 // of its own, where the station's side stands, carried in the state; its events are the same battle's.
 // Pinned again when a building in a sandbox came to train as its card says: the sandbox's Barracks became the bench's Practice Barracks, which trains nothing, so the battle is the same one under another content id.
+// Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
 const PINNED_AID_STATION = [
-  "9f8c5b4541be010815cae01a90c9f2946fcc38b3e042c7b455c8a7cac7fe27c4",
+  "a25356649ec349628e3fbe9d3fd140f2fcd40656e844430d19b7865ead032f75",
   "ab9bdcca53a9dc31d9e60e9cf0c852f530aa23e906a70ff55db674a0fa73e168",
 ]
 // Its state's hash was the one from before the Aid Station, its events' pinned again when a unit among equally near
@@ -273,8 +274,9 @@ const PINNED_AID_STATION = [
 // (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
 // Both pinned again when every map came to give each side that fights a goal: each side heads for where the other
 // stands rather than for the nearest enemy anywhere, so the walks changed, not what the medic heals.
+// Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
 const PINNED_MEDIC = [
-  "e02339ec858308f503432fd9a2e96e316fdc91f48a80e30588fa6e3b7aba1eaf",
+  "bb9e83b0d2844a315679c46bcc0cba7f0abc583175cefa7867841bb4ba90942a",
   "dc9b825b8e849ac633808f0120b503f8661020c99aced784fcffe96934a02a78",
 ]
 
@@ -356,11 +358,11 @@ test("a heal's mark keeps the effect contract: a pure function of time, one ASCI
   assert.notDeepEqual(recipe({ ...instance, params: hit }, context({ timeMs: impact })), recipe(instance, context({ timeMs: impact })))
 })
 
-test("a heal's mark goes on the first open tile beside the mended unit: above, right, left, then below — never on a unit, rock or off the Grid", () => {
+test("a heal's mark goes on the first open tile beside the mended unit: above, right, left, then below — never on a unit, rock or off the battlefield", () => {
   const opening: BattleOpening = {
     id: "mend-tile",
     name: "mend tile",
-    grid: { width: 8, height: 6 },
+    size: { width: 8, height: 6 },
     seed: 1,
     pulseTicks: 1,
     terrain: ["........", "...#....", "........", "........", "........", "........"],
@@ -375,7 +377,7 @@ test("a heal's mark goes on the first open tile beside the mended unit: above, r
   assert.deepEqual(mendTile(state, REGISTRY, { x: 3, y: 2 }, footprint), { x: 3, y: 3 })
   // Open above.
   assert.deepEqual(mendTile(state, REGISTRY, { x: 4, y: 2 }, footprint), { x: 4, y: 1 })
-  // In the corner: off the Grid above and to the left, so to the right.
+  // In the corner: off the battlefield above and to the left, so to the right.
   assert.deepEqual(mendTile(state, REGISTRY, { x: 0, y: 0 }, footprint), { x: 1, y: 0 })
   // A three-tile hauler (anchored at 4,4): above the middle of it.
   assert.deepEqual(mendTile(state, REGISTRY, { x: 4, y: 4 }, REGISTRY.get("unit.citizen.hauler").footprint), { x: 5, y: 3 })

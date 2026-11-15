@@ -192,7 +192,7 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     detonation: { radius: 1, damage: 8 },
   },
   {
-    // A Grid Nexus welded out of the same scrap as everything else, and true to the doctrine: when
+    // A Nexus welded out of the same scrap as everything else, and true to the doctrine: when
     // it goes, it goes loudly, and it takes the block with it.
     id: "structure.ravel.nexus",
     short: "nexus",

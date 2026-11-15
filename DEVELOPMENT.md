@@ -24,7 +24,7 @@ npm run test:all    # typecheck, then both runtimes: what to run before every pu
 ./bin/skirmish.ts --map crossing --p1 build: --p2 script:agro                         # a new battle: p1's brief
 ./bin/skirmish.ts -f s.save.json --p1 build:b.json --play-to next                     # a round played from a save
 ./bin/skirmish.ts --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --play-to end
-./bin/skirmish.ts --load sandboxes/rules/melee-kill.save.json --play-to next --show 0,end --log-level info   # a board written by hand
+./bin/skirmish.ts --load sandboxes/rules/melee-kill.save.json --play-to next --show 0,end --log-level info   # a battlefield set up by hand
 
 # measure — many battles, the same way before and after a change (measurement.md, the remeasure skill).
 node bin/measure.ts run --spec quick --jobs 4
@@ -110,7 +110,7 @@ measurement after, testers with a goal, and only then Mario. Each step ends on a
 
 1. **Write the measurement before the change.** Write down the number it should move or the rule it must not break,
    with a threshold: "the side ahead after round 2 wins less than 70%", "engagement damage equals total damage". Pick the
-   layer the change lives at and the check that reads it there: an engine rule on a board written by hand (a sandbox),
+   layer the change lives at and the check that reads it there: an engine rule on a battlefield set up by hand (a sandbox),
    the whole game through the **`skirmish` command** (Nexus, credits, rounds, who wins), the power curve through the
    **`measure` command** ([`testing.md`](docs/system-design/testing.md), unit tests and verifiers). *Done when* the sentence, the threshold and the command that counts it are written in the
    step's notes or the pull request, before any code.
@@ -198,7 +198,7 @@ about a mission. Which save shows what:
 | `saves/crossing-round-4.save.json` | Three rounds in: bases built, armies regrouped, a Commander's return, Save game offering its own name |
 | `saves/mirror-vasse.save.json` | Both slots scripted: spectating, the result naming a winner |
 | `saves/pocket-short.save.json` | Four rounds on the small map: a whole battle to its result and `[m] Setup screen` in minutes |
-| `sandboxes/<folder>/*.save.json` | One Battle Round from a board written by hand, one rule each: played and drawn by the `skirmish` command (`--play-to next --show 0,end`), not on the game's screen |
+| `sandboxes/<folder>/*.save.json` | One Battle Round from a battlefield set up by hand, one rule each: played and drawn by the `skirmish` command (`--play-to next --show 0,end`), not on the game's screen |
 
 **The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on the game's screens
 without a terminal — a Skirmish from `saves/crossing-new.save.json` unless told otherwise, the title menu from a title

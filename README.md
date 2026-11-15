@@ -112,7 +112,7 @@ npm run skirmish -- --map crossing --p1 script:agro --p2 script:defensive --play
 npm run skirmish -- --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --play-to end
 ```
 
-A **sandbox** (`sandboxes/`, `npm run sandboxes` lists them) is a save whose board is drawn by hand: one
+A **sandbox** (`sandboxes/`, `npm run sandboxes` lists them) is a save whose battlefield is set up by hand: one
 Battle Round for one rule, unit or kind of ground. The command plays it, prints the levelled log (one
 stream, closed by a `report` line with the outcome, losses and hashes) and draws it as ASCII at the ticks
 asked for:
@@ -162,7 +162,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the toolchain, testing and how work is 
 │                          battle and skirmish (the game), content, armies, report, log, measure,
 │                          terminal, view, build (the Build Phase), title-menu, cli, settings, web
 ├── tests/                 The test suite; Node's runner and Bun both run it
-├── sandboxes/             Sandboxes: Skirmish saves whose board is drawn by hand, one per rule
+├── sandboxes/             Sandboxes: Skirmish saves whose battlefield is set up by hand, one per rule
 ├── saves/                 Example Skirmish saves and the save format's JSON Schema
 ├── scripts/               Repository validation and development tooling (its README lists them)
 ├── bin/                   terminal-nexus.ts, skirmish.ts and measure.ts, the three entry points

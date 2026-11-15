@@ -185,14 +185,14 @@ export function roundScreenshots(states: readonly MatchState[], events: readonly
   return [...note, ...asked.flatMap((tick) => {
     const sample = view.sampleAt(tick * view.tickDurationMs, "monochrome")
     const shot = asciiScreenshot(
-      { grid: timeline.grid, registry, state: sample.state, positions: sample.positions, fire: sample.fire, ...(effects ? { effects: sample.effects, heldCorpses: sample.heldCorpses } : {}) },
+      { terrain: timeline.terrain, registry, state: sample.state, positions: sample.positions, fire: sample.fire, ...(effects ? { effects: sample.effects, heldCorpses: sample.heldCorpses } : {}) },
       { side: (player) => (player === "A" ? "p1" : "p2"), content: titleOf },
     )
     return [`--- ASCII screenshot at tick ${tick}${tick === lastTick ? " (the round's end)" : ""}`, ...asciiScreenshotLines(shot), standingLine(sample.state, registry)]
   })]
 }
 
-/** What the picture cannot show: each side's Nexus health and how many units it has on the Grid at that tick. */
+/** What the picture cannot show: each side's Nexus health and how many units it has on the battlefield at that tick. */
 function standingLine(state: Pick<MatchState, "entities">, registry: ContentRegistry): string {
   const side = (player: "A" | "B", label: string): string => {
     const own = state.entities.filter((entity) => entity.player === player)

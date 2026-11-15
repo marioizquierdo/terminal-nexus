@@ -3,7 +3,7 @@
 //
 // **The runner never reads any of this** (`src/match/mission.ts` applies only the simulation band), so a
 // mission's lines can never change what its Pulses resolve: a scene read, skipped or never shown ends on
-// exactly the same Grid. What is here is what the screen needs to show a round's scene — `sceneOf` — and
+// exactly the same battlefield. What is here is what the screen needs to show a round's scene — `sceneOf` — and
 // the load-time checks on a `say`, which `validate.ts` reports with every other problem at once.
 //
 // Pure data, like the rest of `src/mission`: no engine, no view, no glyph. A speaker who is a unit is named
@@ -59,7 +59,7 @@ export function sayLines(text: string): readonly string[] {
   return wrapWords(text.trim(), SAY_COLUMNS)
 }
 
-/** What a mission brings onto the Grid by the end of round `round`'s Pulse — the groups its spawns name,
+/** What a mission brings onto the battlefield by the end of round `round`'s Pulse — the groups its spawns name,
  *  and the units they bring — so a line can only look at what can be on that round's map. */
 function broughtBy(mission: MissionDefinition, round: number): Readonly<{ groups: Set<string>; units: Map<string, PlayerId> }> {
   const groups = new Set<string>()

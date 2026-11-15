@@ -1,11 +1,11 @@
-// The maps a battle is played on: two Grid Nexuses, one a side, and the ground between them. Written as rows of text so
+// The maps a battle is played on: two Nexuses, one a side, and the ground between them. Written as rows of text so
 // a person, a test and a language model all read the same picture: `.` open ground, `#` rock, `*` a deposit.
 //
 // A battle map says where each side's Nexus stands (the side's own faction Nexus is set down there: a Citizen's or a
 // Ravel's, `src/battle/sides.ts`) and where each side's troops stand when they hold rather than attack. Symmetric by
 // design, west against east, so neither side's ground is the better one.
 
-import type { Coord, GridTerrain, TerrainId } from "../engine/geometry/types.ts"
+import type { Coord, MapTerrain, TerrainId } from "../engine/geometry/types.ts"
 import type { TargetArea } from "../engine/state/types.ts"
 import type { Side } from "./types.ts"
 import crossing from "../../maps/crossing.map.json" with { type: "json" }
@@ -24,8 +24,8 @@ export type BattleMap = Readonly<{
 
 const TERRAIN: Readonly<Record<string, TerrainId>> = { ".": "terrain.plain", "#": "terrain.rock", "*": "terrain.deposit" }
 
-/** The Grid of a battle map's rows. Throws for a row of another width or a character it does not know. */
-export function battleGrid(map: BattleMap): GridTerrain {
+/** The battlefield of a battle map's rows. Throws for a row of another width or a character it does not know. */
+export function battleTerrain(map: BattleMap): MapTerrain {
   const height = map.rows.length
   const width = map.rows[0]?.length ?? 0
   const tiles: TerrainId[] = []

@@ -5,7 +5,7 @@
 // formation happens passively during march state ... half speed if another unit with higher priority is in vision range."
 //
 // **What a unit is doing, in a word** (`MoveState`): it *marches* when it has no enemy to turn to — it walks for its
-// side's goal (its target, or the enemy's Grid Nexus while that is beyond its vision), steps off its roof, makes way for
+// side's goal (its target, or the enemy's Nexus while that is beyond its vision), steps off its roof, makes way for
 // a wave, holds at its side's target or has nothing to do; it is in *battle* when it walks to an enemy or fights one; it
 // *retreats* when it runs (a worker from a threat).
 //
@@ -17,7 +17,7 @@
 // to fight. Because it only slows, an army sorts itself on the move and no unit can wait on itself. The Commander is a
 // regular troop: she slows and is slowed by her own priority, and leads nothing.
 //
-// **The band.** A side's guide line runs from its own Grid Nexus to the middle of its march goal, and a marcher more than
+// **The band.** A side's guide line runs from its own Nexus to the middle of its march goal, and a marcher more than
 // `BAND` columns off it takes, among its steps that are equally good, the one that brings it nearest the line
 // (`bandOrder`).
 //
@@ -45,7 +45,7 @@ export type MoveState = "march" | "battle" | "retreat"
 /** The guide line's band, each side of it: a marcher further than 6 columns off it is drawn back toward it. */
 export const BAND = 6
 
-/** Where a side marches: its target, or the enemy's Grid Nexus. */
+/** Where a side marches: its target, or the enemy's Nexus. */
 type MarchGoal = Readonly<{ kind: "area"; area: TargetArea }> | Readonly<{ kind: "nexus"; nexus: Actor }>
 
 /** One side's march this tick. */
@@ -124,7 +124,7 @@ export class March {
    *  open ground, worked out once a tick and only when a marcher asks. */
   private laneOf(side: SideMarch): DistanceField {
     if (side.lane === undefined) {
-      const { width, height } = this.context.index.grid
+      const { width, height } = this.context.index.terrain
       const open: Ground = { width, height, open: new Uint8Array(width * height).fill(1) }
       side.lane = new DistanceField(open, side.ends === null ? [] : lineTiles(side.ends.from, side.ends.to))
     }
@@ -140,7 +140,7 @@ export function moveStateOf(actor: Actor, purpose: Purpose, target: Actor | null
   return goal.kind === "unit" && !marchesOn(actor, goal.target) ? "battle" : "march"
 }
 
-/** Whether a unit walking to `target` walks for its side's goal: the enemy's Grid Nexus, while it is beyond the
+/** Whether a unit walking to `target` walks for its side's goal: the enemy's Nexus, while it is beyond the
  *  unit's vision. */
 export function marchesOn(actor: Actor, target: Actor): boolean {
   return target.definition.nexus === true && target.player !== actor.player && !within(actor, target, visionOf(actor.definition))
@@ -187,7 +187,7 @@ function sideMarchOf(context: TickContext, player: PlayerId): SideMarch | null {
   const goal: MarchGoal | null = area !== undefined ? { kind: "area", area } : nexus !== undefined ? { kind: "nexus", nexus } : null
   if (goal === null) return null
   const to = goal.kind === "area" ? { x: 2 * goal.area.x + goal.area.width - 1, y: 2 * goal.area.y + goal.area.height - 1 } : middleOf(goal.nexus)
-  // The line starts at the side's own Grid Nexus: the Commander is a regular troop and leads nothing.
+  // The line starts at the side's own Nexus: the Commander is a regular troop and leads nothing.
   const home = context.actors.find((other) => other.player === player && !other.pendingDead && other.definition.nexus === true)
   return { player, goal, ends: home === undefined ? null : { from: middleOf(home), to } }
 }
@@ -230,7 +230,7 @@ function slowedAmong(context: TickContext, marchers: readonly Actor[], ranks: Ma
     const sees = members.some(
       (ally) =>
         ally.rank < member.rank &&
-        // Cheap first: two bodies far apart on the Grid are never within sight.
+        // Cheap first: two bodies far apart on the battlefield are never within sight.
         Math.abs(ally.actor.anchor.x - member.actor.anchor.x) <= member.vision + 8 &&
         Math.abs(ally.actor.anchor.y - member.actor.anchor.y) <= member.vision / 2 + 8 &&
         within(member.actor, ally.actor, member.vision),
@@ -241,7 +241,7 @@ function slowedAmong(context: TickContext, marchers: readonly Actor[], ranks: Ma
 }
 
 /**
- * The tiles of the line between two points given in half tiles (`middleOf`), as the Grid draws a straight line with
+ * The tiles of the line between two points given in half tiles (`middleOf`), as the battlefield draws a straight line with
  * whole numbers: a point every half tile of the longer way, each on its nearest tile — and on both, where it falls
  * exactly between two — so a line and its mirror cover mirrored tiles, whichever end of the map it starts from.
  */

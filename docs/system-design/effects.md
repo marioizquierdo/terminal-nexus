@@ -114,7 +114,7 @@ one of them is a pure function of absolute presentation time (RULE — `tests/ef
   onto an occupied tile. The name keeps the word "shader" and admits that a rainbow sweep is not a
   light.
 - **Tweens** — a number or point moving between two values over a window of time, along an easing
-  curve (`src/view/tween.ts`): the camera's slide and the cursor's glide ([`grid.md`](grid.md)), the
+  curve (`src/view/tween.ts`): the camera's slide and the cursor's glide ([`battlefield.md`](battlefield.md)), the
   Build Phase's focus arrow, see-through cursor and card reveal (below), and the expansions inside
   recipes.
 
@@ -172,7 +172,7 @@ to discover. See [`ascii-art-references.md`](../game-design/ascii-art-references
    that reads, the calm frames will. Designing the calm frame first guarantees a beautiful opening and
    an unreadable climax.
 2. **Different weapons need different physical languages.** If every attack is a burst of `*`, every
-   event becomes the same computer effect and the Grid stops telling a story. A kinetic round, a beam,
+   event becomes the same computer effect and the battlefield stops telling a story. A kinetic round, a beam,
    an explosion and a corruption should not share a glyph family.
 3. **Similar things must look similar; a tier-3 effect is a tier-1 effect that grew up.** Not a
    different effect. This is the hardest consistency problem in a large effect set, and the only
@@ -254,7 +254,7 @@ size of the set, so the count moves only on purpose.
 | see-through cursor (interface) | Explore Map opened from the menu | `chrome`, under every popup | action, eased out, on the focus arrow's timeline | A copy of the map cursor, one tile wide, from Explore Map's row to the cursor as drawn, homing on it; glyphless writes carrying `seeThrough` at 0.8 at the head, 0.45 and 0.2 one and two tile-steps behind; never on the real cursor's own cells, into which it settles. Reduced motion: dropped with the arrow; the blink keeps the cue |
 | card reveal (interface) | the side panel becomes a card (Explore Map opened, a building armed) | `chrome` | anticipation, action, settle (400 ms, a tuned value) | Three beats, 25% / 30% / 45%: the other rows fade (`fade` where colour blends, dim for the nearer-gone half in monochrome); the chosen row slides whole rows up to the header line; the separator and the card fade in, typed. Reduced motion: none |
 | popup border: opening, then breath (interface) | any popup is open | `chrome` | an opening played once (the Battle Round screen: two flashes, 530 ms), then sustained and looping (one breath per "Popup pulse" — a Settings name for the breath of light, unrelated to the Nexus Pulse — 2000 ms) | Experiments: "Popup pulse", "Battle Round flash", "Flash strength". Only the border plays. The breath follows a sine: a tint toward `chrome.title` on the lighter half (up to 0.4) and a fade toward the background on the darker half (up to 0.25). The double flash is two 220 ms flashes 90 ms apart, each lit fast and faded slowly, up to 0.8 of the way to `chrome.title`; it ends at rest and the breath starts from rest. Both are timed from the frame that first showed the popup. The flash is drawn every frame; while only the breath moves the live loop redraws 20 times a second. Reduced motion and monochrome: still |
-| raid's intent trail (interface) | a raid group is foreseen, in the Build Phase | `territory` | sustained and looping, a step per `trailStepMs` (400 ms, a tuned value) | An arrow every four along the group's way by the Grid's own distance, pointing a whole stair on; each step every arrow goes a column's distance on, and an arrow that reaches another tile leaves a copy on the one it left that fades (0.6, then 0.8) and is gone at half a step. Open ground only, never over a glyph. Reduced motion: still. Monochrome: the copy is the arrow's own dim look, then gone |
+| raid's intent trail (interface) | a raid group is foreseen, in the Build Phase | `territory` | sustained and looping, a step per `trailStepMs` (400 ms, a tuned value) | An arrow every four along the group's way by the battlefield's own distance, pointing a whole stair on; each step every arrow goes a column's distance on, and an arrow that reaches another tile leaves a copy on the one it left that fades (0.6, then 0.8) and is gone at half a step. Open ground only, never over a glyph. Reduced motion: still. Monochrome: the copy is the arrow's own dim look, then gone |
 
 How each interface effect behaves (when it plays, what holds it still, what is never drawn) is in
 [`ui-patterns.md`](ui-patterns.md): *Hand-offs to the map*, *Motion and transitions*, *Popups* and *The raid's intent*.
@@ -303,7 +303,7 @@ terminal:
 - sampling `f(t)` at *t* alone equals sampling it after rendering every intervening frame;
 - an effect emits nothing outside `[startMs, startMs + durationMs)`;
 - an effect emits nothing in a forbidden band;
-- an effect emits nothing outside the Grid clip;
+- an effect emits nothing outside the battlefield clip;
 - every glyph it emits has terminal width one;
 - the full, reduced-motion and monochrome forms all exist and all emit something at the impact beat.
 - a blast draws only tiles its rule reaches, in every form and body size, and under reduced motion exactly its

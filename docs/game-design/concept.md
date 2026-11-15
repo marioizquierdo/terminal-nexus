@@ -23,8 +23,8 @@ The terminal is not a novelty wrapper. Fixed cells, symbols, ANSI color, keyboar
 
 **RULE.** A battle (the engine says *match*) is a sequence of rounds, each in three parts in this order, and these are their names everywhere — in the interface and the writing:
 
-1. **Nexus Pulse.** The round opens: each player's Grid Nexus speaks to its Commander and deals a hand of Nexus powers.
-2. **Build Phase.** Both players study the same resolved Grid and secretly commit construction, production state, and one Nexus upgrade choice: a power kept from that hand, which for now may be left unpicked. Planning is hidden, simultaneous and untimed: there are no turns.
+1. **Nexus Pulse.** The round opens: each player's Nexus speaks to its Commander and deals a hand of Nexus powers.
+2. **Build Phase.** Both players study the same resolved battlefield and secretly commit construction, production state, and one Nexus upgrade choice: a power kept from that hand, which for now may be left unpicked. Planning is hidden, simultaneous and untimed: there are no turns.
 3. **Battle Round.** Plans reveal simultaneously. New buildings activate, workers choose jobs, producers spawn fixed recipes when resources and supply allow, and armies move and fight automatically for a fixed number of deterministic logical ticks. How fast the battle plays on screen is presentation only and is independent of that logical time. The code still calls this step `pulse`, the engine's word ([the glossary](glossary.md)).
 
 **No turns, and everything at once** (RULE — the owner, 2026-11-12: "in Terminal Nexus there are no turns: all players
@@ -39,7 +39,7 @@ tick they apply together, damage resolved as unit attacks are; two powers that e
 Nexus as the round starts" and so destroy both Nexuses on that tick make a draw, rare and fair (the battle engine already
 scores two Nexuses falling on one tick as a draw: `src/engine/pulse/victory.ts`).
 
-After a Battle Round, surviving units stay on the Grid and regroup where they fought, facing the enemy. Casualties and destroyed buildings remain consequential. The next round begins from the new public state. The battle ends when one Grid Nexus is destroyed, or after its last round. One Nexus Pulse, one Build Phase and one Battle Round make a **round**, the unit the player counts.
+After a Battle Round, surviving units stay on the battlefield and regroup where they fought, facing the enemy. Casualties and destroyed buildings remain consequential. The next round begins from the new public state. The battle ends when one Nexus is destroyed, or after its last round. One Nexus Pulse, one Build Phase and one Battle Round make a **round**, the unit the player counts.
 
 The player does not micromanage units during a Battle Round. Their agency comes from base geometry, expansion, resource capacity, supply, production mix, defenses, research drafts, commander development, and prediction of the opponent's hidden plan.
 
@@ -71,7 +71,7 @@ Three modes share that battle ([`game-modes.md`](game-modes.md)):
 
 ## The fantasy
 
-Across the galaxy, ancient pyramidal world machines called Prime Nexuses have awakened. Each remains rooted to its home territory, yet can replicate a smaller Nexus onto a distant Grid and send one psychically connected leader with it. These rare leaders—Commanders, or **Nexus Symbols**—receive incomplete visions and may be restored by their Prime Nexus after death.
+Across the galaxy, ancient pyramidal world machines called Prime Nexuses have awakened. Each remains rooted to its home territory, yet can replicate a smaller Nexus onto a distant battlefield and send one psychically connected leader with it. These rare leaders—Commanders, or **Nexus Symbols**—receive incomplete visions and may be restored by their Prime Nexus after death.
 
 The civilizations controlling these machines cannot agree whether the network is a weapon, a trial, a god, an ecological disaster, or an opportunity. Some believe its wars are selecting the one structure that will become the **Terminal Nexus**.
 
@@ -92,7 +92,7 @@ The player should be able to:
 
 ## What the game must prove first
 
-The first proofs put a few units on a Grid, let them fight without anyone steering them, and ask three questions in this order:
+The first proofs put a few units on a battlefield, let them fight without anyone steering them, and ask three questions in this order:
 
 1. **Is it deterministic?** The same opening, seed, and tick count resolve into the same events and the same final state, every run, with no terminal involved.
 2. **Is it legible?** A viewer who did not simulate it can follow who moved, who shot whom, and who died — at 80×24, with colour switched off.

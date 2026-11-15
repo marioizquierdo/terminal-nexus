@@ -34,7 +34,7 @@ import { frameToText } from "../view/frame.ts"
 import type { GameStart } from "./game.ts"
 import type { Coord } from "../engine/geometry/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
-import { hasTrail } from "../view/build-grid.ts"
+import { hasTrail } from "../view/build-map.ts"
 import { BannerClock, RegroupClock, RoomClock, TrailClock } from "../view/build-live.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
 import type { ColorDepth } from "../view/roles.ts"
@@ -208,11 +208,11 @@ export class BuildDriver {
     const terminal = { columns: options.columns ?? 80, rows: options.rows ?? 24 }
     // Below the floor the live screen shows its "terminal too small" notice instead of this one, so
     // a playtest there would be of a different screen.
-    if (isGated(terminal, context.grid)) {
+    if (isGated(terminal, context.terrain)) {
       throw new Error(`${terminal.columns}x${terminal.rows} is below the Build Phase's 80x24 floor`)
     }
     // Laid out as the live screen lays out a terminal of this size.
-    const layout = buildLayout(terminal, context.grid)
+    const layout = buildLayout(terminal, context.terrain)
     this.layout = layout
 
     const build = new BuildSession({

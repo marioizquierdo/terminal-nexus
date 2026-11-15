@@ -9,7 +9,7 @@ attack is a data record the battle engine reads (`ContentDef` and its attack, de
 registered by id in a content registry (`src/content/index.ts`); behaviour comes from capabilities
 and bounded rule shapes on the record, never from code written per unit.
 
-**A Grid Nexus is a flag on a content definition**, never a content id the battle engine recognises (RULE —
+**A Nexus is a flag on a content definition**, never a content id the battle engine recognises (RULE —
 [`architecture.md`](architecture.md), invariants).
 
 **A building that carries an upgrade or a mode has a content id of its own** (RULE — `src/content/fitted.ts`,
@@ -90,7 +90,7 @@ The sketch's `buildRadius` is built as `constructionRadius` on `ContentDef`: eve
 has one, the battle engine never reads it, and while the "Build range" Experiment is felt its value stands in for
 each ([`pulse.md`](pulse.md), construction territory).
 
-Supply: `supplyProvided`, how many more units a structure lets its side field at once (the Grid Nexus 12, a Supply
+Supply: `supplyProvided`, how many more units a structure lets its side field at once (the Nexus 12, a Supply
 Depot 8), and `supplyCost`, the places a unit takes (1 when absent; a Commander's is 0). The battle engine reads both, in
 production only ([`pulse.md`](pulse.md), supply).
 

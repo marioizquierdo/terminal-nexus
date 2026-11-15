@@ -3,7 +3,7 @@
 // unit came to its Nexus, in tiles (a row counting two). The end less the start is how far the front moved. Public.
 
 import type { DomainEvent } from "../../engine/events/types.ts"
-import { gridDistance } from "../../engine/geometry/coords.ts"
+import { tileDistance } from "../../engine/geometry/coords.ts"
 import type { MatchState } from "../../engine/state/types.ts"
 import type { Side } from "../types.ts"
 import type { RoundContext } from "./context.ts"
@@ -28,7 +28,7 @@ export function readAdvance(context: RoundContext, start: MatchState): Tracker<R
         if (nexus === undefined) continue
         for (const entity of state.entities) {
           if (entity.player === side || !context.isUnit(entity.id)) continue
-          const distance = gridDistance(entity.anchor, nexus)
+          const distance = tileDistance(entity.anchor, nexus)
           if (closest[side] === null || distance < (closest[side] as number)) closest[side] = distance
         }
       }

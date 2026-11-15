@@ -173,11 +173,11 @@ test("a unit that fights hand to hand says melee for its range; one that shoots 
   }
 })
 
-test("Explore Map's card says what is under the cursor as it moves: open ground, the Grid Nexus and its numbers, a planned building and its cost", () => {
+test("Explore Map's card says what is under the cursor as it moves: open ground, the Nexus and its numbers, a planned building and its cost", () => {
   const side = buildSide()
   keys(side, "e")
   assert.match(screenText(side), /Open ground/)
-  side.build.run([{ kind: "move-cursor", dx: 0, dy: -2 }]) // onto the Grid Nexus
+  side.build.run([{ kind: "move-cursor", dx: 0, dy: -2 }]) // onto the Nexus
   const nexus = screenText(side)
   assert.match(nexus, /Citizen Nexus/)
   assert.match(nexus, /HEALTH {2,}400/)
@@ -185,7 +185,7 @@ test("Explore Map's card says what is under the cursor as it moves: open ground,
 
   const planned = buildSide()
   keys(planned, "1")
-  planned.build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }, { kind: "focus", target: "grid" }, { kind: "open-explore" }])
+  planned.build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }, { kind: "focus", target: "map" }, { kind: "open-explore" }])
   const text = screenText(planned)
   assert.match(text, /Barracks/)
   assert.match(text, /COST {2,}40/)
@@ -245,7 +245,7 @@ function exploreIncoming(side: Side, contentId: string): void {
 }
 
 /** Every card the Build Phase can show: each building being placed, and Explore Map over open ground,
- *  rock, a deposit, the Grid Nexus, a standing building and a planned one, and the units the round brings —
+ *  rock, a deposit, the Nexus, a standing building and a planned one, and the units the round brings —
  *  Vasse's the tallest card of all, her skill above her numbers. */
 const EVERY_CARD: readonly (readonly [string, (side: Side) => void])[] = [
   ...STARTER_CATALOG.map((item) => [`placing the ${item.label}`, (side: Side) => keys(side, item.hotkey)] as const),
@@ -254,7 +254,7 @@ const EVERY_CARD: readonly (readonly [string, (side: Side) => void])[] = [
       ["open ground", { x: 21, y: 13 }],
       ["rock", { x: 8, y: 10 }],
       ["a deposit", { x: 14, y: 12 }],
-      ["the Grid Nexus", { x: 18, y: 10 }],
+      ["the Nexus", { x: 18, y: 10 }],
       ["the standing Barracks", { x: 26, y: 10 }],
     ] as const
   ).map(([name, tile]) => [`exploring ${name}`, (side: Side) => {
@@ -339,10 +339,10 @@ test("Explore Map's header key, Esc, x and a click on its header go back to wher
     // Opened on the map, in plain navigation: back to plain navigation.
     const fromMap = buildSide()
     keys(fromMap, TAB, "e")
-    assert.equal(fromMap.build.state.returnTo, "grid")
+    assert.equal(fromMap.build.state.returnTo, "map")
     closeIt(fromMap)
     assert.equal(fromMap.build.state.exploreMap, false)
-    assert.equal(fromMap.build.state.focus, "grid", `${close[0]} from the map left the map`)
+    assert.equal(fromMap.build.state.focus, "map", `${close[0]} from the map left the map`)
     assert.equal(hint(fromMap.context, fromMap.build.state).text, "Arrows move the cursor, [enter] explores here, a number selects a building.")
   }
   // Enter or Space with Explore Map already open does nothing more.
@@ -356,7 +356,7 @@ test("Explore Map's header key, Esc, x and a click on its header go back to wher
 test("a click anywhere on the panel while a card shows goes back to where it began and chooses nothing; a click on the map moves Explore Map's card", () => {
   for (const [name, begin, back] of [
     ["armed from the menu", [DOWN, DOWN, ENTER], "menu"],
-    ["armed on the map", [TAB, "1"], "grid"],
+    ["armed on the map", [TAB, "1"], "map"],
     ["Explore Map from the menu", ["e"], "menu"],
   ] as const) {
     const { layout } = buildSide()
@@ -383,7 +383,7 @@ test("a click anywhere on the panel while a card shows goes back to where it beg
   // In Explore Map a click on the map moves the card there.
   const side = buildSide()
   keys(side, "e")
-  clickTile(side, { x: 18, y: 11 }) // the Grid Nexus
+  clickTile(side, { x: 18, y: 11 }) // the Nexus
   assert.equal(side.build.state.exploreMap, true)
   assert.match(screenText(side), /Citizen Nexus/)
 })

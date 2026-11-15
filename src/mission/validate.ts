@@ -7,7 +7,7 @@
 
 import type { ContentRegistry } from "../content/index.ts"
 import { inBounds, tileIndex, tilesOf } from "../engine/geometry/coords.ts"
-import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import type { Coord, MapTerrain } from "../engine/geometry/types.ts"
 import { TERRAIN } from "../engine/geometry/types.ts"
 import type {
   MissionDefinition,
@@ -60,13 +60,13 @@ export function actionName(action: TriggerAction): string {
 const isPositiveInteger = (value: number): boolean => Number.isInteger(value) && value > 0
 
 /**
- * Throws `MissionError` listing every problem, or returns the mission unchanged. The grid is the map the
+ * Throws `MissionError` listing every problem, or returns the mission unchanged. The terrain is the map the
  * mission is played on (its regions must be on it); the registry is the content its units and
  * structures come from. A mission's `notes` are for whoever edits it and are never checked; that the
  * Commander it brings for the player is her story's, and that its content is what its army sees, are
  * the army loader's to check (`src/armies/load.ts`), since a mission alone knows neither.
  */
-export function validateMission(mission: MissionDefinition, grid: GridTerrain, registry: ContentRegistry): MissionDefinition {
+export function validateMission(mission: MissionDefinition, terrain: MapTerrain, registry: ContentRegistry): MissionDefinition {
   const problems: string[] = []
   const say = (problem: string): void => {
     problems.push(problem)
@@ -90,8 +90,8 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
       { x: region.x, y: region.y },
       { x: region.x + region.width - 1, y: region.y + region.height - 1 },
     ]
-    if (!corners.every((corner) => inBounds(grid, corner))) {
-      say(`region "${region.id}" reaches off the ${grid.width}x${grid.height} map`)
+    if (!corners.every((corner) => inBounds(terrain, corner))) {
+      say(`region "${region.id}" reaches off the ${terrain.width}x${terrain.height} map`)
     }
   }
   const knownRegion = (id: string, where: string): void => {
@@ -162,7 +162,7 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
         if (registry.has(entry.unit) && registry.get(entry.unit).commander === true) {
           const key = `${spawn.side}:${entry.unit}`
           if (entry.count !== 1) say(`${where} spawns ${entry.count} of the Commander "${entry.unit}"; a side has one`)
-          if (commanders.has(key)) say(`${where} spawns the Commander "${entry.unit}" a second time; once she is on the Grid the rules bring her back`)
+          if (commanders.has(key)) say(`${where} spawns the Commander "${entry.unit}" a second time; once she is on the battlefield the rules bring her back`)
           commanders.add(key)
         }
       }
@@ -181,7 +181,7 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
       if (region === undefined) return
       // The screen says where a side's troops head, by the region's name; and they must be able to stand there.
       if ((region.name ?? "").trim() === "") say(`${where} sends troops to the region "${region.id}", which has no name for the screen to say`)
-      const rock = regionTiles(region).find((tile) => inBounds(grid, tile) && TERRAIN[grid.tiles[tileIndex(grid, tile)] ?? "terrain.plain"].impassable)
+      const rock = regionTiles(region).find((tile) => inBounds(terrain, tile) && TERRAIN[terrain.tiles[tileIndex(terrain, tile)] ?? "terrain.plain"].impassable)
       if (rock !== undefined) say(`${where} sends troops to the region "${region.id}", which has rock at ${rock.x},${rock.y}: a target is ground they can stand on`)
       return
     }
@@ -196,7 +196,7 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
         }
         const definition = registry.get(structure.contentId)
         if (definition.layer !== "obstacles") say(`${where} plans "${structure.contentId}", which is not a structure`)
-        if (!tilesOf(structure.anchor, definition.footprint).every((tile) => inBounds(grid, tile))) {
+        if (!tilesOf(structure.anchor, definition.footprint).every((tile) => inBounds(terrain, tile))) {
           say(`${where} plans "${structure.contentId}" at ${structure.anchor.x},${structure.anchor.y}, reaching off the map`)
         }
       }

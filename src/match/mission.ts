@@ -21,7 +21,7 @@
 // place that needs no engine change — a finding recorded in docs/history/reports/2026-09-30-round-loop-and-missions.md.
 //
 // One consequence is deliberate and visible: **the battle engine's victory rule ends a Pulse the moment a side with
-// no Grid Nexus standing is wiped out** — a raid — so a reinforcement of its scheduled after that tick never
+// no Nexus standing is wiped out** — a raid — so a reinforcement of its scheduled after that tick never
 // comes. A side whose Nexus stands is never wiped out and plays on (Mario, 2026-10-01). The victory check
 // reads what each side has fielded (its roster) from the opening state; an arrival between ticks widens that
 // roster for the rest of the Pulse, so a side that only arrives later can still be wiped out, and win.
@@ -39,7 +39,7 @@ import type { ContentRegistry } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
 import type { DomainEvent } from "../engine/events/types.ts"
 import { OccupancyIndex, VacatedOverlay, maskFrom } from "../engine/geometry/occupancy.ts"
-import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import type { Coord, MapTerrain } from "../engine/geometry/types.ts"
 import { ENTITY_LAYERS } from "../engine/geometry/types.ts"
 import { isMoment, regionCentre, regionOf } from "../mission/validate.ts"
 import type { MissionDefinition, MissionVerdict, Region, SpawnAction, TriggerDefinition } from "../mission/types.ts"
@@ -52,13 +52,13 @@ import { opening } from "./opening.ts"
 import { enemyNexusMiddle, nearestFit } from "./placement.ts"
 import type { Force, StructurePlacement } from "./types.ts"
 
-/** How far from a region's centre an arrival may be set down, by the Grid's own distance (`nearestFit`): 12 rows up
+/** How far from a region's centre an arrival may be set down, by the battlefield's own distance (`nearestFit`): 12 rows up
  *  and down, 24 columns across. */
 const ARRIVAL_RADIUS = 24
 
 export type MissionPulseInput = Readonly<{
   mission: MissionDefinition
-  grid: GridTerrain
+  terrain: MapTerrain
   registry: ContentRegistry
   /** Which Pulse of the mission, from 1. */
   pulse: number
@@ -225,7 +225,7 @@ export const CALLED_UP = "nexus-power"
  * as incoming: the same function, asked with the plan as it stands.
  */
 export function missionOpening(input: MissionPulseInput): Readonly<{ state: MatchState; arrivals: Arrival[]; fired: Fired[] }> {
-  const { mission, grid, registry, pulse, carried } = input
+  const { mission, terrain, registry, pulse, carried } = input
   const structures: StructurePlacement[] = [...input.structures]
   const fired: Fired[] = []
   for (const trigger of mission.triggers) {
@@ -246,7 +246,7 @@ export function missionOpening(input: MissionPulseInput): Readonly<{ state: Matc
     ...(input.callups ?? []),
   ]
   const result = opening({
-    grid,
+    terrain,
     registry,
     structures,
     setup: { seed: mission.seed, pulseTicks: mission.pulseTicks, forces },
@@ -277,7 +277,7 @@ function arriveBetweenTicks(
   state: MatchState,
   scheduled: readonly Scheduled[],
 ): Readonly<{ state: MatchState; arrivals: Arrival[]; events: DomainEvent[] }> {
-  const index = new OccupancyIndex(state.grid)
+  const index = new OccupancyIndex(state.terrain)
   for (const entity of state.entities) {
     const definition = registry.get(entity.contentId)
     index.add(definition.layer, entity.ordinal, entity.anchor, definition.footprint)
@@ -346,7 +346,7 @@ function widened(context: PulseContext, state: MatchState, registry: ContentRegi
   return { ...context, roster }
 }
 
-/** Whether a side has a Grid Nexus standing in a state. */
+/** Whether a side has a Nexus standing in a state. */
 function hasNexus(state: MatchState, registry: ContentRegistry, side: PlayerId): boolean {
   return state.entities.some((entity) => entity.player === side && registry.get(entity.contentId).nexus === true)
 }

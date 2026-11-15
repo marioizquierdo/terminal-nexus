@@ -1,8 +1,8 @@
-// The Build Phase's Grid pane: what stands on the map and what is going up or coming down (placements
+// The Build Phase's map: what stands on the map and what is going up or coming down (placements
 // and their effects), the ghost of the building being placed, the cursor, and a refused try's flash —
 // all drawn through the camera and clipped to the view.
 
-import { ROW_DISTANCE, gridDistance, inBounds, inColumns, nearestTile, tilesOf } from "../engine/geometry/coords.ts"
+import { ROW_DISTANCE, tileDistance, inBounds, inColumns, nearestTile, tilesOf } from "../engine/geometry/coords.ts"
 import type { PlayerId } from "../engine/state/types.ts"
 import type { Coord } from "../engine/geometry/types.ts"
 import type { VisibleRange } from "../build/camera.ts"
@@ -14,7 +14,7 @@ import type { PlannedPlacement, RaidForecast } from "../build/types.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import { put } from "./draw.ts"
-import { drawTerrain } from "./grid-layer.ts"
+import { drawTerrain } from "./map-layers.ts"
 import type { ColorDepth, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
@@ -37,7 +37,7 @@ import { TICKS_PER_SECOND } from "../engine/state/types.ts"
 /** Every tile of a preview that would be refused: a block of `x`, so shape carries the refusal. */
 const ILLEGAL_PREVIEW_GLYPH = "x"
 
-/** Whether `tile` is in the view's range of tiles — what the Grid pane draws, and all it draws. */
+/** Whether `tile` is in the view's range of tiles — what the map draws, and all it draws. */
 export function inView(range: VisibleRange, tile: Coord): boolean {
   return tile.x >= range.firstX && tile.x <= range.lastX && tile.y >= range.firstY && tile.y <= range.lastY
 }
@@ -62,12 +62,12 @@ export function animatingPlacements(input: BuildCompositionInput): Map<number, A
   return animating
 }
 
-/** Everything that is actually on the Grid, drawn through the camera and clipped to the viewport. */
-export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, animating: ReadonlyMap<number, Animating>): void {
+/** Everything that is actually on the battlefield, drawn through the camera and clipped to the viewport. */
+export function drawMapTiles(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, animating: ReadonlyMap<number, Animating>): void {
   const { context, state, layout } = input
   const range = visibleRange(state.camera, state.viewport)
 
-  drawTerrain(cells, { grid: context.grid, camera: state.camera, viewport: state.viewport, layout }, pack)
+  drawTerrain(cells, { terrain: context.terrain, camera: state.camera, viewport: state.viewport, layout }, pack)
 
   const drawStructure = (contentId: string, anchor: Coord, animation: Animating | undefined): void => {
     const definition = context.registry.get(contentId)
@@ -126,7 +126,7 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
     const band = definition.layer === "obstacles" ? BANDS.structures : definition.layer === "air" ? BANDS.air : BANDS.units
     for (const offset of definition.footprint) {
       const tile = { x: entity.anchor.x + offset.x, y: entity.anchor.y + offset.y }
-      if (!inBounds(context.grid, tile) || !inView(range, tile)) continue
+      if (!inBounds(context.terrain, tile) || !inView(range, tile)) continue
       const under = built.get(`${tile.x},${tile.y}`)
       if (definition.layer !== "obstacles" && under !== undefined && (incoming || under !== entity.player)) continue
       const cell = cellForTile(layout, state.camera, tile)
@@ -204,7 +204,7 @@ const INCOMING_WASH = 0.2
  * Phase only: a Pulse shows what happens, not what was foreseen.
  *
  * - The trail follows the way the group's front unit would walk (`RaidGroup.path`, the battle engine's own step
- *   rule): an arrow every few columns of the Grid's own distance along it (`trailSpacing`, the owner's "1 arrow
+ *   rule): an arrow every few columns of the battlefield's own distance along it (`trailSpacing`, the owner's "1 arrow
  *   every 3 tiles" made whole rows: four columns, or two rows), each pointing a whole
  *   stair on along the way (`LOOK_AHEAD`) — the glyph pack's own arrowheads where the way runs straight, its
  *   diagonal strokes where it runs along the screen's diagonal (`trailGlyph`). **It moves** (the owner: "a slow-moving line of arrows ... leaving a transparent
@@ -236,8 +236,8 @@ export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, 
   const ordered = [...marks.filter(({ mark }) => mark.ghost !== undefined), ...marks.filter(({ mark }) => mark.ghost === undefined)]
   for (const { mark, player } of ordered) {
     const { tile } = mark
-    if (!inBounds(context.grid, tile) || !inView(range, tile) || taken.has(`${tile.x},${tile.y}`)) continue
-    if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain") continue
+    if (!inBounds(context.terrain, tile) || !inView(range, tile) || taken.has(`${tile.x},${tile.y}`)) continue
+    if (context.terrain.tiles[tile.y * context.terrain.width + tile.x] !== "terrain.plain") continue
     const style: CellStyle = { fgRole: playerRole(player), dim: true, fade: mark.ghost === undefined ? TRAIL_FADE : (GHOST_FADES[mark.ghost] ?? 1) }
     const cell = cellForTile(layout, state.camera, tile)
     cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: trailGlyph(pack, mark.dx, mark.dy), style } })
@@ -247,7 +247,7 @@ export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, 
     if (group.target === null) continue
     for (const tile of group.target.tiles) {
       const key = `${tile.x},${tile.y}`
-      if (marked.has(key) || !inBounds(context.grid, tile) || !inView(range, tile)) continue
+      if (marked.has(key) || !inBounds(context.terrain, tile) || !inView(range, tile)) continue
       marked.add(key)
       const cell = cellForTile(layout, state.camera, tile)
       const style: CellStyle = { underline: true, seeThrough: { role: playerRole(group.player), alpha: TARGET_WASH } }
@@ -270,7 +270,7 @@ export const GHOST_FADES: readonly number[] = [0.6, 0.8]
 /** How strongly the raid's colour washes the tiles of what it goes for first, where colours blend. */
 const TARGET_WASH = 0.25
 
-/** How the raid's trail moves: how far apart its arrows are along the way, by the Grid's own distance, and how long
+/** How the raid's trail moves: how far apart its arrows are along the way, by the battlefield's own distance, and how long
  *  each takes to go one further (a column's distance; a row is two). */
 export type TrailMotion = Readonly<{ spacing: number; stepMs: number }>
 
@@ -319,7 +319,7 @@ export const LOOK_AHEAD = ROW_DISTANCE + 1
 export type TrailMark = Readonly<{ tile: Coord; dx: number; dy: number; ghost?: number }>
 
 /**
- * Where a trail's marks are along `path`, placed by the Grid's own distance along the way (`gridDistance`: a step
+ * Where a trail's marks are along `path`, placed by the battlefield's own distance along the way (`tileDistance`: a step
  * across goes one, a step up or down two), so its arrows stand as far apart on screen, and move as fast, whichever
  * way the way runs, at the pace a unit walks it. **Still** (no `elapsedMs`): an arrow every `motion.spacing` of
  * distance, counted back from the last tile so the arrow beside the target is always drawn, each on the tile it has
@@ -336,9 +336,9 @@ export function trailMarks(path: readonly Coord[], target: readonly Coord[], ela
   const last = path.length - 1
   if (last < 0) return []
   const spacing = Math.max(1, Math.round(motion.spacing))
-  // How far along the way each of its tiles is, by the Grid's own distance.
+  // How far along the way each of its tiles is, by the battlefield's own distance.
   const along: number[] = [0]
-  for (let index = 1; index <= last; index += 1) along.push((along[index - 1] as number) + gridDistance(path[index - 1] as Coord, path[index] as Coord))
+  for (let index = 1; index <= last; index += 1) along.push((along[index - 1] as number) + tileDistance(path[index - 1] as Coord, path[index] as Coord))
   const end = along[last] as number
   const beat = elapsedMs === null ? null : trailBeat(elapsedMs, motion)
   const shift = beat === null ? 0 : beat.step % spacing
@@ -440,7 +440,7 @@ export function takenTiles(context: BuildContext, planned: readonly PlannedPlace
  * only restyles whatever is beneath it, and a particle that would land on any building's tile —
  * standing, planned, or still going up — is dropped, so an effect never replaces the glyph that says a
  * building is there. Two effects on one tile merge the way the Pulse's do. Clipped to the view like
- * everything else on the Grid.
+ * everything else on the battlefield.
  */
 export function drawEffects(
   cells: BandCell[],
@@ -466,7 +466,7 @@ export function drawEffects(
       for (const cell of recipe(instance, effectContext)) {
         const { tile } = cell
         if (!inView(range, tile)) continue
-        if (tile.x >= context.grid.width || tile.y >= context.grid.height) continue
+        if (tile.x >= context.terrain.width || tile.y >= context.terrain.height) continue
         sources.push({ band: instance.band, cell })
       }
     }
@@ -556,11 +556,11 @@ export const CURSOR_ROLE: StyleRole = HIGHLIGHT_BAR.role
  */
 export function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, state, layout } = input
-  // The cursor is the Grid's own focus mark: drawn only while the Grid has the keyboard, so the
+  // The cursor is the battlefield's own focus mark: drawn only while the battlefield has the keyboard, so the
   // screen never shows two "you are here"s at once.
   // A committed plan hides the cursor, except while a Pulse is on screen: there it is how the player looks
   // around the map, the arrows moving it and the view following.
-  if (state.focus !== "grid" || state.popup !== null || (state.committed && input.pulse === undefined)) return
+  if (state.focus !== "map" || state.popup !== null || (state.committed && input.pulse === undefined)) return
   const range = visibleRange(state.camera, state.viewport)
   // Where the cursor is drawn: mid-glide, a tile on its way (and what stands there decides its style).
   const cursor = input.cursor ?? state.cursor
@@ -591,7 +591,7 @@ export function drawCursor(cells: BandCell[], input: BuildCompositionInput): voi
  */
 export function drawRefusedTry(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { state, layout } = input
-  if (input.refusedTry !== true || state.focus !== "grid" || state.popup !== null) return
+  if (input.refusedTry !== true || state.focus !== "map" || state.popup !== null) return
   const range = visibleRange(state.camera, state.viewport)
   const shift = glideShift(input)
   const tiles =

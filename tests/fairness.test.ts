@@ -83,12 +83,12 @@ function block(placed: readonly Placed[]): PlacementBlock {
   return { rows: rows.map((row) => row.join("")), legend }
 }
 
-/** An open Grid with each side placed as given. */
+/** An open battlefield with each side placed as given. */
 function opening(sides: Readonly<Record<PlayerId, readonly Placed[]>>, seed = 1): MatchState {
   const opening: BattleOpening = {
     id: "fairness",
     name: "fairness",
-    grid: { width: WIDTH, height: HEIGHT },
+    size: { width: WIDTH, height: HEIGHT },
     seed,
     pulseTicks: 600,
     terrain: Array.from({ length: HEIGHT }, () => ".".repeat(WIDTH)),
@@ -113,7 +113,7 @@ function run(start: MatchState, ticks: number): Readonly<{ states: MatchState[];
   return { states, events }
 }
 
-/** A state as a set of rows — side, content, place, health — each side's things seen from the other end of the Grid
+/** A state as a set of rows — side, content, place, health — each side's things seen from the other end of the battlefield
  *  when `mirrored`: the same battle mirrored west to east, sides swapped, has the same rows. */
 function rows(state: MatchState, mirrored: boolean): string[] {
   return state.entities
@@ -171,8 +171,8 @@ test("a unit among equally near enemies keeps the one it holds, and otherwise dr
 })
 
 test("a group set down round a point takes a tied tile on the side of the enemy, whichever side that is", () => {
-  const grid = { width: WIDTH, height: HEIGHT, tiles: Array.from({ length: WIDTH * HEIGHT }, () => "terrain.plain" as const) }
-  const index = new OccupancyIndex(grid)
+  const terrain = { width: WIDTH, height: HEIGHT, tiles: Array.from({ length: WIDTH * HEIGHT }, () => "terrain.plain" as const) }
+  const index = new OccupancyIndex(terrain)
   const mask = maskFrom(index, { layers: ["units"], terrain: "impassable" })
   const one = rectFootprint(1, 1)
   // The muster's own tile is taken, so the first ring decides: one column west or one east, a tie.

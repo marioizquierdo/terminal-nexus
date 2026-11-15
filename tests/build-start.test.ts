@@ -227,7 +227,7 @@ test("a click on [s] Start starts it; a click outside the screen goes back", () 
 
   const outside = ready()
   outside.build.handleData("s", outside.layout)
-  click(outside, outside.layout.gridBox.right - 2, outside.layout.gridBox.bottom - 1)
+  click(outside, outside.layout.mapBox.right - 2, outside.layout.mapBox.bottom - 1)
   assert.equal(outside.build.state.committed, false)
   assert.equal(outside.build.state.popup, null)
 })

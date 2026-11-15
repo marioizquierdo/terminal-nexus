@@ -125,7 +125,7 @@ _The patterns below are reference: one section per family, each rule with the te
 - **Finishing goes back to where it began** (`BuildState.returnTo`): begun on the map, it ends in plain
   navigation with the cursor where it was; begun on the menu, it ends on the same row, and a placement
   flashes that row once to bring the eye back. (RULE — `tests/build-focus.test.ts`, `tests/build-menu.test.ts`)
-- **The Build Phase opens on the menu at Explore Map**, the cursor (not yet drawn) on the player's Grid
+- **The Build Phase opens on the menu at Explore Map**, the cursor (not yet drawn) on the player's battlefield
   Nexus. (RULE — `tests/build-focus.test.ts`)
 
 ## Keys and clicks
@@ -363,7 +363,7 @@ title screen's menu.
   (`drawCardBody`): that is where a later round would change the look for placing a building (where the title
   repeats the header), for exploring in the Build Phase, or for exploring during a Battle Round. (RULE for the four
   parts and the fit — `tests/build-card.test.ts`)
-- ***A range on a card*** (a named pattern; a row counts two columns in every distance, [`grid.md`](grid.md)):
+- ***A range on a card*** (a named pattern; a row counts two columns in every distance, [`battlefield.md`](battlefield.md)):
   **every range a card states is one number, the range across**, as strategy games say a range — an attack's,
   the build range, a Commander's aura. The rest of the shape is the map's to show: a range of 6 also reaches 3 rows
   up and down, and the map draws it wherever it shows a range. An attack is two rows, its damage and then its range
@@ -685,7 +685,7 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
   **trail** to what it targets first, and **that target is marked**. The target is the battle engine's own choice on
   the Battle Round's first tick, worked out on the plan as it stands (`src/match/intent.ts`), so placing, undoing or
   removing a building changes it at once. The trail is the battle engine's own steps, round a ridge, or pressing on it when
-  nothing gets through. Its arrows stand four apart along the way by the Grid's own distance, four columns or two rows
+  nothing gets through. Its arrows stand four apart along the way by the battlefield's own distance, four columns or two rows
   (the owner's "1 arrow every 3 tiles", made whole rows), in the glyph pack's arrowheads and strokes, dim and faded, on
   open ground only and never over a glyph, and **they move** (the owner: "a slow-moving line of arrows ... leaving a
   transparent arrow behind then moving that fades"): every step (a tuned value about a raider's pace) each arrow goes a
@@ -714,7 +714,7 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
   reach's strokes are drawn). None shows under a popup, on a committed plan, or during a Battle Round. (RULE —
   `tests/build-areas.test.ts`, `tests/build-territory.test.ts`)
   **Measured as the battle will be.** Both are the rules' own, drawn from the functions the battle counts with
-  (`tilesWithin`, [`grid.md`](grid.md), distance, reach and movement). Build range 6 reaches 6 columns across and 3
+  (`tilesWithin`, [`battlefield.md`](battlefield.md), distance, reach and movement). Build range 6 reaches 6 columns across and 3
   rows up and down, and what the dots allow is what Enter takes; a Turret's reach of 6 is drawn 13 wide by 7 tall, as
   tall as it is wide on screen. An outline is the last tiles reached — every tile in reach with a four-way neighbour out
   of it, never the footprint's own (`outlineWithin`) — so it is two tiles thick on its slants and has no gaps; a blast's
@@ -809,7 +809,7 @@ compositor). What the interface decides:
 - ***Her voice in battle*** (a named pattern; the owner: "let's experiment with this to see if it gets into
   the battle or enhances the experience even more", and once played, "it looks cool"): Vasse says a short line
   at the moments of a Battle Round that matter — it starts, the first shot, a group of the raid arriving, one
-  of hers falling near her, a building of hers falling, her badly hurt, the Grid Nexus first hit, her own
+  of hers falling near her, a building of hers falling, her badly hurt, the Nexus first hit, her own
   fall, and, as the result stands, a round won. Her lines are data in her army, a few a moment. **She does not
   chatter**: the round is resolved before it plays, so its lines are planned at once — each moment once, at
   most three lines a round besides the two that cut in, the moments that matter most chosen first, a quiet gap

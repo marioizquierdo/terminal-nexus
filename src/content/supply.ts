@@ -1,4 +1,4 @@
-// Supply (Commander Armies, the curve on the Grid; the owner, 2026-10-16: "go with your recommendation, supply cap",
+// Supply (Commander Armies, the curve on the battlefield; the owner, 2026-10-16: "go with your recommendation, supply cap",
 // and "Supply should be controlled by another building"): how many units a side may field at once. A side's supply
 // is what its standing structures give (`supplyProvided`); each of its units takes its `supplyCost` (1 when it says
 // nothing, a Commander none). A building whose next unit would take its side past its supply keeps the unit owed

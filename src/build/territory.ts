@@ -8,7 +8,7 @@
 //   of the building and 3 rows above and below it — as far on screen either way. While the "Build range"
 //   Experiment is being felt, its value is every projecting structure's radius (it replaces the number on the
 //   content).
-// - **The player's Grid Nexus roots a network.** Two of the player's structures are linked when their build
+// - **The player's Nexus roots a network.** Two of the player's structures are linked when their build
 //   ranges meet — share a tile, so their footprints are at most the two radii apart (`footprintDistance`): exactly
 //   so for build ranges of whole rows, an even number of columns, as every build range is — and the network is
 //   everything linked to the Nexus, step by step. Only a structure in the network projects: one **cut off**
@@ -26,14 +26,14 @@
 //
 // What it is not: a path. A range passes over rock, which is refused on its own, and nothing the raid stands
 // is part of the player's network, nor (yet) limits it: building inside the enemy's coverage waits for a raid
-// that stands buildings at the start of a Build Phase. With no Grid Nexus of the player's standing there is no
+// that stands buildings at the start of a Build Phase. With no Nexus of the player's standing there is no
 // network, and nothing can be built.
 //
 // Pure: the reducer's legality and the view's drawing all read one answer (`territoryOf`).
 
 import { footprintDistance, footprintWithin, inBounds } from "../engine/geometry/coords.ts"
 import { tilesWithin } from "../engine/geometry/reach.ts"
-import type { Coord, Footprint, GridTerrain } from "../engine/geometry/types.ts"
+import type { Coord, Footprint, MapTerrain } from "../engine/geometry/types.ts"
 import type { ContentDef } from "../content/types.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { StandingStructure } from "./types.ts"
@@ -42,7 +42,7 @@ import type { StandingStructure } from "./types.ts"
 export type TerritoryMember = Readonly<{
   contentId: string
   anchor: Coord
-  /** In the network: linked to the Grid Nexus, so it projects its build range. */
+  /** In the network: linked to the Nexus, so it projects its build range. */
   linked: boolean
   /** How far it lets its player build from it, or `null` for a structure that projects nothing. */
   radius: number | null
@@ -53,12 +53,12 @@ export type Territory = Readonly<{
   has: (tile: Coord) => boolean
   /** The player's standing structures, each with whether it is linked. */
   members: readonly TerritoryMember[]
-  /** Whether the player has a Grid Nexus standing — the network's root. Without one nothing is inside. */
+  /** Whether the player has a Nexus standing — the network's root. Without one nothing is inside. */
   rooted: boolean
 }>
 
 /** What the territory needs of a Build Phase's context. */
-export type TerritorySource = Readonly<{ grid: GridTerrain; registry: ContentRegistry; standing: readonly StandingStructure[] }>
+export type TerritorySource = Readonly<{ terrain: MapTerrain; registry: ContentRegistry; standing: readonly StandingStructure[] }>
 
 /**
  * How far a structure lets its player build from it — `override` (the "Build range" Experiment's value)
@@ -71,7 +71,7 @@ export function constructionRadiusOf(definition: ContentDef, override?: number):
 }
 
 /**
- * The build range a Build Phase opens with, and keeps: the standing structures linked from the Grid Nexus as far
+ * The build range a Build Phase opens with, and keeps: the standing structures linked from the Nexus as far
  * as their build ranges meet, and every tile within the radius of a linked one. `radius` is the "Build range"
  * Experiment's value (`constructionRadiusOf`). Nothing planned is part of it, so it is worked out once for a
  * context and a radius and kept (the context never changes while its screen is open; the radius is an
@@ -95,7 +95,7 @@ export function territoryOf(source: TerritorySource, radius?: number): Territory
 const TERRITORIES = new WeakMap<TerritorySource, Map<number | "own", Territory>>()
 
 function workOut(source: TerritorySource, radius?: number): Territory {
-  const { grid, registry } = source
+  const { terrain, registry } = source
   type Draft = { contentId: string; anchor: Coord; footprint: Footprint; radius: number | null; linked: boolean }
   const members: Draft[] = source.standing.map((structure) => {
     const definition = registry.get(structure.contentId)
@@ -125,17 +125,17 @@ function workOut(source: TerritorySource, radius?: number): Territory {
     }
   }
 
-  // The ground it projects onto: every tile within a linked member's reach (`tilesWithin`), on the Grid.
-  const inside = new Uint8Array(grid.width * grid.height)
+  // The ground it projects onto: every tile within a linked member's reach (`tilesWithin`), on the battlefield.
+  const inside = new Uint8Array(terrain.width * terrain.height)
   for (const member of members) {
     if (!member.linked || member.radius === null) continue
     for (const tile of tilesWithin(member.anchor, member.footprint, member.radius)) {
-      if (inBounds(grid, tile)) inside[tile.y * grid.width + tile.x] = 1
+      if (inBounds(terrain, tile)) inside[tile.y * terrain.width + tile.x] = 1
     }
   }
 
   return {
-    has: (tile) => inBounds(grid, tile) && inside[tile.y * grid.width + tile.x] === 1,
+    has: (tile) => inBounds(terrain, tile) && inside[tile.y * terrain.width + tile.x] === 1,
     members: members.map(({ contentId, anchor, linked, radius: own }) => ({ contentId, anchor, linked, radius: own })),
     rooted,
   }

@@ -1,6 +1,6 @@
-// The Grid's layers. `drawTerrain` is the ground, drawn through the camera and clipped to the viewport —
+// The battlefield's layers. `drawTerrain` is the ground, drawn through the camera and clipped to the viewport —
 // shared by the Build Phase and the Battle Round, so the map looks like the same map on both sides of a
-// commit. `drawGridLayers` is the whole board at one Pulse instant — ground, what stands on it, fire and
+// commit. `drawMapLayers` is the whole battlefield at one Pulse instant — ground, what stands on it, fire and
 // effects — with no camera and no chrome, as the ASCII screenshot draws it.
 
 import type { Camera, Viewport } from "../build/camera.ts"
@@ -8,7 +8,7 @@ import { visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { cellForTile } from "../build/layout.ts"
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
-import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import type { Coord, MapTerrain } from "../engine/geometry/types.ts"
 import type { PlayerId } from "../engine/state/types.ts"
 import type { ActiveEffect, EffectCellSource } from "./effects/index.ts"
 import { paintEffectCells } from "./effects/index.ts"
@@ -22,20 +22,20 @@ import type { GlyphPack } from "./theme.ts"
 
 export function drawTerrain(
   cells: BandCell[],
-  view: Readonly<{ grid: GridTerrain; camera: Camera; viewport: Viewport; layout: BuildLayout }>,
+  view: Readonly<{ terrain: MapTerrain; camera: Camera; viewport: Viewport; layout: BuildLayout }>,
   pack: GlyphPack,
 ): void {
-  const { grid, camera, viewport, layout } = view
+  const { terrain, camera, viewport, layout } = view
   const range = visibleRange(camera, viewport)
   for (let y = range.firstY; y <= range.lastY; y += 1) {
     for (let x = range.firstX; x <= range.lastX; x += 1) {
-      const terrainId = grid.tiles[y * grid.width + x]
+      const terrainId = terrain.tiles[y * terrain.width + x]
       if (terrainId === undefined) continue
       const { glyph, role } = terrainGlyph(terrainId, pack)
       const cell = cellForTile(layout, camera, { x, y })
       // The same lattice the Pulse view draws featureless ground with — a full field of dots
       // competes with everything on top of it. Rock and deposits are features and always drawn. The
-      // lattice is keyed to absolute tile coordinates, so it scrolls with the Grid rather than
+      // lattice is keyed to absolute tile coordinates, so it scrolls with the battlefield rather than
       // crawling across it.
       const featureless = terrainId === "terrain.plain"
       const onLattice = x % 4 === 0 && y % 2 === 0
@@ -50,7 +50,7 @@ export function drawTerrain(
  * Whether an entity is drawn bold while a Pulse plays: a structure, as everything that stands is, and a
  * Commander — the one `@`, bold at full strength in her side's colour, so she is found at a glance among
  * the squads she walks with (the owner: "make sure vasse is visible, prominent"). One rule for every picture
- * of a Pulse: the Battle Round's (`pulse-scene.ts`) and the board's own (`drawGridLayers`).
+ * of a Pulse: the Battle Round's (`pulse-scene.ts`) and the battlefield's own (`drawMapLayers`).
  */
 export function drawnBold(definition: Pick<ContentDef, "layer" | "commander">): boolean {
   return definition.layer === "obstacles" || definition.commander === true
@@ -72,11 +72,11 @@ export type HeldCorpse = Readonly<{
   anchor: Coord
 }>
 
-/** What the Grid's own layers are drawn from: the ground, what stands and walks on it, the fire, and the effects. */
-export type GridLayersInput = Readonly<{
-  grid: GridTerrain
+/** What the battlefield's own layers are drawn from: the ground, what stands and walks on it, the fire, and the effects. */
+export type MapLayersInput = Readonly<{
+  terrain: MapTerrain
   registry: ContentRegistry
-  /** What stands on the Grid: a tick's state, or anything shaped like its entities and ground items. */
+  /** What stands on the battlefield: a tick's state, or anything shaped like its entities and ground items. */
   state: Readonly<{
     entities: readonly Readonly<{ ordinal: number; contentId: string; player: PlayerId; anchor: Coord }>[]
     groundItems: readonly Readonly<{ at: Coord }>[]
@@ -94,17 +94,17 @@ export type GridLayersInput = Readonly<{
 }>
 
 /**
- * **The Grid's own layers**, every tile: terrain, salvage, buildings, units and air, burning ground and the effects, each
- * in its band, a tile drawn on the cell `cellOf` gives: the board alone, with no camera and no chrome, as the ASCII
+ * **The battlefield's own layers**, every tile: terrain, salvage, buildings, units and air, burning ground and the effects, each
+ * in its band, a tile drawn on the cell `cellOf` gives: the battlefield alone, with no camera and no chrome, as the ASCII
  * screenshot (`./ascii-screenshot.ts`) draws it. Returns the tiles an entity stands on.
  */
-export function drawGridLayers(cells: BandCell[], input: GridLayersInput, cellOf: (tile: Coord) => Coord): ReadonlySet<string> {
+export function drawMapLayers(cells: BandCell[], input: MapLayersInput, cellOf: (tile: Coord) => Coord): ReadonlySet<string> {
   const pack: GlyphPack = input.glyphPack ?? "ascii"
 
   // Band 1 — terrain.
-  for (let y = 0; y < input.grid.height; y += 1) {
-    for (let x = 0; x < input.grid.width; x += 1) {
-      const terrainId = input.grid.tiles[y * input.grid.width + x]
+  for (let y = 0; y < input.terrain.height; y += 1) {
+    for (let x = 0; x < input.terrain.width; x += 1) {
+      const terrainId = input.terrain.tiles[y * input.terrain.width + x]
       if (terrainId === undefined) continue
       const { glyph, role } = terrainGlyph(terrainId, pack)
       const cell = cellOf({ x, y })
@@ -123,7 +123,7 @@ export function drawGridLayers(cells: BandCell[], input: GridLayersInput, cellOf
     put(cells, BANDS.groundItems, cell.x, cell.y, salvageGlyph(pack), "item.salvage")
   }
 
-  // Bands 4, 5 and 6 — structures, workers and units, air. The Grid layers map onto them directly.
+  // Bands 4, 5 and 6 — structures, workers and units, air. The battlefield layers map onto them directly.
   // Tiles an entity occupies are remembered, because the corruption law says an effect may never
   // replace the only cell carrying a required semantic cue, and a unit's glyph is exactly that.
   const occupied = new Set<string>()
@@ -147,7 +147,7 @@ export function drawGridLayers(cells: BandCell[], input: GridLayersInput, cellOf
           : BANDS.units
     for (const offset of definition.footprint) {
       const tile = { x: drawn.x + offset.x, y: drawn.y + offset.y }
-      if (tile.x < 0 || tile.y < 0 || tile.x >= input.grid.width || tile.y >= input.grid.height) {
+      if (tile.x < 0 || tile.y < 0 || tile.x >= input.terrain.width || tile.y >= input.terrain.height) {
         continue
       }
       const glyph = entityGlyph(entity.contentId, entity.player, offset)
@@ -161,14 +161,14 @@ export function drawGridLayers(cells: BandCell[], input: GridLayersInput, cellOf
   // keeps its glyph as a unit does.
   const salvage = new Set(input.state.groundItems.map((item) => `${item.at.x},${item.at.y}`))
   drawFire(cells, input.fire ?? [], pack, {
-    grid: input.grid,
+    terrain: input.terrain,
     cellOf,
     visible: () => true,
     standing: (tile) => occupied.has(`${tile.x},${tile.y}`) || salvage.has(`${tile.x},${tile.y}`),
   })
 
   // Bands 3, 7, 8 and 9 — effects. They may paint here and nowhere else (`effects.md`),
-  // they are clipped to the Grid, and they can never move a glyph the simulation put down.
+  // they are clipped to the battlefield, and they can never move a glyph the simulation put down.
   //
   // Collected first, rather than pushed straight into `cells`, so that two effect cells landing on
   // the same tile and band this frame go through mergeEffectCells (src/view/effects/composite.ts)
@@ -182,8 +182,8 @@ export function drawGridLayers(cells: BandCell[], input: GridLayersInput, cellOf
       if (
         cell.tile.x < 0 ||
         cell.tile.y < 0 ||
-        cell.tile.x >= input.grid.width ||
-        cell.tile.y >= input.grid.height
+        cell.tile.x >= input.terrain.width ||
+        cell.tile.y >= input.terrain.height
       ) {
         continue
       }

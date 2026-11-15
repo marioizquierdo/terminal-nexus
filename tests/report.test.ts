@@ -175,7 +175,7 @@ test("the stuck warning fires for an actor that cannot make progress", async () 
 })
 
 test("the stuck warning names the actor's own tile, not the one it cannot enter", async () => {
-  // Owner playtest, 2026-08-22: two units at the top of the Grid stopped facing each other across a
+  // Owner playtest, 2026-08-22: two units at the top of the battlefield stopped facing each other across a
   // two-tile rock, and the log said `stuck A:trooper#3 at (20,2)` — which is the rock. The blocked
   // tile is exactly the one tile the actor is guaranteed *not* to be standing on, so reporting it as
   // a position sent a reader to look at the wrong cell. Routes walk round that rock now; a hauler three

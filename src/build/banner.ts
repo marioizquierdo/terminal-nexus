@@ -12,7 +12,7 @@
 // with the road clear would walk it. Not the battle engine's march itself: that is walked by every unit at once, round each
 // other, fighting what comes in reach; this is the line it keeps to with nobody in the way.
 
-import { footprintBox, footprintCentre, gridDistance, inBounds, tilesOf } from "../engine/geometry/coords.ts"
+import { footprintBox, footprintCentre, tileDistance, inBounds, tilesOf } from "../engine/geometry/coords.ts"
 import type { Coord, Direction } from "../engine/geometry/types.ts"
 import { DistanceField, UNREACHABLE, goalsInside, goalsNear, groundFor, rankSteps, wallsOf, weightsFor } from "../engine/routing/index.ts"
 import type { Ground, RankedStep } from "../engine/routing/index.ts"
@@ -20,7 +20,7 @@ import { cardTextFor } from "../content/cards.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import type { BannerStance } from "./types.ts"
 
-/** An area of the Grid, as the match layer's target is: its north-west tile, width and height. */
+/** An area of the battlefield, as the match layer's target is: its north-west tile, width and height. */
 export type BannerArea = Readonly<{ x: number; y: number; width: number; height: number }>
 
 /** The banner as the screen reads it: where it stands, what it stands on in words, its stance, and whether it is the
@@ -32,7 +32,7 @@ export type BannerView = Readonly<{ tile: Coord; name: string; stance: BannerSta
 export type BannerSpot = Readonly<{ tile: Coord; name: string; area: BannerArea; refusal: string | null }>
 
 /** What the context and plan say of the map the banner is planted on. */
-type Ctx = Pick<BuildContext, "grid" | "registry" | "standing" | "field" | "incoming" | "commander" | "bannerDefault" | "landmarks" | "catalog">
+type Ctx = Pick<BuildContext, "terrain" | "registry" | "standing" | "field" | "incoming" | "commander" | "bannerDefault" | "landmarks" | "catalog">
 type Plan = Pick<BuildState, "planned" | "banner">
 
 const ONE_TILE: readonly Coord[] = [{ x: 0, y: 0 }]
@@ -59,7 +59,7 @@ const centreOf = (context: Ctx, structure: Structure): Coord => {
   return { x: structure.anchor.x + centre.x, y: structure.anchor.y + centre.y }
 }
 
-/** The enemy's Grid Nexus on the map, when there is one. */
+/** The enemy's Nexus on the map, when there is one. */
 function enemyNexus(context: Ctx): Structure | undefined {
   return structuresOf(context, { planned: [] }).find((structure) => structure.player === "B" && context.registry.get(structure.contentId).nexus === true)
 }
@@ -99,9 +99,9 @@ function nameOf(context: Ctx, contentId: string): string {
   return context.catalog.find((row) => row.contentId === contentId)?.label ?? cardTextFor(contentId)?.title ?? context.registry.get(contentId).short
 }
 
-const terrainAt = (context: Ctx, tile: Coord): string => context.grid.tiles[tile.y * context.grid.width + tile.x] ?? "terrain.rock"
+const terrainAt = (context: Ctx, tile: Coord): string => context.terrain.tiles[tile.y * context.terrain.width + tile.x] ?? "terrain.rock"
 
-/** How near, by the Grid's own distance (a row counts two columns), a thing must be for a spot to be "near" it. */
+/** How near, by the battlefield's own distance (a row counts two columns), a thing must be for a spot to be "near" it. */
 const NEAR_RESOURCES = 6
 const NEAR_ENEMY_BASE = 16
 const NEAR_OWN_BASE = 12
@@ -113,7 +113,7 @@ const inside = (area: BannerArea, tile: Coord): boolean => tile.x >= area.x && t
 /** The nearest distance from `tile` to any of `tiles`. */
 function nearest(tile: Coord, tiles: readonly Coord[]): number {
   let best = Number.POSITIVE_INFINITY
-  for (const each of tiles) best = Math.min(best, gridDistance(tile, each))
+  for (const each of tiles) best = Math.min(best, tileDistance(tile, each))
   return best
 }
 
@@ -134,8 +134,8 @@ function describe(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord):
   const tilesOfSide = (player: "A" | "B"): Coord[] =>
     structures.filter((each) => each.player === player).flatMap((each) => tilesOf(each.anchor, context.registry.get(each.contentId).footprint))
   const deposits: Coord[] = []
-  for (let y = Math.max(0, tile.y - 3); y <= Math.min(context.grid.height - 1, tile.y + 3); y += 1) {
-    for (let x = Math.max(0, tile.x - NEAR_RESOURCES); x <= Math.min(context.grid.width - 1, tile.x + NEAR_RESOURCES); x += 1) {
+  for (let y = Math.max(0, tile.y - 3); y <= Math.min(context.terrain.height - 1, tile.y + 3); y += 1) {
+    for (let x = Math.max(0, tile.x - NEAR_RESOURCES); x <= Math.min(context.terrain.width - 1, tile.x + NEAR_RESOURCES); x += 1) {
       if (terrainAt(context, { x, y }) === "terrain.deposit") deposits.push({ x, y })
     }
   }
@@ -144,7 +144,7 @@ function describe(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord):
   const landmark = [...landmarks].sort((a, b) => nearest(tile, areaTiles(a)) - nearest(tile, areaTiles(b)))[0]
   if (landmark !== undefined && nearest(tile, areaTiles(landmark)) <= NEAR_LANDMARK) return `ground near ${landmark.name}`
   if (nearest(tile, tilesOfSide("A")) <= NEAR_OWN_BASE) return "ground near your base"
-  if (fallback !== undefined && gridDistance(tile, fallback.tile) <= NEAR_LANDMARK) return `ground near ${fallback.name}`
+  if (fallback !== undefined && tileDistance(tile, fallback.tile) <= NEAR_LANDMARK) return `ground near ${fallback.name}`
   return "open ground"
 }
 
@@ -161,20 +161,20 @@ function areaFor(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord): 
   const box = structure === undefined ? { left: tile.x, right: tile.x, top: tile.y, bottom: tile.y } : footprintBox(structure.anchor, context.registry.get(structure.contentId).footprint)
   const left = Math.max(0, box.left - 1)
   const top = Math.max(0, box.top - 1)
-  const right = Math.min(context.grid.width - 1, box.right + 1)
-  const bottom = Math.min(context.grid.height - 1, box.bottom + 1)
+  const right = Math.min(context.terrain.width - 1, box.right + 1)
+  const bottom = Math.min(context.terrain.height - 1, box.bottom + 1)
   return { x: left, y: top, width: right - left + 1, height: bottom - top + 1 }
 }
 
 /** The ground a lone trooper walks: the terrain, and every structure standing or planned as a wall. */
 function groundOf(context: Ctx, plan: Pick<BuildState, "planned">): Ground {
   const blocked = structuresOf(context, plan).flatMap((structure) => tilesOf(structure.anchor, context.registry.get(structure.contentId).footprint))
-  return groundFor(wallsOf(context.grid, "impassable", blocked), ONE_TILE)
+  return groundFor(wallsOf(context.terrain, "impassable", blocked), ONE_TILE)
 }
 
 /** A field toward an area over that ground, the terrain's weights counted as a route counts them. */
 function fieldToward(context: Ctx, ground: Ground, area: BannerArea): DistanceField {
-  return new DistanceField(ground, goalsInside(ground, ONE_TILE, area), weightsFor(context.grid, ONE_TILE, "impassable") ?? undefined)
+  return new DistanceField(ground, goalsInside(ground, ONE_TILE, area), weightsFor(context.terrain, ONE_TILE, "impassable") ?? undefined)
 }
 
 /** The open tiles touching a structure, where its troops step out. */
@@ -187,7 +187,7 @@ function ringOf(context: Ctx, ground: Ground, structure: Structure): Coord[] {
 export function bannerSpot(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord): BannerSpot {
   const name = describe(context, plan, tile)
   const area = areaFor(context, plan, tile)
-  if (!inBounds(context.grid, tile)) return { tile, name, area, refusal: "Off the map." }
+  if (!inBounds(context.terrain, tile)) return { tile, name, area, refusal: "Off the map." }
   if (terrainAt(context, tile) === "terrain.rock") return { tile, name, area, refusal: "Rock: no troops can stand there." }
   const ground = groundOf(context, plan)
   if (goalsInside(ground, ONE_TILE, area).length === 0) return { tile, name, area, refusal: "No ground to stand on there." }
@@ -242,7 +242,7 @@ function onwardGoal(context: Ctx, from: Coord): BannerArea | null {
     ...(context.incoming ?? []).filter((entity) => entity.player === "B" && entity.tick === 0).map((entity) => entity.anchor),
   ]
   if (enemies.length === 0) return null
-  const closest = [...enemies].sort((a, b) => gridDistance(from, a) - gridDistance(from, b) || a.y - b.y || a.x - b.x)[0] as Coord
+  const closest = [...enemies].sort((a, b) => tileDistance(from, a) - tileDistance(from, b) || a.y - b.y || a.x - b.x)[0] as Coord
   return { x: closest.x - 1, y: closest.y - 1, width: 3, height: 3 }
 }
 
@@ -251,7 +251,7 @@ export function bannerLines(context: Ctx, plan: Pick<BuildState, "planned">, til
   if (spot.refusal !== null) return { fromNexus: [], fromCommander: [], onward: [] }
   const ground = groundOf(context, plan)
   const field = fieldToward(context, ground, spot.area)
-  const limit = context.grid.width * context.grid.height
+  const limit = context.terrain.width * context.terrain.height
   const home = ownNexus(context)
   let fromNexus: Coord[] = []
   if (home !== undefined) {
@@ -266,7 +266,7 @@ export function bannerLines(context: Ctx, plan: Pick<BuildState, "planned">, til
     const goal = onwardGoal(context, tile)
     const from = fromNexus[fromNexus.length - 1] ?? tile
     if (goal !== null && !inside(goal, from)) {
-      const beyond = new DistanceField(ground, goalsInside(ground, ONE_TILE, goal), weightsFor(context.grid, ONE_TILE, "impassable") ?? undefined)
+      const beyond = new DistanceField(ground, goalsInside(ground, ONE_TILE, goal), weightsFor(context.terrain, ONE_TILE, "impassable") ?? undefined)
       onward = walkDown(beyond, from, limit)
     }
   }

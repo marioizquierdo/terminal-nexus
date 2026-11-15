@@ -2,7 +2,7 @@
 // (hit-testing) both read, so a click can never target a tile or a row the frame did not draw there.
 // `src/title-menu/layout.ts` is the same idea for the menu.
 
-import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import type { Coord, MapTerrain } from "../engine/geometry/types.ts"
 import type { PlaybackControl } from "../terminal/playback.ts"
 import type { BuildState } from "./state.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, mapMode, startEntry } from "./state.ts"
@@ -22,33 +22,33 @@ export type BuildLayout = Readonly<{
   /** The whole frame, which is the whole terminal: a frame the size of the screen overwrites
    *  everything on it, so growing the window never leaves a stale strip behind. */
   frame: Readonly<{ width: number; height: number }>
-  /** Border, panel and Grid pane together — 1 + 29 + 49 + 1 at 80 columns (the floor's
-   *  1 + 30 + 48 + 1 in docs/system-design/grid.md, with the shared west side's column given to the
-   *  Grid), the panel on the left. */
+  /** Border, panel and map together — 1 + 29 + 49 + 1 at 80 columns (the floor's
+   *  1 + 30 + 48 + 1 in docs/system-design/battlefield.md, with the shared west side's column given to the
+   *  battlefield), the panel on the left. */
   composition: Readonly<{ width: number; height: number }>
   /** Where that composition sits inside the frame. Terminal space beyond the maximum viewport is
-   *  spent on centring, "never on more Grid" (docs/system-design/grid.md). */
+   *  spent on centring, "never on more map" (docs/system-design/battlefield.md). */
   offset: Readonly<{ column: number; row: number }>
   /** The tiles on screen, a tile to a column (`src/build/camera.ts`). */
   viewport: Viewport
   /** Frame cell of the viewport's own north-west tile. */
   origin: Readonly<{ column: number; row: number }>
   /**
-   * The four lines that close the Grid pane into a rectangle of its own, as frame rows and columns:
-   * a rule directly above the Grid and one directly below it (each running the whole width, so the
+   * The four lines that close the map into a rectangle of its own, as frame rows and columns:
+   * a rule directly above the battlefield and one directly below it (each running the whole width, so the
    * top bar and the bottom bar read as bars), the divider on its left and the frame's own border on
-   * its right. These are the sides that carry the "there is more Grid this way" signal of docs/system-design/grid.md,
-   * because they are where the Grid actually stops.
+   * its right. These are the sides that carry the "there is more map this way" signal of docs/system-design/battlefield.md,
+   * because they are where the battlefield actually stops.
    */
-  gridBox: Readonly<{ top: number; bottom: number; left: number; right: number }>
+  mapBox: Readonly<{ top: number; bottom: number; left: number; right: number }>
   /**
-   * Frame row of the full-width rule over the bottom bar. The same row as `gridBox.bottom` whenever
-   * the Grid fills the pane; below it when the Grid is shorter than the panel needs, and
-   * then the Grid's own bottom edge is a line across the Grid pane alone, so its rectangle is still
+   * Frame row of the full-width rule over the bottom bar. The same row as `mapBox.bottom` whenever
+   * the battlefield fills the pane; below it when the battlefield is shorter than the panel needs, and
+   * then the battlefield's own bottom edge is a line across the map alone, so its rectangle is still
    * closed directly under its last row.
    */
   paneBottom: number
-  /** Frame column of the vertical rule between the side panel and the Grid pane. It runs only between
+  /** Frame column of the vertical rule between the side panel and the map. It runs only between
    *  the two rules, so the top bar and the bottom bar each run the whole width (docs/system-design/presentation.md). */
   dividerColumn: number
   /** Frame column the side panel's own text starts at — one blank column in from the frame's left
@@ -64,12 +64,12 @@ export type BuildLayout = Readonly<{
   escLabelEnd: Readonly<{ row: number; to: number }>
   /** How many glyphs fit on the bottom bar's line, which runs the full width beneath both panes. */
   footerLimit: number
-  /** Frame row of the bottom bar's one line — the first row below the Grid's own bottom rule: the
+  /** Frame row of the bottom bar's one line — the first row below the battlefield's own bottom rule: the
    *  contextual line, the last command's answer or a hint for where the keyboard is
    *  (`src/build/help.ts`). It once took three lines: a position readout, the key help, the status line. */
   footerRow: number
   /** Frame row the panel's first line is drawn on — the first row under the rule that closes the
-   *  Grid's top, so the panel and the Grid start together. */
+   *  battlefield's top, so the panel and the battlefield start together. */
   panelRow: number
   /** Frame row of the panel's last usable line: the Start Battle Round row is pinned there (`startRow`), and
    *  the Battle Round panel's last control row. (Named for the key help that used to overflow into the
@@ -248,16 +248,16 @@ export function menuEntryAt(
 }
 
 /**
- * The frame for a terminal of this size: the same layout at every size, a tile to a column, the Grid pane as many
+ * The frame for a terminal of this size: the same layout at every size, a tile to a column, the map as many
  * columns wide as the viewport is tiles (`fitViewport`), and whatever the terminal has beyond the composition
  * spent on centring it.
  */
-export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLayout {
-  const viewport = fitViewport(terminal, grid)
+export function buildLayout(terminal: TerminalSize, terrain: MapTerrain): BuildLayout {
+  const viewport = fitViewport(terminal, terrain)
   // The pane between the two full-width rules is as tall as the viewport — but never shorter than
   // the minimum viewport's 16 rows while the terminal has them, because the side panel is designed at
   // that height and, since the top bar runs the whole width, has no rows beside it to
-  // borrow. A Grid smaller than the minimum viewport is still never gated (docs/system-design/grid.md); it just
+  // borrow. A battlefield smaller than the minimum viewport is still never gated (docs/system-design/battlefield.md); it just
   // sits in the top of a pane taller than itself, closed by its own bottom edge.
   const paneHeight = Math.max(viewport.height, Math.min(MIN_VIEWPORT.height, availableTiles(terminal).height))
   const composition = {
@@ -270,19 +270,19 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     row: Math.floor((frame.height - composition.height) / 2),
   }
   // The side panel on the left (docs/system-design/presentation.md): the frame's left border, the panel's 28
-  // columns, then the divider — which is also the Grid rectangle's west side — the Grid, and the
-  // frame's right border. The Grid's west side was once a column of its own beside
+  // columns, then the divider — which is also the map rectangle's west side — the battlefield, and the
+  // frame's right border. The battlefield's west side was once a column of its own beside
   // the divider, because the solid "the map ends here" bar sat against the menu text and read as a
   // heavy menu border; the quieter edge colour and the map's own edge styles fixed that, and the
-  // owner chose the shared column after trying both, so the Grid has it back.
+  // owner chose the shared column after trying both, so the battlefield has it back.
   const dividerColumn = offset.column + PANEL_COLUMNS
-  const gridLeft = dividerColumn
-  const origin = { column: gridLeft + 1, row: offset.row + 1 + HEADER_ROWS }
+  const mapLeft = dividerColumn
+  const origin = { column: mapLeft + 1, row: offset.row + 1 + HEADER_ROWS }
   const right = offset.column + composition.width - 1
-  const gridBox = {
+  const mapBox = {
     top: origin.row - 1,
     bottom: origin.row + viewport.height,
-    left: gridLeft,
+    left: mapLeft,
     right,
   }
   const paneBottom = origin.row + paneHeight
@@ -295,7 +295,7 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     offset,
     viewport,
     origin,
-    gridBox,
+    mapBox,
     paneBottom,
     dividerColumn,
     panelColumn,
@@ -304,13 +304,13 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     escLabelEnd: { row: offset.row + 1, to: hintTo },
     footerLimit: composition.width - 4,
     footerRow: paneBottom + 1,
-    panelRow: gridBox.top + 1,
+    panelRow: mapBox.top + 1,
     panelLastRow: paneBottom - 1,
   }
 }
 
-/** The frame cell a Grid tile is drawn at — the composer's direction of travel. A tile is one cell: a column
- *  of the Grid pane for each tile across, a row for each tile down. */
+/** The frame cell a tile is drawn at — the composer's direction of travel. A tile is one cell: a column
+ *  of the map for each tile across, a row for each tile down. */
 export function cellForTile(layout: BuildLayout, camera: Camera, tile: Coord): Coord {
   return {
     x: layout.origin.column + (tile.x - camera.x),
@@ -319,7 +319,7 @@ export function cellForTile(layout: BuildLayout, camera: Camera, tile: Coord): C
 }
 
 /**
- * The Grid tile at a frame cell, or `null` when the cell is not on the Grid pane at all — the mouse
+ * The tile at a frame cell, or `null` when the cell is not on the map at all — the mouse
  * adapter's direction of travel, and the only place a terminal coordinate ever becomes a tile.
  */
 export function tileAtCell(

@@ -102,14 +102,14 @@ test("chains are bounded: nothing detonates twice, and the cascade resolves insi
   assert.equal(resolved.run.finalState.outcome?.reason, "annihilation")
 })
 
-test("a Grid Nexus is a flag on the definition, not a content id the battle engine knows by heart", async () => {
+test("a Nexus is a flag on the definition, not a content id the battle engine knows by heart", async () => {
   const citizen = FIXTURE_REGISTRY.get("structure.citizen.nexus")
   const ravel = FIXTURE_REGISTRY.get("structure.ravel.nexus")
   assert.equal(citizen.nexus, true)
   assert.equal(ravel.nexus, true)
   assert.equal(FIXTURE_REGISTRY.get("structure.ravel.den").nexus, undefined)
 
-  // Destroying a Grid Nexus ends a Pulse whatever its id: the sandbox's is the bench's passive one, a third id.
+  // Destroying a Nexus ends a Pulse whatever its id: the sandbox's is the bench's passive one, a third id.
   const resolved = await playSandbox("structure-destruction.save.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "nexus-destroyed")
 })

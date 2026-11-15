@@ -177,12 +177,12 @@ test("while Settings is open its highlight is the only one on screen", () => {
   assert.notEqual(cellAt(compose(side), side.layout.panelColumn + side.layout.panelLimit - 1, nexusRow).style.inverse, true)
 })
 
-test("the popup fits inside the Grid pane at every size, and every question fits its lines without a cut word", () => {
+test("the popup fits inside the map at every size, and every question fits its lines without a cut word", () => {
   for (const size of [MINIMUM, MAXIMUM, WIDE]) {
     const side = buildSide({ terminal: size })
     keys(side, "d")
     const popup = placed(side)
-    assert.ok(popup.box.top > side.layout.gridBox.top, `the popup covers the top rule at ${size.columns}x${size.rows}`)
+    assert.ok(popup.box.top > side.layout.mapBox.top, `the popup covers the top rule at ${size.columns}x${size.rows}`)
     assert.ok(popup.box.bottom + 1 < side.layout.paneBottom, `the popup covers the bottom rule at ${size.columns}x${size.rows}`)
     const columns = settingColumns(popup)
     for (const spec of [...EXPERIMENT_FIELDS, ...PLAYER_FIELDS]) assert.ok(spec.label.length <= columns.labelLimit, `${spec.label} is cut`)

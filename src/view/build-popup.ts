@@ -1,5 +1,5 @@
 // Popups: every one drawn from its spec (`src/build/popup.ts`) in one shape, over everything on the
-// Grid.
+// battlefield.
 
 import { CONTROLS_KEYS_WIDTH } from "../build/help.ts"
 import { popupSpec, placePopup, settingColumns } from "../build/popup.ts"
@@ -140,7 +140,7 @@ export function popupBorderStyle(border: PopupBorder | undefined): Pick<CellStyl
 
 /**
  * A popup — the Nexus powers, the start-the-Pulse question, the game menu, Settings, the export, a
- * message — drawn from its spec (`src/build/popup.ts`), over everything on the Grid. A solid border
+ * message — drawn from its spec (`src/build/popup.ts`), over everything on the battlefield. A solid border
  * with the title in it, and a one-cell shadow that blanks what is behind it, so it cannot be missed
  * (Mario once clicked Nexus, did not notice the popup, and thought the mouse had stopped
  * working). There is no `[esc]` in the border: the top bar's "close [esc]" says it. Beside a

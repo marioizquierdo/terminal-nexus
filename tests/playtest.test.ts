@@ -36,10 +36,10 @@ test("the owner's menu flow — Down three times, then Space four times — plan
   const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("Down*3 Space*4") })
   assert.equal(run.frames.length, 8, "the opening screen plus one frame per key")
   const states = run.frames.map((frame) => frame.state)
-  // Arming from the menu moves focus to the Grid; placing sends it back to the menu.
+  // Arming from the menu moves focus to the battlefield; placing sends it back to the menu.
   assert.deepEqual(
     states.map((state) => state.focus),
-    ["menu", "menu", "menu", "menu", "grid", "menu", "grid", "menu"],
+    ["menu", "menu", "menu", "menu", "map", "menu", "map", "menu"],
   )
   assert.deepEqual(
     states.map((state) => state.planned.length),

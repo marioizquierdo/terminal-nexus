@@ -12,7 +12,7 @@ import { footprintBox, footprintSteps, footprintWithin } from "../geometry/coord
 import type { Coord, Footprint } from "../geometry/types.ts"
 import type { Ground } from "./ground.ts"
 
-/** What a body must do to its goal: touch it within `steps` steps along the Grid's sides (melee), or stand within a
+/** What a body must do to its goal: touch it within `steps` steps along the battlefield's sides (melee), or stand within a
  *  reach of `radius` of it, measured as range is (a shot, a heal). */
 export type Reach = Readonly<{ kind: "touch"; steps: number }> | Readonly<{ kind: "within"; radius: number }>
 
@@ -55,7 +55,7 @@ export function goalsNear(ground: Ground, body: Footprint, target: Coord, target
   return goals
 }
 
-/** An area of the Grid: its north-west tile, and how wide and tall it is. */
+/** An area of the battlefield: its north-west tile, and how wide and tall it is. */
 export type Area = Readonly<{ x: number; y: number; width: number; height: number }>
 
 /** Every anchor from which some tile of `body` stands inside `area`, that the body may stand on. */

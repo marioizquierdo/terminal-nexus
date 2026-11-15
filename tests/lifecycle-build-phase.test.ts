@@ -175,7 +175,7 @@ test("SIGINT and SIGTERM reach the same disposer", async () => {
   }
 })
 
-test("below the floor the screen gates, and resizing back above it restores the Grid", async () => {
+test("below the floor the screen gates, and resizing back above it restores the battlefield", async () => {
   const { stdout } = await starterSession((input, output) => {
     output.columns = 79
     output.emit("resize")

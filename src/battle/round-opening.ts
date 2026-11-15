@@ -10,7 +10,7 @@ import type { Coord } from "../engine/geometry/types.ts"
 import type { Absence, Force, Restoration, StructurePlacement } from "../match/index.ts"
 import { opening, restoreCommanders } from "../match/index.ts"
 import type { MatchState } from "../engine/state/types.ts"
-import { battleGrid } from "./maps.ts"
+import { battleTerrain } from "./maps.ts"
 import { armyOf } from "./sides.ts"
 import { mapOf, musterOf, standingOf } from "./round.ts"
 import type { BattleState, Side } from "./types.ts"
@@ -63,7 +63,7 @@ export function roundOpening(state: BattleState, input: RoundOpeningInput): Read
     if (units.length > 0) forces.push({ player: side, muster, units })
   }
   const opened = opening({
-    grid: battleGrid(mapOf(state)),
+    terrain: battleTerrain(mapOf(state)),
     registry: sides.A,
     sides,
     structures,

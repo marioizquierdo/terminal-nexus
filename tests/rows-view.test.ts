@@ -16,14 +16,14 @@ import { runBuildPhase } from "../src/cli/build-phase.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/engine/events/types.ts"
-import { ROW_DISTANCE, footprintWithin, gridDistance, gridSteps } from "../src/engine/geometry/coords.ts"
+import { ROW_DISTANCE, footprintWithin, tileDistance, tileSteps } from "../src/engine/geometry/coords.ts"
 import type { Coord, TerrainId } from "../src/engine/geometry/types.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import type { EntityState, MatchState, PlayerId } from "../src/engine/state/types.ts"
 import { reachOutline } from "../src/view/build-areas.ts"
 import { outlineWithin } from "../src/view/reach-outline.ts"
-import { LOOK_AHEAD, trailGlyph, trailMarks } from "../src/view/build-grid.ts"
+import { LOOK_AHEAD, trailGlyph, trailMarks } from "../src/view/build-map.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { speakerOf, voiceMoments } from "../src/view/pulse-voice.ts"
@@ -40,12 +40,12 @@ const VASSE = "unit.citizen.vasse"
 const ONE: readonly Coord[] = [{ x: 0, y: 0 }]
 const STROKES = ["-", "|", "/", "\\"]
 
-/** An open field, 40 x 20, with the Grid Nexus standing at 10,8 to 12,9 and plenty to spend. */
+/** An open field, 40 x 20, with the Nexus standing at 10,8 to 12,9 and plenty to spend. */
 function field(): BuildContext {
   const width = 40
   const height = 20
   const tiles = new Array<TerrainId>(width * height).fill("terrain.plain")
-  return { ...starterContext(), grid: { width, height, tiles }, standing: [{ contentId: NEXUS, anchor: { x: 10, y: 8 } }], field: [], incoming: [], allotment: 1000 }
+  return { ...starterContext(), terrain: { width, height, tiles }, standing: [{ contentId: NEXUS, anchor: { x: 10, y: 8 } }], field: [], incoming: [], allotment: 1000 }
 }
 
 /** Moves the map cursor onto `tile` and asserts it got there. */
@@ -55,7 +55,7 @@ function moveTo(side: Side, tile: Coord): void {
   assert.deepEqual(side.build.state.cursor, tile)
 }
 
-/** The cell a Grid tile is drawn on, in `frame`. */
+/** The cell a tile is drawn on, in `frame`. */
 const at = (side: Side, frame: ReadonlyCellFrame, tile: Coord): Cell => {
   const cell = cellForTile(side.layout, side.build.state.camera, tile)
   return cellAt(frame, cell.x, cell.y)
@@ -71,11 +71,11 @@ function extent(tiles: readonly Coord[]): Readonly<{ width: number; height: numb
 // --- A tile is one column wide ------------------------------------------------------------------------------
 
 test("a tile is drawn one column wide at every size the game is played at", () => {
-  const { grid } = starterContext()
+  const { terrain } = starterContext()
   for (const terminal of [MINIMUM, MAXIMUM, WIDE, { columns: 200, rows: 60 }]) {
-    const layout = buildLayout(terminal, grid)
+    const layout = buildLayout(terminal, terrain)
     const camera = { x: 0, y: 0 }
-    // The tile beside a tile is the cell beside its cell, and a cell of the Grid pane is the tile drawn on it.
+    // The tile beside a tile is the cell beside its cell, and a cell of the map is the tile drawn on it.
     for (let x = 0; x < layout.viewport.width; x += 1) {
       const cell = cellForTile(layout, camera, { x, y: 3 })
       assert.equal(cell.x, layout.origin.column + x, `${terminal.columns} columns: tile ${x}`)
@@ -86,8 +86,8 @@ test("a tile is drawn one column wide at every size the game is played at", () =
     assert.equal(layout.composition.width, 2 + 29 + layout.viewport.width, `${terminal.columns} columns`)
   }
   // At 80 x 24, 49 tiles across and 18 rows; at 128 columns, 72 across.
-  assert.deepEqual(buildLayout(MINIMUM, grid).viewport, { width: 49, height: 18 })
-  assert.equal(buildLayout(WIDE, grid).viewport.width, 72)
+  assert.deepEqual(buildLayout(MINIMUM, terrain).viewport, { width: 49, height: 18 })
+  assert.equal(buildLayout(WIDE, terrain).viewport.width, 72)
   // The scripted playtest at 128 columns: the Nexus is three columns, `[=]`, not spread over six.
   const wide = runBuildPlaytest({ scenes: false, steps: [], columns: WIDE.columns, rows: WIDE.rows })
   assert.equal(wide.layout.viewport.width, 72)
@@ -343,8 +343,8 @@ test("near her, for her voice, is her aura's reach by the rule: a trooper fallin
   assert.ok(near !== undefined && near >= 2)
   // One row down and `near - 1` columns across: as many four-way steps as her reach, and one more than it by the rule.
   const aside = entity(2, "A", TROOPER, { x: 10 + near - 1, y: 11 })
-  assert.equal(gridSteps(her.anchor, aside.anchor), near)
-  assert.equal(gridDistance(her.anchor, aside.anchor), near + 1)
+  assert.equal(tileSteps(her.anchor, aside.anchor), near)
+  assert.equal(tileDistance(her.anchor, aside.anchor), near + 1)
   const below = entity(3, "A", TROOPER, { x: 10, y: 11 })
   const died = (tick: number, who: EntityState): DomainEvent => ({
     kind: "entity.died",

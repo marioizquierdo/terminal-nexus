@@ -196,7 +196,7 @@ test("the screen plays a round exactly as playNext plays it headless: the same s
   const level = skirmishLevel(save, {}, { profiles: SHIPPED_PROFILES })
   const context = withoutScene(level.firstRound())
   const plan: BuildActions = { power: 1, build: [{ building: "turret", x: 10, y: 11 }], stance: "attack" }
-  const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
+  const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
   const opened = createBuildState(context, nexusTile(context) ?? { x: 0, y: 0 }, viewport)
   const planned = planOnRound(context, opened, plan, level.play.keep as NonNullable<typeof level.play.keep>)
   const resolved = level.play.startPulse(planned.context, planned.state)
@@ -219,9 +219,9 @@ test("spectating: with no player the Build Phase offers only Explore Map and Sta
   assert.equal(context.spectating, true)
   assert.equal(context.catalog.length, 0)
   assert.equal(context.nexusDraft.length, 0)
-  const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
+  const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
   const session = new BuildSession({ context, cursor: nexusTile(context) ?? { x: 0, y: 0 }, viewport, startPulse: level.play.startPulse, nextRound: level.play.nextRound })
-  const layout = buildLayout({ columns: 80, rows: 24 }, context.grid)
+  const layout = buildLayout({ columns: 80, rows: 24 }, context.terrain)
   const text = frameToText(sessionFrame(session, layout))
   assert.match(text, /\[e\] Explore Map/u)
   assert.match(text, /\[s\] Start next round/u)

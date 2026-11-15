@@ -1,7 +1,7 @@
 {
   "format": "terminal-nexus.save/1",
   "name": "Route: the dead end - a trooper straight above its goal, a wall between",
-  "notes": "A trooper stands straight above the enemy's Grid Nexus with a long rock wall between them; the way round is past either end of the wall. The greedy step had one step that brought it closer, into the rock, so it stood above the wall for good (the on-axis dead end). Done when the trooper walks round the wall and the Nexus falls.",
+  "notes": "A trooper stands straight above the enemy's Nexus with a long rock wall between them; the way round is past either end of the wall. The greedy step had one step that brought it closer, into the rock, so it stood above the wall for good (the on-axis dead end). Done when the trooper walks round the wall and the Nexus falls.",
   "setup": {
     "map": {
       "id": "route-dead-end",

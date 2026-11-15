@@ -1,7 +1,7 @@
 {
   "id": "citizen",
   "title": "The Citizen Nexus",
-  "notes": "The Citizen faction: what every Citizen Commander builds on. Its Grid Nexus, the Barracks and its troopers and marksmen (the engine's bench Citizen roster, named by id), the Supply Depot and the Garrison's tier (defined here), and the Nexus powers any Citizen Commander may be dealt. Choosing the Citizens' real roster and its balance is still to come (Milestone 12); every number is a first guess.",
+  "notes": "The Citizen faction: what every Citizen Commander builds on. Its Nexus, the Barracks and its troopers and marksmen (the engine's bench Citizen roster, named by id), the Supply Depot and the Garrison's tier (defined here), and the Nexus powers any Citizen Commander may be dealt. Choosing the Citizens' real roster and its balance is still to come (Milestone 12); every number is a first guess.",
   "requires": ["all"],
   "content": [
     "structure.citizen.nexus",
@@ -127,7 +127,7 @@
       "rarity": "common",
       "role": "economy",
       "cost": 30,
-      "notes": "Supply as a building: eight more units the army may field at once, where the Grid Nexus alone gives twelve. A building whose next unit would go past the supply waits, so once the army is full a new unit comes only as an old one falls (the power curve: survivors are outgrown). First guesses, no balance claim."
+      "notes": "Supply as a building: eight more units the army may field at once, where the Nexus alone gives twelve. A building whose next unit would go past the supply waits, so once the army is full a new unit comes only as an old one falls (the power curve: survivors are outgrown). First guesses, no balance claim."
     },
     {
       "id": "garrison",
@@ -197,7 +197,7 @@
       "role": "troops",
       "repeatable": true,
       "chance": [{"from": 1, "to": 3, "times": 2}],
-      "notes": "Units arrive: the two troopers are set down beside the Grid Nexus as the round's Battle Round starts, with the round's squads, and stay with the army after, coming home with Recall like any survivor. Repeatable: kept again, two more come. Twice as likely as another common in rounds 1 to 3 (the owner's example of a chance modifier, 2026-10-07: 'double chance during first 3 rounds'): troops matter most while the army is small."
+      "notes": "Units arrive: the two troopers are set down beside the Nexus as the round's Battle Round starts, with the round's squads, and stay with the army after, coming home with Recall like any survivor. Repeatable: kept again, two more come. Twice as likely as another common in rounds 1 to 3 (the owner's example of a chance modifier, 2026-10-07: 'double chance during first 3 rounds'): troops matter most while the army is small."
     },
     {
       "id": "drill-schedule",

@@ -7,9 +7,9 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { STARTER_ALLOTMENT, STARTER_CATALOG, STARTER_NEXUS_DRAFT, starterGrid } from "../src/build/catalog.ts"
+import { STARTER_ALLOTMENT, STARTER_CATALOG, STARTER_NEXUS_DRAFT, starterTerrain } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import type { GridTerrain, TerrainId } from "../src/engine/geometry/types.ts"
+import type { MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import type { KeyboardContext } from "../src/build/keyboard.ts"
@@ -52,9 +52,9 @@ function readyBuildSession(options: BuildSessionOptions): BuildSession {
   const build = new BuildSession(options)
   build.dispatch({ kind: "pick-nexus", index: 0 })
   // Keyboard focus starts on the menu; every test here that presses an arrow means the
-  // Grid's cursor, the way every one of them was written before focus existed. The focus model's own
+  // battlefield's cursor, the way every one of them was written before focus existed. The focus model's own
   // tests are in `tests/build-focus.test.ts`.
-  build.dispatch({ kind: "focus", target: "grid" })
+  build.dispatch({ kind: "focus", target: "map" })
   return build
 }
 
@@ -64,7 +64,7 @@ function session(
   terminal = MINIMUM,
 ): { build: BuildSession; layout: ReturnType<typeof buildLayout>; context: ReturnType<typeof starterContext> } {
   const context = { ...starterContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT, experiments: { battleBanner: "off" as const } }
-  const layout = buildLayout(terminal, context.grid)
+  const layout = buildLayout(terminal, context.terrain)
   const build = readyBuildSession({
     context,
     cursor: { x: 18, y: 13 },
@@ -79,7 +79,7 @@ function moveTo(build: BuildSession, tile: { x: number; y: number }): void {
   build.dispatch({ kind: "move-cursor", dx: tile.x - build.state.cursor.x, dy: tile.y - build.state.cursor.y })
 }
 
-/** The raw bytes a left click on this Grid tile sends, derived from the composer's own geometry —
+/** The raw bytes a left click on this tile sends, derived from the composer's own geometry —
  *  1-based, like a terminal's own coordinates. A hand-picked number here could quietly stop matching
  *  the screen; this cannot. */
 function clickTileBytes(
@@ -140,7 +140,7 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   byMouse.build.handleData("1", byMouse.layout)
   // Arming already put the cursor on 30,13, so one click there is the confirming second click.
   clickTile({ x: 30, y: 13 })
-  assert.equal(byMouse.build.state.focus, "grid", "a placement armed on the map left the map")
+  assert.equal(byMouse.build.state.focus, "map", "a placement armed on the map left the map")
 
   const script: readonly BuildCommand[] = [
     { kind: "arm", index: 0 },
@@ -172,7 +172,7 @@ test("after a placement the keyboard goes back to where the arming came from, di
   // The owner answered "always back to the menu" (2026-09-27), replacing the first build's "stays armed after
   // placing", and refined it: armed on the map, the keyboard stays on the map in plain
   // navigation; armed from the menu, it goes back to the menu.
-  for (const start of ["grid", "menu"] as const) {
+  for (const start of ["map", "menu"] as const) {
     const { build, layout } = session()
     build.dispatch({ kind: "focus", target: start })
     build.handleData("1", layout)
@@ -216,7 +216,7 @@ test("a second Enter after a placement never places a second building", () => {
   build.handleData(ENTER, layout)
   assert.equal(build.state.planned.length, 1)
   assert.equal(build.state.armed, 0)
-  assert.equal(build.state.focus, "grid")
+  assert.equal(build.state.focus, "map")
 
   const onMap = session()
   onMap.build.handleData("1", onMap.layout)
@@ -261,10 +261,10 @@ test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never 
   assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), { kind: "move-cursor", dx: 0, dy: -fastDown })
   // End to end, through the real splitter: nothing is armed, and the screen is not left.
   const context2 = starterContext()
-  const layout = buildLayout(MINIMUM, context2.grid)
+  const layout = buildLayout(MINIMUM, context2.terrain)
   const build = readyBuildSession({ context: context2, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   build.handleData(`${ESC}f`, layout)
-  assert.equal(build.state.focus, "grid", "Option+Right was read as an Esc")
+  assert.equal(build.state.focus, "map", "Option+Right was read as an Esc")
   assert.equal(build.state.popup, null, "Option+Right was read as an Esc")
   assert.equal(build.state.cursor.x, 18 + defaultValue("jumpStep"))
 })
@@ -278,7 +278,7 @@ test("keyboard: digits always address the list, and a digit past its end means n
 
 test("keyboard: Esc is cancel and x is back in every focus, and q opens the game menu rather than quits", () => {
   // `x` walks back like Esc but never opens the game menu (tests/build-cancel.test.ts has what each does).
-  for (const focus of ["menu", "grid"] as const) {
+  for (const focus of ["menu", "map"] as const) {
     for (const armed of [true, false]) {
       assert.deepEqual(buildKeyboardCommand(ESC, { itemCount: 3, armed, focus }), { kind: "cancel" })
       assert.deepEqual(buildKeyboardCommand("x", { itemCount: 3, armed, focus }), { kind: "back" })
@@ -314,10 +314,10 @@ test("keyboard: h j k l are the arrows everywhere, and H J K L the fast move", (
   const context = starterContext()
   const menu = applyBuildCommand(context, createBuildState(context, { x: 18, y: 13 }, { width: 48, height: 16 }), { kind: "open-game-menu" })
   const contexts: readonly KeyboardContext[] = [
-    { itemCount: 3, armed: false, focus: "grid" },
-    { itemCount: 3, armed: true, focus: "grid" },
+    { itemCount: 3, armed: false, focus: "map" },
+    { itemCount: 3, armed: true, focus: "map" },
     { itemCount: 3, armed: false, focus: "menu" },
-    { itemCount: 3, armed: false, focus: "grid", pulse: true },
+    { itemCount: 3, armed: false, focus: "map", pulse: true },
     { itemCount: 3, armed: false, popup: "game-menu", popupSpec: popupSpec(context, menu) },
   ]
   for (const keyContext of contexts) {
@@ -351,7 +351,7 @@ test("mouse: a click on a menu row arms it at once, and a right click goes back,
   assert.equal(build.state.armed, null)
 })
 
-test("mouse: a click on the side panel is not a click on the Grid", () => {
+test("mouse: a click on the side panel is not a click on the battlefield", () => {
   const { build, layout } = session()
   const cursorBefore = { ...build.state.cursor }
   // Well below the building rows, inside the panel: neither a row nor a tile.
@@ -400,12 +400,12 @@ test("a click on a tile only arms the preview there - a second click on the same
     { ...byKeyboard.build.state, camera: null },
   )
   // Armed by its digit on the map, placed by the mouse: back on the map, where the arming began.
-  assert.equal(byClick.build.state.focus, "grid")
+  assert.equal(byClick.build.state.focus, "map")
 })
 
 test("a click that scrolled the camera is a fresh first click, not a mis-place on the wrong tile", () => {
   // A finding deliberately re-tested rather than assumed fixed: a first click within the
-  // scroll margin can slide the Grid under the pointer, so replaying the same *screen position*
+  // scroll margin can slide the battlefield under the pointer, so replaying the same *screen position*
   // resolves to a different *tile* the second time. Comparing tile identity (what the mouse adapter
   // already resolves screen cells to) rather than screen position is what keeps this safe. An armed
   // click scrolls like any other since the owner asked for it (an Experiment until he kept it, 2026-09-30).
@@ -455,7 +455,7 @@ test("legality: an illegal placement is refused with a reason and nothing is mov
   assert.match(build.state.status.text, /rock in the way at 18,5/)
   assert.deepEqual(build.state.cursor, cursorBefore, "the cursor did not slide somewhere legal")
 
-  // The standing Grid Nexus, at 17,10 through 19,11.
+  // The standing Nexus, at 17,10 through 19,11.
   moveTo(build, { x: 18, y: 10 })
   build.handleData(ENTER, layout)
   assert.equal(build.state.planned.length, 0)
@@ -468,11 +468,11 @@ test("legality: an illegal placement is refused with a reason and nothing is mov
   assert.match(build.state.status.text, /outside your build range at 33,14/)
   assert.deepEqual(build.state.cursor, { x: 34, y: 14 }, "the cursor did not slide into the range")
 
-  // The Grid's own edge, where a 3x2 footprint hangs off it: a Nexus standing at the north-west corner, so the
+  // The battlefield's own edge, where a 3x2 footprint hangs off it: a Nexus standing at the north-west corner, so the
   // range reaches the edge.
   const corner = { ...context, standing: [{ contentId: "structure.citizen.nexus", anchor: { x: 0, y: 3 } }] }
   const hanging = legalityAt(corner, [], "structure.citizen.barracks", anchorForCursor({ x: 0, y: 1 }, context.registry.get("structure.citizen.barracks").footprint))
-  assert.match(hanging.ok ? "" : hanging.reason, /off the Grid/)
+  assert.match(hanging.ok ? "" : hanging.reason, /off the battlefield/)
 
   // And a legal one, for contrast: the refusals above are about the tile, not about placement.
   moveTo(build, { x: 26, y: 13 })
@@ -506,8 +506,8 @@ test("a plan is revisable: remove under the cursor, and undo the last one", () =
   assert.equal(build.state.planned.length, 2)
   build.handleData("u", layout)
   assert.equal(build.state.planned.length, 1)
-  // Backspace, on the Grid, removes whatever is under the cursor, wherever in the plan it came from.
-  build.run([{ kind: "focus", target: "grid" }, { kind: "move-cursor", dx: 5, dy: 0 }])
+  // Backspace, on the battlefield, removes whatever is under the cursor, wherever in the plan it came from.
+  build.run([{ kind: "focus", target: "map" }, { kind: "move-cursor", dx: 5, dy: 0 }])
   build.handleData(String.fromCharCode(127), layout)
   assert.equal(build.state.planned.length, 0)
   build.handleData("u", layout)
@@ -576,7 +576,7 @@ test("spending is exactly as revisable as the plan: placing spends, removing and
   // Undo refunds the last one exactly, and Backspace refunds whichever is under the cursor.
   build.handleData("u", layout)
   assert.equal(spent(context, build.state), barracks.cost)
-  build.run([{ kind: "focus", target: "grid" }, { kind: "move-cursor", dx: -3, dy: 1 }])
+  build.run([{ kind: "focus", target: "map" }, { kind: "move-cursor", dx: -3, dy: 1 }])
   build.handleData(String.fromCharCode(127), layout)
   assert.equal(spent(context, build.state), 0)
   assert.equal(remaining(context, build.state), STARTER_ALLOTMENT, "the allotment came back whole")
@@ -640,7 +640,7 @@ test("the buildings' digits run straight through the one list, with no mode to t
 
 test("the buildings are one list in catalog order, one row each, with no group headings", () => {
   const context = starterContext()
-  const layout = buildLayout(MINIMUM, context.grid)
+  const layout = buildLayout(MINIMUM, context.terrain)
   const lines = constructLines(layout, context.catalog)
   // Every building has its row, in catalog order, on consecutive rows — which is what a click relies on.
   assert.deepEqual(
@@ -651,7 +651,7 @@ test("the buildings are one list in catalog order, one row each, with no group h
   assert.deepEqual(itemRows, itemRows.map((_, index) => (itemRows[0] as number) + index))
 })
 
-test("scrolling: the whole Grid is reachable, at the smallest terminal and the largest", () => {
+test("scrolling: the whole battlefield is reachable, at the smallest terminal and the largest", () => {
   for (const terminal of [MINIMUM, MAXIMUM]) {
     const { build, layout } = session(terminal)
     // Walk into the far south-east corner with the fast move, the way a player would.
@@ -659,11 +659,11 @@ test("scrolling: the whole Grid is reachable, at the smallest terminal and the l
       build.handleData(SHIFT_RIGHT, layout)
       build.handleData(PAGE_DOWN, layout)
     }
-    const grid = starterGrid()
-    assert.deepEqual(build.state.cursor, { x: grid.width - 1, y: grid.height - 1 })
+    const terrain = starterTerrain()
+    assert.deepEqual(build.state.cursor, { x: terrain.width - 1, y: terrain.height - 1 })
     assert.deepEqual(build.state.camera, {
-      x: grid.width - layout.viewport.width,
-      y: grid.height - layout.viewport.height,
+      x: terrain.width - layout.viewport.width,
+      y: terrain.height - layout.viewport.height,
     })
     // And back out again, to the opposite corner.
     for (let step = 0; step < 40; step += 1) {
@@ -679,14 +679,14 @@ test("the scroll margin is a share of the view: the tuned one, or another from -
   // It is a share of the view's width and height; the owner settled the share (a tuned value),
   // and `--scroll-margin` sets another for one run. 49 tiles wide at 80 columns: 5% is 2 tiles, 10% is 5,
   // 20% is 10, 25% is 12, 30% is 15. No --scroll-margin: the tuned value.
-  const tuned = marginForView(TUNING.scrollMargin, buildLayout(MINIMUM, starterContext().grid).viewport).x
+  const tuned = marginForView(TUNING.scrollMargin, buildLayout(MINIMUM, starterContext().terrain).viewport).x
   for (const [percent, margin] of [[5, 2], [10, 5], [20, 10], [25, 12], [30, 15], [undefined, tuned]] as const) {
     const context = percent === undefined ? starterContext() : { ...starterContext(), scrollMargin: percent }
-    const layout = buildLayout(MINIMUM, context.grid)
+    const layout = buildLayout(MINIMUM, context.terrain)
     const build = readyBuildSession({ context, cursor: { x: 0, y: 0 }, viewport: layout.viewport })
     // Walk east until the camera first moves: it should be exactly at the margin from the east edge.
     let steps = 0
-    while (build.state.camera.x === 0 && steps < context.grid.width) {
+    while (build.state.camera.x === 0 && steps < context.terrain.width) {
       build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
       steps += 1
     }
@@ -700,19 +700,19 @@ test("the scroll margin is a share of the view: the tuned one, or another from -
 
 test("a resize keeps the cursor where it was and re-fits the camera around it", () => {
   const context = starterContext()
-  const small = buildLayout(MINIMUM, context.grid)
+  const small = buildLayout(MINIMUM, context.terrain)
   const build = readyBuildSession({ context, cursor: { x: 60, y: 30 }, viewport: small.viewport })
   const cursor = { ...build.state.cursor }
-  build.resize(fitViewport(MAXIMUM, context.grid))
+  build.resize(fitViewport(MAXIMUM, context.terrain))
   assert.deepEqual(build.state.cursor, cursor)
   assert.deepEqual(build.state.viewport, { width: 72, height: 24 })
-  assert.ok(build.state.camera.x >= 0 && build.state.camera.x <= context.grid.width - 72)
-  assert.ok(build.state.camera.y >= 0 && build.state.camera.y <= context.grid.height - 24)
+  assert.ok(build.state.camera.x >= 0 && build.state.camera.x <= context.terrain.width - 72)
+  assert.ok(build.state.camera.y >= 0 && build.state.camera.y <= context.terrain.height - 24)
 })
 
 test("Esc walks back to the game menu; only its q quits, and neither touches the plan", () => {
   const context = starterContext()
-  const layout = buildLayout(MINIMUM, context.grid)
+  const layout = buildLayout(MINIMUM, context.terrain)
   let quits = 0
   const build = readyBuildSession({
     context,
@@ -723,7 +723,7 @@ test("Esc walks back to the game menu; only its q quits, and neither touches the
     },
   })
   const planned = build.state.planned
-  build.handleData(ESC, layout) // Grid -> menu
+  build.handleData(ESC, layout) // battlefield -> menu
   assert.equal(build.state.focus, "menu")
   build.handleData(ESC, layout) // menu -> the game menu
   assert.equal(build.state.popup, "game-menu")
@@ -752,16 +752,16 @@ test("two keys arriving in one chunk are two keys, not one", () => {
 test("a refusal's message clears once the cursor leaves the tile it was about", () => {
   // The panel already recomputes its own "why" live from the current cursor position; the footer's
   // one-line echo of the same refusal must not go on saying so once that stops being true, or the
-  // two disagree with each other on screen. A tiny hand-built grid with a single rock tile, rather
+  // two disagree with each other on screen. A tiny hand-built map with a single rock tile, rather
   // than the starter map's own terrain, so the test does not have to reason about which other tiles a
   // move happens to land on.
   const width = 10
   const height = 10
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.plain")
   tiles[5 * width + 5] = "terrain.rock"
-  const grid: GridTerrain = { width, height, tiles }
+  const terrain: MapTerrain = { width, height, tiles }
   const context = {
-    grid,
+    terrain,
     registry: FIXTURE_REGISTRY,
     catalog: STARTER_CATALOG,
     // A Nexus to build from, two rows below the tiles the test uses, so all of them are in its build range.
@@ -792,7 +792,7 @@ test("a refusal's message clears once the cursor leaves the tile it was about", 
 })
 
 test("a move clamped back to the same tile keeps the refusal on screen, read quietly once the attempt has lapsed", () => {
-  // Pressing further into the Grid's own edge does not move the cursor at all — clampToGrid leaves
+  // Pressing further into the battlefield's own edge does not move the cursor at all — clampToMap leaves
   // it exactly where it was. That is not "the cursor left the tile the refusal was about", so the
   // bottom line still says why Enter is refused there. But the move is a command that said nothing, so
   // the attempt's own red answer lapses: the same sentence reads as looking, not trying.
@@ -800,9 +800,9 @@ test("a move clamped back to the same tile keeps the refusal on screen, read qui
   const height = 10
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.plain")
   tiles[9 * width + 9] = "terrain.rock"
-  const grid: GridTerrain = { width, height, tiles }
+  const terrain: MapTerrain = { width, height, tiles }
   const context = {
-    grid,
+    terrain,
     registry: FIXTURE_REGISTRY,
     catalog: STARTER_CATALOG,
     // A Nexus to build from, so the refusal is the rock's and names its tile.
@@ -830,14 +830,14 @@ test("keyboard: g goes to the player's Nexus from the menu or the map, and the k
   const nexus = nexusTile(context)
   assert.ok(nexus !== null)
   assert.deepEqual(buildKeyboardCommand("g", { itemCount: 3, armed: false, focus: "menu" }), { kind: "go-nexus" })
-  assert.deepEqual(buildKeyboardCommand("g", { itemCount: 3, armed: false, focus: "grid" }), { kind: "go-nexus" })
-  const layout = buildLayout(MINIMUM, context.grid)
+  assert.deepEqual(buildKeyboardCommand("g", { itemCount: 3, armed: false, focus: "map" }), { kind: "go-nexus" })
+  const layout = buildLayout(MINIMUM, context.terrain)
   // From the menu, the cursor far away: one key, and the cursor stands on the Nexus with the view on it.
   const build = readyBuildSession({ context, cursor: { x: 0, y: 0 }, viewport: layout.viewport })
   build.dispatch({ kind: "focus", target: "menu" })
   build.handleData("g", layout)
   assert.deepEqual(build.state.cursor, nexus)
-  assert.equal(build.state.focus, "grid")
+  assert.equal(build.state.focus, "map")
   const { camera, viewport } = build.state
   assert.ok(nexus.x >= camera.x && nexus.x < camera.x + viewport.width && nexus.y >= camera.y && nexus.y < camera.y + viewport.height, "the Nexus is not in view")
   // Inside a popup it means nothing.

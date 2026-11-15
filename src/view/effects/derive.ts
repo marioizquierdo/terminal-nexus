@@ -38,7 +38,7 @@ const CASCADE_STAGGER_MS = 55
 const CASCADE_STAGGER_CAP = 6
 const NEXUS_PERIOD_MS = 1200
 
-/** Below this fraction of its health a Grid Nexus is critical, and says so until it stops. */
+/** Below this fraction of its health a Nexus is critical, and says so until it stops. */
 const NEXUS_CRITICAL = 0.35
 
 export type EffectSource = Readonly<{
@@ -56,8 +56,8 @@ function familyFor(contentId: string): EffectFamily {
 
 /**
  * Where a heal's mark goes: the first open tile beside the mended unit, as the tick it was mended in left the
- * Grid — above the middle of its top row, then beside its middle row to the right and to the left, then below
- * the middle of its bottom row. Open is plain ground on the Grid that nothing stands on: a glyph on a unit would
+ * battlefield — above the middle of its top row, then beside its middle row to the right and to the left, then below
+ * the middle of its bottom row. Open is plain ground on the battlefield that nothing stands on: a glyph on a unit would
  * be dropped (the corruption law), and rock and a deposit are information too. `null` when every side is taken.
  */
 export function mendTile(state: MatchState, registry: ContentRegistry, anchor: Coord, footprint: Footprint): Coord | null {
@@ -75,7 +75,7 @@ export function mendTile(state: MatchState, registry: ContentRegistry, anchor: C
     for (const tile of tilesOf(entity.anchor, registry.get(entity.contentId).footprint)) taken.add(`${tile.x},${tile.y}`)
   }
   const open = (tile: Coord): boolean =>
-    inBounds(state.grid, tile) && state.grid.tiles[tile.y * state.grid.width + tile.x] === "terrain.plain" && !taken.has(`${tile.x},${tile.y}`)
+    inBounds(state.terrain, tile) && state.terrain.tiles[tile.y * state.terrain.width + tile.x] === "terrain.plain" && !taken.has(`${tile.x},${tile.y}`)
   return sides.find(open) ?? null
 }
 
@@ -244,7 +244,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
           params: {},
         })
 
-        // A Grid Nexus that drops below the threshold starts saying so, and keeps saying it.
+        // A Nexus that drops below the threshold starts saying so, and keeps saying it.
         const contentId = contentOf.get(event.ordinal)
         if (contentId !== undefined && source.registry.get(contentId).nexus === true) {
           const definition = source.registry.get(contentId)

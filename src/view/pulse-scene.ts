@@ -20,15 +20,15 @@ import { hasRoom, supplyOf } from "../content/supply.ts"
 import type { DomainEvent } from "../engine/events/types.ts"
 import { inBounds, tileIndex } from "../engine/geometry/coords.ts"
 import { tilesWithin } from "../engine/geometry/reach.ts"
-import type { Coord, Footprint, GridTerrain } from "../engine/geometry/types.ts"
+import type { Coord, Footprint, MapTerrain } from "../engine/geometry/types.ts"
 import type { PlayerId } from "../engine/state/types.ts"
 import { PLAYERS } from "../engine/state/types.ts"
 import type { StatusMessage } from "../build/status.ts"
 import { status } from "../build/status.ts"
 import type { EndingPhase, EndingTimes, PulseResult } from "./ending.ts"
 import { BEAM_BOLD, beamFrame, beamLight, formatTimer, timerLit, timerSeconds } from "./ending.ts"
-import { drawnBold } from "./grid-layer.ts"
-import { inView } from "./build-grid.ts"
+import { drawnBold } from "./map-layers.ts"
+import { inView } from "./build-map.ts"
 import { drawFire } from "./burning.ts"
 import { paintEffectCells } from "./effects/composite.ts"
 import type { EffectCellSource } from "./effects/composite.ts"
@@ -70,7 +70,7 @@ export type PulseFrame = Readonly<{
   watched?: Readonly<Record<PlayerId, string>>
   /** How many mobile units the player has left, standing where the fight left them to regroup. */
   home: number
-  /** Her aura's reach while the fight is on (`pulse-live.ts`). Absent: no aura on the Grid. */
+  /** Her aura's reach while the fight is on (`pulse-live.ts`). Absent: no aura on the battlefield. */
   aura?: AuraFrame
   /** What she is saying at this instant, and where: beside her, or in the panel while she is out of view.
    *  Absent: nothing. */
@@ -108,7 +108,7 @@ export type VoiceFrame = Readonly<{
 /** The words for a side: the player's own units are "you", the other side "raid". */
 const SIDE: Readonly<Record<PlayerId, string>> = { A: "you", B: "raid" }
 
-type SceneView = Readonly<{ camera: Camera; viewport: Viewport; layout: BuildLayout; grid: GridTerrain }>
+type SceneView = Readonly<{ camera: Camera; viewport: Viewport; layout: BuildLayout; terrain: MapTerrain }>
 
 /**
  * Every entity, drawn where the frame says it is, through the camera and clipped to the view. Both sides,
@@ -124,9 +124,9 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
     const band = definition.layer === "obstacles" ? BANDS.structures : definition.layer === "air" ? BANDS.air : BANDS.units
     for (const offset of definition.footprint) {
       const tile = { x: at.x + offset.x, y: at.y + offset.y }
-      if (!inBounds(view.grid, tile)) continue
+      if (!inBounds(view.terrain, tile)) continue
       if (!inView(range, tile)) continue
-      occupied.add(tileIndex(view.grid, tile))
+      occupied.add(tileIndex(view.terrain, tile))
       const cell = cellForTile(view.layout, view.camera, tile)
       put(cells, band, cell.x, cell.y, entityGlyph(entity.contentId, entity.player, offset), playerRole(entity.player), {
         bold: drawnBold(definition),
@@ -146,10 +146,10 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
 export function drawPulseFire(cells: BandCell[], view: SceneView, pulse: PulseFrame, occupied: ReadonlySet<number>, pack: GlyphPack): void {
   const range = visibleRange(view.camera, view.viewport)
   drawFire(cells, pulse.sample.fire, pack, {
-    grid: view.grid,
+    terrain: view.terrain,
     cellOf: (tile) => cellForTile(view.layout, view.camera, tile),
     visible: (tile) => inView(range, tile),
-    standing: (tile) => occupied.has(tileIndex(view.grid, tile)),
+    standing: (tile) => occupied.has(tileIndex(view.terrain, tile)),
   })
 }
 
@@ -172,7 +172,7 @@ export function drawPulseEffects(
   for (const painted of pulse.sample.effects) {
     for (const cell of painted.cells) {
       const { tile } = cell
-      if (!inBounds(view.grid, tile)) continue
+      if (!inBounds(view.terrain, tile)) continue
       if (!inView(range, tile)) continue
       sources.push({ band: painted.instance.band, cell })
     }
@@ -181,7 +181,7 @@ export function drawPulseEffects(
     cells,
     sources,
     (tile) => cellForTile(view.layout, view.camera, tile),
-    (tile) => occupied.has(tileIndex(view.grid, tile)),
+    (tile) => occupied.has(tileIndex(view.terrain, tile)),
   )
   drawVoiceOnMap(cells, view, pulse, occupied)
 }
@@ -212,7 +212,7 @@ export function drawAura(cells: BandCell[], view: SceneView, pulse: PulseFrame):
   const range = visibleRange(view.camera, view.viewport)
   const style: CellStyle = { seeThrough: { role: playerRole(aura.player), alpha: AURA_WASH } }
   for (const tile of tilesWithin(aura.at, ONE_TILE, aura.radius)) {
-    if (!inBounds(view.grid, tile) || !inView(range, tile)) continue
+    if (!inBounds(view.terrain, tile) || !inView(range, tile)) continue
     const cell = cellForTile(view.layout, view.camera, tile)
     cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, style })
   }
@@ -230,7 +230,7 @@ export function drawAura(cells: BandCell[], view: SceneView, pulse: PulseFrame):
 export function drawVoiceOnMap(cells: BandCell[], view: SceneView, pulse: PulseFrame, occupied: ReadonlySet<number>): void {
   const voice = pulse.voice
   if (voice === undefined || voice.where !== "map") return
-  const { layout, camera, viewport, grid } = view
+  const { layout, camera, viewport, terrain } = view
   const words = quoted(voice.text)
   // The opening blank, what is typed of the line, and the closing blank once it is whole.
   const label = ` ${words.slice(0, voice.typed)}${voice.typed >= words.length ? " " : ""}`
@@ -250,15 +250,15 @@ export function drawVoiceOnMap(cells: BandCell[], view: SceneView, pulse: PulseF
     if (x > mapRight) break
     // A letter is a tile's cell: the one it would cover.
     const tile = tileAtCell(layout, camera, x, y)
-    if (tile === null || !inBounds(grid, tile) || occupied.has(tileIndex(grid, tile))) continue
+    if (tile === null || !inBounds(terrain, tile) || occupied.has(tileIndex(terrain, tile))) continue
     put(cells, BANDS.effects, x, y, glyphs[index] as string, role, extra)
   }
 }
 
 /** The border's cells, clockwise from the top left corner — the same list every frame of a layout. */
-const borders = new WeakMap<BuildLayout["gridBox"], readonly Coord[]>()
+const borders = new WeakMap<BuildLayout["mapBox"], readonly Coord[]>()
 
-function borderOf(box: BuildLayout["gridBox"]): readonly Coord[] {
+function borderOf(box: BuildLayout["mapBox"]): readonly Coord[] {
   let border = borders.get(box)
   if (border === undefined) {
     const cells: Coord[] = []
@@ -277,12 +277,12 @@ function borderOf(box: BuildLayout["gridBox"]): readonly Coord[] {
  * the frame like a lighthouse calling, and, a moment at a time, the border goes a faint red when the
  * player's Nexus is hurt (and then only red — the news of a hurt Nexus comes first). Both are a colour
  * pulled a little toward another — a style-only write, so the map's own edge and the frame's junctions
- * keep their glyphs and nothing on the Grid is ever covered. Where colour cannot show (monochrome) the
+ * keep their glyphs and nothing on the battlefield is ever covered. Where colour cannot show (monochrome) the
  * beam is the border going bold as it passes; the red has nothing to say there, because every red flash
  * is said again in words.
  */
 export function drawFrameLight(cells: BandCell[], layout: BuildLayout, pulse: PulseFrame): void {
-  const border = borderOf(layout.gridBox)
+  const border = borderOf(layout.mapBox)
   if (pulse.redAlert > 0) {
     const style: CellStyle = { tint: { role: "notice.gate", amount: pulse.redAlert } }
     for (const { x, y } of border) cells.push({ band: BANDS.chrome, x, y, style })
@@ -395,7 +395,7 @@ const FEED_NAMES = new WeakMap<ContentRegistry, ReadonlyMap<string, string>>()
  * What the feed calls each kind of thing in `registry`, by the short name its ids carry: what its card calls it,
  * so the feed, the menu and the cards give a thing one name — lowercased, as the feed writes a kind of thing
  * ("turret > runner", "swarmer trained", "aid station falls"), and a Commander by her own name ("Vasse falls"). A
- * Grid Nexus is "nexus", as the raid panel says "your Nexus", so a line about it stays short enough for the panel
+ * Nexus is "nexus", as the raid panel says "your Nexus", so a line about it stays short enough for the panel
  * at the floor. Content no card describes keeps the short name its id carries.
  */
 export function feedNames(registry: ContentRegistry): ReadonlyMap<string, string> {

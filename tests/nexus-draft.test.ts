@@ -1,4 +1,4 @@
-// The Nexus Pulse (commander-armies.md, how the Nexus Pulse deals): the hand the Grid Nexus deals as each round
+// The Nexus Pulse (commander-armies.md, how the Nexus Pulse deals): the hand the Nexus deals as each round
 // opens, from the army's Nexus power pool by a schedule of rarities, War Chest beside it, one kept — and what each
 // of PERIMETER's powers does once kept, from the moment it is picked to the end of the mission. The dealer is
 // seeded and repeatable, and draws from a stream of its own, so dealing never moves a battle.
@@ -17,7 +17,7 @@ import type { BuildContext } from "../src/build/state.ts"
 import { createBuildState, nexusPowers, nexusTile } from "../src/build/state.ts"
 import { missionPlay } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
-import { gridDistance } from "../src/engine/geometry/coords.ts"
+import { tileDistance } from "../src/engine/geometry/coords.ts"
 import { buildSide, compose, ENTER, keys, panelLines, screenText, TAB } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
 
@@ -46,7 +46,7 @@ function side(context: BuildContext): BuildSide {
 
 /** A Build Phase state on `context`, as a round opens. */
 function opened(context: BuildContext) {
-  return createBuildState(context, STARTER_START_CURSOR, buildLayout({ columns: 80, rows: 24 }, context.grid).viewport)
+  return createBuildState(context, STARTER_START_CURSOR, buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport)
 }
 
 // --- The dealer ----------------------------------------------------------------------------------------------
@@ -331,10 +331,10 @@ test("Reserve Callup: two troopers join at the Nexus — shown arriving the mome
   const after = callup.build.round
   const troopers = (context: BuildContext) => (context.incoming ?? []).filter((entity) => entity.player === "A" && entity.contentId === TROOPER)
   assert.equal(troopers(after).length, troopers(before).length + 2, "the two troopers are not shown arriving")
-  // Beside the Grid Nexus: the two new ones are its nearest troopers.
+  // Beside the Nexus: the two new ones are its nearest troopers.
   const nexus = nexusTile(after)
   assert.ok(nexus !== null)
-  const near = (entity: Readonly<{ anchor: Readonly<{ x: number; y: number }> }>) => gridDistance(entity.anchor, nexus)
+  const near = (entity: Readonly<{ anchor: Readonly<{ x: number; y: number }> }>) => tileDistance(entity.anchor, nexus)
   const added = troopers(after).filter((entity) => !troopers(before).some((was) => was.anchor.x === entity.anchor.x && was.anchor.y === entity.anchor.y))
   assert.equal(added.length, 2)
   for (const entity of added) assert.ok(near(entity) <= 8, `a called-up trooper stands ${near(entity)} from the Nexus`)

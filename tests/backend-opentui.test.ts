@@ -39,7 +39,7 @@ if (RUNTIME_IS_BUN) {
       drawFrameInto(core, rendered.renderer.nextRenderBuffer, frame, "monochrome")
       await rendered.renderOnce()
       // Both sides read the same way: trailing spaces and the blank rows under the last drawn one dropped (a Battle Round
-      // on a small Grid is centred in the terminal, with a blank row below it).
+      // on a small battlefield is centred in the terminal, with a blank row below it).
       const asText = (text: string): string =>
         text
           .split("\n")

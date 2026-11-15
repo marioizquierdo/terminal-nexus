@@ -157,7 +157,7 @@ The definition: "the first attack in a given area after a cooldown since the las
 that area", with the area's unit count and accumulated power attached. Making it deterministic and
 reproducible needs three things nailed down:
 
-- **Area.** Partition the Grid into fixed square sectors: the same coarse-bucketing idea the scaling
+- **Area.** Partition the battlefield into fixed square sectors: the same coarse-bucketing idea the scaling
   design proposes for perception ([`runtime.md`](runtime.md)), one mechanism serving two consumers. An
   attack's sector is the one containing the attacker's anchor at the tick of its `attack.launched`
   event. Default `ENGAGEMENT_SECTOR_SIZE = 8` tiles per side, a constant not measured against a real
@@ -266,7 +266,7 @@ Not built. The shape it could grow into:
 
 ## Naming, and the engine version
 
-`replayType: "sandbox"` is a single Battle Round from a board written by hand, the build phase standing in as its
+`replayType: "sandbox"` is a single Battle Round from a battlefield set up by hand, the build phase standing in as its
 setup. The engine version is recorded from the first file the format writes: `ReplayFile.engineVersion` is
 `ENGINE_VERSION` (`src/engine/pulse/resolve.ts`). One gap in the current code, not in this design: `PulseRun` has no `prng`
 field though the game log's required contents name one; with one PRNG nothing depends on it, and it is cheap to add

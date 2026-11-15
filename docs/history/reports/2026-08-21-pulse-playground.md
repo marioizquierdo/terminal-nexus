@@ -164,13 +164,13 @@ passes.
 | `parse(serialize(state))` hashes identically, all 15 scenarios | PASS | `tests/determinism.test.ts` |
 | The JSONL event stream round-trips to the same hash and the same bytes | PASS | `tests/determinism.test.ts`; every kind emitted is a declared kind, and the only declared kind no scenario emits is `arbitration.bounded`, the warning that fires when arbitration hits its pass bound |
 | **Identical hashes under Bun and under Node**, all 15 scenarios | PASS | `tests/cli.test.ts` spawns both runtimes and compares `--json` |
-| No two entities overlap in a mask including both layers, at any tick | PASS | `tests/grid.test.ts`, every tick of every scenario |
-| A worker and a ground unit may share a tile | PASS | `tests/grid.test.ts`; `share-tile-worker-unit` at tick 64, tile (6,5) |
-| A ground unit is blocked by a structure on another layer | PASS | `tests/grid.test.ts` |
-| An air entity may share a tile with a ground entity (Q8) | PASS | `tests/grid.test.ts`, using a test-only definition — no air content authored |
-| 3x1 hauler refused a two-tile gap, admitted a three-tile one | PASS | `tests/grid.test.ts`, mask and scenario both |
-| Multi-tile footprints never leave the Grid; destroyed as one entity | PASS | `tests/grid.test.ts`; the 3x2 Nexus emits exactly one destruction |
-| Range measures to the nearest occupied tile | PASS | `tests/grid.test.ts` |
+| No two entities overlap in a mask including both layers, at any tick | PASS | `tests/layers.test.ts`, every tick of every scenario |
+| A worker and a ground unit may share a tile | PASS | `tests/layers.test.ts`; `share-tile-worker-unit` at tick 64, tile (6,5) |
+| A ground unit is blocked by a structure on another layer | PASS | `tests/layers.test.ts` |
+| An air entity may share a tile with a ground entity (Q8) | PASS | `tests/layers.test.ts`, using a test-only definition — no air content authored |
+| 3x1 hauler refused a two-tile gap, admitted a three-tile one | PASS | `tests/layers.test.ts`, mask and scenario both |
+| Multi-tile footprints never leave the Grid; destroyed as one entity | PASS | `tests/layers.test.ts`; the 3x2 Nexus emits exactly one destruction |
+| Range measures to the nearest occupied tile | PASS | `tests/layers.test.ts` |
 | Arbitration bounded, progress measure strictly decreasing | PASS | `tests/rules.test.ts` over `jammed-corridor`; no `arbitration.bounded` event ever emitted |
 | Movement credit reproduces the cadence table at every rate | PASS | `tests/rules.test.ts`, all eight rates of engine.md 4.1 |
 | Blocked actor keeps credit and steps the tick the tile frees | PASS | `tests/rules.test.ts` |

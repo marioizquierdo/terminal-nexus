@@ -18,7 +18,7 @@ import {
   STARTER_NEXUS_DRAFT,
   STARTER_STANDING,
   STARTER_START_CURSOR,
-  starterGrid,
+  starterTerrain,
 } from "../src/build/catalog.ts"
 import { centreOn } from "../src/build/camera.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
@@ -49,7 +49,7 @@ import { hashState } from "../src/engine/state/serialize.ts"
 import type { MatchState } from "../src/engine/state/types.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import { BREATH_FRAME_MS, BuildAnimation } from "../src/view/build-live.ts"
-import { drawnBold } from "../src/view/grid-layer.ts"
+import { drawnBold } from "../src/view/map-layers.ts"
 import { EFFECT_RECIPES } from "../src/view/effects/recipes.ts"
 import { FOCUS_LIGHT } from "../src/view/effects/shading.ts"
 import type { EffectContext, EffectInstance } from "../src/view/effects/types.ts"
@@ -82,7 +82,7 @@ import {
 import type { BuildSide } from "./build-helpers.ts"
 import { COMMANDER_FALLS, VASSE, sittingOut } from "./commander-fixture.ts"
 
-const grid = starterGrid()
+const terrain = starterTerrain()
 const registry = FIXTURE_REGISTRY
 
 /** A Build Phase session as the game opens one — scenes played unless told otherwise — on PERIMETER's first
@@ -92,7 +92,7 @@ function sceneSide(
 ): BuildSide {
   const activity = activityLog()
   const context: BuildContext = { ...(options.context ?? starterContext()), activity }
-  const layout = buildLayout(options.terminal ?? MINIMUM, context.grid)
+  const layout = buildLayout(options.terminal ?? MINIMUM, context.terrain)
   const play = options.mission ?? STARTER_MISSION
   const build = new BuildSession({
     context,
@@ -133,7 +133,7 @@ function playRound(side: BuildSide): void {
 function fixtureSide(scenes = true, out = 0): BuildSide {
   const play = missionPlay(COMMANDER_FALLS)
   const context = play.firstRound({
-    grid,
+    terrain,
     registry: out === 0 ? registry : sittingOut(out, registry),
     catalog: STARTER_CATALOG,
     standing: STARTER_STANDING,
@@ -182,7 +182,7 @@ function say(speaker: string, text: string, focus: Record<string, string> = { re
 
 const problemsOf = (mission: MissionDefinition): readonly string[] => {
   try {
-    validateMission(mission, grid, registry)
+    validateMission(mission, terrain, registry)
     return []
   } catch (error) {
     assert.ok(error instanceof MissionError, `not a MissionError: ${String(error)}`)
@@ -237,7 +237,7 @@ function playMission(mission: MissionDefinition): MissionPulse[] {
   const pulses: MissionPulse[] = []
   let carried: MatchState | null = null
   for (let pulse = 1; pulse <= mission.pulses; pulse += 1) {
-    const run = resolveMissionPulse({ mission, grid, registry, pulse, carried, structures: pulse === 1 ? STARTER_STANDING : [] })
+    const run = resolveMissionPulse({ mission, terrain, registry, pulse, carried, structures: pulse === 1 ? STARTER_STANDING : [] })
     pulses.push(run)
     if (run.verdict.kind !== "continue") break
     carried = regroup(run.final, registry).state
@@ -253,7 +253,7 @@ test("a mission's lines never change what its Pulses resolve: with or without th
   const withLines = shape(playMission(PERIMETER))
   const without: MissionDefinition = { ...PERIMETER, triggers: PERIMETER.triggers.filter((trigger) => trigger.id !== "intro") }
   const more = withTriggers({ id: "chatter", when: at(2), do: [say("Corvane", "Again.", { region: "ridge" })] })
-  validateMission(more, grid, registry)
+  validateMission(more, terrain, registry)
   assert.deepEqual(shape(playMission(without)), withLines, "the intro changed a Pulse")
   assert.deepEqual(shape(playMission(more)), withLines, "a line in round 2 changed a Pulse")
   // The runner never fires a line: its triggers fire in the Pulse, and a line is the Build Phase's.
@@ -388,12 +388,12 @@ test("each line takes the camera to what it looks at: Vasse, the raid on the rid
     const focus = line.focus
     assert.ok(focus !== null)
     assert.equal(side.build.state.dialog?.line, index)
-    assert.deepEqual(side.build.state.camera, centreOn(focus.tile, side.layout.viewport, grid), `line ${index + 1}'s camera`)
+    assert.deepEqual(side.build.state.camera, centreOn(focus.tile, side.layout.viewport, terrain), `line ${index + 1}'s camera`)
     assert.deepEqual(side.build.state.cursor, focus.tile)
     keys(side, ENTER)
   }
   // The ridge is far from the base: the view really moved, and came back.
-  assert.notDeepEqual(centreOn(scene[1]?.focus?.tile ?? { x: 0, y: 0 }, side.layout.viewport, grid), centreOn(vasse.anchor, side.layout.viewport, grid))
+  assert.notDeepEqual(centreOn(scene[1]?.focus?.tile ?? { x: 0, y: 0 }, side.layout.viewport, terrain), centreOn(vasse.anchor, side.layout.viewport, terrain))
   assert.deepEqual(side.build.state.cursor, STARTER_START_CURSOR)
 })
 
@@ -449,8 +449,8 @@ test("the dialog is docked at the bottom of the map, its height kept through the
       const size = `${terminal.columns}x${terminal.rows}`
       // Over the map, its shadow on the map's last row, the bottom line clear below it.
       assert.equal(box.bottom, layout.paneBottom - 2, `${size}: not docked at the bottom`)
-      assert.ok(box.left > layout.gridBox.left && box.right + 1 < layout.gridBox.right, `${size}: wider than the map`)
-      assert.ok(box.top > layout.gridBox.top, `${size}: taller than the map`)
+      assert.ok(box.left > layout.mapBox.left && box.right + 1 < layout.mapBox.right, `${size}: wider than the map`)
+      assert.ok(box.top > layout.mapBox.top, `${size}: taller than the map`)
       heights.add(box.bottom - box.top + 1)
       keys(side, ENTER)
     }
@@ -589,7 +589,7 @@ test("drawn on the map: a ring around the line's focus as drawn, the focus's own
 
 test("the live loop breathes the light from the frame that first showed each line, on slow frames, and holds it still where it cannot breathe", () => {
   const context = starterContext()
-  const viewport = buildLayout(MINIMUM, context.grid).viewport
+  const viewport = buildLayout(MINIMUM, context.terrain).viewport
   const opened = createBuildState(context, STARTER_START_CURSOR, viewport)
   const animation = new BuildAnimation()
   const first = animation.frame(opened, 1000, { colors: "truecolor" })
@@ -629,7 +629,7 @@ test("round 2 of the Commander's named fixture opens on her return, one line in 
   assert.deepEqual(side.build.round.scene, [
     { speaker: null, side: null, unit: null, text: "The Nexus Pulse restores Vasse beside the Nexus.", focus: { tile: vasse.anchor, own: [vasse.anchor] } },
   ])
-  assert.deepEqual(state.camera, centreOn(vasse.anchor, side.layout.viewport, grid))
+  assert.deepEqual(state.camera, centreOn(vasse.anchor, side.layout.viewport, terrain))
   keys(side, ENTER)
   assert.equal(side.build.state.popup, null)
   assert.equal(bottomLineText(side), "Round 1: victory. The Nexus Pulse restores Vasse and deals: [n].")
@@ -663,7 +663,7 @@ test("a Commander who sits a round out: round 2 opens on her absence, round 3 on
   assert.deepEqual(side.build.round.scene, [
     { speaker: null, side: null, unit: null, text: "The Nexus Pulse restores Vasse beside the Nexus.", focus: { tile: vasse.anchor, own: [vasse.anchor] } },
   ])
-  assert.deepEqual(state.camera, centreOn(vasse.anchor, side.layout.viewport, grid))
+  assert.deepEqual(state.camera, centreOn(vasse.anchor, side.layout.viewport, terrain))
   assert.equal(bottomLineText(side), "[enter] or [esc] closes it.")
   // The game's own voice has no name: the border runs unbroken where a speaker's would be.
   const frame = compose(side, {}, "truecolor")
@@ -706,7 +706,7 @@ test("round 2 of PERIMETER opens without a scene; Restart is the mission from ro
 test("a resize while the dialog is open: the camera it gives back fits the new view", () => {
   const side = sceneSide()
   const plain = sceneSide({ scenes: false })
-  const viewport = buildLayout(MAXIMUM, grid).viewport
+  const viewport = buildLayout(MAXIMUM, terrain).viewport
   side.build.resize(viewport)
   plain.build.resize(viewport)
   keys(side, ENTER, ESC)

@@ -2,7 +2,7 @@
 // anywhere steps downhill and is on its way. One field serves every unit heading for the same goal with the same body,
 // and a unit pushed, pulled or newly made reads its route from wherever it stands.
 //
-// The cost of a step is what the Grid charges a walk for it (`stepLength`, `src/engine/geometry/coords.ts`): one across a column,
+// The cost of a step is what the battlefield charges a walk for it (`stepLength`, `src/engine/geometry/coords.ts`): one across a column,
 // `ROW_DISTANCE` up or down a row — the movement credit's own proportion, so a field's distance is a walk's time in
 // beats — times the weight of the ground stepped onto (one everywhere, until terrain has a cost). Whole numbers only.
 //
@@ -17,7 +17,7 @@ import type { Ground } from "./ground.ts"
 
 export const UNREACHABLE = Number.POSITIVE_INFINITY
 
-/** What `distance` holds for an anchor no way has reached yet: beyond any walk on a Grid. */
+/** What `distance` holds for an anchor no way has reached yet: beyond any walk on a battlefield. */
 const FAR = 0x7fffffff
 
 /** The cost of a settled anchor, from what `DistanceField.distance` holds for it (`-1 - cost`). */

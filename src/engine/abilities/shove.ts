@@ -1,4 +1,4 @@
-// A shove (milestone 16, a Grid that changes): every `everyTicks` ticks, each enemy unit touching the bearer is pushed
+// A shove (milestone 16, a battlefield that changes): every `everyTicks` ticks, each enemy unit touching the bearer is pushed
 // `tiles` tiles straight away from it. A bench ability, the test of the battle engine's rule for a unit that did not walk
 // (`displace`, `src/engine/pulse/shared.ts`), so the first Nexus power or unit that pushes has it ready: a pushed unit stops
 // where its body would not fit, and walks on from where it lands.

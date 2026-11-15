@@ -101,7 +101,7 @@ test("the balanced script with upgrades spends what its plan leaves on its Barra
 test("a Skirmish hands the screen's actions to its battle: a production line bought on the screen is bought in the battle", { timeout: 120_000 }, () => {
   const { play, firstRound } = newSkirmishLevel(1)
   const context = withoutScene(firstRound())
-  const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
+  const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
   const opened = createBuildState(context, nexusTile(context) ?? { x: 0, y: 0 }, viewport)
   const { battle } = (context.mode as { battle: BattleState })
   const spot = placementsOf(battle, "A", { build: [{ building: "barracks", at: "nexus" }], stance: "attack" })[0]

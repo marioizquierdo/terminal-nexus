@@ -1,4 +1,4 @@
-// Coordinates, footprints and distance on the Grid (grid.md).
+// Coordinates, footprints and distance on the battlefield (battlefield.md).
 //
 // **A row counts two columns.** A tile is one terminal cell, and a cell is about twice as tall as it is wide, so the
 // rules count the ground the way the screen shows it: a row up or down counts `ROW_DISTANCE` columns in every
@@ -8,14 +8,14 @@
 //   down (`src/engine/geometry/reach.ts` draws it);
 // - **every step covers its distance at one pace**: "in range" and "reachable in that time" agree, so eleven rows
 //   down are as far, and as long a walk, as twenty-two columns across;
-// - **touching is not a distance**: two tiles touch when they share a side (`gridSteps` is 1), one row up as much
+// - **touching is not a distance**: two tiles touch when they share a side (`tileSteps` is 1), one row up as much
 //   as one column across. Melee reaches what touches it, a unit stands beside what it touches, and every reach of
 //   1 or more covers what touches (`footprintWithin`), so a reach of 1 means touching.
 //
 // Every distance in the game is worked out here and in `reach.ts`, never by hand: the battle engine, the rules between
 // rounds, the Build Phase and the screen all ask these functions.
 
-import type { Coord, Direction, Footprint, GridTerrain } from "./types.ts"
+import type { Coord, Direction, Footprint, MapTerrain } from "./types.ts"
 
 /**
  * What one row up or down counts against one column across, in every distance and every step: two, as a cell is
@@ -25,7 +25,7 @@ import type { Coord, Direction, Footprint, GridTerrain } from "./types.ts"
 export const ROW_DISTANCE = 2
 
 /**
- * The four directions a mover may step in, in a fixed order: the compass points, never a diagonal (grid.md). A unit
+ * The four directions a mover may step in, in a fixed order: the compass points, never a diagonal (battlefield.md). A unit
  * that cuts corners is a unit whose next tile a viewer cannot predict; four-way steps read as up, down, left or
  * right.
  */
@@ -50,7 +50,7 @@ export function step(from: Coord, direction: Direction): Coord {
 /**
  * How far `dx` columns across and `dy` rows down go along each axis, both counted in columns: `across` is `dx`,
  * and `down` is `dy` rows of `ROW_DISTANCE` columns each. Signed, east and south positive. The one place a row is
- * weighed: a distance (`gridDistance`), the way straight at a tile (`directionOf`), and a slope read off the map
+ * weighed: a distance (`tileDistance`), the way straight at a tile (`directionOf`), and a slope read off the map
  * (the raid's trail, the raid panel's bearing) all start from it.
  */
 export function inColumns(dx: number, dy: number): Readonly<{ across: number; down: number }> {
@@ -62,7 +62,7 @@ export function inColumns(dx: number, dy: number): Readonly<{ across: number; do
  * Every range, reach and radius in the game is counted in it, to the nearest tile of a footprint
  * (`footprintDistance`). A tracer or a trail may still draw a diagonal; that is a picture of a way, not a distance.
  */
-export function gridDistance(a: Coord, b: Coord): number {
+export function tileDistance(a: Coord, b: Coord): number {
   const { across, down } = inColumns(b.x - a.x, b.y - a.y)
   return Math.abs(across) + Math.abs(down)
 }
@@ -72,17 +72,17 @@ export function gridDistance(a: Coord, b: Coord): number {
  * means — melee's reach, a unit standing beside another, a way that ends next to its target — and never a
  * distance.
  */
-export function gridSteps(a: Coord, b: Coord): number {
+export function tileSteps(a: Coord, b: Coord): number {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 }
 
-/** How far a step in each direction goes: `gridDistance` from a tile to the one its vector lands on, worked out once. */
+/** How far a step in each direction goes: `tileDistance` from a tile to the one its vector lands on, worked out once. */
 const STEP_LENGTHS = Object.fromEntries(
-  Object.entries(DIRECTION_VECTORS).map(([direction, vector]) => [direction, gridDistance({ x: 0, y: 0 }, vector)]),
+  Object.entries(DIRECTION_VECTORS).map(([direction, vector]) => [direction, tileDistance({ x: 0, y: 0 }, vector)]),
 ) as Readonly<Record<Direction, number>>
 
 /**
- * How far one step in `direction` goes: `gridDistance` from where it starts to where it lands, worked out from the
+ * How far one step in `direction` goes: `tileDistance` from where it starts to where it lands, worked out from the
  * direction's own vector, so 1 across a column, `ROW_DISTANCE` up or down a row, and the two together on a diagonal,
  * which no mover takes. A step takes time in proportion (`stepCost`, `src/engine/pulse/movement.ts`), so every step covers
  * its distance at one pace.
@@ -163,8 +163,8 @@ export function tilesOf(anchor: Coord, footprint: Footprint): Coord[] {
 }
 
 /**
- * The distance between two footprints (`gridDistance`), from the nearest occupied tile of one to the nearest of
- * the other (grid.md). Range is measured this way, so a large structure is easier to reach because it is large.
+ * The distance between two footprints (`tileDistance`), from the nearest occupied tile of one to the nearest of
+ * the other (battlefield.md). Range is measured this way, so a large structure is easier to reach because it is large.
  */
 export function footprintDistance(
   anchorA: Coord,
@@ -172,12 +172,12 @@ export function footprintDistance(
   anchorB: Coord,
   footprintB: Footprint,
 ): number {
-  return nearestPair(anchorA, footprintA, anchorB, footprintB, gridDistance)
+  return nearestPair(anchorA, footprintA, anchorB, footprintB, tileDistance)
 }
 
-/** Four-way steps between the nearest tiles of two footprints (`gridSteps`): 1 when they touch along a side. */
+/** Four-way steps between the nearest tiles of two footprints (`tileSteps`): 1 when they touch along a side. */
 export function footprintSteps(anchorA: Coord, footprintA: Footprint, anchorB: Coord, footprintB: Footprint): number {
-  return nearestPair(anchorA, footprintA, anchorB, footprintB, gridSteps)
+  return nearestPair(anchorA, footprintA, anchorB, footprintB, tileSteps)
 }
 
 /** The least of `measure` between a tile of one footprint and a tile of the other. */
@@ -230,12 +230,12 @@ export function footprintWithin(
   return false
 }
 
-/** The tile of `tiles` nearest `from` (`gridDistance`), the first listed on a tie; `null` when there are none. */
+/** The tile of `tiles` nearest `from` (`tileDistance`), the first listed on a tie; `null` when there are none. */
 export function nearestTile(from: Coord, tiles: readonly Coord[]): Coord | null {
   let best: Coord | null = null
   let bestDistance = Number.POSITIVE_INFINITY
   for (const tile of tiles) {
-    const distance = gridDistance(from, tile)
+    const distance = tileDistance(from, tile)
     if (distance < bestDistance) {
       best = tile
       bestDistance = distance
@@ -276,10 +276,10 @@ export function footprintRing(width: number, height: number, outset: number): Co
   return tiles
 }
 
-export function inBounds(grid: GridTerrain, tile: Coord): boolean {
-  return tile.x >= 0 && tile.y >= 0 && tile.x < grid.width && tile.y < grid.height
+export function inBounds(terrain: MapTerrain, tile: Coord): boolean {
+  return tile.x >= 0 && tile.y >= 0 && tile.x < terrain.width && tile.y < terrain.height
 }
 
-export function tileIndex(grid: GridTerrain, tile: Coord): number {
-  return tile.y * grid.width + tile.x
+export function tileIndex(terrain: MapTerrain, tile: Coord): number {
+  return tile.y * terrain.width + tile.x
 }

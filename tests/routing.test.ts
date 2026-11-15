@@ -1,14 +1,14 @@
 // Routing's parts, each alone (src/engine/routing/; milestone 16, "the parts"): where a body may stand, the anchors that
-// reach a goal, distance fields against a plain search on small Grids and mazes, and the choice of a step — before
+// reach a goal, distance fields against a plain search on small battlefields and mazes, and the choice of a step — before
 // anything in a battle leans on them.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { footprintSteps, footprintWithin } from "../src/engine/geometry/coords.ts"
-import type { Coord, Footprint, GridTerrain, TerrainId } from "../src/engine/geometry/types.ts"
+import type { Coord, Footprint, MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { canStand, DistanceField, goalsInside, goalsNear, groundFor, isWall, patchesOf, rankSteps, UNREACHABLE, wallsOf } from "../src/engine/routing/index.ts"
 import type { Ground } from "../src/engine/routing/index.ts"
-import { starterGrid } from "../src/build/maps.ts"
+import { starterTerrain } from "../src/build/maps.ts"
 
 const ONE: Footprint = [{ x: 0, y: 0 }]
 const WIDE: Footprint = [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }]
@@ -17,8 +17,8 @@ const BLOCK: Footprint = [
   { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 },
 ]
 
-/** A Grid from rows of `.` (plain) and `#` (rock). */
-function gridOf(rows: readonly string[]): GridTerrain {
+/** A battlefield from rows of `.` (plain) and `#` (rock). */
+function terrainOf(rows: readonly string[]): MapTerrain {
   const tiles: TerrainId[] = []
   for (const row of rows) for (const char of row) tiles.push(char === "#" ? "terrain.rock" : "terrain.plain")
   return { width: rows[0]?.length ?? 0, height: rows.length, tiles }
@@ -62,7 +62,7 @@ function stream(seed: number): () => number {
   }
 }
 
-function maze(width: number, height: number, seed: number, rockShare: number): GridTerrain {
+function maze(width: number, height: number, seed: number, rockShare: number): MapTerrain {
   const next = stream(seed)
   const rows: string[] = []
   for (let y = 0; y < height; y += 1) {
@@ -70,35 +70,35 @@ function maze(width: number, height: number, seed: number, rockShare: number): G
     for (let x = 0; x < width; x += 1) row += next() < rockShare ? "#" : "."
     rows.push(row)
   }
-  return gridOf(rows)
+  return terrainOf(rows)
 }
 
 // --- Ground --------------------------------------------------------------------------------------------------------
 
 test("ground: rock and what stands still are walls, the edge is a wall, and air ignores rock", () => {
-  const grid = gridOf(["....", ".#..", "...."])
-  const walls = wallsOf(grid, "impassable", [{ x: 3, y: 2 }, { x: 9, y: 9 }])
+  const terrain = terrainOf(["....", ".#..", "...."])
+  const walls = wallsOf(terrain, "impassable", [{ x: 3, y: 2 }, { x: 9, y: 9 }])
   assert.equal(isWall(walls, { x: 1, y: 1 }), true)
   assert.equal(isWall(walls, { x: 3, y: 2 }), true)
   assert.equal(isWall(walls, { x: 0, y: 0 }), false)
   assert.equal(isWall(walls, { x: -1, y: 0 }), true)
   assert.equal(isWall(walls, { x: 4, y: 0 }), true)
-  assert.equal(isWall(wallsOf(grid, "ignore"), { x: 1, y: 1 }), false)
+  assert.equal(isWall(wallsOf(terrain, "ignore"), { x: 1, y: 1 }), false)
 })
 
 test("ground: a body stands where every tile it covers is open, so a wide body fits a gap of its width and no narrower", () => {
-  const grid = gridOf([
+  const terrain = terrainOf([
     ".......",
     "##...##",
     ".......",
     "###..##",
   ])
-  const walls = wallsOf(grid, "impassable")
+  const walls = wallsOf(terrain, "impassable")
   const wide = groundFor(walls, WIDE)
   assert.equal(canStand(wide, { x: 2, y: 1 }), true, "a three-wide gap takes a three-wide body")
   assert.equal(canStand(wide, { x: 3, y: 1 }), false)
   assert.equal(canStand(wide, { x: 3, y: 3 }), false, "a two-wide gap does not")
-  assert.equal(canStand(wide, { x: 5, y: 0 }), false, "a body may not hang off the Grid's edge")
+  assert.equal(canStand(wide, { x: 5, y: 0 }), false, "a body may not hang off the battlefield's edge")
   assert.equal(canStand(wide, { x: 4, y: 0 }), true)
   const block = groundFor(walls, BLOCK)
   assert.equal(canStand(block, { x: 2, y: 0 }), true, "a tall body stands on two open rows")
@@ -111,7 +111,7 @@ test("ground: a body stands where every tile it covers is open, so a wide body f
 // --- Goals ---------------------------------------------------------------------------------------------------------
 
 test("goals: touching a one-tile target is the four tiles beside it; touching a 3x2 block is the ten round it", () => {
-  const ground = groundFor(wallsOf(gridOf(Array(9).fill("..........")), "impassable"), ONE)
+  const ground = groundFor(wallsOf(terrainOf(Array(9).fill("..........")), "impassable"), ONE)
   const near = goalsNear(ground, ONE, { x: 4, y: 4 }, ONE, { kind: "touch", steps: 1 })
   assert.deepEqual(near, [{ x: 4, y: 3 }, { x: 3, y: 4 }, { x: 5, y: 4 }, { x: 4, y: 5 }])
   const block = goalsNear(ground, ONE, { x: 3, y: 3 }, BLOCK, { kind: "touch", steps: 1 })
@@ -120,8 +120,8 @@ test("goals: touching a one-tile target is the four tiles beside it; touching a 
 })
 
 test("goals: within a range are the anchors range is measured to, never on the target, never under a wall", () => {
-  const grid = gridOf(Array(15).fill(".".repeat(21)).map((row: string, y: number) => (y === 5 ? `${row.slice(0, 10)}#${row.slice(11)}` : row)))
-  const ground = groundFor(wallsOf(grid, "impassable"), ONE)
+  const terrain = terrainOf(Array(15).fill(".".repeat(21)).map((row: string, y: number) => (y === 5 ? `${row.slice(0, 10)}#${row.slice(11)}` : row)))
+  const ground = groundFor(wallsOf(terrain, "impassable"), ONE)
   const target = { x: 10, y: 7 }
   const goals = goalsNear(ground, ONE, target, ONE, { kind: "within", radius: 6 })
   const expected: Coord[] = []
@@ -136,7 +136,7 @@ test("goals: within a range are the anchors range is measured to, never on the t
 })
 
 test("goals: a wide body touching a target counts from any tile of its body", () => {
-  const ground = groundFor(wallsOf(gridOf(Array(7).fill("...........")), "impassable"), WIDE)
+  const ground = groundFor(wallsOf(terrainOf(Array(7).fill("...........")), "impassable"), WIDE)
   const goals = goalsNear(ground, WIDE, { x: 5, y: 3 }, ONE, { kind: "touch", steps: 1 })
   // West of it, east of it, and the three anchors above and below whose body covers its column.
   assert.deepEqual(goals, [
@@ -147,17 +147,17 @@ test("goals: a wide body touching a target counts from any tile of its body", ()
 })
 
 test("goals: inside an area is any anchor whose body has a tile in it; a walled-off target has no goal", () => {
-  const ground = groundFor(wallsOf(gridOf(Array(6).fill("........")), "impassable"), WIDE)
+  const ground = groundFor(wallsOf(terrainOf(Array(6).fill("........")), "impassable"), WIDE)
   const inside = goalsInside(ground, WIDE, { x: 4, y: 2, width: 2, height: 1 })
   assert.deepEqual(inside, [{ x: 2, y: 2 }, { x: 3, y: 2 }, { x: 4, y: 2 }, { x: 5, y: 2 }])
-  const boxed = groundFor(wallsOf(gridOf([".....", ".###.", ".#.#.", ".###.", "....."]), "impassable"), ONE)
+  const boxed = groundFor(wallsOf(terrainOf([".....", ".###.", ".#.#.", ".###.", "....."]), "impassable"), ONE)
   assert.deepEqual(goalsNear(boxed, ONE, { x: 2, y: 2 }, ONE, { kind: "touch", steps: 1 }), [])
 })
 
 // --- Distance fields -----------------------------------------------------------------------------------------------
 
-test("a field on open ground is the Grid's own distance: one a column, two a row", () => {
-  const ground = groundFor(wallsOf(gridOf(Array(7).fill("...........")), "impassable"), ONE)
+test("a field on open ground is the battlefield's own distance: one a column, two a row", () => {
+  const ground = groundFor(wallsOf(terrainOf(Array(7).fill("...........")), "impassable"), ONE)
   const field = new DistanceField(ground, [{ x: 5, y: 3 }])
   assert.equal(field.distanceAt({ x: 5, y: 3 }), 0)
   assert.equal(field.distanceAt({ x: 0, y: 3 }), 5)
@@ -167,9 +167,9 @@ test("a field on open ground is the Grid's own distance: one a column, two a row
 
 test("a field walks round a wall, and is exact on mazes whatever order it is asked in", () => {
   for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
-    const grid = maze(23, 11, seed, 0.3)
+    const terrain = maze(23, 11, seed, 0.3)
     for (const body of [ONE, WIDE]) {
-      const ground = groundFor(wallsOf(grid, "impassable"), body)
+      const ground = groundFor(wallsOf(terrain, "impassable"), body)
       const goals = [{ x: 11, y: 5 }, { x: 2, y: 9 }].filter((goal) => canStand(ground, goal))
       const expected = plainDistances(ground, goals)
       // Asked from the far corner first, then in reading order, then backwards: always the same answers.
@@ -186,7 +186,7 @@ test("a field walks round a wall, and is exact on mazes whatever order it is ask
 })
 
 test("a field says what cannot be reached, and a field with no goal reaches nothing", () => {
-  const ground = groundFor(wallsOf(gridOf(["..#..", "..#..", "..#.."]), "impassable"), ONE)
+  const ground = groundFor(wallsOf(terrainOf(["..#..", "..#..", "..#.."]), "impassable"), ONE)
   const field = new DistanceField(ground, [{ x: 0, y: 1 }])
   assert.equal(field.distanceAt({ x: 1, y: 2 }), 3)
   assert.equal(field.distanceAt({ x: 4, y: 1 }), UNREACHABLE)
@@ -197,8 +197,8 @@ test("a field says what cannot be reached, and a field with no goal reaches noth
   assert.equal(none.distanceAt({ x: 0, y: 0 }), UNREACHABLE)
 })
 
-test("a field stops as soon as it has the answer: asking beside the goal settles a few anchors, not the Grid", () => {
-  const ground = groundFor(wallsOf(gridOf(Array(40).fill(".".repeat(96))), "impassable"), ONE)
+test("a field stops as soon as it has the answer: asking beside the goal settles a few anchors, not the battlefield", () => {
+  const ground = groundFor(wallsOf(terrainOf(Array(40).fill(".".repeat(96))), "impassable"), ONE)
   const field = new DistanceField(ground, [{ x: 48, y: 20 }])
   assert.equal(field.distanceAt({ x: 50, y: 20 }), 2)
   assert.ok(field.settledCount < 30, `settled ${field.settledCount}`)
@@ -207,7 +207,7 @@ test("a field stops as soon as it has the answer: asking beside the goal settles
 })
 
 test("a field charges what the ground stepped onto weighs", () => {
-  const ground = groundFor(wallsOf(gridOf(["......"]), "impassable"), ONE)
+  const ground = groundFor(wallsOf(terrainOf(["......"]), "impassable"), ONE)
   const weights = new Uint8Array([1, 1, 3, 1, 1, 1])
   const field = new DistanceField(ground, [{ x: 0, y: 0 }], weights)
   // From x=3 toward x=0: onto 2 (weight 3), onto 1, onto 0.
@@ -220,10 +220,10 @@ test("a field charges what the ground stepped onto weighs", () => {
 
 test("a field asked for a walk within a limit gives the walk when it is that short, none when it is longer, and stays exact", () => {
   for (const seed of [1, 2, 3, 4, 5, 6]) {
-    const grid = maze(23, 11, seed, 0.25)
+    const terrain = maze(23, 11, seed, 0.25)
     const next = stream(seed + 100)
     for (const body of [ONE, WIDE]) {
-      const ground = groundFor(wallsOf(grid, "impassable"), body)
+      const ground = groundFor(wallsOf(terrain, "impassable"), body)
       const weights = new Uint8Array(23 * 11).map(() => 1 + Math.floor(next() * 4))
       const goals = [{ x: 11, y: 5 }, { x: 3, y: 2 }].filter((goal) => canStand(ground, goal))
       const expected = plainDistances(ground, goals, weights)
@@ -260,13 +260,13 @@ test("a field given the ground's patches says whether an anchor reaches a goal w
 // --- The choice of a step ------------------------------------------------------------------------------------------
 
 test("a step along the shortest route ranks first, round a wall as on open ground", () => {
-  const grid = gridOf([
+  const terrain = terrainOf([
     "...........",
     "...........",
     "..#######..",
     "...........",
   ])
-  const ground = groundFor(wallsOf(grid, "impassable"), ONE)
+  const ground = groundFor(wallsOf(terrain, "impassable"), ONE)
   const field = new DistanceField(ground, [{ x: 5, y: 3 }])
   // Straight above the goal, the wall between: the way round is east or west, equally; never into the rock.
   const groups = rankSteps(field, { x: 5, y: 1 }, "s")
@@ -277,8 +277,8 @@ test("a step along the shortest route ranks first, round a wall as on open groun
   assert.equal(groups.flat().some((choice) => choice.direction === "s"), false, "the rock is no step")
 })
 
-test("equally good steps go by the turn from the way the unit faces, and mirrored Grids rank mirrored steps", () => {
-  const ground = groundFor(wallsOf(gridOf(Array(9).fill("...............")), "impassable"), ONE)
+test("equally good steps go by the turn from the way the unit faces, and mirrored battlefields rank mirrored steps", () => {
+  const ground = groundFor(wallsOf(terrainOf(Array(9).fill("...............")), "impassable"), ONE)
   const field = new DistanceField(ground, [{ x: 12, y: 6 }])
   // Two across and a row down are as good as each other on the screen's diagonal; facing east, east ranks first.
   const east = rankSteps(field, { x: 4, y: 2 }, "e")
@@ -291,8 +291,8 @@ test("equally good steps go by the turn from the way the unit faces, and mirrore
 })
 
 test("from where the field does not reach, every step onto it is downhill", () => {
-  const grid = gridOf(["....", "....", "...."])
-  const ground = groundFor(wallsOf(grid, "impassable", [{ x: 1, y: 1 }]), ONE)
+  const terrain = terrainOf(["....", "....", "...."])
+  const ground = groundFor(wallsOf(terrain, "impassable", [{ x: 1, y: 1 }]), ONE)
   const field = new DistanceField(ground, [{ x: 3, y: 1 }])
   const groups = rankSteps(field, { x: 1, y: 1 }, "e")
   assert.equal(groups[0]?.[0]?.direction, "e")
@@ -302,18 +302,18 @@ test("from where the field does not reach, every step onto it is downhill", () =
 // --- What they cost ------------------------------------------------------------------------------------------------
 
 test("a tick's worth of fields over the starter map fits well inside a frame", () => {
-  const grid = starterGrid()
+  const terrain = starterTerrain()
   const bodies = [ONE, WIDE, BLOCK]
   const run = (): number => {
     const started = performance.now()
     // As a tick does: the ground once for each body, then twelve fields over it, each worked out over the whole map —
     // more than a battle's tick asks for, and further than any asks.
-    const grounds = bodies.map((body) => groundFor(wallsOf(grid, "impassable"), body))
+    const grounds = bodies.map((body) => groundFor(wallsOf(terrain, "impassable"), body))
     for (let index = 0; index < 12; index += 1) {
       const body = bodies[index % bodies.length] as Footprint
       const ground = grounds[index % bodies.length] as Ground
       const field = new DistanceField(ground, goalsNear(ground, body, { x: 70 + index, y: 20 }, BLOCK, { kind: "touch", steps: 1 }))
-      for (let y = 0; y < grid.height; y += 1) for (let x = 0; x < grid.width; x += 1) field.distanceAt({ x, y })
+      for (let y = 0; y < terrain.height; y += 1) for (let x = 0; x < terrain.width; x += 1) field.distanceAt({ x, y })
     }
     return performance.now() - started
   }

@@ -13,14 +13,14 @@ remains.
 
 | Milestone | Status | Build order | Question |
 | --- | --- | --- | --- |
-| [1 — Grid Battles](../history/milestones/milestone-01-grid-battles.md) | COMPLETE | done | Do units move, fight, and die deterministically from a seed, legibly on screen? |
+| [1 — First battles](../history/milestones/milestone-01-grid-battles.md) | COMPLETE | done | Do units move, fight, and die deterministically from a seed, legibly on screen? |
 | [2 — Design and Orientation](../history/milestones/milestone-02-campaign-design.md) | COMPLETE | done | What vocabulary and structure do the single-player modes need, and what few PERIMETER decisions does the UX build need, before milestones 3-6 build the game's experience? |
 | [3 — Game Menu](../history/milestones/milestone-03-game-menu.md) | COMPLETE | done | Can a player launch `terminal-nexus` into a menu with displayed hotkeys, mouse parity, and a driver, and pick a mode? |
 | [5 — Build Phase](../history/milestones/milestone-05-build-phase.md) | COMPLETE | done | Can a player place buildings, pick a Nexus upgrade, and scroll a real map during Build Phase — by keyboard, mouse, and driver? |
 | [6 — Nexus Pulse Phase](../history/milestones/milestone-06-pulse-phase.md) | COMPLETE | done | Can a player start the Battle Round (then called the Nexus Pulse), watch it resolve, see a legible ending with Recall, and land in the next Build Phase? |
 | [8 — Commander](../history/milestones/milestone-08-commander.md) | COMPLETE | done | Can Commander Vasse and a Nexus Pulse that deals from an army's pool exist without becoming a full Commander Army? |
 | [14 — Commander Armies](../history/milestones/milestone-14-commander-armies.md) | COMPLETE | done | Can two Commanders on the same buildings feel different, each army leaning its build on something of its own, against one expected power curve a lucky early hand cannot run away with? |
-| [16 — Pathfinding](../history/milestones/milestone-16-pathfinding.md) | COMPLETE | done | Does every unit get where it is going — round rock, through crowds and narrow gaps, on a Grid that changes mid-round — by a route a player would call sensible, while a Battle Round stays deterministic, fair from either end and fast; and can where a player builds send their army out tight or loose? |
+| [16 — Pathfinding](../history/milestones/milestone-16-pathfinding.md) | COMPLETE | done | Does every unit get where it is going — round rock, through crowds and narrow gaps, on a battlefield that changes mid-round — by a route a player would call sensible, while a Battle Round stays deterministic, fair from either end and fast; and can where a player builds send their army out tight or loose? |
 | [11 — Challenge Mode: Runs](../history/milestones/milestone-11-challenge-runs.md) | COMPLETE | done | Can a player play a seeded run of battles with a run draft between them? Closed when runs were retired: its battle mechanics (building actions, the kept front, troop movement, the banner prototype) carry on in every mode |
 | [13 — The Nexus Pulse](../history/milestones/milestone-13-nexus-pulse.md) | COMPLETE | retired unbuilt | Retired on 2026-11-12: the Skirmish milestones polish the Build Phase and the Battle Round; its powers went to content, its moment on screen to the backlog |
 | [17 — Skirmish: setup and save files](../history/milestones/milestone-17-skirmish.md) | COMPLETE | done | Can Mario set up a Skirmish by map and slots, play, save, load and carry on, and can an agent take the same save, change who plays each side and play it headless, round by round? |
@@ -60,10 +60,10 @@ no longer the testing map, and no Story mission is built for now. In order:
    deeper planner** (19) only if they find the enemy dull, then **Story** (4, 9, 10, then 18), one Commander at a time.
 
 The Nexus Pulse milestone was retired on 2026-11-12: the Skirmish milestones polish the Build Phase and the Battle Round
-it was meant to polish. It changes how the project is approached, not the game: the Grid, the battle and every rule built
+it was meant to polish. It changes how the project is approached, not the game: the battlefield, the battle and every rule built
 so far stay as they are.
 
-Prefer the honest, connected, ugly step over the beautiful one that dead-ends: the biggest improvements to the Grid all
+Prefer the honest, connected, ugly step over the beautiful one that dead-ends: the biggest improvements to the battlefield all
 came after the Battle Round ran end to end, because playing it is what says which part needed the quality.
 
 **The owner's priority, 2026-10-01**, after playing the loop across rounds: the interface and the quality of

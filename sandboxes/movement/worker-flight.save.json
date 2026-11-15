@@ -1,7 +1,7 @@
 {
   "format": "terminal-nexus.save/1",
   "name": "Worker flight - a worker runs from a marksman",
-  "notes": "A hostile attacker inside range + 2 sends the worker away from it. With no friendly Grid Nexus on the Grid it flees directly away from the nearest threat (Q13), outruns a slower marksman, and is finally cornered against the east edge.",
+  "notes": "A hostile attacker inside range + 2 sends the worker away from it. With no friendly Nexus on the battlefield it flees directly away from the nearest threat (Q13), outruns a slower marksman, and is finally cornered against the east edge.",
   "setup": {
     "map": {
       "id": "worker-flight",

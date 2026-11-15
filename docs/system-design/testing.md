@@ -28,8 +28,8 @@ about something no other session will is a verifier's job, never the suite's.
 | Did a change move the balance? | the game, many battles | none: a pin of a measured number only where a rule depends on it | the `measure` command, before and after ([`measurement.md`](measurement.md)) |
 | Does a screen read and respond right? | the doors | the screen's frame from a stand-in terminal, keys as bytes | the scripted playtest, its text and pictures read |
 
-A sandbox is a save whose `start` draws the board by hand ([`skirmish-saves.md`](skirmish-saves.md), a board written by
-hand): the engine's context for one rule, effect, movement or ability. It measures what happens on the board (damage,
+A sandbox is a save whose `start` sets the battlefield up by hand ([`skirmish-saves.md`](skirmish-saves.md), a battlefield written by
+hand): the engine's context for one rule, effect, movement or ability. It measures what happens on the battlefield (damage,
 deaths, paths, timings), not who wins a game.
 
 ## Verifying through the `skirmish` command
@@ -39,8 +39,8 @@ the same save, seed and build actions give the same battle, hash for hash, on No
 examples, is in the command's manual (`npm run skirmish -- --help`); the `skirmish` skill has the procedures. The shapes
 a verifier takes, cheapest first:
 
-- **One Battle Round from a board written by hand**: a sandbox, or a copy of one changed for the question (another unit
-  in the legend, another seed, more ticks). `--show 0,60,end` draws the board at those ticks, `--log <file>
+- **One Battle Round from a battlefield set up by hand**: a sandbox, or a copy of one changed for the question (another unit
+  in the legend, another seed, more ticks). `--show 0,60,end` draws the battlefield at those ticks, `--log <file>
   --log-level info` keeps every event.
 - **A battle from where a save stands**: a save at a Build Phase, its slots played by scripts (`--p1 script:turtle`) or
   build files (`--p1 build:b.json`, one round or a list by round), `--play-to next`, a round, or `end`.
@@ -107,9 +107,9 @@ RULE — `tests/determinism.test.ts`, `tests/architecture.test.ts`, `tests/rng.t
 - Changing only the cosmetic seed changes nothing about state, events or the log. The gameplay generator
   is checked against published PCG32 vectors.
 
-### The Grid's occupancy and masks
+### The battlefield's occupancy and masks
 
-RULE — `tests/grid.test.ts`, `tests/rules.test.ts`.
+RULE — `tests/layers.test.ts`, `tests/rules.test.ts`.
 
 - No two entities overlap in a collision mask that includes both their layers, at any tick of any
   sandbox; a worker and a ground unit may share a tile; a ground unit is blocked by a structure on a
@@ -130,7 +130,7 @@ shapes and the rest of `sandboxes/`). Every sandbox reads as a save, every probl
 its name and gives each side that fights somewhere to go; every unit and building the content holds stands alone in a
 slice and runs without failing. The rules between rounds (openings, the regroup, missions) are held by
 `tests/match.test.ts`, `tests/regroup.test.ts` and `tests/mission.test.ts`; routing's own parts are tested alone on small
-Grids and mazes, against a plain search (`tests/routing.test.ts`).
+battlefields and mazes, against a plain search (`tests/routing.test.ts`).
 
 ### Structured-cell snapshots across backends
 
@@ -234,7 +234,7 @@ change can be seen before it is claimed.
 
 - **Set a battle up as the game sets it up.** A rule once seemed to cut blocked time by nine tenths: its units had
   stopped trying, on maps that gave no side a target.
-- **Check a board before trusting it.** A board drawn as mirrors gave one end 27 battles to 7: a Nexus placed by its
+- **Check a battlefield before trusting it.** A battlefield drawn as mirrors gave one end 27 battles to 7: a Nexus placed by its
   corner. Play it from both ends.
 - **Vary the opening and play enough.** One layout turns on tie draws alone; both ends and a dozen seeds before a few
   percent means anything.

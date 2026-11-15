@@ -1,10 +1,10 @@
-// A sandbox's one Battle Round (docs/system-design/skirmish-saves.md, a board written by hand): its board opened on
+// A sandbox's one Battle Round (docs/system-design/skirmish-saves.md, a battlefield set up by hand): its battlefield opened on
 // the content it is played with, and the battle engine run from it to its end or its ticks. The one path every door
 // plays a sandbox by: the `skirmish` command (`src/cli/skirmish-sandbox.ts`), a measurement (`measureSave`,
 // `src/measure/suites.ts`), the formations bench and the tests, so a sandbox says the same through each.
 //
-// The same engine as a battle's Battle Round, from a board written by hand rather than one a Build Phase built: no
-// Commander, Nexus Pulse or credits unless the board places them. Pure: the save is already read.
+// The same engine as a battle's Battle Round, from a battlefield set up by hand rather than one a Build Phase built: no
+// Commander, Nexus Pulse or credits unless the battlefield places them. Pure: the save is already read.
 
 import type { ContentRegistry } from "../content/index.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"

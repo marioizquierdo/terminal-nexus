@@ -507,7 +507,7 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
       for (const made of [definition.spawn?.contentId, definition.splitOnDeath?.contentId, definition.production?.output]) {
         if (made === undefined) continue
         const unseen = unseenContent(viewer, made)
-        if (unseen !== null) say(`"${id}" puts on the Grid ${unseen}`)
+        if (unseen !== null) say(`"${id}" puts on the battlefield ${unseen}`)
       }
     }
 
@@ -538,10 +538,10 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     const entry = army.commander
     if (entry !== null) {
       if (entry.name.trim() === "") say(`the Commander "${entry.id}" has no name`)
-      // Her faction: an army she sees that brings a Grid Nexus.
+      // Her faction: an army she sees that brings a Nexus.
       if (!viewer.sees.has(entry.faction)) say(`the Commander "${entry.id}" names the faction "${entry.faction}", which is not an army "${army.id}" requires`)
       else if (!(read.get(entry.faction)?.content ?? []).some((id) => registry.has(id) && registry.get(id).nexus === true)) {
-        say(`the Commander "${entry.id}" names the faction "${entry.faction}", which brings no Grid Nexus`)
+        say(`the Commander "${entry.id}" names the faction "${entry.faction}", which brings no Nexus`)
       }
       const unseen = unseenContent(viewer, entry.unit)
       if (unseen !== null) say(`the Commander "${entry.id}" is ${unseen}`)
@@ -647,7 +647,7 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
       const inMission = `${where}, mission "${mission.id}"`
       if (map !== undefined) {
         try {
-          validateMission(mission, map.grid(), registry)
+          validateMission(mission, map.terrain(), registry)
         } catch (error) {
           if (!(error instanceof MissionError)) throw error
           for (const problem of error.problems) say(`${inMission}: ${problem}`)

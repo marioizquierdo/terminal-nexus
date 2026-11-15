@@ -1,5 +1,5 @@
 // A save's `start` (docs/system-design/skirmish-saves.md): what a person places by hand before round 1, a slot at a
-// time: the units and buildings already on the Grid, written as a picture with a legend, and where its troops head.
+// time: the units and buildings already on the battlefield, written as a picture with a legend, and where its troops head.
 // A save with a `start` is a **sandbox** (`sandboxes/`): it opens on a Battle Round written by hand, which
 // is what it tests, and both slots plan nothing (`script:idle`).
 //
@@ -18,9 +18,9 @@ import type { SaveFile, SaveMap, Slot } from "./save.ts"
 export const MAP_LEGEND: Readonly<Record<string, TerrainId>> = { ".": "terrain.plain", "#": "terrain.rock", "*": "terrain.deposit" }
 
 /**
- * One slot's start: what it has on the Grid when the first Battle Round opens, and where its troops head.
+ * One slot's start: what it has on the battlefield when the first Battle Round opens, and where its troops head.
  *
- * `rows` are one character per tile, north to south, from `at` (the Grid's north-west corner unless given); a space is
+ * `rows` are one character per tile, north to south, from `at` (the battlefield's north-west corner unless given); a space is
  * nothing. Each character is the **centre tile** of what the legend names, whatever its size, and the legend may start
  * it hurt (`hp`). A slot with no `target` heads for the enemy Nexus, as every side of the game does.
  */
@@ -111,7 +111,7 @@ export function openingOf(save: SaveFile): BattleOpening {
     id: ground.id,
     name: save.name ?? ground.name,
     ...(notes === undefined ? {} : { notes }),
-    grid: { width: ground.rows[0]?.length ?? 0, height: ground.rows.length },
+    size: { width: ground.rows[0]?.length ?? 0, height: ground.rows.length },
     seed: save.setup.seed,
     pulseTicks: save.setup.roundTicks,
     terrain: ground.rows,

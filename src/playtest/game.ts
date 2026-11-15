@@ -91,7 +91,7 @@ export const PLAYTEST_NOW = 1_234_567_890
 
 /**
  * **A key script played through the game's screens**, title menu and Build Phase alike, each step its frame. A key on
- * the title menu goes through its adapters as the bytes a terminal sends (a cell click as the SGR press); a grid tile
+ * the title menu goes through its adapters as the bytes a terminal sends (a cell click as the SGR press); a map tile
  * click (`click:X,Y`) means nothing there and stops the run, naming the step.
  */
 export function runGamePlaytest(options: GamePlaytestOptions): GamePlaytest {
@@ -212,6 +212,6 @@ export function runGamePlaytest(options: GamePlaytestOptions): GamePlaytest {
 function titleBytes(step: PlaytestStep): string {
   if (step.kind === "wait") return ""
   if (step.kind === "key") return step.bytes
-  if (step.target.kind === "tile") throw new Error(`"${step.label}": a Grid tile click means nothing on the title menu; click a cell, click@COL,ROW`)
+  if (step.target.kind === "tile") throw new Error(`"${step.label}": a tile click means nothing on the title menu; click a cell, click@COL,ROW`)
   return formatMouseClick(step.target.column + 1, step.target.row + 1)
 }

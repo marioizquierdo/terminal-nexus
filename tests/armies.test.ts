@@ -696,7 +696,7 @@ test("a level's mission is checked against its map, its content against what its
   const empty = { id: "empty", title: "Empty", commander: "nobody", requires: [], levels: [] }
   assert.deepEqual(problemsWithGame({ armies: [solo, pretender], stories: [soloStory, empty] }, { registry: registryWith(hero, nest, grub), maps: MAPS }), [
     'the content "unit.citizen.trooper" is in both "citizen" and "solo"',
-    'army "solo": "structure.test.nest" puts on the Grid "unit.test.grub", which no army brings',
+    'army "solo": "structure.test.nest" puts on the battlefield "unit.test.grub", which no army brings',
     'army "solo": content names "unit.test.ghost", which is not content the game has',
     'army "solo": the Nexus power "blank" needs a name and a description',
     'army "solo": the Nexus power "ghost-call" calls up "unit.test.nobody", which is not content the game has',
@@ -706,7 +706,7 @@ test("a level's mission is checked against its map, its content against what its
     'army "solo": the Nexus power "no-dice" changes the ability "loadedDice" of "unit.test.hero", which has none',
     'army "solo": the Nexus power "nest-drill" adds waves to the building "nest", which spawns nothing',
     'army "solo": the Nexus power "lost-permit" names the building "missing", which no army has',
-    'army "solo": the Commander "hero" names the faction "solo", which brings no Grid Nexus',
+    'army "solo": the Commander "hero" names the faction "solo", which brings no Nexus',
     'army "pretender": the Commander "trooper" is "unit.citizen.trooper", which is not a Commander',
     'story "solo": level "solo-1" is played on the map "nowhere", which is not one the game has ("starter", "starter-open")',
     'story "solo": level "solo-1" unlocks the building "nest" twice',

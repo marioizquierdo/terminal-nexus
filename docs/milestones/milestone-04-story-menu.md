@@ -29,7 +29,7 @@ reports), and launch the current mission from it?
   not a new roster concept. The panel reads the record and computes nothing new.
 - **Enemy intel panel.** Discovered enemy units, buildings, Nexus powers, Commanders and mission reports.
   This is new ground: no design document yet describes a persistent, cross-mission record of what the
-  player has seen of the enemy. The player's view in the grid engine is a live visibility filter for
+  player has seen of the enemy. The player's view in the battle engine is a live visibility filter for
   one Battle Round, not a remembered log. The discovery rule is an open question (below) and is settled before
   this panel is built.
 - **Mission reports.** The existing headless report already produces a per-mission outcome (ticks,

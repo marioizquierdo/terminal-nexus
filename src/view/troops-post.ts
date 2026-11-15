@@ -85,9 +85,9 @@ export function drawTroopsPost(cells: BandCell[], input: BuildCompositionInput, 
   const taken = takenTiles(context, state.planned)
   const style: CellStyle = { fgRole: playerRole(troops.player), dim: true, fade: CORNER_FADE }
   for (const { tile, part } of cornersOf(troops.post.tiles)) {
-    if (!inBounds(context.grid, tile) || taken.has(`${tile.x},${tile.y}`)) continue
+    if (!inBounds(context.terrain, tile) || taken.has(`${tile.x},${tile.y}`)) continue
     if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
-    if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain") continue
+    if (context.terrain.tiles[tile.y * context.terrain.width + tile.x] !== "terrain.plain") continue
     const cell = cellForTile(layout, state.camera, tile)
     cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: chromeGlyph(pack, part), style } })
   }

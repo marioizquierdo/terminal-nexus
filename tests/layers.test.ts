@@ -1,17 +1,17 @@
-// The Grid, its layers, and collision masks — docs/system-design/grid.md, "Layers and collision masks".
+// The battlefield, its layers, and collision masks — docs/system-design/battlefield.md, "Layers and collision masks".
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { createRegistry, CITIZEN_CONTENT, rectFootprint } from "../src/content/index.ts"
 import type { ContentDef } from "../src/content/index.ts"
 import { OccupancyIndex, footprintDistance, maskFrom, tilesOf } from "../src/engine/geometry/index.ts"
-import type { GridTerrain, TerrainId } from "../src/engine/geometry/index.ts"
+import type { MapTerrain, TerrainId } from "../src/engine/geometry/index.ts"
 import { contextFor, occupancyFor, stepTick } from "../src/engine/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { loadSandbox, playSandbox, sandboxFiles } from "./helpers.ts"
 
-function plainGrid(width: number, height: number): GridTerrain {
+function plainTerrain(width: number, height: number): MapTerrain {
   return { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") }
 }
 
@@ -32,8 +32,8 @@ test("no two entities overlap in a mask that includes both their layers, at any 
         const definition = loaded.registry.get(entity.contentId)
         for (const tile of tilesOf(entity.anchor, definition.footprint)) {
           assert.ok(
-            tile.x >= 0 && tile.y >= 0 && tile.x < state.grid.width && tile.y < state.grid.height,
-            `${name}: ${entity.id} has a footprint tile outside the Grid at tick ${state.tick}`,
+            tile.x >= 0 && tile.y >= 0 && tile.x < state.terrain.width && tile.y < state.terrain.height,
+            `${name}: ${entity.id} has a footprint tile outside the battlefield at tick ${state.tick}`,
           )
           const key = `${definition.layer}:${tile.x},${tile.y}`
           const other = seen.get(key)
@@ -72,8 +72,8 @@ test("a worker and a ground unit may share a tile", async () => {
 })
 
 test("a ground unit is blocked by a structure on a different layer", () => {
-  const grid = plainGrid(8, 4)
-  const index = new OccupancyIndex(grid)
+  const terrain = plainTerrain(8, 4)
+  const index = new OccupancyIndex(terrain)
   const barracks = FIXTURE_REGISTRY.get("structure.citizen.barracks")
   const trooper = FIXTURE_REGISTRY.get("unit.citizen.trooper")
   index.add(barracks.layer, 0, { x: 3, y: 1 }, barracks.footprint)
@@ -103,8 +103,8 @@ test("an air entity can share a tile with a ground entity", () => {
     salvage: 0,
   }
   const registry = createRegistry([...CITIZEN_CONTENT, skiff])
-  const grid = plainGrid(6, 3)
-  const index = new OccupancyIndex(grid)
+  const terrain = plainTerrain(6, 3)
+  const index = new OccupancyIndex(terrain)
   const trooper = registry.get("unit.citizen.trooper")
   index.add(trooper.layer, 0, { x: 2, y: 1 }, trooper.footprint)
 
@@ -124,7 +124,7 @@ test("a 3x1 hauler is refused a two-tile gap and admitted a three-tile one", () 
   const hauler = FIXTURE_REGISTRY.get("unit.citizen.hauler")
   assert.equal(hauler.footprint.length, 3)
 
-  const build = (gap: number): GridTerrain => {
+  const build = (gap: number): MapTerrain => {
     const width = 9
     const height = 3
     const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.plain")
@@ -139,8 +139,8 @@ test("a 3x1 hauler is refused a two-tile gap and admitted a three-tile one", () 
     [2, false],
     [3, true],
   ] as const) {
-    const grid = build(gap)
-    const index = new OccupancyIndex(grid)
+    const terrain = build(gap)
+    const index = new OccupancyIndex(terrain)
     const mask = maskFrom(index, { layers: hauler.collidesWith, terrain: "impassable" })
     assert.equal(
       mask.footprintFits({ x: 3, y: 1 }, hauler.footprint),
@@ -162,7 +162,7 @@ test("the hauler sandboxes agree with the mask: three crosses the wall, two neve
 test("a multi-tile entity is damaged and destroyed as one entity", async () => {
   const resolved = await playSandbox("structure-destruction.save.json")
   const destroyed = resolved.run.events.filter((event) => event.kind === "structure.destroyed")
-  assert.equal(destroyed.length, 1, "a 3x2 Grid Nexus died more than once")
+  assert.equal(destroyed.length, 1, "a 3x2 Nexus died more than once")
   const nexus = destroyed[0]
   assert.ok(nexus !== undefined && nexus.kind === "structure.destroyed")
   assert.equal(nexus.contentId, "structure.bench.nexus")

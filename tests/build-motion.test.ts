@@ -60,7 +60,7 @@ import type { Side } from "./build-helpers.ts"
 function exploring(context: BuildContext = starterContext(), cursor: Coord = OPEN_GROUND, terminal = MINIMUM): Side {
   const side = buildSide({ context, cursor, terminal })
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
-  side.build.dispatch({ kind: "focus", target: "grid" })
+  side.build.dispatch({ kind: "focus", target: "map" })
   return side
 }
 
@@ -462,9 +462,9 @@ test("exploring, a click near an edge scrolls further the nearer the edge it lan
   assert.equal(tile.x - side.build.state.camera.x, Math.floor((width - 1) / 2))
   // Pure: west and north work the same way, and the zone is a share of the view.
   const view = { width: 48, height: 16 }
-  const grid = starterContext().grid
-  assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 30, y: 10 }, view, grid, 33).x < 30)
-  assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 40, y: 10 }, view, grid, 33).y < 10)
+  const terrain = starterContext().terrain
+  assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 30, y: 10 }, view, terrain, 33).x < 30)
+  assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 40, y: 10 }, view, terrain, 33).y < 10)
 })
 
 /** A spot for a Barracks inside the build range, north-west of the Nexus and a tile clear of it — and, with the
@@ -511,7 +511,7 @@ test("a double click on the ghost's own tile places once and leaves the keyboard
   assert.match(side.build.state.status.text, /Barracks placed/)
   // Out of the window, the same cell is a fresh click on the map again.
   side.build.handleData(click, side.layout, { now: 2150 + TUNING.doubleClickMs + 1 })
-  assert.equal(side.build.state.focus, "grid")
+  assert.equal(side.build.state.focus, "map")
 })
 
 test("a slow second click on a scrolled spot is a fresh first click, not a place on the wrong tile", () => {
@@ -602,7 +602,7 @@ test("every camera move slides, the plain arrow at the margin included — only 
 })
 
 test("the cursor glides to its new tile over the glide time; the state is already there", () => {
-  // Shift jump toward the Grid's west edge, where the camera has nowhere to go: the cursor alone.
+  // Shift jump toward the battlefield's west edge, where the camera has nowhere to go: the cursor alone.
   const side = exploring(starterContext(), { x: 20, y: 20 })
   const animation = new BuildAnimation()
   const from = side.build.state.cursor

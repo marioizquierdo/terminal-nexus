@@ -97,7 +97,7 @@ that reports key events does (the kitty keyboard protocol), with the same `~MS` 
 line prints each step's cursor and the kind and size of the last timed cursor key's move (`tap 1`,
 `tap 2`, `hold 1`, `hold 0`, `jump 10`, `release 0`).
 `wait` is a step where no key is pressed and time passes — a second, or `wait~MS`; `wait~250*40` is
-ten seconds in quarter-second frames. It is how a script watches a Battle Round. Mouse: `click:X,Y` clicks Grid tile X,Y wherever the camera has it drawn right now (fails if
+ten seconds in quarter-second frames. It is how a script watches a Battle Round. Mouse: `click:X,Y` clicks tile X,Y wherever the camera has it drawn right now (fails if
 it is off screen), `click@COL,ROW` clicks a 0-based screen cell; `rclick`, `wheelup`, `wheeldown` take
 the same targets. `#` starts a comment in a `--file`. The table with bytes is at the top of
 `src/playtest/keys.ts`. An unknown name is an error, never a guess.
@@ -124,7 +124,7 @@ which skips it (`Enter` reads the next line; `--keys "Enter Enter Enter" --png a
 - `Esc s`: Settings from the menu; from the map it is `Tab Esc Esc s` (Esc on the map goes back to the
   menu first). `Esc s Right` switches the background to light; `d` opens the Experiments.
 - `Esc a`: the Activity logs window (`Right` steps the filter, `e` exports).
-- `click@3,7`: click a screen cell (0-based column, row); `click:22,9` clicks Grid tile 22,9.
+- `click@3,7`: click a screen cell (0-based column, row); `click:22,9` clicks tile 22,9.
 - `--settings "popupPulseMs=3000 nextRound=auto"`: start from an export, or just pairs; a name that
   is no longer an Experiment is skipped with a note on stderr.
 - `--activity [filter]`: print what the run recorded in the Activity Logs (Everything when no filter

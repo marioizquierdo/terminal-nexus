@@ -9,7 +9,7 @@ import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../engine/g
 import type { ContentRegistry } from "../content/index.ts"
 import { baseContentId, fittedId, fittingsOf } from "../content/fitted.ts"
 import { stepListIndex } from "../terminal/list-keys.ts"
-import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import type { Coord, MapTerrain } from "../engine/geometry/types.ts"
 import { TERRAIN } from "../engine/geometry/types.ts"
 import type { MatchState } from "../engine/state/types.ts"
 import type { BuildingActionCard, BuildingCard, PowerCard, Schedule } from "../armies/types.ts"
@@ -18,7 +18,7 @@ import { lasts as effectLasts } from "../armies/effects.ts"
 import type { StatusMessage } from "./status.ts"
 import { NO_STATUS, status } from "./status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
-import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
+import { centreOn, clampToMap, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
 import type { SettingSource, ShownName } from "./all-settings.ts"
 import { defaultValue, setting, shownSetting } from "./all-settings.ts"
 import type { Experiments } from "./experiments.ts"
@@ -82,7 +82,7 @@ import { bannerSpot, capitalised, currentBanner, defaultBanner } from "./banner.
 /** Everything about the screen that never changes while it is open. Split from the state proper so
  *  the reducer's signature says plainly which half a command can move. */
 export type BuildContext = Readonly<{
-  grid: GridTerrain
+  terrain: MapTerrain
   registry: ContentRegistry
   catalog: readonly ConstructItem[]
   standing: readonly StandingStructure[]
@@ -92,7 +92,7 @@ export type BuildContext = Readonly<{
   /**
    * How close to a viewport edge the cursor gets before the camera follows. The design's first
    * number was three tiles, offered as a starting point to retune once someone actually scrolls a
-   * Grid. So the Build Phase takes it as a parameter and puts it on the command line
+   * battlefield. So the Build Phase takes it as a parameter and puts it on the command line
    * (`--scroll-margin`) — a number the owner can feel the difference between beats a number argued
    * for. **It is a percentage of the view** — of its width for the sides and its height for the top
    * and bottom — rather than a number of tiles. It was an Experiment until the owner settled it;
@@ -119,12 +119,12 @@ export type BuildContext = Readonly<{
   /** The building cards a Nexus power can add, and those the level offers: what keeping a power that names a
    *  building reads (Aid Station Permit, Drill Schedule). Absent: none. */
   buildingCards?: readonly BuildingCard[]
-  /** The units a power kept this Build Phase calls up (Reserve Callup): set down beside the Grid Nexus as this
+  /** The units a power kept this Build Phase calls up (Reserve Callup): set down beside the Nexus as this
    *  round's Battle Round starts, with its squads, and gone from the next round's context. Absent: none. */
   callups?: readonly Readonly<{ unit: string; count: number }>[]
   /**
    * The map's own border style — a "map-defined border" ("defining custom borders
-   * could accentuate the location"), drawn wherever the Grid rectangle reaches the map's edge; the
+   * could accentuate the location"), drawn wherever the map rectangle reaches the map's edge; the
    * owner chose it over one style for every map. Presentation only, and a name rather
    * than glyphs: the view owns what each style looks like (`src/view/edge.ts`). Absent: the solid bar.
    */
@@ -229,7 +229,7 @@ export type BuildContext = Readonly<{
   activityExportDestination?: string
   /**
    * **The battle banner's default** (the Battle banner Experiment): where the round sends the player's troops when the
-   * player plants no banner — the enemy's Grid Nexus, aggressive; or the place the level sends them, defensive, since
+   * player plants no banner — the enemy's Nexus, aggressive; or the place the level sends them, defensive, since
    * they hold it — with its name in the player's words. Worked out by the shell (`src/cli/pulse-run.ts`). Absent: the
    * enemy's Nexus on the map, or else the nearest enemy (`defaultBanner`, `banner.ts`).
    */
@@ -248,8 +248,8 @@ export type BuildState = Readonly<{
   camera: Camera
   viewport: Viewport
   /**
-   * Index into `catalog`, or `null` for nothing armed. **A structure is armed only while the Grid has
-   * focus**: every way focus leaves the Grid — Tab, Esc, a placement from the
+   * Index into `catalog`, or `null` for nothing armed. **A structure is armed only while the battlefield has
+   * focus**: every way focus leaves the battlefield — Tab, Esc, a placement from the
    * menu — disarms, so the screen is always in one of a few plain modes: the menu (no cursor), placing
    * (a row marked active, the cursor carrying its ghost), Explore Map (the bare cursor, and the side
    * panel showing what is under it — `exploring`), or plain navigation (the bare cursor, the menu
@@ -257,8 +257,8 @@ export type BuildState = Readonly<{
    */
   armed: number | null
   /**
-   * Where the Grid's current activity — placing, or Explore Map — was started from, and so where
-   * finishing it goes back to: `grid` when it began on the map (a
+   * Where the battlefield's current activity — placing, or Explore Map — was started from, and so where
+   * finishing it goes back to: `map` when it began on the map (a
    * digit pressed there, Enter/Space or `e` in plain navigation) — a placement and Esc then leave the
    * keyboard on the map in plain navigation; `menu` when it began on the menu (Enter/Space or a click
    * on its row, a digit while the menu had the keyboard) — they go back to the menu. Meaningless while
@@ -281,7 +281,7 @@ export type BuildState = Readonly<{
    * card for what is under the cursor, following it as it moves, headed by the Explore Map row in the
    * active style, `[e] Explore Map  >`, over a separator. Reached only by `e`, the menu's first entry,
    * and Enter/Space in plain navigation; `e` again, Esc, `x` or a click on the panel go back to where
-   * it was opened from (`returnTo`). Only ever true while the Grid has focus and nothing is armed (read
+   * it was opened from (`returnTo`). Only ever true while the battlefield has focus and nothing is armed (read
    * it through `mapMode` or `exploring`).
    *
    * **Tab and a click on the map do not open it**: they arrive in plain navigation,
@@ -317,7 +317,7 @@ export type BuildState = Readonly<{
    * else — a key that acted on a row the player could not see would be a surprise.
    */
   highlightHidden: boolean
-  /** The popup drawn over the Grid and holding the keyboard and mouse, or `null`: the Nexus powers,
+  /** The popup drawn over the battlefield and holding the keyboard and mouse, or `null`: the Nexus powers,
    *  the Battle Round confirmation (`s` — "the one action that must not fire by accident", from
    *  docs/system-design/input.md), the game menu, Settings, the export, or a message. Never opened by anything but the player —
    *  a message only as the answer to something the player did (closing Settings with a change that
@@ -437,7 +437,7 @@ export type BuildState = Readonly<{
 }>
 
 /**
- * The tile the cursor opens on when nothing has been pointed at yet: the player's Grid Nexus — its
+ * The tile the cursor opens on when nothing has been pointed at yet: the player's Nexus — its
  * centre tile, the way the cursor points at every structure (the owner: "or on
  * top of the nexus by default"). Found by the Nexus flag on its content definition, never by an id;
  * `null` for a map with no Nexus standing on it.
@@ -481,10 +481,10 @@ export function createBuildState(
   experiments: Experiments = { ...defaultExperiments(), ...context.experiments },
   settings: Settings = context.settings ?? DEFAULT_SETTINGS,
 ): BuildState {
-  const start = clampToGrid(cursor, context.grid)
+  const start = clampToMap(cursor, context.terrain)
   const opened: BuildState = {
     cursor: start,
-    camera: followCursor({ x: 0, y: 0 }, start, viewport, context.grid, marginOf(context, viewport)),
+    camera: followCursor({ x: 0, y: 0 }, start, viewport, context.terrain, marginOf(context, viewport)),
     viewport,
     armed: null,
     returnTo: "menu",
@@ -552,7 +552,7 @@ export function withoutScene(context: BuildContext): BuildContext {
 
 /** The tile the camera centres on and the cursor goes to: the Pulse's `look-at`, and each dialog line's. */
 function lookAt(context: BuildContext, state: BuildState, tile: Coord): BuildState {
-  return withCursor(context, state, tile, (_camera, cursor) => centreOn(cursor, state.viewport, context.grid))
+  return withCursor(context, state, tile, (_camera, cursor) => centreOn(cursor, state.viewport, context.terrain))
 }
 
 /** Line `line` of the scene on screen: the camera on what it looks at, or where it was for a line that
@@ -994,8 +994,8 @@ export function buildingsOn(context: BuildContext, planned: readonly PlannedPlac
  * send them to fix the wrong thing. **The build range comes next, for the same reason**: it is about a
  * region, a rock or a building about one tile, so a ghost far from the range is sent toward the range
  * rather than off the rock it happens to sit on. One tile of the footprint inside it is enough
- * (`src/build/territory.ts`); when none is, the first of its tiles on the Grid is named. Then each tile's own
- * problem — off the Grid, rock, a building already there (a unit, anyone's, walks out from under a new building as the
+ * (`src/build/territory.ts`); when none is, the first of its tiles on the battlefield is named. Then each tile's own
+ * problem — off the battlefield, rock, a building already there (a unit, anyone's, walks out from under a new building as the
  * round begins). Buildings may touch: one that makes units sets them on its
  * roof (pulse.md), so it keeps no room round it. `radius` is the "Build range" Experiment's value — its default when
  * the caller has no state to read it from.
@@ -1017,15 +1017,15 @@ export function legalityAt(
   if (!territory.rooted) return { ok: false, reason: "there is no Nexus to build from" }
   const tiles = tilesOf(anchor, footprint)
   if (!anyInside(territory, anchor, footprint)) {
-    const first = tiles.find((tile) => inBounds(context.grid, tile))
+    const first = tiles.find((tile) => inBounds(context.terrain, tile))
     return { ok: false, reason: "outside your build range", ...(first === undefined ? {} : { tile: first }) }
   }
   const claimed = claimedTiles(context, planned)
   for (const tile of tiles) {
-    if (!inBounds(context.grid, tile)) {
-      return { ok: false, reason: "it would hang off the Grid" }
+    if (!inBounds(context.terrain, tile)) {
+      return { ok: false, reason: "it would hang off the battlefield" }
     }
-    const terrainId = context.grid.tiles[tile.y * context.grid.width + tile.x]
+    const terrainId = context.terrain.tiles[tile.y * context.terrain.width + tile.x]
     if (terrainId !== undefined && TERRAIN[terrainId].impassable) {
       return { ok: false, reason: "rock in the way", tile }
     }
@@ -1098,15 +1098,15 @@ export function armingSpot(
   const size = footprintExtent(footprint)
   const offset = footprintCentre(footprint)
   const claimed = claimedTiles(context, planned)
-  const { grid } = context
+  const { terrain } = context
   const { territory } = rules
 
   const anchorOf = (tile: Coord): Coord => ({ x: tile.x - offset.x, y: tile.y - offset.y })
   const fits = (anchor: Coord): boolean => {
     let inRange = territory === undefined
     for (const tile of tilesOf(anchor, footprint)) {
-      if (!inBounds(grid, tile)) return false
-      const terrainId = grid.tiles[tile.y * grid.width + tile.x]
+      if (!inBounds(terrain, tile)) return false
+      const terrainId = terrain.tiles[tile.y * terrain.width + tile.x]
       if (terrainId !== undefined && TERRAIN[terrainId].impassable) return false
       if (claimed.has(`${tile.x},${tile.y}`)) return false
       if (!inRange && territory?.has(tile) === true) inRange = true
@@ -1150,7 +1150,7 @@ export function armingSpot(
     }
     if (best !== null) return { tile: { x: cursor.x + best.x, y: cursor.y + best.y }, found: true }
   }
-  return { tile: clampToGrid({ x: cursor.x + 1, y: cursor.y + 1 }, grid), found: false }
+  return { tile: clampToMap({ x: cursor.x + 1, y: cursor.y + 1 }, terrain), found: false }
 }
 
 /**
@@ -1220,14 +1220,14 @@ function withCursor(
   tile: Coord,
   placeCamera?: (camera: Camera, cursor: Coord) => Camera,
 ): BuildState {
-  const cursor = clampToGrid(tile, context.grid)
+  const cursor = clampToMap(tile, context.terrain)
   const placed = placeCamera === undefined ? state.camera : placeCamera(state.camera, cursor)
-  const camera = followCursor(placed, cursor, state.viewport, context.grid, marginOf(context, state.viewport))
+  const camera = followCursor(placed, cursor, state.viewport, context.terrain, marginOf(context, state.viewport))
   return { ...state, cursor, camera }
 }
 
 /**
- * A click on a Grid tile, as a cursor move: the view comes to the click — a click inside
+ * A click on a tile, as a cursor move: the view comes to the click — a click inside
  * an edge zone (`TUNING.clickZone` deep) scrolls, further the nearer the edge it lands, and the middle
  * of the view does not scroll. **With a structure armed it scrolls the same way** (the owner: "keep
  * clicking on the grid with the ghost building placement cursor to keep scrolling, and double click
@@ -1238,7 +1238,7 @@ function withCursor(
  * owner settled them.
  */
 function withClickedCursor(context: BuildContext, state: BuildState, tile: Coord): BuildState {
-  return withCursor(context, state, tile, (camera, cursor) => edgeClickCamera(camera, cursor, state.viewport, context.grid, TUNING.clickZone))
+  return withCursor(context, state, tile, (camera, cursor) => edgeClickCamera(camera, cursor, state.viewport, context.terrain, TUNING.clickZone))
 }
 
 /** The next acknowledgement: a new sequence number, so the live loop sees a fresh one even when two
@@ -1247,8 +1247,8 @@ function acknowledge(state: BuildState, kind: Ack["kind"], entry: number): Ack {
   return { seq: (state.ack?.seq ?? 0) + 1, kind, entry }
 }
 
-/** Gives the keyboard to the menu. A structure is armed only while the Grid has focus, so this
- *  disarms, and Explore Map — a Grid-side view — gives way to the menu with it. */
+/** Gives the keyboard to the menu. A structure is armed only while the battlefield has focus, so this
+ *  disarms, and Explore Map — a battlefield-side view — gives way to the menu with it. */
 function toMenu(state: BuildState): BuildState {
   return { ...state, focus: "menu", armed: null, exploreMap: false }
 }
@@ -1262,24 +1262,24 @@ function revealHighlight(state: BuildState): BuildState {
 /**
  * A key that reached the menu with nothing to do there — Left, Right, Backspace: the highlighted row
  * flickers "refused" to say the key arrived, and the keyboard stays on the menu, however many come
- * (a second Right once moved focus to the Grid; Tab and a click on the map still do). After the mouse, it only shows the highlight again.
+ * (a second Right once moved focus to the battlefield; Tab and a click on the map still do). After the mouse, it only shows the highlight again.
  */
 function refuseOnMenu(state: BuildState): BuildState {
   if (state.highlightHidden) return revealHighlight(state)
   return { ...state, ack: acknowledge(state, "refused", state.menuHighlight) }
 }
 
-/** Gives the keyboard to the Grid in **plain navigation**: nothing armed, no Explore Map — the bare
+/** Gives the keyboard to the battlefield in **plain navigation**: nothing armed, no Explore Map — the bare
  *  cursor with the menu drawn beside it. Where Tab, a click on the map and finishing something begun
  *  on the map all arrive. */
 function toMap(state: BuildState): BuildState {
-  return { ...state, focus: "grid", armed: null, exploreMap: false }
+  return { ...state, focus: "map", armed: null, exploreMap: false }
 }
 
-/** Finishing what the Grid was doing — a placement, or Esc while placing or exploring: back to where
+/** Finishing what the battlefield was doing — a placement, or Esc while placing or exploring: back to where
  *  it was started from (`BuildState.returnTo`), one level. */
 function backToOrigin(state: BuildState): BuildState {
-  return state.returnTo === "grid" ? toMap(state) : toMenu(state)
+  return state.returnTo === "map" ? toMap(state) : toMenu(state)
 }
 
 /** The next hand-off of the keyboard from menu row `entry` to the map (`BuildState.handoff`), when
@@ -1291,7 +1291,7 @@ function handOff(state: BuildState, from: Focus, entry: number): BuildState["han
 
 /**
  * Arms catalog row `index`: the one path a digit, the menu's own Enter/Space and a click on the row
- * share. Focus moves to the Grid, where the placing happens, and the menu highlight follows the row.
+ * share. Focus moves to the battlefield, where the placing happens, and the menu highlight follows the row.
  * `from` is where it was started — the menu (Enter/Space or a click on the row, or a digit while the
  * menu had the keyboard) or the map (a digit there) — and is where a placement or Esc goes back to.
  * The cursor stays where it is when the building can go there, and otherwise moves to the nearest
@@ -1339,7 +1339,7 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
     ...state,
     armed: index,
     returnTo: from,
-    focus: "grid",
+    focus: "map",
     exploreMap: false,
     menuHighlight: entry,
     ack: acknowledge(state, "pressed", entry),
@@ -1393,7 +1393,7 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number):
   return openExplore(context, highlighted, "menu")
 }
 
-/** `s`, or the Start Battle Round entry: open the Battle Round confirmation over the Grid, the menu lit behind
+/** `s`, or the Start Battle Round entry: open the Battle Round confirmation over the battlefield, the menu lit behind
  *  it. Its row flashes "pressed" however it was reached — or, refused (a popup or a committed plan holds
  *  it), a flicker beside the bottom line's reason. A Nexus power still waiting is no reason while the pick is
  *  optional (the "Nexus pick" Experiment): the screen says it is waiting, and the round can start without it;
@@ -1522,7 +1522,7 @@ function openNexus(state: BuildState): BuildState {
 }
 
 /**
- * `e`, the Explore Map entry, or Enter/Space in plain navigation: the Grid with nothing armed, and
+ * `e`, the Explore Map entry, or Enter/Space in plain navigation: the battlefield with nothing armed, and
  * the side panel showing what is under the cursor. `from` is where Esc, `e` again or
  * a click on its row go back to. The bottom line says nothing: the card and its active header say
  * where the player is. Opened from the menu, the row hands the keyboard to the map
@@ -1543,7 +1543,7 @@ function openExplore(context: BuildContext, state: BuildState, from: Focus): Bui
   if (refused !== null) return refused
   const opened: BuildState = {
     ...state,
-    focus: "grid",
+    focus: "map",
     armed: null,
     exploreMap: true,
     returnTo: from,
@@ -1962,7 +1962,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // Nothing to go to on a map without a Nexus of the player's; a popup holds the keyboard.
       const nexus = nexusTile(context)
       if (nexus === null || state.popup !== null) return state
-      return withCursor(context, { ...state, focus: "grid" }, nexus)
+      return withCursor(context, { ...state, focus: "map" }, nexus)
     }
 
     case "move-cursor":
@@ -1974,7 +1974,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // The dialog is read, not chosen from: a click anywhere shows the next line, and a stray one never
       // skips the scene (the mouse sends the same for a click on it or off it).
       if (state.popup === "dialog") return nextLine(context, state)
-      const target = clampToGrid({ x: command.x, y: command.y }, context.grid)
+      const target = clampToMap({ x: command.x, y: command.y }, context.terrain)
       // Moving the banner: a click moves it there, and a second click on the tile it stands on plants it, as a
       // building is placed.
       if (state.popup === "banner-place") {
@@ -1987,7 +1987,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (state.popup !== null) {
         const dismissed = dismissPopup(state)
         if (state.popup === "battle-round" || state.committed) return dismissed
-        return withClickedCursor(context, { ...dismissed, focus: "grid" }, target)
+        return withClickedCursor(context, { ...dismissed, focus: "map" }, target)
       }
       // A committed plan locks every edit but not looking: a click on the map moves the cursor there and
       // scrolls the view as it does while exploring (the Pulse's map is a map to look around).
@@ -1996,11 +1996,11 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // moves the cursor there and shows the armed preview; a second click **on that same tile** is
       // what places. Checked against `state.cursor` (tile identity), never the click's screen cell.
       const confirming =
-        state.focus === "grid" && state.armed !== null && target.x === state.cursor.x && target.y === state.cursor.y
-      // A click on the Grid is attention on the Grid: it takes keyboard focus there too. With nothing
+        state.focus === "map" && state.armed !== null && target.x === state.cursor.x && target.y === state.cursor.y
+      // A click on the battlefield is attention on the battlefield: it takes keyboard focus there too. With nothing
       // armed it only moves the cursor: in Explore Map the panel follows it; from the menu it arrives
       // in plain navigation with the menu still drawn, so the next click can arm a building from it.
-      const moved = { ...withClickedCursor(context, state, target), focus: "grid" as const }
+      const moved = { ...withClickedCursor(context, state, target), focus: "map" as const }
       if (!confirming) return moved
       // Placed by the mouse: back where the arming came from — for a building clicked on the menu,
       // the menu with nothing looking chosen ("get back to the menu, focused but
@@ -2045,7 +2045,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "open-explore":
       // Enter/Space in plain navigation: Explore Map, begun on the map. Already open, nothing more.
       if (mapMode(state) !== "plain") return state
-      return openExplore(context, state, "grid")
+      return openExplore(context, state, "map")
 
     case "remove": {
       const lock = editLock(state)
@@ -2111,7 +2111,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // Meaningless outside the one moment it answers — a stray "y" is not a command here any more
       // than a stray "3" is one before anything is armed.
       if (state.popup !== "battle-round") return state
-      // The Battle Round starts. The keyboard goes to the Grid, where the arrows look around it
+      // The Battle Round starts. The keyboard goes to the battlefield, where the arrows look around it
       // — a committed plan locks every edit but not the cursor — and nothing is armed or being explored.
       return {
         ...closePopups(toMap(state)),
@@ -2135,7 +2135,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
 
     case "focus":
       if (state.popup !== null || state.committed || state.focus === command.target) return state
-      // To the Grid, Tab arrives in plain navigation — Explore Map is `e`'s.
+      // To the battlefield, Tab arrives in plain navigation — Explore Map is `e`'s.
       return command.target === "menu" ? { ...toMenu(state), highlightHidden: false } : toMap(state)
 
     case "highlight": {
@@ -2338,8 +2338,8 @@ export function withViewport(
   return {
     ...state,
     viewport,
-    camera: followCursor(state.camera, state.cursor, viewport, context.grid, margin),
+    camera: followCursor(state.camera, state.cursor, viewport, context.terrain, margin),
     // The camera the dialog gives back fits the new view too.
-    ...(dialog === null ? {} : { dialog: { ...dialog, camera: followCursor(dialog.camera, dialog.cursor, viewport, context.grid, margin) } }),
+    ...(dialog === null ? {} : { dialog: { ...dialog, camera: followCursor(dialog.camera, dialog.cursor, viewport, context.terrain, margin) } }),
   }
 }

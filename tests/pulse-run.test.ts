@@ -107,13 +107,13 @@ test("the timeline runs to the outcome and no further; the regroup hands the nex
     assert.equal(timeline.states.length - 1, last.outcome.tick, "the timeline ran past its own ending")
     assert.equal(recall.state.tick, 0)
     assert.equal(recall.state.outcome, null)
-    // Nobody is on top of anybody — but a survivor on its own side's roof — and nothing left the Grid.
+    // Nobody is on top of anybody — but a survivor on its own side's roof — and nothing left the battlefield.
     const buildings = new Map<string, string>()
     const units = new Set<string>()
     for (const entity of recall.state.entities) {
       const structure = FIXTURE_REGISTRY.get(entity.contentId).layer === "obstacles"
       for (const tile of tilesOf(entity.anchor, FIXTURE_REGISTRY.get(entity.contentId).footprint)) {
-        assert.ok(inBounds(timeline.grid, tile))
+        assert.ok(inBounds(timeline.terrain, tile))
         const key = `${tile.x},${tile.y}`
         const held = structure ? buildings.has(key) : units.has(key)
         assert.ok(!held, `${key} is covered twice after the regroup`)
@@ -147,7 +147,7 @@ test("a building committed on top of the muster points does not stop the Pulse: 
 
 test("a session with no Pulse to start starts none: committing only freezes the plan, as it did before a Pulse could start", () => {
   const context = starterContext()
-  const layout = buildLayout(MINIMUM, context.grid)
+  const layout = buildLayout(MINIMUM, context.terrain)
   const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })
   build.run([{ kind: "pick-nexus", index: 0 }, { kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.equal(build.state.committed, true)
@@ -177,7 +177,7 @@ test("the first placeholder Pulse, written as a mission, resolves its winning pl
   // would refuse it now: this is about the Pulse, not about where a building may go.
   const mission = missionPlay(testMission())
   const context = mission.firstRound(placeholderContext())
-  const opened = createBuildState(context, STARTER_START_CURSOR, buildLayout(MINIMUM, context.grid).viewport)
+  const opened = createBuildState(context, STARTER_START_CURSOR, buildLayout(MINIMUM, context.terrain).viewport)
   const placeholderPlan: readonly PlannedPlacement[] = [
     { ordinal: 1, contentId: "structure.bench.beamturret", anchor: { x: 22, y: 9 } },
     { ordinal: 2, contentId: "structure.bench.beamturret", anchor: { x: 22, y: 12 } },
@@ -189,12 +189,13 @@ test("the first placeholder Pulse, written as a mission, resolves its winning pl
   // Pinned again when every tie came to go by what a unit faces, then a draw (the plan won at tick 171 where it once
   // took until 217), when units came to walk by routes, and when the raid came to head for the Nexus and turn only to
   // what comes within its reach (tick 220), and when a building's units came to appear on its roof and walk out over
-  // it: the plan still wipes the raid out, now at tick 206. Pinned again when the Grid Nexus came to fight back: its
+  // it: the plan still wipes the raid out, now at tick 206. Pinned again when the Nexus came to fight back: its
   // events carry the Nexus's shots, and the raid is wiped out on the same tick, every unit where it would have been.
   // Pinned again when a unit came to keep the target it holds until it falls (commitment): the raid is wiped out at tick 214.
   // Pinned again when a unit that cannot reach its target came to let it go, and to march on round the fight when it can
   // reach none: the plan still wipes the raid out, at tick 202.
-  assert.ok(timeline.stateHash.startsWith("cd831ab4"), `state hash ${timeline.stateHash}`)
+  // Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
+  assert.ok(timeline.stateHash.startsWith("7c57bf7e"), `state hash ${timeline.stateHash}`)
   assert.ok(timeline.eventsHash.startsWith("bbe64075"), `events hash ${timeline.eventsHash}`)
   assert.equal(timeline.states.length - 1, 202)
   assert.deepEqual(timeline.states.at(-1)?.outcome, { winner: "A", reason: "annihilation", tick: 202 })

@@ -43,7 +43,7 @@ The owner, 2026-11-11 after showing the game ([his words](../history/feedback/20
 the battle begins, see what they built, and… go back and analyze their base"; and 2026-11-12: "So you can see what the
 enemy plays new and how they're plotting to counter your build." The plans stay hidden while both sides build.
 
-- [ ] **The reveal**: as the Battle Round starts, what the enemy did this Build Phase is marked on the Grid for a few
+- [ ] **The reveal**: as the Battle Round starts, what the enemy did this Build Phase is marked on the battlefield for a few
       seconds and said in one line: its new buildings and upgrades, its Nexus power, its banner and stance.
 - [ ] **After the battle**: in the next Build Phase the enemy's base stands as it is, its new things still marked until
       the player has looked, and the panel says in a line or two what changed on its side (built, lost, its army now).

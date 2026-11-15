@@ -1,8 +1,8 @@
-// PRESENTATION — an ASCII screenshot: the Grid exactly as the game's screen draws it, cell for cell, written out as text
+// PRESENTATION — an ASCII screenshot: the battlefield exactly as the game's screen draws it, cell for cell, written out as text
 // for a reader that reads text (an agent, a test, a log). Not an image: a screenshot is a picture of the screen
-// (PNG, `scripts/playtest.mjs`); an ASCII screenshot is the Grid's own cells.
+// (PNG, `scripts/playtest.mjs`); an ASCII screenshot is the battlefield's own cells.
 //
-// The picture is the screen's and nothing else: the same layers in the same bands (`drawGridLayers`), the same glyphs,
+// The picture is the screen's and nothing else: the same layers in the same bands (`drawMapLayers`), the same glyphs,
 // featureless ground drawn as the screen's sparse lattice, a unit on a roof drawn over its building, effects only when
 // asked for. What the picture cannot say is said beside it, never inside it: a ruler of column tens above and row
 // numbers to the left, a legend of the glyphs in it, and the overlaps — each cell where one thing stands over another
@@ -12,16 +12,16 @@
 
 import type { Coord } from "../engine/geometry/types.ts"
 import type { PlayerId } from "../engine/state/types.ts"
-import type { GridLayersInput } from "./grid-layer.ts"
-import { drawGridLayers } from "./grid-layer.ts"
+import type { MapLayersInput } from "./map-layers.ts"
+import { drawMapLayers } from "./map-layers.ts"
 import type { BandCell } from "./frame.ts"
 import { composeBands, frameToText } from "./frame.ts"
 import { entityGlyph } from "./theme.ts"
 
-/** An ASCII screenshot: the Grid's rows as drawn, the ruler and row numbers round them, the legend and the overlaps. */
+/** An ASCII screenshot: the battlefield's rows as drawn, the ruler and row numbers round them, the legend and the overlaps. */
 export type AsciiScreenshot = Readonly<{
-  /** The Grid's cells, a row of text a row of tiles, exactly as the screen draws them. */
-  grid: readonly string[]
+  /** The battlefield's cells, a row of text a row of tiles, exactly as the screen draws them. */
+  terrain: readonly string[]
   /** The same rows with a ruler of column tens above and each row's number to the left. */
   framed: readonly string[]
   /** What each glyph in the picture is: `t Trooper (p1)`; a building with its art row by row and where it stands,
@@ -41,16 +41,16 @@ const DEFAULT_NAMES: ScreenshotNames = {
   content: (contentId) => contentId.slice(contentId.lastIndexOf(".") + 1),
 }
 
-/** **An ASCII screenshot** of the Grid from what a frame draws: the state, where each entity is drawn, and the effects
+/** **An ASCII screenshot** of the battlefield from what a frame draws: the state, where each entity is drawn, and the effects
  *  and fire when they are to be seen. */
-export function asciiScreenshot(input: GridLayersInput, names: ScreenshotNames = DEFAULT_NAMES): AsciiScreenshot {
+export function asciiScreenshot(input: MapLayersInput, names: ScreenshotNames = DEFAULT_NAMES): AsciiScreenshot {
   const cells: BandCell[] = []
-  drawGridLayers(cells, input, (tile) => tile)
-  const grid = frameToText(composeBands(input.grid.width, input.grid.height, cells)).split("\n")
-  while (grid.length < input.grid.height) grid.push("")
-  const rows = grid.map((row) => row.padEnd(input.grid.width, " "))
+  drawMapLayers(cells, input, (tile) => tile)
+  const terrain = frameToText(composeBands(input.terrain.width, input.terrain.height, cells)).split("\n")
+  while (terrain.length < input.terrain.height) terrain.push("")
+  const rows = terrain.map((row) => row.padEnd(input.terrain.width, " "))
 
-  const ruler = `   ${Array.from({ length: input.grid.width }, (_, x) => (x % 10 === 0 ? String(x / 10) : " ")).join("")}`
+  const ruler = `   ${Array.from({ length: input.terrain.width }, (_, x) => (x % 10 === 0 ? String(x / 10) : " ")).join("")}`
   const framed = [ruler, ...rows.map((row, y) => `${String(y).padStart(2, " ")} ${row}`)]
 
   const legend = new Map<string, string>()
@@ -82,15 +82,15 @@ export function asciiScreenshot(input: GridLayersInput, names: ScreenshotNames =
     const [bx, by] = (b.match(/\d+/gu) ?? []).map(Number)
     return (ay ?? 0) - (by ?? 0) || (ax ?? 0) - (bx ?? 0)
   })
-  return { grid: rows, framed, legend: [...legend.keys()].sort(), overlaps, effects: input.effects !== undefined }
+  return { terrain: rows, framed, legend: [...legend.keys()].sort(), overlaps, effects: input.effects !== undefined }
 }
 
-/** An ASCII screenshot as lines to print: the framed Grid, then the legend and the overlaps, each under its heading. */
+/** An ASCII screenshot as lines to print: the framed battlefield, then the legend and the overlaps, each under its heading. */
 export function asciiScreenshotLines(screenshot: AsciiScreenshot): string[] {
   return [
     ...screenshot.framed,
-    `Legend: ${screenshot.legend.join("; ") || "nothing on the Grid"}. Ground: . open (every fourth tile drawn, as on screen), # rock, * ore, % salvage.`,
+    `Legend: ${screenshot.legend.join("; ") || "nothing on the battlefield"}. Ground: . open (every fourth tile drawn, as on screen), # rock, * ore, % salvage.`,
     `Overlaps (the top one is what is drawn): ${screenshot.overlaps.length === 0 ? "none" : screenshot.overlaps.join("; ")}.`,
-    ...(screenshot.effects ? ["Effects are on: any mark the legend does not name (' , | / : and the like) is a shot, a burst or fire's light, not a thing on the Grid."] : []),
+    ...(screenshot.effects ? ["Effects are on: any mark the legend does not name (' , | / : and the like) is a shot, a burst or fire's light, not a thing on the battlefield."] : []),
   ]
 }

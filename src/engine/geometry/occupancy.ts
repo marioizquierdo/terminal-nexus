@@ -1,8 +1,8 @@
-// Occupancy and collision masks (grid.md).
+// Occupancy and collision masks (battlefield.md).
 //
 // DESIGN DECISION (recorded in docs/history/reports/2026-08-21-pulse-playground.md):
 //
-// grid.md deliberately leaves mask caching to the implementation, because arbitration mutates
+// battlefield.md deliberately leaves mask caching to the implementation, because arbitration mutates
 // claimed tiles part-way through a tick, so a mask materialised once per tick is stale exactly
 // when it matters. This implementation resolves that by never materialising one:
 //
@@ -19,7 +19,7 @@
 // (24 x 12 tiles, ~14 actors) that is not measurable, and it removes a whole class of bug.
 
 import { inBounds, tileIndex, tilesOf } from "./coords.ts"
-import type { Coord, EntityLayer, Footprint, GridTerrain, VacatedEntry } from "./types.ts"
+import type { Coord, EntityLayer, Footprint, MapTerrain, VacatedEntry } from "./types.ts"
 import { ENTITY_LAYERS, TERRAIN } from "./types.ts"
 
 const EMPTY = 0
@@ -27,14 +27,14 @@ const EMPTY = 0
 export type OccupantLookup = (ordinal: number) => boolean
 
 export class OccupancyIndex {
-  readonly grid: GridTerrain
+  readonly terrain: MapTerrain
   private readonly layers: Map<EntityLayer, Int32Array>
 
-  constructor(grid: GridTerrain) {
-    this.grid = grid
+  constructor(terrain: MapTerrain) {
+    this.terrain = terrain
     this.layers = new Map()
     for (const layer of ENTITY_LAYERS) {
-      this.layers.set(layer, new Int32Array(grid.width * grid.height))
+      this.layers.set(layer, new Int32Array(terrain.width * terrain.height))
     }
   }
 
@@ -48,10 +48,10 @@ export class OccupancyIndex {
   add(layer: EntityLayer, ordinal: number, anchor: Coord, footprint: Footprint): void {
     const slot = this.slot(layer)
     for (const tile of tilesOf(anchor, footprint)) {
-      if (!inBounds(this.grid, tile)) {
-        throw new Error(`footprint tile ${tile.x},${tile.y} is outside the Grid`)
+      if (!inBounds(this.terrain, tile)) {
+        throw new Error(`footprint tile ${tile.x},${tile.y} is outside the battlefield`)
       }
-      const index = tileIndex(this.grid, tile)
+      const index = tileIndex(this.terrain, tile)
       const existing = slot[index] ?? EMPTY
       if (existing !== EMPTY && existing !== ordinal + 1) {
         throw new Error(
@@ -66,8 +66,8 @@ export class OccupancyIndex {
   remove(layer: EntityLayer, ordinal: number, anchor: Coord, footprint: Footprint): void {
     const slot = this.slot(layer)
     for (const tile of tilesOf(anchor, footprint)) {
-      if (!inBounds(this.grid, tile)) continue
-      const index = tileIndex(this.grid, tile)
+      if (!inBounds(this.terrain, tile)) continue
+      const index = tileIndex(this.terrain, tile)
       if (slot[index] === ordinal + 1) slot[index] = EMPTY
     }
   }
@@ -85,8 +85,8 @@ export class OccupancyIndex {
 
   /** The ordinal occupying `tile` on `layer`, or `null`. */
   occupantAt(layer: EntityLayer, tile: Coord): number | null {
-    if (!inBounds(this.grid, tile)) return null
-    const value = this.slot(layer)[tileIndex(this.grid, tile)] ?? EMPTY
+    if (!inBounds(this.terrain, tile)) return null
+    const value = this.slot(layer)[tileIndex(this.terrain, tile)] ?? EMPTY
     return value === EMPTY ? null : value - 1
   }
 }
@@ -159,13 +159,13 @@ export class VacatedOverlay {
 }
 
 export type MaskSpec = Readonly<{
-  /** Layers whose occupants block. A unit definition declares these (grid.md). */
+  /** Layers whose occupants block. A unit definition declares these (battlefield.md). */
   layers: readonly EntityLayer[]
   /** Whether impassable terrain blocks. Air movement, for example, does not care. */
   terrain: "impassable" | "ignore"
   /** Ordinals that never block — a mover must not block itself. */
   ignore?: readonly number[]
-  /** Optional extra predicate on the occupant, per the signature grid.md describes. */
+  /** Optional extra predicate on the occupant, per the signature battlefield.md describes. */
   predicate?: OccupantLookup
   /** Claims granted earlier in this arbitration phase. */
   overlay?: ClaimOverlay
@@ -188,7 +188,7 @@ export class CollisionMask {
     this.ignored = new Set(spec.ignore ?? [])
   }
 
-  /** Off-Grid tiles are blocked: a footprint may never leave the Grid. */
+  /** Off-tiles are blocked: a footprint may never leave the battlefield. */
   blocked(tile: Coord): boolean {
     return this.blockerAt(tile) !== null
   }
@@ -198,10 +198,10 @@ export class CollisionMask {
    * clear. Returning the reason is what lets melee recognise "an enemy is in the tile I wanted".
    */
   blockerAt(tile: Coord): "edge" | "terrain" | "settling" | number | null {
-    const grid = this.index.grid
-    if (!inBounds(grid, tile)) return "edge"
+    const terrain = this.index.terrain
+    if (!inBounds(terrain, tile)) return "edge"
     if (this.spec.terrain === "impassable") {
-      const terrainId = grid.tiles[tileIndex(grid, tile)]
+      const terrainId = terrain.tiles[tileIndex(terrain, tile)]
       if (terrainId !== undefined && TERRAIN[terrainId].impassable) return "terrain"
     }
     for (const layer of this.spec.layers) {
@@ -225,7 +225,7 @@ export class CollisionMask {
     return null
   }
 
-  /** A whole footprint is legal only if every tile it would cover is clear (grid.md). */
+  /** A whole footprint is legal only if every tile it would cover is clear (battlefield.md). */
   footprintBlockerAt(
     anchor: Coord,
     footprint: Footprint,

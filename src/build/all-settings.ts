@@ -297,7 +297,7 @@ export const ALL_SETTINGS = {
    *  (`movementRate`, `src/content/ravel.ts`), so the trail reads as the way they will come rather than the raid
    *  already coming, and calm enough to sit at the edge of the eye while the player builds. */
   trailStepMs: { tier: "tuned", default: 400 },
-  /** How far apart the trail's arrows are along their way, by the Grid's own distance: four, four columns or two
+  /** How far apart the trail's arrows are along their way, by the battlefield's own distance: four, four columns or two
    *  rows — the owner's "1 arrow every 3 tiles" made whole rows, so the arrows stand evenly apart on screen
    *  whichever way the way runs, and the line is less obtrusive than an arrow every other tile. */
   trailSpacing: { tier: "tuned", unit: "tiles", default: 4 },
@@ -368,7 +368,7 @@ export const ALL_SETTINGS = {
   // that is was an open question (the default construction radius, Q5): two tiles was the recommendation, with
   // outposts farther.
 
-  /** How far the Grid Nexus and every building linked to it let the player build from them, in tiles, as range
+  /** How far the Nexus and every building linked to it let the player build from them, in tiles, as range
    *  is measured (`src/build/territory.ts`): a row counts two columns, so 6 reaches 6 columns either side and 3
    *  rows up and down. It replaces each projecting structure's own `constructionRadius` while it is felt. Every
    *  value is a whole number of rows, so two buildings' ranges meet exactly where the buildings are no further

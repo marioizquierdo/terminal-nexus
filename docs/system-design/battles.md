@@ -25,7 +25,7 @@ sides A and B; a Skirmish calls them slots `p1` (west) and `p2` (east).
 3. **The Battle Round**: each side's troops take its stance — `attack` marches on the enemy Nexus, `hold` gathers in
    front of its own — and the battle engine runs it, **each side on its own content** (`PulseContext.sides`): what one side's
    powers changed is that side's alone, though both may field troopers.
-4. **Between rounds**: survivors stay on the Grid and regroup across their march line (`src/match/regroup.ts`), a Commander who fell is out by her own rule, credits carry over,
+4. **Between rounds**: survivors stay on the battlefield and regroup across their march line (`src/match/regroup.ts`), a Commander who fell is out by her own rule, credits carry over,
    and each side adds the curve's credits for the round and what its abilities earned (Dob's bounty).
 
 **A round opens in one function** (`roundOpening`, `src/battle/round-opening.ts`): the Commanders due back set down, the
@@ -35,7 +35,7 @@ the Skirmish's Build Phase asks it what arrives, so the see-through units on the
 **A battle ends** when a Nexus falls, or after its last round: then the side whose Nexus kept the larger share of its
 health wins; on an even share, the side that dealt more damage over the battle; on that too, a draw.
 
-**What a side starts with**: its faction's Grid Nexus on its end of the map, its Commander and her starting package
+**What a side starts with**: its faction's Nexus on its end of the map, its Commander and her starting package
 (`start` in her army), and round 1's credits. Maps are files in `maps/`, read by `src/battle/maps.ts`: the Crossing (72 by 28, a ridge with one
 gap) and the Pocket (22 by 12, the bases close enough that their build ranges meet).
 
@@ -206,8 +206,8 @@ reads is deleted.
 its buildings, the advance, the damage it took and each engagement. Each round's report in the `skirmish` command: both
 sides' in a line each, then each engagement.
 
-**The ASCII screenshot** (`asciiScreenshot`, `src/view/ascii-screenshot.ts`): the Grid exactly as the game's screen
-draws it — the same layers and glyphs (`drawGridLayers`, shared with the screen's own frame), featureless ground as the
+**The ASCII screenshot** (`asciiScreenshot`, `src/view/ascii-screenshot.ts`): the battlefield exactly as the game's screen
+draws it — the same layers and glyphs (`drawMapLayers`, shared with the screen's own frame), featureless ground as the
 screen's sparse lattice, a unit on a roof drawn over its building — written out as text. What the picture cannot say
 is said beside it, never in it: a ruler and row numbers, a legend (each glyph; each building with its art and where it
 stands, since a symbol has no case and two sides' buildings can look alike) and the **overlaps**, each cell where one

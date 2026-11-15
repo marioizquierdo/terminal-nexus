@@ -1,7 +1,7 @@
 import type { BuildContext } from "../src/build/state.ts"
 // The Build Phase's frame, at both ends of the supported terminal size range. What is being
-// checked is what docs/system-design/grid.md requires *in place of a minimap* — the weight of the Grid pane's sides
-// where there is more Grid — plus the placement preview, which is the only thing on screen that says
+// checked is what docs/system-design/battlefield.md requires *in place of a minimap* — the weight of the map's sides
+// where there is more map — plus the placement preview, which is the only thing on screen that says
 // whether Enter will work before it is pressed, and the bottom bar's one contextual line.
 
 import { test } from "node:test"
@@ -16,7 +16,7 @@ import { bottomLine, hint } from "../src/build/help.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import { COLOR_DEPTHS } from "../src/view/roles.ts"
-import type { GridTerrain, TerrainId } from "../src/engine/geometry/types.ts"
+import type { MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { MAXIMUM, MINIMUM, WIDE } from "./build-helpers.ts"
 
@@ -37,9 +37,9 @@ function readyBuildSession(options: BuildSessionOptions): BuildSession {
   const build = new BuildSession(options)
   build.dispatch({ kind: "pick-nexus", index: 0 })
   // Keyboard focus starts on the menu; every test here that presses an arrow means the
-  // Grid's cursor, the way every one of them was written before focus existed. The focus model's own
+  // battlefield's cursor, the way every one of them was written before focus existed. The focus model's own
   // tests are in `tests/build-focus.test.ts`.
-  build.dispatch({ kind: "focus", target: "grid" })
+  build.dispatch({ kind: "focus", target: "map" })
   return build
 }
 
@@ -56,7 +56,7 @@ function screenAt(
 ) {
   // The Battle Round confirmation these tests read is the one the Battle banner Experiment, off, keeps.
   const context: BuildContext = { ...neutralContext(), experiments: { battleBanner: "off" } }
-  const layout = buildLayout(terminal, context.grid)
+  const layout = buildLayout(terminal, context.terrain)
   const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   drive(build, layout)
   const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
@@ -68,8 +68,8 @@ test("the frame is exactly the terminal's size, at the minimum and at the maximu
   assert.equal(screenAt(MINIMUM).frame.height, 24)
   assert.equal(screenAt(MAXIMUM).frame.width, 104)
   assert.equal(screenAt(MAXIMUM).frame.height, 32)
-  // 1 border + 48 tiles + 1 border + 30 panel = 80: the floor. The panel's divider is the Grid's west side, so the
-  // panel takes 29 of those columns and the Grid 49, a column a tile. A wider terminal is a tile a column more, up
+  // 1 border + 48 tiles + 1 border + 30 panel = 80: the floor. The panel's divider is the battlefield's west side, so the
+  // panel takes 29 of those columns and the battlefield 49, a column a tile. A wider terminal is a tile a column more, up
   // to the widest view: at 128 columns, 72 tiles fill 103 of them, centred.
   assert.equal(screenAt(MINIMUM).layout.viewport.width, 49)
   assert.equal(screenAt(MINIMUM).layout.composition.width, 80)
@@ -81,7 +81,7 @@ test("the frame is exactly the terminal's size, at the minimum and at the maximu
 
 test("a terminal larger than the maximum viewport spends the difference on centring", () => {
   // 200 columns have room for 169 tiles; the viewport still stops at 72, and the 97 columns left over become
-  // margin on both sides rather than more Grid or wider tiles.
+  // margin on both sides rather than more map or wider tiles.
   const huge = screenAt({ columns: 200, rows: 44 })
   assert.deepEqual(huge.layout.viewport, { width: 72, height: 24 })
   assert.equal(huge.layout.composition.width, 2 + 29 + 72)
@@ -89,35 +89,35 @@ test("a terminal larger than the maximum viewport spends the difference on centr
   assert.equal(huge.frame.width, 200)
 })
 
-/** Whether the frame cell at this position is drawn as the game's "soft" (dim, more-Grid-this-way)
+/** Whether the frame cell at this position is drawn as the game's "soft" (dim, more-battlefield-this-way)
  *  line rather than a plain or heavy one — checked against the frame's own style, not the glyph
  *  alone, since the soft line is the frame's own `-`/`|` and dimness is the actual signal. */
 function isSoftEdge(frame: ReturnType<typeof composeBuildFrame>, x: number, y: number): boolean {
   return cellAt(frame, x, y).style.dim === true
 }
 
-test("the Grid pane is a closed rectangle: a line directly above, below, and beside it", () => {
-  // The owner could not tell where the Grid ended (2026-09-26): two blank header rows sat between its
+test("the map is a closed rectangle: a line directly above, below, and beside it", () => {
+  // The owner could not tell where the battlefield ended (2026-09-26): two blank header rows sat between its
   // top edge and the nearest line, and the footer sat against its bottom edge with no line at all.
-  // Every side of the Grid pane is now a frame line touching the Grid's own first or last row/column.
+  // Every side of the map is now a frame line touching the battlefield's own first or last row/column.
   for (const glyphPack of ["ascii", "unicode"] as const) {
     const context = neutralContext()
-    const layout = buildLayout(MINIMUM, context.grid)
+    const layout = buildLayout(MINIMUM, context.terrain)
     const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
     const frame = composeBuildFrame({ context, state: build.state, layout, glyphPack }, "monochrome")
-    const { gridBox, origin, viewport } = layout
-    assert.equal(gridBox.top, origin.row - 1, "the top rule sits directly on the Grid's first row")
-    assert.equal(gridBox.bottom, origin.row + viewport.height, "the bottom rule directly under its last")
+    const { mapBox, origin, viewport } = layout
+    assert.equal(mapBox.top, origin.row - 1, "the top rule sits directly on the battlefield's first row")
+    assert.equal(mapBox.bottom, origin.row + viewport.height, "the bottom rule directly under its last")
     // A solid (reverse-video) cell is a line too — the heavy edge where the map ends.
     const blank = (x: number, y: number): boolean =>
       cellAt(frame, x, y).glyph === " " && cellAt(frame, x, y).style.inverse !== true
-    for (let x = gridBox.left + 1; x < gridBox.right; x += 1) {
-      assert.ok(!blank(x, gridBox.top), `${glyphPack}: a gap in the top rule at column ${x}`)
-      assert.ok(!blank(x, gridBox.bottom), `${glyphPack}: a gap in the bottom rule at column ${x}`)
+    for (let x = mapBox.left + 1; x < mapBox.right; x += 1) {
+      assert.ok(!blank(x, mapBox.top), `${glyphPack}: a gap in the top rule at column ${x}`)
+      assert.ok(!blank(x, mapBox.bottom), `${glyphPack}: a gap in the bottom rule at column ${x}`)
     }
-    for (let y = gridBox.top + 1; y < gridBox.bottom; y += 1) {
-      assert.ok(!blank(gridBox.left, y), `${glyphPack}: a gap in the left side at row ${y}`)
-      assert.ok(!blank(gridBox.right, y), `${glyphPack}: a gap in the right side at row ${y}`)
+    for (let y = mapBox.top + 1; y < mapBox.bottom; y += 1) {
+      assert.ok(!blank(mapBox.left, y), `${glyphPack}: a gap in the left side at row ${y}`)
+      assert.ok(!blank(mapBox.right, y), `${glyphPack}: a gap in the right side at row ${y}`)
     }
     // The rules meet the frame and the divider in a real junction, not a line running past them. The
     // divider starts at the top rule rather than crossing it (the top bar runs the whole
@@ -126,48 +126,48 @@ test("the Grid pane is a closed rectangle: a line directly above, below, and bes
     // in its own style and the quiet edge colour; the east corners, where no heavy side meets, are
     // real junctions.
     const junctions = glyphPack === "ascii" ? ["+", "+"] : ["┤", "┤"]
-    assert.equal(cellAt(frame, gridBox.right, gridBox.top).glyph, junctions[0])
-    assert.equal(cellAt(frame, gridBox.right, gridBox.bottom).glyph, junctions[1])
-    assert.equal(cellAt(frame, gridBox.left, gridBox.top).style.fgRole, "chrome.edge")
-    assert.notEqual(cellAt(frame, gridBox.left, gridBox.top).style.dim, true)
+    assert.equal(cellAt(frame, mapBox.right, mapBox.top).glyph, junctions[0])
+    assert.equal(cellAt(frame, mapBox.right, mapBox.bottom).glyph, junctions[1])
+    assert.equal(cellAt(frame, mapBox.left, mapBox.top).style.fgRole, "chrome.edge")
+    assert.notEqual(cellAt(frame, mapBox.left, mapBox.top).style.dim, true)
   }
 })
 
-test("the Grid's sides: a side goes soft where there is more Grid, and heavy where there is not", () => {
-  // Hard against the Grid's north-west corner: nothing north of here, nothing west of here.
+test("the battlefield's sides: a side goes soft where there is more map, and heavy where there is not", () => {
+  // Hard against the battlefield's north-west corner: nothing north of here, nothing west of here.
   const corner = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
   })
-  const { gridBox } = corner.layout
-  const midGridColumn = corner.layout.origin.column + 5
-  const midGridRow = corner.layout.origin.row + 5
+  const { mapBox } = corner.layout
+  const midMapColumn = corner.layout.origin.column + 5
+  const midMapRow = corner.layout.origin.row + 5
   assert.equal(
-    isSoftEdge(corner.frame, midGridColumn, gridBox.top),
+    isSoftEdge(corner.frame, midMapColumn, mapBox.top),
     false,
-    "nothing north of the Grid's own top edge",
+    "nothing north of the battlefield's own top edge",
   )
   assert.equal(
-    isSoftEdge(corner.frame, gridBox.left, midGridRow),
+    isSoftEdge(corner.frame, mapBox.left, midMapRow),
     false,
-    "nothing west of the Grid's own left edge",
+    "nothing west of the battlefield's own left edge",
   )
-  // The map's west edge is drawn on the menu's divider, which is the Grid's west side (owner,
+  // The map's west edge is drawn on the menu's divider, which is the battlefield's west side (owner,
   // 2026-09-29): in the map's own edge style and the quiet edge colour, never soft.
-  assert.equal(gridBox.left, corner.layout.dividerColumn, "the divider is the Grid's west side")
-  assert.equal(cellAt(corner.frame, gridBox.left, midGridRow).style.fgRole, "chrome.edge", "the west edge is the map's edge")
-  assert.ok(isSoftEdge(corner.frame, midGridColumn, gridBox.bottom), "more Grid to the south")
-  assert.ok(isSoftEdge(corner.frame, gridBox.right, midGridRow), "more Grid to the east")
+  assert.equal(mapBox.left, corner.layout.dividerColumn, "the divider is the battlefield's west side")
+  assert.equal(cellAt(corner.frame, mapBox.left, midMapRow).style.fgRole, "chrome.edge", "the west edge is the map's edge")
+  assert.ok(isSoftEdge(corner.frame, midMapColumn, mapBox.bottom), "more map to the south")
+  assert.ok(isSoftEdge(corner.frame, mapBox.right, midMapRow), "more map to the east")
 
-  // Walk into the middle and every side has more Grid beyond it.
+  // Walk into the middle and every side has more map beyond it.
   const middle = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: 30, dy: 12 }])
   })
-  const box = middle.layout.gridBox
+  const box = middle.layout.mapBox
   const midColumn = middle.layout.origin.column + 5
   const midRow = middle.layout.origin.row + 5
   assert.ok(isSoftEdge(middle.frame, midColumn, box.top), "north, from the middle")
   assert.ok(isSoftEdge(middle.frame, midColumn, box.bottom), "south, from the middle")
-  // West, the light side is the divider itself, which is the Grid's west side.
+  // West, the light side is the divider itself, which is the battlefield's west side.
   assert.equal(box.left, middle.layout.dividerColumn)
   assert.ok(isSoftEdge(middle.frame, middle.layout.dividerColumn, midRow), "west, from the middle")
   assert.ok(isSoftEdge(middle.frame, box.right, midRow), "east, from the middle")
@@ -182,9 +182,9 @@ test("the Grid's sides: a side goes soft where there is more Grid, and heavy whe
   assert.equal(isSoftEdge(middle.frame, midColumn, middle.layout.offset.row), false, "the outer top border")
 })
 
-test("the bottom bar: it is one contextual line, and the largest view shows more Grid than the floor's", () => {
+test("the bottom bar: it is one contextual line, and the largest view shows more map than the floor's", () => {
   // The owner, 2026-09-30: "The 'view x y' position is not needed." The weight of the
-  // Grid rectangle's sides is the signal that there is more Grid (the Grid's-sides tests above and below),
+  // map rectangle's sides is the signal that there is more map (the battlefield's-sides tests above and below),
   // and the bottom bar's one row says what can be done.
   for (const terminal of [MINIMUM, MAXIMUM]) {
     const opening = screenAt(terminal)
@@ -192,21 +192,21 @@ test("the bottom bar: it is one contextual line, and the largest view shows more
     assert.match(lines[opening.layout.footerRow] as string, /Arrows move the cursor, \[enter\] explores here/)
     assert.equal(opening.layout.footerRow + 1, opening.layout.offset.row + opening.layout.composition.height - 1, "one row, then the border")
   }
-  // The maximum viewport genuinely shows more Grid than the minimum: 72 tiles across, not 49.
+  // The maximum viewport genuinely shows more map than the minimum: 72 tiles across, not 49.
   assert.equal(screenAt(MAXIMUM).layout.viewport.width, 72)
   assert.equal(screenAt(MINIMUM).layout.viewport.width, 49)
 })
 
-test("the Grid drawn is the Grid under the camera, not the Grid's north-west corner", () => {
+test("the battlefield drawn is the battlefield under the camera, not the battlefield's north-west corner", () => {
   const scrolled = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: 50, dy: 20 }])
   })
   const { layout, build, context } = scrolled
-  // A south-east rock block, three-quarters of the way across a Grid whose north-west corner is the
+  // A south-east rock block, three-quarters of the way across a battlefield whose north-west corner is the
   // only part that was ever on screen before. It should be drawn exactly where the camera puts it —
   // which is the whole claim made here about scrolling.
   const tile = { x: 66, y: 31 }
-  assert.equal(context.grid.tiles[tile.y * context.grid.width + tile.x], "terrain.rock")
+  assert.equal(context.terrain.tiles[tile.y * context.terrain.width + tile.x], "terrain.rock")
   const cell = cellForTile(layout, build.state.camera, tile)
   assert.equal(cellAt(scrolled.frame, cell.x, cell.y).glyph, "#")
 })
@@ -234,7 +234,7 @@ test("the placement preview says whether Enter will work, by shape rather than b
 
 test("the cursor keeps whatever glyph is beneath it", () => {
   const onNexus = screenAt(MINIMUM, (build) => {
-    // The standing Grid Nexus occupies 17,10 through 19,11.
+    // The standing Nexus occupies 17,10 through 19,11.
     build.run([{ kind: "move-cursor", dx: 0, dy: -3 }])
   })
   const cell = cellForTile(onNexus.layout, onNexus.build.state.camera, { x: 18, y: 10 })
@@ -270,7 +270,7 @@ test("right after a placement the tile reads as built, and the status line says 
   // Owner, 2026-09-27: "hatch placed (credits: 30) - [u] undo" — what is left, and the way back.
   assert.match(justPlaced.text, /Barracks placed \(credits: 60\) - \[u\] undo/, "the footer reports the success")
   // Armed by its digit on the map, so the keyboard stays on the map, where the arming began.
-  assert.equal(justPlaced.build.state.focus, "grid", "and the keyboard is back where the arming began")
+  assert.equal(justPlaced.build.state.focus, "map", "and the keyboard is back where the arming began")
   assert.equal(justPlaced.build.state.armed, null)
 })
 
@@ -280,7 +280,7 @@ test("undoing the placement just made lets the same tile be built on again at on
   // silently, on a tile that is now empty.
   for (const revise of [{ kind: "undo" } as const, { kind: "remove" } as const]) {
     const context = neutralContext()
-    const layout = buildLayout(MINIMUM, context.grid)
+    const layout = buildLayout(MINIMUM, context.terrain)
     const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }, revise])
@@ -296,7 +296,7 @@ test("undoing the placement just made lets the same tile be built on again at on
 
 test("every colour depth puts identical glyphs on screen", () => {
   const context = neutralContext()
-  const layout = buildLayout(MINIMUM, context.grid)
+  const layout = buildLayout(MINIMUM, context.terrain)
   const build = readyBuildSession({ context, cursor: { x: 30, y: 20 }, viewport: layout.viewport })
   build.handleData("1", layout)
   const texts = COLOR_DEPTHS.map((colors) =>
@@ -309,7 +309,7 @@ test("every glyph on the frame is one cell wide, at both sizes and in both packs
   for (const terminal of [MINIMUM, MAXIMUM, WIDE]) {
     for (const glyphPack of ["ascii", "unicode"] as const) {
       const context = neutralContext()
-      const layout = buildLayout(terminal, context.grid)
+      const layout = buildLayout(terminal, context.terrain)
       const build = readyBuildSession({ context, cursor: { x: 40, y: 20 }, viewport: layout.viewport })
       build.handleData("2", layout)
       const frame = composeBuildFrame({ context, state: build.state, layout, glyphPack }, "truecolor")
@@ -406,7 +406,7 @@ test("looking at an illegal tile reads quietly, trying to build there reads in r
 
 test("while the commit question is open, the status line asks it, whatever the ghost would say", () => {
   // A refusal is about what Enter would do right now; with the confirmation open, Enter does
-  // nothing to the Grid, so the ghost and its refusal both step aside for the question.
+  // nothing to the battlefield, so the ghost and its refusal both step aside for the question.
   // The question does not open over an armed building at all: `s` is
   // refused, and the bottom line says so rather than what the ghost on rock would say — a command's
   // answer comes first. Cancelled, the question opens.
@@ -427,12 +427,12 @@ test("while the commit question is open, the status line asks it, whatever the g
 
 test("the budget on screen is the budget the reducer is enforcing", () => {
   const context = neutralContext()
-  const layout = buildLayout(MINIMUM, context.grid)
+  const layout = buildLayout(MINIMUM, context.terrain)
   const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   const show = (): string =>
     frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
-  // The Grid arrives in Explore Map, whose panel covers the menu; the budget is the menu's.
+  // The battlefield arrives in Explore Map, whose panel covers the menu; the budget is the menu's.
   build.dispatch({ kind: "focus", target: "menu" })
   assert.match(show(), new RegExp(`\\* ${STARTER_ALLOTMENT}[|+]`))
   build.handleData("1", layout)
@@ -462,7 +462,7 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
 
 test("selecting something unaffordable says so before the player tries it", () => {
   const context = neutralContext()
-  const layout = buildLayout(MINIMUM, context.grid)
+  const layout = buildLayout(MINIMUM, context.terrain)
   const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
@@ -486,9 +486,9 @@ test("the bottom line never names a key the keyboard adapter does not bind", () 
     { drive: (build: BuildSession) => build.dispatch({ kind: "focus", target: "menu" }), context: { itemCount: 3, armed: false, focus: "menu" as const } },
     { drive: (build: BuildSession) => build.run([{ kind: "focus", target: "menu" }, { kind: "highlight", delta: 1 }, { kind: "highlight", delta: 1 }]), context: { itemCount: 3, armed: false, focus: "menu" as const } },
     { drive: (build: BuildSession) => build.run([{ kind: "focus", target: "menu" }, { kind: "highlight", delta: -1 }]), context: { itemCount: 3, armed: false, focus: "menu" as const } },
-    { drive: (build: BuildSession, layout: ReturnType<typeof buildLayout>) => build.handleData("1", layout), context: { itemCount: 3, armed: true, focus: "grid" as const } },
-    { drive: (build: BuildSession) => build.dispatch({ kind: "explore" }), context: { itemCount: 3, armed: false, focus: "grid" as const } },
-    { drive: () => {}, context: { itemCount: 3, armed: false, focus: "grid" as const } },
+    { drive: (build: BuildSession, layout: ReturnType<typeof buildLayout>) => build.handleData("1", layout), context: { itemCount: 3, armed: true, focus: "map" as const } },
+    { drive: (build: BuildSession) => build.dispatch({ kind: "explore" }), context: { itemCount: 3, armed: false, focus: "map" as const } },
+    { drive: () => {}, context: { itemCount: 3, armed: false, focus: "map" as const } },
   ] as const
   for (const mode of modes) {
     const shown = screenAt(MINIMUM, mode.drive)
@@ -501,7 +501,7 @@ test("the bottom line never names a key the keyboard adapter does not bind", () 
 })
 
 test("no header or footer line is cut off at the 80-column floor", () => {
-  // 80x24 is the acceptance target, and the Grid pane is only 49 columns of it. Every line
+  // 80x24 is the acceptance target, and the map is only 49 columns of it. Every line
   // below has been truncated mid-word at some point and only a
   // screenshot showed it, so each one is now asserted whole at the narrowest size that must work.
   const { text } = screenAt(MINIMUM)
@@ -522,7 +522,7 @@ test("a row that costs more than is left cannot be armed: it flickers and says w
   // Since a placement disarms and budgets only fall by placing, an armed structure can never become
   // unaffordable while armed; the refusal moved to the moment of arming, and names the cost first.
   const context = neutralContext()
-  const layout = buildLayout(MINIMUM, context.grid)
+  const layout = buildLayout(MINIMUM, context.terrain)
   const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
@@ -543,21 +543,21 @@ test("a row that costs more than is left cannot be armed: it flickers and says w
   assert.equal(cellAt(frame, costColumn, barracksLine.row).style.dim, true)
 })
 
-test("on a Grid short enough to shrink the panel, the detail block is dropped rather than drawn over the footer", () => {
-  // `isGated` deliberately never gates a Grid that fits the screen entirely ("a small tutorial Grid
+test("on a battlefield short enough to shrink the panel, the detail block is dropped rather than drawn over the footer", () => {
+  // `isGated` deliberately never gates a battlefield that fits the screen entirely ("a small tutorial battlefield
   // is never gated"), so the viewport — and with it the panel's height — can be much shorter than
   // the starter map's. A detail block that just keeps writing downward overwrites the pinned bindings,
   // then the footer's position readout, then the controls line. Found by review, not by use: no
-  // Grid this small is wired up today, and nothing in the layout prevented it.
-  const small: GridTerrain = {
+  // battlefield this small is wired up today, and nothing in the layout prevented it.
+  const small: MapTerrain = {
     width: 20,
     height: 10,
     tiles: new Array<TerrainId>(200).fill("terrain.plain"),
   }
-  const context = { ...neutralContext(), grid: small, standing: [] }
+  const context = { ...neutralContext(), terrain: small, standing: [] }
   const layout = buildLayout(MINIMUM, small)
   const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
-  build.handleData("1", layout) // a 3x2 barracks at 2,2 hangs off the Grid, so it is refused
+  build.handleData("1", layout) // a 3x2 barracks at 2,2 hangs off the battlefield, so it is refused
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
   // The furniture that must survive, whole: the bottom bar's one line, narrower here, keeps whole
@@ -583,18 +583,18 @@ test("a panel with room for the card's words still draws them", () => {
   assert.match(roomy.text, /home to it after\./, "the description is cut short")
 })
 
-test("on a small Grid the panel's rows are drawn whole, however few fit: the Nexus entry, the buildings it has room for, and Start Battle Round", () => {
-  // The panel's height is the viewport's, and the viewport shrinks to fit a Grid smaller than the
+test("on a small battlefield the panel's rows are drawn whole, however few fit: the Nexus entry, the buildings it has room for, and Start Battle Round", () => {
+  // The panel's height is the viewport's, and the viewport shrinks to fit a battlefield smaller than the
   // screen (`isGated` deliberately passes one that fits entirely); every row the panel draws must still
   // be drawn whole, and a building it has no room for is not drawn at all.
   for (const [width, height] of [[20, 10], [8, 6]] as const) {
-    const small: GridTerrain = { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") }
-    const context = { ...neutralContext(), grid: small, standing: [] }
+    const small: MapTerrain = { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") }
+    const context = { ...neutralContext(), terrain: small, standing: [] }
     const layout = buildLayout(MINIMUM, small)
     const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
     build.dispatch({ kind: "focus", target: "menu" })
     const rows = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome")).split("\n")
-    // Against the divider — or, where this small Grid is the solid bar of a map edge, against nothing.
+    // Against the divider — or, where this small battlefield is the solid bar of a map edge, against nothing.
     assert.match(rows.join("\n"), /\[n\] Nexus Pulse {2,}1 active(?:[|+ ]|$)/m, `${width}x${height}`)
     const lines = constructLines(layout, context.catalog)
     assert.ok(lines.length > 0, `${width}x${height}: no building has room`)
@@ -607,16 +607,16 @@ test("on a small Grid the panel's rows are drawn whole, however few fit: the Nex
   }
 })
 
-test("the Grid's sides: the soft border runs the whole Grid-pane segment, at the floor and on a wide terminal", () => {
+test("the battlefield's sides: the soft border runs the whole battlefield-pane segment, at the floor and on a wide terminal", () => {
   // A signal that only reaches some of a wide border is a signal a player can miss. The whole
-  // segment beside the Grid pane goes soft together, at 80 columns and at 160.
+  // segment beside the map goes soft together, at 80 columns and at 160.
   const wholeSegmentIsSoft = (terminal: { columns: number; rows: number }): void => {
     const { frame, layout } = screenAt(terminal, (build) => {
       build.run([{ kind: "move-cursor", dx: 20, dy: 20 }])
     })
-    for (let x = layout.gridBox.left + 1; x < layout.gridBox.right; x += 1) {
+    for (let x = layout.mapBox.left + 1; x < layout.mapBox.right; x += 1) {
       assert.ok(
-        cellAt(frame, x, layout.gridBox.top).style.dim === true,
+        cellAt(frame, x, layout.mapBox.top).style.dim === true,
         `column ${x} of the north border should be soft at ${terminal.columns} columns`,
       )
     }
@@ -646,26 +646,26 @@ test("no line is drawn over another, at every terminal size in the supported ran
         /Cannot build here: outside your build range at 7,5\./,
         `status at ${columns}x${rows}`,
       )
-      // The rule under the Grid is its own row: the Grid's last row never touches the bottom line,
+      // The rule under the battlefield is its own row: the battlefield's last row never touches the bottom line,
       // and the frame's border closes directly under it.
-      assert.equal(layout.gridBox.bottom, layout.footerRow - 1, `bottom rule at ${columns}x${rows}`)
+      assert.equal(layout.mapBox.bottom, layout.footerRow - 1, `bottom rule at ${columns}x${rows}`)
       assert.equal(layout.footerRow + 1, layout.offset.row + layout.composition.height - 1, `bottom border at ${columns}x${rows}`)
     }
   }
 })
 
-test("the Grid's sides: the side border is soft on every row, not a broken column of carets", () => {
-  // The west border is the rule between the side panel and the Grid. A signal on only
+test("the battlefield's sides: the side border is soft on every row, not a broken column of carets", () => {
+  // The west border is the rule between the side panel and the battlefield. A signal on only
   // some rows there reads as a caret pointing at whichever panel row it lands beside — `> [1]
   // Barracks` looks selected. Soft the whole way down is what makes it read as a border instead.
-  // Far enough in that all four sides have more Grid beyond them.
+  // Far enough in that all four sides have more map beyond them.
   const { frame, layout } = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: 40, dy: 20 }])
   })
-  assert.equal(layout.gridBox.left, layout.dividerColumn, "the divider is the Grid's west side")
+  assert.equal(layout.mapBox.left, layout.dividerColumn, "the divider is the battlefield's west side")
   for (let row = layout.origin.row; row < layout.origin.row + layout.viewport.height; row += 1) {
     assert.equal(
-      cellAt(frame, layout.gridBox.right, row).style.dim,
+      cellAt(frame, layout.mapBox.right, row).style.dim,
       true,
       `the east edge is not soft on row ${row}`,
     )
@@ -686,57 +686,57 @@ test("the cursor is bold and undimmed over bare ground, so it reads over a dim g
   assert.notEqual(style.dim, true, "bold and dim on the same cell fight each other")
 })
 
-test("the cursor shows only while the Grid has the keyboard", () => {
+test("the cursor shows only while the battlefield has the keyboard", () => {
   // Owner, 2026-09-27: focus on the menu => no cursor. One "you are here" at a time.
   const onMenu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
   const cell = cellForTile(onMenu.layout, onMenu.build.state.camera, onMenu.build.state.cursor)
   assert.notEqual(cellAt(onMenu.frame, cell.x, cell.y).style.inverse, true, "a cursor is drawn with the menu focused")
-  const onGrid = screenAt(MINIMUM)
-  const gridCell = cellForTile(onGrid.layout, onGrid.build.state.camera, onGrid.build.state.cursor)
-  assert.equal(cellAt(onGrid.frame, gridCell.x, gridCell.y).style.inverse, true)
+  const onMap = screenAt(MINIMUM)
+  const mapCell = cellForTile(onMap.layout, onMap.build.state.camera, onMap.build.state.cursor)
+  assert.equal(cellAt(onMap.frame, mapCell.x, mapCell.y).style.inverse, true)
 })
 
-test("the Grid's sides: a map that names no edge style ends in a solid bar, on all four sides alike", () => {
+test("the battlefield's sides: a map that names no edge style ends in a solid bar, on all four sides alike", () => {
   // Owner, 2026-09-27: the heavy edge must read the same horizontally and vertically — "the rectangle
   // needs to be a rectangle". A solid (reverse-video) bar is the same weight in both directions, in
   // every glyph pack, and needs no colour. Since 2026-09-29 a map may name its own edge style (the
   // starter map's fence; every style is checked in `tests/build-edge.test.ts`); the solid bar is what a
   // map that names none gets.
   const { edgeStyle: _fence, ...unnamed } = neutralContext()
-  const cornerLayout = buildLayout(MINIMUM, unnamed.grid)
+  const cornerLayout = buildLayout(MINIMUM, unnamed.terrain)
   const cornerBuild = readyBuildSession({ context: unnamed, cursor: { x: 18, y: 13 }, viewport: cornerLayout.viewport })
   cornerBuild.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
   const corner = {
     layout: cornerLayout,
     frame: composeBuildFrame({ context: unnamed, state: cornerBuild.state, layout: cornerLayout }, "monochrome"),
   }
-  const { gridBox } = corner.layout
+  const { mapBox } = corner.layout
   const solid = (frame: typeof corner.frame, x: number, y: number): boolean =>
     cellAt(frame, x, y).glyph === " " && cellAt(frame, x, y).style.inverse === true
-  assert.ok(solid(corner.frame, corner.layout.origin.column + 5, gridBox.top), "north edge")
-  assert.ok(solid(corner.frame, gridBox.left, corner.layout.origin.row + 5), "west edge")
-  assert.ok(solid(corner.frame, gridBox.left, gridBox.top), "the corner where both meet")
+  assert.ok(solid(corner.frame, corner.layout.origin.column + 5, mapBox.top), "north edge")
+  assert.ok(solid(corner.frame, mapBox.left, corner.layout.origin.row + 5), "west edge")
+  assert.ok(solid(corner.frame, mapBox.left, mapBox.top), "the corner where both meet")
   // The sides with more map beyond them stay the thin, dim line.
-  assert.ok(!solid(corner.frame, corner.layout.origin.column + 5, gridBox.bottom), "south has more map")
-  assert.ok(!solid(corner.frame, gridBox.right, corner.layout.origin.row + 5), "east has more map")
+  assert.ok(!solid(corner.frame, corner.layout.origin.column + 5, mapBox.bottom), "south has more map")
+  assert.ok(!solid(corner.frame, mapBox.right, corner.layout.origin.row + 5), "east has more map")
 
-  // A Grid that fits the viewport whole is solid all round.
-  const small: GridTerrain = { width: 20, height: 10, tiles: new Array<TerrainId>(200).fill("terrain.plain") }
-  const context = { ...unnamed, grid: small, standing: [] }
+  // A battlefield that fits the viewport whole is solid all round.
+  const small: MapTerrain = { width: 20, height: 10, tiles: new Array<TerrainId>(200).fill("terrain.plain") }
+  const context = { ...unnamed, terrain: small, standing: [] }
   const layout = buildLayout(MINIMUM, small)
   const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
   const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
   for (const [x, y] of [
-    [layout.gridBox.left, layout.gridBox.top],
-    [layout.gridBox.right, layout.gridBox.top],
-    [layout.gridBox.left, layout.gridBox.bottom],
-    [layout.gridBox.right, layout.gridBox.bottom],
-    [layout.gridBox.left + 3, layout.gridBox.bottom],
-    [layout.gridBox.right, layout.gridBox.top + 3],
+    [layout.mapBox.left, layout.mapBox.top],
+    [layout.mapBox.right, layout.mapBox.top],
+    [layout.mapBox.left, layout.mapBox.bottom],
+    [layout.mapBox.right, layout.mapBox.bottom],
+    [layout.mapBox.left + 3, layout.mapBox.bottom],
+    [layout.mapBox.right, layout.mapBox.top + 3],
   ] as const) {
-    assert.ok(solid(frame, x, y), `the Grid's edge at ${x},${y} is solid`)
+    assert.ok(solid(frame, x, y), `the battlefield's edge at ${x},${y} is solid`)
   }
-  // The outer frame is not the Grid, and does not join in.
+  // The outer frame is not the battlefield, and does not join in.
   assert.ok(!solid(frame, layout.offset.column, layout.offset.row))
 })
 
@@ -745,7 +745,7 @@ test("after the pick, the Nexus row says how many powers are active", () => {
   assert.match(built.text, /\[n\] Nexus Pulse {2,}1 active/)
 })
 
-test("the commit confirmation is a screen over the Grid: Battle Round 1, what it announces, and [s] Start", () => {
+test("the commit confirmation is a screen over the battlefield: Battle Round 1, what it announces, and [s] Start", () => {
   const built = screenAt(MINIMUM, (build) => {
     build.dispatch({ kind: "open-battle-round" })
   })

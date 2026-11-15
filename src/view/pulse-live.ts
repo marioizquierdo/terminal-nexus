@@ -8,7 +8,7 @@
 // and its walk home included, without waiting a second.
 //
 // Two things reach back into the Build Phase's state, both as ordinary named commands (`due`): the view
-// is centred on the player's Grid Nexus when the Pulse starts and again when its ending begins. Nothing
+// is centred on the player's Nexus when the Pulse starts and again when its ending begins. Nothing
 // here can change what the Pulse did — presentation never can (`docs/system-design/architecture.md`).
 //
 // Two more things the presenter works out for the scene, the same way: what the player's Commander says and
@@ -49,7 +49,7 @@ export type ResolvedPulse = Readonly<{
    *  there, which that Build Phase plays. Nothing walks on the Battle Round's own screen: once the shooting stops the
    *  survivors stand where the fight left them. */
   regroup: RegroupResult
-  /** The tile the player's Grid Nexus stands on, where the view looks at the start and the end; `null`
+  /** The tile the player's Nexus stands on, where the view looks at the start and the end; `null`
    *  for a map with none. */
   nexus: Coord | null
   /** How the mission stands after this Pulse: which round it was, and whether the mission goes
@@ -116,7 +116,7 @@ type VoicePlan = Readonly<{ speaker: Speaker; lines: readonly SpokenLine[]; fell
 export type BarksOf = (contentId: string) => Barks
 
 /** A unit rather than a structure: structures sit on the obstacles layer, and a force bar leaves them out
- *  (a 400-point Grid Nexus would swamp it). */
+ *  (a 400-point Nexus would swamp it). */
 const isMobile = (timeline: PulseTimeline, contentId: string): boolean => timeline.registry.get(contentId).layer !== "obstacles"
 
 const finalStateOf = (timeline: PulseTimeline) => timeline.states[timeline.states.length - 1]
@@ -149,7 +149,7 @@ export class PulsePresenter {
    *  player (the Next round Experiment). */
   private readonly autoNextMs: number | null
 
-  /** The player's Commander in this Pulse, or `null` when she is not on the Grid in it. */
+  /** The player's Commander in this Pulse, or `null` when she is not on the battlefield in it. */
   private readonly bearer: Bearer | null
   /** What she says in this Pulse and when, or `null` when she says nothing in it (`pulse-voice.ts`). */
   private readonly voice: VoicePlan | null
@@ -215,7 +215,7 @@ export class PulsePresenter {
 
   /** The tile she stands on at a presentation instant, by the resolved states (not the drawn glide), or where
    *  she fell once she has: where a line of hers is said, for the Activity Logs. `null` when she is not on the
-   *  Grid. */
+   *  battlefield. */
   speakerTileAt(timeMs: number): Coord | null {
     const voice = this.voice
     if (voice === null) return null
@@ -313,7 +313,7 @@ export class PulsePresenter {
   }
 
   /** What the scene draws at the Pulse's current time, the red flashes on the border when the player's
-   *  Nexus is hurt included (the owner kept them, 2026-09-30), and — while she is on the Grid — her aura's
+   *  Nexus is hurt included (the owner kept them, 2026-09-30), and — while she is on the battlefield — her aura's
    *  reach and what she is saying. */
   frame(options: PulseFrameOptions): PulseFrame {
     const { colors, reducedMotion } = options
@@ -425,7 +425,7 @@ export class PulsePresenter {
     const opening = timeline.states[0]
     if (her === null || opening === undefined) return null
     const within = view === undefined ? undefined : visibleRange(view.camera, view.viewport)
-    const place = labelPlace(line.text, her, over, timeline.registry, opening.grid, within)
+    const place = labelPlace(line.text, her, over, timeline.registry, opening.terrain, within)
     voice.places.set(line, place)
     return place
   }
@@ -454,7 +454,7 @@ function inRange(tile: Coord, range: VisibleRange): boolean {
   return tile.x >= range.firstX && tile.x <= range.lastX && tile.y >= range.firstY && tile.y <= range.lastY
 }
 
-/** The player's Commander in a resolved Pulse, with her aura's reach, or `null` when she is not on the Grid in it. */
+/** The player's Commander in a resolved Pulse, with her aura's reach, or `null` when she is not on the battlefield in it. */
 function bearerOf(timeline: PulseTimeline): Bearer | null {
   const commander = commanderOf(timeline)
   if (commander === null) return null

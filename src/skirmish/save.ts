@@ -3,11 +3,11 @@
 //
 // Pure: it reads and writes text, never a file. The parts a person writes (`setup`, `draft`) say `p1` and `p2`, the
 // slots a player picks; the part the game writes (`state`) is the battle's own state between rounds, `BattleState`, in the
-// engine's words, where side A is `p1` and side B is `p2`. The Grid's ground is never saved (the map has it) and the
+// engine's words, where side A is `p1` and side B is `p2`. The battlefield's ground is never saved (the map has it) and the
 // log never is (the owner, 2026-11-12: "Logging is a separate concern").
 //
 // A save may instead open on a Battle Round written by hand: a **sandbox** (`sandboxes/`), whose `start`
-// says what each slot has on the Grid before round 1 (`./start.ts`). It is opened by the battle engine from that `start`
+// says what each slot has on the battlefield before round 1 (`./start.ts`). It is opened by the battle engine from that `start`
 // (`src/skirmish/opening/`), not by the battle, and both its slots plan nothing.
 
 import { inBounds, tileIndex, tilesOf } from "../engine/geometry/coords.ts"
@@ -17,7 +17,7 @@ import type { Armies } from "../armies/index.ts"
 import { ARMIES } from "../armies/index.ts"
 import type { MatchState, TargetArea } from "../engine/state/types.ts"
 import type { BattleMap, BattleSetup, BattleState, Side, BuildActions } from "../battle/index.ts"
-import { BATTLE_MAPS, BATTLE_ROUND_TICKS, BATTLE_ROUNDS, battleArmy, battleGrid, beginBattle, readBuildActions, scriptedName } from "../battle/index.ts"
+import { BATTLE_MAPS, BATTLE_ROUND_TICKS, BATTLE_ROUNDS, battleArmy, battleTerrain, beginBattle, readBuildActions, scriptedName } from "../battle/index.ts"
 import { isObject, isWhole } from "../content/shape.ts"
 import { openBattle } from "./opening/open.ts"
 import type { SaveStart } from "./start.ts"
@@ -109,8 +109,8 @@ export type SaveSetup = Readonly<{
 }>
 
 /** The battle's state between rounds as a save keeps it: `BattleState` without its setup (the save's own) and without the
- *  Grid's ground (the map's). */
-export type SavedState = Omit<BattleState, "setup" | "carried"> & Readonly<{ carried: Omit<MatchState, "grid"> | null }>
+ *  battlefield's ground (the map's). */
+export type SavedState = Omit<BattleState, "setup" | "carried"> & Readonly<{ carried: Omit<MatchState, "terrain"> | null }>
 
 /** A save file. Only `format` and `setup` are needed: a file with only those is a new battle. */
 export type SaveFile = Readonly<{
@@ -184,10 +184,10 @@ export function battleMapOf(map: SaveSetup["map"]): string | BattleMap {
   }
 }
 
-/** The map's Grid, whichever way the save names it. */
-const mapGrid = (map: SaveSetup["map"]): ReturnType<typeof battleGrid> => {
+/** The map's terrain, whichever way the save names it. */
+const mapTerrain = (map: SaveSetup["map"]): ReturnType<typeof battleTerrain> => {
   const battle = battleMapOf(map)
-  return battleGrid(typeof battle === "string" ? (BATTLE_MAPS[battle] as BattleMap) : battle)
+  return battleTerrain(typeof battle === "string" ? (BATTLE_MAPS[battle] as BattleMap) : battle)
 }
 
 // --- Between a save and a battle -----------------------------------------------------------------------------------------
@@ -216,26 +216,26 @@ export function battleOf(save: SaveFile, profiles: Profiles = NO_PROFILES): Batt
   const setup = battleSetupOf(save.setup, profiles)
   if (save.state === undefined) return beginBattle(setup)
   const { carried, ...rest } = save.state
-  return { ...rest, setup, carried: carried === null ? null : { ...carried, grid: mapGrid(save.setup.map) } }
+  return { ...rest, setup, carried: carried === null ? null : { ...carried, terrain: mapTerrain(save.setup.map) } }
 }
 
 /**
- * **Whether the battle a save carries fits its map**: the first entity (by ordinal) whose footprint leaves the Grid, or,
+ * **Whether the battle a save carries fits its map**: the first entity (by ordinal) whose footprint leaves the battlefield, or,
  * for one that is not in the air, lies on ground no one may enter. `null` when all fit or when the save carries no
  * battle between rounds. Says the map by name and the entity by its id and tile.
  */
 export function mapMismatch(save: SaveFile, armies: Armies = ARMIES): string | null {
   const carried = save.state?.carried
   if (carried === undefined || carried === null) return null
-  const grid = mapGrid(save.setup.map)
+  const terrain = mapTerrain(save.setup.map)
   const map = typeof save.setup.map === "string" ? save.setup.map : save.setup.map.id
   for (const entity of carried.entities) {
     if (!armies.registry.has(entity.contentId)) continue
     const definition = armies.registry.get(entity.contentId)
     for (const tile of tilesOf(entity.anchor, definition.footprint)) {
       const at = `${entity.id} (${entity.contentId}) stands at ${tile.x},${tile.y}`
-      if (!inBounds(grid, tile)) return `${at}, which is outside the map ${map} (${grid.width} by ${grid.height})`
-      if (definition.layer !== "air" && TERRAIN[grid.tiles[tileIndex(grid, tile)] as TerrainId].impassable) return `${at}, which is rock on the map ${map}`
+      if (!inBounds(terrain, tile)) return `${at}, which is outside the map ${map} (${terrain.width} by ${terrain.height})`
+      if (definition.layer !== "air" && TERRAIN[terrain.tiles[tileIndex(terrain, tile)] as TerrainId].impassable) return `${at}, which is rock on the map ${map}`
     }
   }
   return null
@@ -256,8 +256,8 @@ export function saveOf(setup: SaveSetup, state: BattleState, extra: Readonly<{ n
   }
 }
 
-function withoutGround(state: MatchState): Omit<MatchState, "grid"> {
-  const { grid: _grid, ...rest } = state
+function withoutGround(state: MatchState): Omit<MatchState, "terrain"> {
+  const { terrain: _terrain, ...rest } = state
   return rest
 }
 
@@ -309,7 +309,7 @@ function mapProblems(map: unknown, started: boolean): string[] {
   }
   if (problems.length === 0 && !started) {
     try {
-      battleGrid(battleMapOf(map as SaveMap) as BattleMap)
+      battleTerrain(battleMapOf(map as SaveMap) as BattleMap)
     } catch (error) {
       problems.push(`setup.map: ${error instanceof Error ? error.message : String(error)}`)
     }
@@ -406,7 +406,7 @@ export function readSave(text: string, profiles: Profiles = NO_PROFILES): ReadSa
   if (started) {
     problems.push(...startProblems(value["start"]))
     for (const part of ["state", "draft"]) if (value[part] !== undefined) problems.push(`${part}: a sandbox opens on the Battle Round its start writes; remove ${part} or start`)
-    // The shape is right: whether its units fit the ground (on the Grid, off rock, not on each other) is the opening's
+    // The shape is right: whether its units fit the ground (on the battlefield, off rock, not on each other) is the opening's
     // to say, and its first refusal is named here with the rest.
     if (problems.length === 0) {
       try {
@@ -422,7 +422,7 @@ export function readSave(text: string, profiles: Profiles = NO_PROFILES): ReadSa
 // --- Writing -----------------------------------------------------------------------------------------------------------
 
 /**
- * A save as text a person can read and change: indented, but each Grid entity, ground item, round's report and planned
+ * A save as text a person can read and change: indented, but each battlefield entity, ground item, round's report and planned
  * building on a line of its own, so a battle of a hundred units stays a page, not a thousand lines.
  */
 export function saveText(save: SaveFile): string {

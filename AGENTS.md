@@ -5,7 +5,7 @@ holds each detail. Change a line here only when a rule of working changes.
 
 ## What this is
 
-Terminal Nexus is a terminal strategy game. Each round opens with a Nexus Pulse, when the Grid Nexus
+Terminal Nexus is a terminal strategy game. Each round opens with a Nexus Pulse, when the Nexus
 deals a hand of Nexus powers; players then build a base during a hidden Build Phase and watch
 persistent armies resolve the plan in a deterministic ASCII battle, the Battle Round. It has three
 modes ([`docs/game-design/game-modes.md`](docs/game-design/game-modes.md)): **Skirmish**, one battle
@@ -109,7 +109,7 @@ session needs:
   acceptance target. The look the game is designed for is the colour one, and with colours the game
   paints every colour itself, its background included, so it never reads or leans on the terminal's
   own theme. Before a colour change, read the manual's "The display options".
-- **Lore is a platform, not a plot.** When clearer ASCII and richer story compete, the Grid wins.
+- **Lore is a platform, not a plot.** When clearer ASCII and richer story compete, clearer ASCII wins.
 - **Build only what a milestone step asks for**; a design page that describes a thing does not
   schedule it. Waiting for a step of their own: a second resource, visibility, the replay format (the
   Skirmish milestone's session record for playtest notes is not it), a unit route still marked IDEA
@@ -129,7 +129,7 @@ What the folder names do not say; the rest is in the tree.
 | `src/match/`, `src/mission/` | The rules between rounds: each Battle Round's opening (the regroup, banners, Commanders returning, training), missions and their trigger runner. |
 | `armies/`, `stories/`, `src/armies/` | Armies as data, stacked: `armies/all` (what any Commander may use), the factions (`citizen`, `ravel`), one army per Commander; a Commander's story and missions (`stories/<id>/story.json`); the loader. To write one: [`army-authoring.md`](docs/system-design/army-authoring.md). |
 | `src/battle/`, `src/skirmish/`, `src/cli/skirmish*.ts`, `saves/`, `players/`, `maps/` | The game: the Nexus Pulse, the Build Phase, credits, rounds and who wins, the save file. The Skirmish screen and the `skirmish` command (`bin/skirmish.ts`, the game headless for agents; its manual is `--help`) play it by the same steps. Design: [`battles.md`](docs/system-design/battles.md), [`skirmish-saves.md`](docs/system-design/skirmish-saves.md). |
-| `sandboxes/`, `src/measure/` | A sandbox is a save whose `start` draws the board by hand: one Battle Round of the engine, for one rule, effect, movement or ability, played and drawn by the `skirmish` command; most are the boards of unit tests. `bin/measure.ts` plays the same battles before and after a change ([`measurement.md`](docs/system-design/measurement.md)). |
+| `sandboxes/`, `src/measure/` | A sandbox is a save whose `start` sets the battlefield up by hand: one Battle Round of the engine, for one rule, effect, movement or ability, played and drawn by the `skirmish` command; most are the setups of unit tests. `bin/measure.ts` plays the same battles before and after a change ([`measurement.md`](docs/system-design/measurement.md)). |
 | `src/build/all-settings.ts` | Every setting and Experiment, declared once. |
 | `src/log/`, `src/report/` | Two records: the Activity Logs (the structured logger, its declared events and filters) and a battle's levelled log with the report a run ends on. |
 | `src/terminal/`, `src/view/`, `src/cli/` | What every screen shares with the terminal (it imports nothing from the view); composition and backends; the screen loops and the screen routes (`src/cli/route.ts`). `bin/terminal-nexus.ts` is the game. |

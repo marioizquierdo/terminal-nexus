@@ -25,7 +25,7 @@ import type { BuildingCard, BuildingSpawns, PowerEffect } from "./types.ts"
 /** A row of a side's build menu, as far as an effect reads it: the structure it builds and what it spawns. */
 export type BuildingRow = Readonly<{ contentId: string; spawns?: BuildingSpawns }>
 
-/** Units a power calls up for the round it is picked in, set down at the side's Grid Nexus as the battle starts. */
+/** Units a power calls up for the round it is picked in, set down at the side's Nexus as the battle starts. */
 export type Callup = Readonly<{ unit: string; count: number }>
 
 /**
@@ -159,7 +159,7 @@ const modifyAttack: EffectKind<Readonly<{ content: string; add: Readonly<Record<
     }
     if (said.length > 0) return said
     // What it makes must still be an attack: something dealt, a cooldown, and a reach of a whole number of rows — 1,
-    // touching (a melee attack's always), or even (grid.md).
+    // touching (a melee attack's always), or even (battlefield.md).
     const made = attackAdded(attack, add)
     if (made.damage <= 0) said.push(`leaves the attack of "${content}" dealing ${made.damage}`)
     if (made.cooldownTicks <= 0) said.push(`leaves the attack of "${content}" a cooldown of ${made.cooldownTicks}`)
@@ -245,7 +245,7 @@ const modifyAbility: EffectKind<Readonly<{ content: string; kind: string; add: A
     }
     if (said.length > 0) return said
     // What it makes must still be an ability of its kind (a lucky hit one time in zero is not one), and a reach still a
-    // whole number of rows (grid.md): 1, which is touching, or even.
+    // whole number of rows (battlefield.md): 1, which is touching, or even.
     return uses.flatMap((use) => {
       const made = added(use, add)
       const radius = made["radius"]

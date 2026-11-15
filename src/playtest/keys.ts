@@ -24,7 +24,7 @@
 //                               presses are known presses too. `Right/repeat~30*10` times them
 //   wait  wait~4000             nothing is pressed and time passes: a second by default, or the given
 //                               milliseconds — how a scripted playtest of a Battle Round lets it play on
-//   click:20,13                 left click on Grid tile x=20, y=13, wherever it is drawn right now
+//   click:20,13                 left click on tile x=20, y=13, wherever it is drawn right now
 //   click@40,7                  left click on frame cell column 40, row 7 (0-based)
 //   rclick:… rclick@…           the same, with the right button
 //   wheelup@… wheeldown@…       the mouse wheel over a frame cell

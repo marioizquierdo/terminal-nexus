@@ -19,7 +19,7 @@ function opening(content = BARRACKS): BattleOpening {
   return {
     id: "training-fixture",
     name: "Training fixture",
-    grid: { width: 40, height: 16 },
+    size: { width: 40, height: 16 },
     seed: 5,
     pulseTicks: 600,
     terrain: ground,

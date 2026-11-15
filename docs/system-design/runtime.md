@@ -95,7 +95,7 @@ as typed functions; cutscenes as tableaux and timelines; missions as map, army, 
 scene definitions.
 
 **The `skirmish` command** is the game played headless, the fastest feedback loop the project has for humans and
-agents alike: a battle from a save or a new setup, or one Battle Round from a board written by hand (a sandbox), every
+agents alike: a battle from a save or a new setup, or one Battle Round from a battlefield set up by hand (a sandbox), every
 round on the battle engine the game runs on ([`skirmish-saves.md`](skirmish-saves.md), [`testing.md`](testing.md)).
 Reading and writing a persisted, levelled game log, rather than only resolving a battle fresh each time, is designed,
 not built, in [`replay-format.md`](replay-format.md).
@@ -112,17 +112,17 @@ font, so every pack keeps an ASCII-safe fallback.
 
 ### Scaling toward hundreds or thousands of units
 
-The sandboxes top out at a few dozen actors on a preset Grid. Whether the battle engine holds at "hundreds or
+The sandboxes top out at a few dozen actors on a preset battlefield. Whether the battle engine holds at "hundreds or
 thousands of units, and possible future epic-large maps" is unmeasured. This section records where a code review
 found cost would appear first, and which moves are cheap now and expensive to retrofit later.
 
-Grid size (`A`, tile count) and actor count (`N`) are different axes, and the battle engine does not couple
+battlefield size (`A`, tile count) and actor count (`N`) are different axes, and the battle engine does not couple
 them uniformly:
 
 | Phase | Cost | Coupled to |
 | --- | --- | --- |
 | Occupancy rebuild (`OccupancyIndex`, `src/engine/geometry/occupancy.ts`) | O(A) | map area: four `Int32Array`s sized to `width * height`, rebuilt every tick (`src/engine/pulse/tick.ts`) |
-| Collision queries (`CollisionMask`, see [`grid.md`](grid.md)) | O(1) per query | neither: a lazy view, allocates nothing |
+| Collision queries (`CollisionMask`, see [`battlefield.md`](battlefield.md)) | O(1) per query | neither: a lazy view, allocates nothing |
 | Movement and routing (distance fields, `src/engine/pulse/routes.ts`; intents) | O(F × A) at worst, F the tick's fields, usually far less | map area and distinct goals: a field stops once it has its answer, and is shared by every unit heading for the same goal with the same body |
 | Arbitration (contested tiles) | O(N) typical, O(C²) at one chokepoint | contestants at a single tile, bounded and self-reporting (`arbitration.bounded`) |
 | **Perception and targeting** (`hostilesOf` + `selectTarget`, `src/engine/pulse/perception.ts`) | **O(N²), every tick, unconditionally** | actor count: the confirmed primary risk |
@@ -138,11 +138,11 @@ uses a reverse `target → observers` index instead of scanning every observer.
 
 **Four design rules, adoptable without building real spatial pathfinding:**
 
-1. **Treat grid size as a declared mode with a sane upper bound, not an unbounded input.** RULE —
-   `src/skirmish/opening/open.ts` (`MAX_DECLARED_GRID_TILES`), `tests/sandboxes.test.ts` ("a custom grid over
-   the declared-mode tile cap"). A custom grid over 10,000 tiles (roughly five times the largest
+1. **Treat map size as a declared mode with a sane upper bound, not an unbounded input.** RULE —
+   `src/skirmish/opening/open.ts` (`MAX_DECLARED_MAP_TILES`), `tests/sandboxes.test.ts` ("a custom map over
+   the declared-mode tile cap"). A custom map over 10,000 tiles (roughly five times the largest
    preset) is rejected at load time, loudly, rather than degrading silently every tick: with no
-   autoscroll or streamed geography, an unbounded grid is an unbounded per-tick allocation.
+   autoscroll or streamed geography, an unbounded map is an unbounded per-tick allocation.
 2. **Reserve a spatial-query shape on perception's signature before anything uses it.** Zero cost, zero
    behaviour change: pure API-surface insurance. Any change to how a target is chosen moves every hash
    pinned to the current behaviour, so the earlier the eventual shape is visible in the types, the
@@ -157,7 +157,7 @@ uses a reverse `target → observers` index instead of scanning every observer.
    and it is a design decision, not an engineering one.** Capping "nearest enemy anywhere" to "nearest
    enemy within R" is cheap once rule 3 exists; deciding what a unit with nothing in R does instead
    changes emergent behaviour and is expensive to reconsider once a sandbox is pinned to a specific
-   contract. What such a unit does is answered: it heads for the enemy's Grid Nexus, the rule a side with no
+   contract. What such a unit does is answered: it heads for the enemy's Nexus, the rule a side with no
    target already walks by ([`pulse.md`](pulse.md), a side's target; the options weighed are in
    [the answered register](../history/answered-questions.md)). Land the cap itself inert until a sandbox
    actually needs it.

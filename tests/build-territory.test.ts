@@ -1,5 +1,5 @@
 // Construction territory — the build range (the owner, round 4: buildings "can only be built within the
-// build-range of the other buildings") as round 5 reshaped it: the Grid Nexus roots it and standing buildings
+// build-range of the other buildings") as round 5 reshaped it: the Nexus roots it and standing buildings
 // link where their ranges meet; a building planned in this Build Phase gives no range until it stands, next
 // round ("Expansing territory is only done at next round"); one tile of a new building inside the range is
 // enough ("should allow to build if at least 1 building tile is within range"); and buildings may touch, as one
@@ -50,23 +50,23 @@ function placeTurret(side: Side, tile: Coord): void {
 
 /** Backspace on the map, on `tile`: the keyboard taken to the map first, where Backspace removes. */
 function removeAt(side: Side, tile: Coord): void {
-  side.build.dispatch({ kind: "focus", target: "grid" })
+  side.build.dispatch({ kind: "focus", target: "map" })
   moveTo(side, tile)
   keys(side, BACKSPACE)
 }
 
-/** An open field with a Grid Nexus at its west edge (0,4 to 2,5), rock where `rock` says, and plenty to spend. */
+/** An open field with a Nexus at its west edge (0,4 to 2,5), rock where `rock` says, and plenty to spend. */
 function field(rock: readonly Coord[] = []): BuildContext {
   const width = 20
   const height = 12
   const tiles = new Array<TerrainId>(width * height).fill("terrain.plain")
   for (const tile of rock) tiles[tile.y * width + tile.x] = "terrain.rock"
-  return { ...starterContext(), grid: { width, height, tiles }, standing: [{ contentId: NEXUS, anchor: { x: 0, y: 4 } }], field: [], incoming: [], allotment: 1000 }
+  return { ...starterContext(), terrain: { width, height, tiles }, standing: [{ contentId: NEXUS, anchor: { x: 0, y: 4 } }], field: [], incoming: [], allotment: 1000 }
 }
 
 // --- The build range --------------------------------------------------------------------------------------
 
-test("the Grid Nexus roots the build range: six tiles round it to begin with, measured as range is", () => {
+test("the Nexus roots the build range: six tiles round it to begin with, measured as range is", () => {
   const context = starterContext()
   assert.equal(defaultValue("buildRange"), 6)
   const territory = territoryOf(context, defaultValue("buildRange"))
@@ -94,7 +94,7 @@ test("standing buildings link where their ranges meet: the Barracks beside the N
   assert.ok(bridged.has({ x: 28, y: 10 }))
 })
 
-test("with no Grid Nexus standing there is nothing to build from", () => {
+test("with no Nexus standing there is nothing to build from", () => {
   const context: BuildContext = { ...starterContext(), standing: [{ contentId: BARRACKS, anchor: { x: 25, y: 10 } }] }
   const territory = territoryOf(context, defaultValue("buildRange"))
   assert.equal(territory.rooted, false)
@@ -123,7 +123,7 @@ test("rock and the map's edge are still refused tile by tile, whichever tile is 
   // A Barracks hanging off the west edge, its middle column in range.
   const edge = field()
   assert.ok(territoryOf(edge, defaultValue("buildRange")).has({ x: 0, y: 1 }))
-  assert.deepEqual(legal(edge, [], BARRACKS, { x: 0, y: 1 }), { ok: false, reason: "it would hang off the Grid" })
+  assert.deepEqual(legal(edge, [], BARRACKS, { x: 0, y: 1 }), { ok: false, reason: "it would hang off the battlefield" })
 })
 
 test("only what stands gives build range: a building planned this phase gives none until it stands", () => {

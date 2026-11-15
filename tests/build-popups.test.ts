@@ -220,7 +220,7 @@ test("closing Settings with a restart setting changed raises the message once; E
 
 /** A state with a message popup open over `under`, as the reducer raises one. */
 function withMessage(context: BuildContext, under: "game-menu" | null): BuildState {
-  const base = createBuildState(context, OPEN_GROUND, buildLayout(MINIMUM, context.grid).viewport)
+  const base = createBuildState(context, OPEN_GROUND, buildLayout(MINIMUM, context.terrain).viewport)
   return {
     ...base,
     popup: "message",
@@ -231,7 +231,7 @@ function withMessage(context: BuildContext, under: "game-menu" | null): BuildSta
 
 test("a message popup: a title and its text, nothing to choose, closed by Esc or a click outside and nothing else", () => {
   const context = starterContext()
-  const layout = buildLayout(MINIMUM, context.grid)
+  const layout = buildLayout(MINIMUM, context.terrain)
   const state = withMessage(context, null)
   // Its shape: a title, and text wrapped in as many lines as it needs — no option anywhere.
   const spec = popupSpec(context, state) as PopupSpec
@@ -279,7 +279,7 @@ test("a message popup: a title and its text, nothing to choose, closed by Esc or
   const dismissed = applyBuildCommand(context, state, command as BuildCommand)
   assert.equal(dismissed.popup, null)
   assert.equal(dismissed.message, null)
-  assert.equal(dismissed.focus, "grid")
+  assert.equal(dismissed.focus, "map")
   assert.equal(dismissed.planned.length, 0)
 })
 
@@ -549,7 +549,7 @@ test("no popup carries [esc] in its border, and its corner is no click target", 
   }
   // The message popup too.
   const context = starterContext()
-  const layout = buildLayout(MINIMUM, context.grid)
+  const layout = buildLayout(MINIMUM, context.terrain)
   const state = withMessage(context, null)
   const popup = placePopup(layout, popupSpec(context, state) as PopupSpec)
   const drawn = frameToText(composeBuildFrame({ context, state, layout }, "monochrome")).split("\n")

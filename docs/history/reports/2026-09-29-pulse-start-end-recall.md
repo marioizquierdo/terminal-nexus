@@ -119,7 +119,7 @@ is the way to a fresh Build Phase until 6B builds the loop.
   commands it asks of the Build Phase (`due`). `pulse-scene.ts`: the panel, the feed, the top-bar
   subtitle, the key help, the status line and the alarm's flash on the map's frame, all pure.
   `snapshot.ts` gained `sampleAt` (a single moment's state, positions, feed and effects) and
-  `composeAt` was rebuilt on it with byte-identical output; `grid-layer.ts` is the terrain drawing the
+  `composeAt` was rebuilt on it with byte-identical output; `map-layers.ts` is the terrain drawing the
   Build Phase and the Pulse now share.
 - **`src/build/` — the Build Phase's reducer knows almost nothing of it.** Three commands: `pulse` (a
   playback control), `look-at` (centre the view — sent by the presenter, so the terminal, the browser

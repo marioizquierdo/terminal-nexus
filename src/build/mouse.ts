@@ -76,7 +76,7 @@ export const WHEEL_TILES = 5
 /**
  * **The wheel moves the cursor, not a second camera.** The bindings table in
  * docs/system-design/input.md says "Mouse: wheel — scroll the camera; the mouse's Shift+Arrow", while
- * the scrolling rule in docs/system-design/grid.md says the camera is driven by the cursor and
+ * the scrolling rule in docs/system-design/battlefield.md says the camera is driven by the cursor and
  * there is "no separate pan mode, no modifier keys, no second cursor". Taken literally together, the
  * only reading that keeps both true is the one the table's own gloss already points at: the wheel is
  * the mouse's fast move, so it moves the *cursor* `WHEEL_TILES` and the camera follows it, as it

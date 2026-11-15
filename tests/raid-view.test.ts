@@ -11,7 +11,7 @@ import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { cellForTile, menuEntryAt, startRow } from "../src/build/layout.ts"
 import type { RaidForecast, RaidGroup } from "../src/build/types.ts"
 import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
-import { gridDistance } from "../src/engine/geometry/coords.ts"
+import { tileDistance } from "../src/engine/geometry/coords.ts"
 import type { Coord } from "../src/engine/geometry/types.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
@@ -22,7 +22,7 @@ import type { GlyphPack } from "../src/view/theme.ts"
 import { bearing, raidLines, raidRows, targetName, troopsLines } from "../src/view/raid-panel.ts"
 import { isTroops } from "../src/view/troops-post.ts"
 import type { TroopsGroup } from "../src/view/troops-post.ts"
-import { GHOST_FADES, TRAIL_MOTION, hasTrail, trailGlyph, trailMarks, trailTiles } from "../src/view/build-grid.ts"
+import { GHOST_FADES, TRAIL_MOTION, hasTrail, trailGlyph, trailMarks, trailTiles } from "../src/view/build-map.ts"
 import { visibleRange } from "../src/build/camera.ts"
 import { BuildAnimation, FRAME_MS } from "../src/view/build-live.ts"
 import { TUNING } from "../src/build/tuning.ts"
@@ -283,11 +283,11 @@ function probeOf(side: BuildSide): RaidGroup & Readonly<{ target: NonNullable<Ra
 /** Where along the probe's way a tile is. */
 const wayIndex = (probe: RaidGroup, tile: Coord): number => probe.path.findIndex((step) => step.x === tile.x && step.y === tile.y)
 
-/** How far along a way each of its tiles is, by the Grid's own distance: what the trail's arrows are spaced and
+/** How far along a way each of its tiles is, by the battlefield's own distance: what the trail's arrows are spaced and
  *  timed by. */
 function alongWay(path: readonly Coord[]): number[] {
   const along = [0]
-  for (let index = 1; index < path.length; index += 1) along.push((along[index - 1] as number) + gridDistance(path[index - 1] as Coord, path[index] as Coord))
+  for (let index = 1; index < path.length; index += 1) along.push((along[index - 1] as number) + tileDistance(path[index - 1] as Coord, path[index] as Coord))
   return along
 }
 
@@ -297,7 +297,7 @@ function straightWay(tiles: number, down: boolean): Readonly<{ path: Coord[]; ta
   return { path: Array.from({ length: tiles }, (_, index) => at(index)), target: [at(tiles)] }
 }
 
-test("the trail moves by the Grid's own distance: an arrow every four columns or two rows, a column's distance on every step and a row on every second, the one beside the target going in as a new one comes out", () => {
+test("the trail moves by the battlefield's own distance: an arrow every four columns or two rows, a column's distance on every step and a row on every second, the one beside the target going in as a new one comes out", () => {
   const { spacing, stepMs } = TRAIL_MOTION
   assert.equal(spacing, 4, "the owner's one arrow every three tiles, made whole rows: four columns or two rows")
   const arrowsOf = (way: Readonly<{ path: readonly Coord[]; target: readonly Coord[] }>, step: number | null): Coord[] =>
@@ -517,7 +517,7 @@ test("the scripted playtest moves the trail on the script's own clock: the same 
   const again = runBuildPlaytest({ steps }).frames.map((each) => frameToText(each.frame))
   assert.deepEqual(again, once)
   // Esc closes the intro and the trail starts from its still form; a step on, it has moved; and four steps on, a
-  // spacing of the Grid's own distance, once the copies are gone, it is the still trail again.
+  // spacing of the battlefield's own distance, once the copies are gone, it is the still trail again.
   const closed = once[1]
   assert.notEqual(once[5], closed, "the trail did not move")
   assert.notEqual(once[9], closed)

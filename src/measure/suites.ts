@@ -111,7 +111,7 @@ export function measureDuel(battle: DuelBattle, players: Readonly<Record<Side, s
 /** How lucky a hand kept was: its rarity's place among the rarities, common 1 up to legendary 4; none kept 0. */
 export const luckOf = (kept: Rarity | null): number => (kept === null ? 0 : RARITIES.indexOf(kept) + 1)
 
-/** A plan a Story level is played by: what it buys each round, near the player's Grid Nexus. */
+/** A plan a Story level is played by: what it buys each round, near the player's Nexus. */
 export type LevelPlan = Readonly<{ name: string; buys: CurvePlan["buys"] }>
 
 export type LevelMeasure = Readonly<{
@@ -139,7 +139,7 @@ export function playLevel(level: PlayableLevel, plan: LevelPlan, each: (round: L
   const curve: CurvePlan = { name: plan.name, buys: plan.buys, near }
   let ended = { round: 0, verdict: "unplayed" }
   for (let round = 1; round <= level.rounds; round += 1) {
-    const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
+    const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
     const opened = createBuildState(withoutScene(context), STARTER_START_CURSOR, viewport)
     const planned = planRound(context, opened, curve)
     const resolved = level.play.startPulse(context, planned.state)

@@ -1,7 +1,7 @@
 {
   "format": "terminal-nexus.save/1",
   "name": "Route: a corridor walked both ways at once - two squads, one corridor, each side's Nexus beyond it",
-  "notes": "Two rock masses leave one corridor two rows tall across the middle of the map. Each side has a Grid Nexus at its end and a squad of four troopers that must go through the corridor to reach the other's. The squads meet in it and fight. Done when the battle never stands still for good: someone wins the corridor and walks on.",
+  "notes": "Two rock masses leave one corridor two rows tall across the middle of the map. Each side has a Nexus at its end and a squad of four troopers that must go through the corridor to reach the other's. The squads meet in it and fight. Done when the battle never stands still for good: someone wins the corridor and walks on.",
   "setup": {
     "map": {
       "id": "route-corridor",

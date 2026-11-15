@@ -1,6 +1,6 @@
 // Compositing effect cells that land on the same tile — the part of "a real ASCII rendering
 // pipeline" that `effects.md`'s compositor section leaves as "the topmost defined cell replaces
-// the lower complete cell" (frame.ts, composeBands). That rule is right for the Grid's own layers
+// the lower complete cell" (frame.ts, composeBands). That rule is right for the battlefield's own layers
 // (a live entity's glyph must never be a blend of two things), but two *effects* overlapping the
 // same tile in the same instant is common in a real fight — several simultaneous damage flashes on
 // one large target, several detonations' debris fields overlapping — and "the last one drawn wins"

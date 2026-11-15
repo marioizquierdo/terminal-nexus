@@ -1,7 +1,7 @@
 {
   "format": "terminal-nexus.save/1",
   "name": "Route: a squad through the ridge's gap - six troopers, one narrow gap far off the straight line",
-  "notes": "Six troopers in a block west of a ridge that runs the whole height of the map, with a gap two rows tall near its north end; the enemy's Grid Nexus stands east, level with the squad. The greedy step slid them along the ridge to the point nearest the Nexus and stood them there. Done when the squad files through the gap and the Nexus falls.",
+  "notes": "Six troopers in a block west of a ridge that runs the whole height of the map, with a gap two rows tall near its north end; the enemy's Nexus stands east, level with the squad. The greedy step slid them along the ridge to the point nearest the Nexus and stood them there. Done when the squad files through the gap and the Nexus falls.",
   "setup": {
     "map": {
       "id": "route-ridge-gap",
