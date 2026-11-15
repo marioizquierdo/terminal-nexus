@@ -1,8 +1,10 @@
-# Terminal Nexus — engine design
+# Terminal Nexus — architecture
 
-_The shape of the engine: the three worlds, the responsibility layers, the architectural invariants and the vocabulary, with a map to the documents that hold each part. This page owns the rules other pages repeat; they point here._
+_The shape of the code: the four layers and what each may know, where to test a change, the three worlds, the
+invariants and the design commitments, with a map to the pages that hold each part. This page owns the rules other
+pages repeat; they point here._
 
-## 0. How to read this document
+## 0. How to read this page
 
 This is a **design document, not a rulebook.** Most of it is a recommendation written before the
 thing existed, so that a session facing a fork has something better than a coin flip.
@@ -26,10 +28,50 @@ Two rules apply everywhere and outrank convenience:
 
 ---
 
-## 1. The three worlds — RULE
+---
+
+## 1. The layers
+
+The game is four layers, each built on the one below it and knowing nothing above it (RULE —
+`tests/architecture.test.ts`). A rule of play lives in the lowest layer that can hold it, and a change to it shows up in
+everything above at once.
+
+| Layer | What it is | Knows nothing of | Where |
+| --- | --- | --- | --- |
+| **The battle engine** | Given a state on a map, the content its things are made of and a seed, it plays a Battle Round tick by tick until a Nexus falls, one side is gone or the round's ticks run out, and records every event on the way. Pure and deterministic: the same state, seed and ticks hash the same on Node and Bun, every run | rounds, credits, players, saves, screens | `src/engine/`: the tick loop (`pulse/`), the state and its hashing (`state/`), the Grid's geometry (`geometry/`), events, the seeded stream (`rng/`), routes (`routing/`) and the ability kinds (`abilities/`); it reads `src/content/` and nothing else above it |
+| **The rules between rounds** | How a Battle Round's opening state is built from the battle so far (the regroup, banners, Commanders returning, buildings set down, units mustered and trained) and a mission's triggers | who plays, credits, the screen | `src/match/`, `src/mission/` |
+| **The game** | The battle as a player has it: the Nexus Pulse's hand, the Build Phase's build actions and credits, rounds and who wins, the brief and the battle reading; the save file, the setup, who plays each slot | keys, terminals, files on disk | `src/battle/`, `src/skirmish/` |
+| **The doors** | Everything that runs the game for someone. **The game itself** (`bin/terminal-nexus.ts`) draws it on a screen, tick by tick, for a person. **The `skirmish` command** (`bin/skirmish.ts`) plays the same Skirmish headless for an agent: a save or a new setup, build files or scripts, a round or the whole battle, many seeds, ASCII screenshots. **The `measure` command** (`bin/measure.ts`) plays many battles the same way before and after a change. The scripted playtest and the browser page press keys on the game's own screens | the rules: a door adds only what it is for | `src/cli/`, `src/view/`, `src/terminal/`, `scripts/`, `src/web/` |
+
+**A Battle Round is the engine run from a state.** The Build Phase is apart from it: it builds the state (what each side
+built, kept and called up, laid on what the last round left) and the engine plays it until the round ends. The game, the
+`skirmish` command, the measurement and a unit test all play a Battle Round on the same engine, so a test through the
+`skirmish` command exercises the code a player's battle runs. A **sandbox** (a save whose `start` draws the board by hand,
+[`skirmish-saves.md`](skirmish-saves.md)) is the same engine started from a board nobody built: no Nexus Pulse, credits or
+Commander unless the board places them.
+
+**The Skirmish mode and the `skirmish` command are one thing seen by two people.** The screen and the command open a
+battle by the same steps and play every round through `playNext` (`src/skirmish/play.ts`), so what an agent's run finds
+is what a player meets.
+
+**Adding something:** put it in the lowest layer that can hold it, and reach it from a door. A new door, a new kind of
+player or a new way to look at a battle adds no rule; a rule added in a door is a rule a player never meets.
+
+### Testing at the right layer
+
+A **unit test** lives in `tests/`, runs on every build and pull request on Node and Bun, and is fast; it holds one rule
+at the layer that owns it: an engine rule from a state written in the test or a sandbox, a rule between rounds through
+`src/match/`, a game rule through `src/battle/` or the `skirmish` command, a screen through the scripted playtest. A
+**verifier** is the check a session runs to show its task works: the `skirmish` command, the `measure` command, the
+scripted playtest, or a test written for the task and thrown away. Keep a verifier as a unit test only when its rule
+must stay true for every later change. How each is chosen and written: [`testing.md`](testing.md).
+
+---
+
+## 2. The three worlds — RULE
 
 **RULE — `tests/architecture.test.ts`, `tests/determinism.test.ts`, `tests/rng.test.ts`.** This is the
-separation the whole engine exists to protect.
+separation the whole design exists to protect.
 
 ```text
 ┌─ STATE ────────────────────────────────────────────────────────────┐
@@ -39,7 +81,7 @@ separation the whole engine exists to protect.
 └────────────────────────────────────────────────────────────────────┘
                                   │
                                   ▼
-┌─ PULSE ────────────────────────────────────────────────────────────┐
+┌─ PULSE (the battle engine) ────────────────────────────────────────┐
 │  How state changes. A pure function stepping state forward in       │
 │  fixed logical ticks. All randomness comes from one seeded stream.  │
 │  Same inputs → same outputs, forever, on any machine.               │
@@ -76,19 +118,16 @@ guess a direction and jitter (whether facing affects the rules was Q9, answered 
 one: interpolation hints, animation state and camera position belong in the presentation model, not in
 the state the Pulse hashes.
 
----
+### Responsibility, by kind of code
 
-## 2. Responsibility layers
-
-The boundaries are right; the module names will move as code arrives. **RULE —
-`tests/architecture.test.ts`: the layers stay separate.** The kernel, content, opening, projection,
-presentation, adapters and shell never reach into one another against the arrows below.
+The same separation by kind of code (RULE — `tests/architecture.test.ts`): the engine, content, the rules between
+rounds, projection, presentation, adapters and the shell never reach into one another against the arrows below.
 
 | Layer | Owns | Must not own |
 | --- | --- | --- |
-| Rules kernel | ticks, state transitions, randomness, occupancy, movement, targeting, damage, economy, legality, victory | terminal objects, wall clocks, network calls, glyphs, prose |
+| Battle engine | ticks, state transitions, randomness, occupancy, movement, targeting, damage, economy, legality, victory | terminal objects, wall clocks, network calls, glyphs, prose |
 | Content definitions | units, attacks, structures, upgrades, Commanders, armies, factions, maps, semantic themes | mutable match authority, backend classes |
-| Rules runtime | starting state, objectives, triggers, mission progress, win/loss requests, unlocks | direct mutation bypassing the kernel |
+| Rules between rounds | starting state, objectives, triggers, mission progress, win/loss requests, unlocks | direct mutation bypassing the engine |
 | Player projection | visibility-filtered state, legal public actions, visible ordered events | hidden-plan leakage, invented facts |
 | Presentation | semantic cues, animation state, portraits, cell frames or graphical scenes, accessibility | damage, targeting, legal placement, victory |
 | Platform adapters | terminal, browser, native input, output, resize, streams, device lifecycle; the keyboard, mouse and driver input adapters that turn events into shell commands ([`input.md`](input.md)) | interpreting ANSI or pixels as game state; giving one adapter a command another cannot issue |
@@ -97,7 +136,7 @@ presentation, adapters and shell never reach into one another against the arrows
 ```text
 content + opening + committed plans
                  ↓
-       deterministic kernel  ── seeded gameplay RNG
+       battle engine  ── seeded gameplay RNG
                  ↓
  canonical state + ordered DomainEvent[]
                  ↓
@@ -109,19 +148,20 @@ content + opening + committed plans
                  └─ accessibility or spectator renderer
 ```
 
-Shared contracts stay leaves of the import graph: nothing downstream of the kernel is imported by the
-kernel (RULE — `tests/architecture.test.ts`).
+Shared contracts stay leaves of the import graph: nothing downstream of the engine is imported by the
+engine (RULE — `tests/architecture.test.ts`).
 
 **The renderer boundary** (RULE — `tests/architecture.test.ts`, `tests/backend-opentui.test.ts`): the
 simulation emits visibility-filtered semantic views and events; the terminal compositor emits an
 engine-owned cell frame; platform backends (OpenTUI, direct ANSI, the browser page, any future
-graphical or networked renderer) are adapters that draw that frame and carry input back. The kernel
-never reaches the view, and the view never reaches the kernel.
+graphical or networked renderer) are adapters that draw that frame and carry input back. The engine
+never reaches the view, and the view never reaches the engine.
 
-**Language and runtime.** The engine and its content are TypeScript-first (RULE — `tsconfig.json`,
+**Language and runtime.** The game and its content are TypeScript-first (RULE — `tsconfig.json`,
 `npm run typecheck`). **The terminal library and the JavaScript runtime are independent choices;
 neither implies the other** (RULE — `src/view/backends/ports.ts`: every backend implements the same
 ports, and the suite runs on Node and on Bun). Direction: [`runtime.md`](runtime.md).
+
 
 ---
 
@@ -132,18 +172,18 @@ The three worlds and the layers above are not repeated here.
 
 | Invariant | Held by | Detail |
 | --- | --- | --- |
-| The kernel is pure: no terminal, clock, network or renderer; no `Math.random`; the same opening, seed and tick count hash identically on Node and Bun | `tests/architecture.test.ts`, `tests/determinism.test.ts` | [`pulse.md`](pulse.md) |
-| Gameplay randomness is one seeded PCG32 stream; cosmetic randomness is a hash of an effect instance's identity, never a stream; the Nexus Pulse, a rule outside the kernel, deals from a seeded stream of its own, so a hand never moves a battle | `tests/rng.test.ts`, `tests/effects.test.ts`, `tests/nexus-draft.test.ts` | [`pulse.md`](pulse.md), [`effects.md`](effects.md) |
+| The battle engine is pure: no terminal, clock, network or renderer; no `Math.random`; the same opening, seed and tick count hash identically on Node and Bun | `tests/architecture.test.ts`, `tests/determinism.test.ts` | [`pulse.md`](pulse.md) |
+| Gameplay randomness is one seeded PCG32 stream; cosmetic randomness is a hash of an effect instance's identity, never a stream; the Nexus Pulse, a rule outside the engine, deals from a seeded stream of its own, so a hand never moves a battle | `tests/rng.test.ts`, `tests/effects.test.ts`, `tests/nexus-draft.test.ts` | [`pulse.md`](pulse.md), [`effects.md`](effects.md) |
 | The simulation emits canonical state and ordered semantic events: events carry meaning, not appearance, and no renderer reads cells back into mechanics | `tests/architecture.test.ts` | [`pulse.md`](pulse.md) |
 | The simulation never knows a glyph; it knows semantic ids such as `unit.worker` | `tests/architecture.test.ts` | [`presentation.md`](presentation.md) |
-| `(0,0)` is the north-west tile, `x` grows east, `y` grows south, sandbox rows read north to south: one convention in every module | `tests/sandboxes.test.ts` | [`grid.md`](grid.md) |
+| `(0,0)` is the north-west tile, `x` grows east, `y` grows south, a board's rows read north to south: one convention in every module | `tests/sandboxes.test.ts` | [`grid.md`](grid.md) |
 | The Grid has five layers; layers define render order only, and collision is a mask composed from a chosen set of layers | `tests/grid.test.ts` | [`grid.md`](grid.md) |
 | Every entity has an anchor, a footprint and a facing; units as well as structures may span tiles, a mover tests its whole footprint, range measures to the nearest occupied tile | `tests/grid.test.ts` | [`grid.md`](grid.md) |
 | A unit stands two squares tall: every distance, range, reach and radius counts a row up or down as two columns (`ROW_DISTANCE`), a step takes as long as the distance it covers, a reach is a diamond as wide as it is tall on screen, and touching is a side shared, which melee reaches with its range of 1 | `tests/rows.test.ts`, `tests/grid-pictures.test.ts` | [`grid.md`](grid.md), [`pulse.md`](pulse.md) |
 | The viewport is clamped between 48 × 16 and 72 × 24 tiles, the cursor drives scrolling, there is no minimap, and 80 × 24 is the floor and the acceptance target | `tests/build-camera.test.ts` | [`grid.md`](grid.md) |
 | Orientation is a rendering choice; portrait and landscape change no coordinate | (RULE — settled; no code holds it yet) | [`grid.md`](grid.md) |
 | Speed tier is initiative and lower acts first, for movement claims and attacks alike; it is not a movement rate | `tests/rules.test.ts` | [`pulse.md`](pulse.md) |
-| A Grid Nexus is a flag on a content definition, never a content id the kernel recognises | `src/content/types.ts` | [`grid.md`](grid.md), [`content.md`](content.md) |
+| A Grid Nexus is a flag on a content definition, never a content id the engine recognises | `src/content/types.ts` | [`grid.md`](grid.md), [`content.md`](content.md) |
 | Composition produces an engine-owned cell frame; cells carry style roles, never literal colours; monochrome seven-bit ASCII is the floor | `tests/roles.test.ts`, `tests/view.test.ts` | [`presentation.md`](presentation.md) |
 | A tile is one terminal column at every size, so a reach is as wide as it is tall on screen, and a picture of an area the rules decide (a reach, the build range, a room, an aura, a blast) draws the rules' own tiles | `tests/rows-view.test.ts`, `tests/build-camera.test.ts`, `tests/effects.test.ts` | [`presentation.md`](presentation.md) |
 | Effects are pure functions of absolute presentation time; presentation has four families (animations, particles, shading, tweens) and an animation's completion is scheduled data, never a callback | `tests/effects.test.ts`, `tests/animation.test.ts`, `tests/tween.test.ts` | [`effects.md`](effects.md) |
@@ -152,10 +192,12 @@ The three worlds and the layers above are not repeated here.
 | Every interactive action is a named command; keyboard, mouse and driver are three adapters onto one vocabulary; every menu item shows its hotkey and a click activates what it lands on | `tests/title-menu-adapters.test.ts`, `tests/build-focus.test.ts` | [`input.md`](input.md) |
 | The Build Phase screen follows one set of interface patterns: focus, cancel, lists, popups, cards, hand-offs, the one-line bottom bar, the Grid pane's edge | the tests named in that document | [`ui-patterns.md`](ui-patterns.md) |
 | The browser playtest page is a development tool, never a platform: it runs the terminal's own screen loops and converts only frames, input bytes and settings storage | `tests/web.test.ts` | [`runtime.md`](runtime.md) |
-| Logs are one structured shape: an event is declared before it is logged, a logger takes its clock as an argument and keeps a bounded memory, the kernel and the match layer never log, and nothing the rules decide reads a log | `tests/log.test.ts`, `tests/architecture.test.ts` | [`runtime.md`](runtime.md) |
-| A mission is a sequence of rounds, each a Nexus Pulse, a Build Phase and the Battle Round after it, driven by triggers; simulation actions run inside the kernel as validated intents, presentation actions never touch state, and a scripted Battle Round is still a Pulse | `tests/mission.test.ts`, `tests/mission-loop.test.ts` | [`story.md`](../game-design/story.md) |
+| Logs are one structured shape: an event is declared before it is logged, a logger takes its clock as an argument and keeps a bounded memory, the engine and the rules between rounds never log, and nothing the rules decide reads a log | `tests/log.test.ts`, `tests/architecture.test.ts` | [`runtime.md`](runtime.md) |
+| A mission is a sequence of rounds, each a Nexus Pulse, a Build Phase and the Battle Round after it, driven by triggers; simulation actions run inside the engine as validated intents, presentation actions never touch state, and a scripted Battle Round is still a Pulse | `tests/mission.test.ts`, `tests/mission-loop.test.ts` | [`story.md`](../game-design/story.md) |
 
-Design commitments the game documents own, GUIDANCE until built and played:
+### Design commitments
+
+The game documents own these, GUIDANCE until built and played:
 
 - A Commander Army is the playable content boundary: a faction and Grid Nexus, a Commander, starting
   units and structures, blueprints and a real tech tree, upgrades, Nexus powers and Specials. A
@@ -172,42 +214,24 @@ Design commitments the game documents own, GUIDANCE until built and played:
   ([`lore.md`](../game-design/lore.md)).
 - Content is TypeScript-first and mostly declarative ([`content.md`](content.md)).
 
+
 ## 4. Vocabulary
 
 Every word the project made its own is defined once, in the [glossary](../game-design/glossary.md).
 A new word goes there in the pull request that brings it in.
 
-## 5. How troops move
+## 5. The parts
 
-The chapter is [`movement.md`](movement.md): what a player should be able to predict, every number, the
-three states, the building blocks and their pictures. The rules with their tests are in
-[`pulse.md`](pulse.md), routes. GUIDANCE unless marked. Three commitments belong here, because they
-shape the architecture:
-
-- **A unit is in one of three states, worked out fresh every tick** (`MoveState`, `src/pulse/march.ts`):
-  march, battle or retreat.
-- **Routes are small parts, each tested alone** (`src/routing/`): ground, goals, the distance field,
-  step choice and arbitration. One field serves every unit heading for the same goal with the same body,
-  worked out every tick from that tick's Grid and only as far as asked, so a fallen building or a moved
-  crowd is in the next tick's routes with nothing kept up to date.
-- **Every tie is broken by what a unit faces and then the seeded stream, never by reading order**, so a
-  mirrored battle stays a mirror (RULE — [`pulse.md`](pulse.md), no side wins by where it stands).
-
-A new way of moving (stepping back from damage, leaping forward, a beacon to gather at) is a new goal, a
-new field or a move that is not a step, on the same parts ([`movement.md`](movement.md), where modifiers
-plug in). "Pathfinding" in this game means troop movement (the owner, 2026-10-26: "in this game
-'pathfinding' is more than just moving, it is 'troops movement'").
-
-## 6. The parts
-
-- [`grid.md`](grid.md) — the Grid: size and shape, orientation, viewport and scrolling, layers and collision masks, placement and footprints, distance.
-- [`pulse.md`](pulse.md) — the Pulse: logical time, movement credit, tick order, determinism and replay, routes, match structure, economy, events.
-- [`movement.md`](movement.md) — troop movement, from what a player predicts to the machinery underneath.
-- [`measurement.md`](measurement.md) — how a battle is measured, so results before and after a rule change compare.
-- [`content.md`](content.md) — content interfaces.
-- [`presentation.md`](presentation.md) — the cell frame, composition, the tile, bands, effects, accessibility.
-- [`input.md`](input.md) — the command vocabulary, the three adapters, hotkeys and bindings.
-- [`runtime.md`](runtime.md) — terminal lifecycle, delivery, tools and modding, scaling.
-- [`effects.md`](effects.md) — animations, particles, shading and tweens.
-- [`ui-patterns.md`](ui-patterns.md) — every screen, menu, popup and key.
-- [`testing.md`](testing.md) — what the suite proves.
+- [`grid.md`](grid.md): the Grid, the playfield: size and shape, orientation, viewport and scrolling, layers and collision masks, placement and footprints, distance.
+- [`pulse.md`](pulse.md): the battle engine's tick loop: logical time, movement credit, tick order, determinism, routes, match structure, economy, events.
+- [`movement.md`](movement.md): troop movement, from what a player predicts to the routes underneath (the three movement states, the routing parts, ties broken by facing and then the seeded stream).
+- [`battles.md`](battles.md): the game layer's battle: rounds, the brief, build actions, the battle reading.
+- [`skirmish-saves.md`](skirmish-saves.md): the save file, the setup, sandboxes, and the `skirmish` command.
+- [`measurement.md`](measurement.md): how a battle is measured, so results before and after a rule change compare.
+- [`testing.md`](testing.md): unit tests and verifiers, and what the suite proves.
+- [`content.md`](content.md): content interfaces.
+- [`presentation.md`](presentation.md): the cell frame, composition, the tile, bands, effects, accessibility.
+- [`input.md`](input.md): the command vocabulary, the three adapters, hotkeys and bindings.
+- [`runtime.md`](runtime.md): terminal lifecycle, delivery, tools and modding, scaling.
+- [`effects.md`](effects.md): animations, particles, shading and tweens.
+- [`ui-patterns.md`](ui-patterns.md): every screen, menu, popup and key.

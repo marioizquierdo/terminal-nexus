@@ -1,19 +1,59 @@
 # Terminal Nexus — testing
 
-_What the test suite proves, how a test is named, what only a person can judge, and the balance measures that will matter later; every unmarked statement is GUIDANCE._
+_Unit tests and verifiers and the layer each belongs at, how to verify through the `skirmish` command, what the suite proves, how a test is named, what only a person can judge, and the balance measures that will matter later; every unmarked statement is GUIDANCE._
 
 The suite lives in `tests/` and runs on Node and on Bun (`scripts/run-tests.sh`); how to run it, and the order a change
 is developed in, is in `DEVELOPMENT.md`, "Developing and testing a change". This page says what the tests are *for*.
-Every engine defect should reduce to a state, plan, seed or event fixture; every balance claim should identify a
-reproducible cohort.
+Every engine defect should reduce to a state, seed and tick count; every balance claim should identify a reproducible
+set of battles.
 
-## Two instruments, two questions
+## Two kinds of check: unit tests and verifiers
 
-A **sandbox** is a slice of the Grid, like the context of a unit test: one rule, effect, movement or ability on a small
-map, read as damage, deaths, paths and timings. The **`skirmish` command** plays the whole game: the Nexus, credits,
-rounds and who wins. Pick the one whose question the change asks; a change that touches both runs both. Which tool
-answers which question, and how to author a sandbox, is [`sandboxes.md`](sandboxes.md); what a measured battle holds
-and how a result is kept is [`measurement.md`](measurement.md).
+A **unit test** is kept: it lives in `tests/`, runs on every build and pull request on Node and Bun, and is fast. It holds
+one rule, at the layer that owns the rule ([`architecture.md`](architecture.md), the layers), named for that rule, and it
+stays true for every later change. The suite is the sum of them, and its cost is paid on every push, so a slow test or a
+test at the wrong layer is a defect.
+
+A **verifier** is the check a session runs to show that its own task works: a `skirmish` run that shows the new unit
+fighting, a `measure` comparison of before and after, a scripted playtest that presses the keys a feature needs, a probe
+in the scratchpad, or a test written for the task. It answers the task's question once and is not kept, unless its rule
+must hold for every later change: then it becomes a unit test at the right layer, small and fast. A session that cares
+about something no other session will is a verifier's job, never the suite's.
+
+| The question | The layer | A unit test | A verifier |
+| --- | --- | --- | --- |
+| Does a rule of the Battle Round hold (a hit, a death, a step, an ability, an effect on state)? | the battle engine | a state written in the test (`defineOpening`, `openBattle`) or a sandbox, run with `resolvePulse` or `playSandboxRound`, asserted on events and state | a sandbox played by `skirmish --load <sandbox> --play-to next --show 0,end --log-level info` |
+| Is the opening of a round built right (the regroup, a banner, a Commander's return, training)? | the rules between rounds | `src/match/` called directly | `skirmish --load <save> --play-to next --show 0` |
+| Does the game play right over rounds (credits, the hand, build actions, who wins)? | the game | `src/battle/` or `src/skirmish/` called directly, or the `skirmish` command with a build file | the `skirmish` command, a save and build files or scripts, one battle or many seeds |
+| Did a change move the balance? | the game, many battles | none: a pin of a measured number only where a rule depends on it | the `measure` command, before and after ([`measurement.md`](measurement.md)) |
+| Does a screen read and respond right? | the doors | the screen's frame from a stand-in terminal, keys as bytes | the scripted playtest, its text and pictures read |
+
+A sandbox is a save whose `start` draws the board by hand ([`skirmish-saves.md`](skirmish-saves.md), a board written by
+hand): the engine's context for one rule, effect, movement or ability. It measures what happens on the board (damage,
+deaths, paths, timings), not who wins a game.
+
+## Verifying through the `skirmish` command
+
+**A Skirmish played headless is the one the screen plays** (RULE — `src/skirmish/play.ts`, `tests/skirmish-save.test.ts`):
+the same save, seed and build actions give the same battle, hash for hash, on Node and Bun. Every option, with
+examples, is in the command's manual (`npm run skirmish -- --help`); the `skirmish` skill has the procedures. The shapes
+a verifier takes, cheapest first:
+
+- **One Battle Round from a board written by hand**: a sandbox, or a copy of one changed for the question (another unit
+  in the legend, another seed, more ticks). `--show 0,60,end` draws the board at those ticks, `--log <file>
+  --log-level info` keeps every event.
+- **A battle from where a save stands**: a save at a Build Phase, its slots played by scripts (`--p1 script:turtle`) or
+  build files (`--p1 build:b.json`, one round or a list by round), `--play-to next`, a round, or `end`.
+- **Many battles**: `--seeds 1-20` for a tally, `--commanders all` for every pairing from both ends. Swap the slots'
+  scripts and play again before reading a side into it.
+- **A model a slot**: both slots players; each round the session hands each slot's brief to its own small agent and
+  plays the build actions it answers with (`-f <file> --p1 build:<a> --p2 build:<b> --play-to next`).
+- **A moment for a person**: every save the command writes opens on the game's screen (`terminal-nexus --load <file>`),
+  so an agent prepares the round Mario should play and hands over one line.
+
+**What these battles are and are not.** A scripted or small-model player is not a good player: it shows what an army
+does in the hands of a plain plan, where its strengths come from, and where the rules or the brief let a player down.
+It does not show balance. Read the numbers for direction, the reports for why, and say so every time.
 
 ## Invariant tests: every reading counted two ways
 
@@ -36,7 +76,7 @@ becomes an invariant, so the next change meets it as a test. The goals worth sen
 | --- | --- |
 | Audit a reading | counts it two ways and reports every disagreement |
 | Play to win | plays one side against a script, from the brief alone, and reports what it wanted and could not see |
-| Break the command | gives `skirmish`, `grid` or `measure` odd input: a flag with a value it does not use, a seed or tick out of range, two options that contradict. Every one is refused or says what is not done; a flag that ignores its input is a bug |
+| Break the command | gives `skirmish` or `measure` odd input: a flag with a value it does not use, a seed or tick out of range, two options that contradict. Every one is refused or says what is not done; a flag that ignores its input is a bug |
 | Check the documents against the code | reads a page and runs what it claims |
 
 Give each tester one goal, one command to start from and the order to report counts, not opinions. **Sonnet for most; one
@@ -48,21 +88,21 @@ before Mario is asked to play anything.
 
 ## What the suite proves
 
-### Determinism and the kernel's purity
+### Determinism and the battle engine's purity
 
 RULE — `tests/determinism.test.ts`, `tests/architecture.test.ts`, `tests/rng.test.ts`.
 
 - The same opening, seed and tick count produce identical final-state and event hashes across twenty
-  runs of every checked-in sandbox, and the same INFO log. `tests/grid-cli.test.ts` repeats the check across
-  runtimes, which one machine and one runtime can never do alone.
+  runs of every checked-in sandbox, and the same INFO log; the suite runs on Node and on Bun, which one runtime can
+  never check alone.
 - Resolving in one call equals resolving tick by tick. A different gameplay seed can change the fight,
   and the same one never does. State and the event stream round-trip through their canonical
   serialization and hash identically.
-- The kernel calls no clock and no `Math.random`: asserted both by replacing them with functions that
+- The battle engine calls no clock and no `Math.random`: asserted both by replacing them with functions that
   throw during a real resolve, and by scanning the source of every deterministic folder for them and for
   the terminal.
-- The import graph is held in one place: `src/pulse` never reaches the view, the report or the shell;
-  `src/view` never reaches the kernel; the simulation never reaches a glyph; missions are data; no
+- The import graph is held in one place: `src/engine` imports nothing above it but the content definitions;
+  `src/view` never reaches the engine; the simulation never reaches a glyph; missions are data; no
   source file imports a package the repository has not pinned.
 - Changing only the cosmetic seed changes nothing about state, events or the log. The gameplay generator
   is checked against published PCG32 vectors.
@@ -81,23 +121,16 @@ RULE — `tests/grid.test.ts`, `tests/rules.test.ts`.
   claims resolve by speed tier before the seeded stream is consulted. Movement credit reproduces the
   cadence table at every rate and never exceeds one step's cost.
 
-### Every rule has a named sandbox
+### Every engine rule has a test at the engine
 
-RULE — `tests/sandboxes.test.ts`, `tests/proving-grounds.test.ts`, `sandboxes/`. Every rule that can be
-shown on a small map has a checked-in, runnable sandbox named for what it exercises
-(`melee-kill`, `mutual-kill`, `worker-flight`, `salvage-drop`, `hauler-two-tile-gap`, `settle-delay`
-and the rest of `sandboxes/`, one folder for each purpose: rules, units, movement, the engage bench, showcases), and
-every file loads with an id that matches its name and gives each side that fights a goal ([the testing
-ground](sandboxes.md)). A sandbox asserts the
-rule through events and hashes, and `grid <save> --verify` (see [`runtime.md`](runtime.md)) re-resolves
-it ten times from the command line. A sandbox is a Skirmish save whose `start` writes its first Battle Round by
-hand ([`skirmish-saves.md`](skirmish-saves.md)): it reads as every save does, every problem at once, and `skirmish --load
-<save> --play-to next` plays the same Battle Round (`tests/skirmish-save.test.ts`).
-The rules layer above the kernel (openings, the regroup, missions) is held the same way by
-`tests/match.test.ts` and `tests/mission.test.ts`. The route saves (`route-*`) each show one shape a route must
-manage and are played on several seeds (`tests/route-saves.test.ts`); routing's own parts are tested alone on
-small Grids and mazes, against a plain search (`tests/routing.test.ts`). The engage bench is held by a trial of what it
-was measured to show, played from both ends over six seeds (`tests/engage-bench.test.ts`).
+RULE — `tests/sandboxes.test.ts`, `tests/rules.test.ts`, `tests/proving-grounds.test.ts`, `tests/sandbox-spawn.test.ts`.
+An engine rule is asserted through events and hashes from a state on a map: a state written in the test, or a checked-in
+sandbox named for what it shows (`melee-kill`, `worker-flight`, `hauler-two-tile-gap`, `settle-delay`, the `route-*`
+shapes and the rest of `sandboxes/`). Every sandbox reads as a save, every problem at once, loads with an id that matches
+its name and gives each side that fights somewhere to go; every unit and building the content holds stands alone in a
+slice and runs without failing. The rules between rounds (openings, the regroup, missions) are held by
+`tests/match.test.ts`, `tests/regroup.test.ts` and `tests/mission.test.ts`; routing's own parts are tested alone on small
+Grids and mazes, against a plain search (`tests/routing.test.ts`).
 
 ### Structured-cell snapshots across backends
 
@@ -105,7 +138,7 @@ RULE — `tests/view.test.ts`, `tests/backend-opentui.test.ts`, `tests/roles.tes
 `tests/see-through.test.ts`. The frame is engine-owned, so two backends drawing the same frame must
 produce the same characters. Frames are exactly the composition size, a tile to a column at every terminal size; every glyph
 is one printable ASCII cell; identical arguments give identical frames and skipping frames changes
-nothing; at a tick boundary every entity stands on the tile the kernel put it on; monochrome renders
+nothing; at a tick boundary every entity stands on the tile the engine put it on; monochrome renders
 every sandbox with no cell depending on colour to exist; the compositor emits only roles from the
 committed vocabulary. Direct ANSI, OpenTUI (where its native core loads) and the canvas resolve one
 mixed cell to the same colours, and turning effects off changes only the picture (`tests/effects.test.ts`).
@@ -196,6 +229,18 @@ battle is fun. Those judgements are kept apart from automated results: a setting
 settle, never a test result, and no automated check stands in for it. Numbers and testers reach everything else
 first, so Mario's time goes only where they cannot. The scripted playtest returns every screen as text and pictures so a
 change can be seen before it is claimed.
+
+## What earlier rounds learned
+
+- **Set a battle up as the game sets it up.** A rule once seemed to cut blocked time by nine tenths: its units had
+  stopped trying, on maps that gave no side a target.
+- **Check a board before trusting it.** A board drawn as mirrors gave one end 27 battles to 7: a Nexus placed by its
+  corner. Play it from both ends.
+- **Vary the opening and play enough.** One layout turns on tie draws alone; both ends and a dozen seeds before a few
+  percent means anything.
+- **Read the whole report**, not only who won: units at a narrow pass once changed target every tick, at four times the
+  route work, while their win rate gave no sign of it.
+- **Look at one battle** (`--show`, `--log`) before believing a number that moved a lot.
 
 ## Balance metrics
 

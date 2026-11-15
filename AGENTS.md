@@ -64,6 +64,11 @@ follow name the section to read for each practice.
   code, each new reading built with a second count as a test, tester agents with a goal each, and
   only then Mario. Before the first edit to code or content, read the manual's "Developing and
   testing a change" and work its steps in order.
+- **Check at the right layer.** The code is four layers, the battle engine at the bottom
+  ([`architecture.md`](docs/system-design/architecture.md)); a rule lives in the lowest one that can hold it. A unit test
+  holds one rule at its layer and runs fast on every build; a verifier (the `skirmish` or `measure` command, the scripted
+  playtest, a throwaway test) shows your task works and is kept only if its rule must hold for every later change
+  ([`testing.md`](docs/system-design/testing.md)).
 - **See it before you claim it.** A passing test is not proof that a screen reads well: press the
   keys with the scripted playtest and read every screen it returns (the `playtest` skill).
 - **One word, one thing: check the [glossary](docs/game-design/glossary.md) before naming anything**,
@@ -83,7 +88,7 @@ follow name the section to read for each practice.
 
 ## Rules that do not bend
 
-[`docs/system-design/grid-engine.md`](docs/system-design/grid-engine.md) holds the architecture and
+[`docs/system-design/architecture.md`](docs/system-design/architecture.md) holds the architecture and
 every rule, each marked RULE (built and depended on), GUIDANCE (the default; anything unmarked) or
 IDEA (a sketch). Read its invariants table before changing a RULE or adding a module. The ones every
 session needs:
@@ -91,7 +96,7 @@ session needs:
 - **Three worlds.** State is what is true, the Pulse is how it changes, presentation is what it looks
   like. Only the Pulse mutates state; presentation never influences it. A match must resolve with
   the renderer deleted.
-- **The kernel is pure.** It imports no terminal, clock, network or renderer, calls no `Math.random`,
+- **The battle engine is pure.** It imports no terminal, clock, network or renderer, calls no `Math.random`,
   and the same opening, seed and tick count hash identically on Node and Bun, every run.
 - **Two random streams never touch**: seeded gameplay (PCG32) and cosmetic randomness (a hash of an
   effect instance's identity, never a stream).
@@ -99,7 +104,7 @@ session needs:
 - **Every interactive action is a named command**; keyboard, mouse and a driver are three adapters
   onto one vocabulary, every menu item shows its hotkey and a click activates what it lands on.
 - **A log is a record, never an input.** Events are declared before they are logged (`src/log/`); the
-  kernel and the match layer never log, and nothing the rules decide reads a log.
+  battle engine and the rules between rounds never log, and nothing the rules decide reads a log.
 - **Cells carry style roles, never colours.** Monochrome ASCII is the floor; 80 × 24 is the
   acceptance target. The look the game is designed for is the colour one, and with colours the game
   paints every colour itself, its background included, so it never reads or leans on the terminal's
@@ -120,15 +125,15 @@ What the folder names do not say; the rest is in the tree.
 
 | Path | What it is |
 | --- | --- |
-| `src/pulse/`, `src/state/`, `src/grid/`, `src/events/`, `src/rng/`, `src/routing/`, `src/abilities/` | The deterministic kernel, the pure parts its unit routes are built from, and the table of ability kinds it calls. `tests/architecture.test.ts` names every folder held to the kernel's purity and which layer may import which. |
-| `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, the regroup, banners, missions and their trigger runner. |
+| `src/engine/` | The battle engine: given a state on a map, it plays a Battle Round tick by tick and records its events. It imports nothing above it but `src/content/`, and `tests/architecture.test.ts` holds which layer may import which. |
+| `src/match/`, `src/mission/` | The rules between rounds: each Battle Round's opening (the regroup, banners, Commanders returning, training), missions and their trigger runner. |
 | `armies/`, `stories/`, `src/armies/` | Armies as data, stacked: `armies/all` (what any Commander may use), the factions (`citizen`, `ravel`), one army per Commander; a Commander's story and missions (`stories/<id>/story.json`); the loader. To write one: [`army-authoring.md`](docs/system-design/army-authoring.md). |
-| `src/battle/`, `src/skirmish/`, `src/cli/skirmish*.ts`, `saves/`, `players/`, `maps/` | The whole game, played: the `skirmish` command plays a Skirmish headless from a save, a round at a time, a script or a model on each side (Nexus, credits, rounds, who wins). Its manual is the opening comment of `src/cli/skirmish.ts`; the design is [`battles.md`](docs/system-design/battles.md) and [`skirmish-saves.md`](docs/system-design/skirmish-saves.md). |
-| `sandboxes/`, `src/skirmish/opening/`, `src/measure/`, `bin/grid.ts` | A slice of the Grid, like a unit test's context: a sandbox is one Battle Round written by hand for one rule, effect, movement or ability, run by `grid`, the engine tool; a trial plays one over many seeds, as built and as variants change it ([`sandboxes.md`](docs/system-design/sandboxes.md)). `bin/measure.ts` plays the same battles before and after a change ([`measurement.md`](docs/system-design/measurement.md)). |
+| `src/battle/`, `src/skirmish/`, `src/cli/skirmish*.ts`, `saves/`, `players/`, `maps/` | The game: the Nexus Pulse, the Build Phase, credits, rounds and who wins, the save file. The Skirmish screen and the `skirmish` command (`bin/skirmish.ts`, the game headless for agents; its manual is `--help`) play it by the same steps. Design: [`battles.md`](docs/system-design/battles.md), [`skirmish-saves.md`](docs/system-design/skirmish-saves.md). |
+| `sandboxes/`, `src/measure/` | A sandbox is a save whose `start` draws the board by hand: one Battle Round of the engine, for one rule, effect, movement or ability, played and drawn by the `skirmish` command; most are the boards of unit tests. `bin/measure.ts` plays the same battles before and after a change ([`measurement.md`](docs/system-design/measurement.md)). |
 | `src/build/all-settings.ts` | Every setting and Experiment, declared once. |
 | `src/log/`, `src/report/` | Two records: the Activity Logs (the structured logger, its declared events and filters) and a battle's levelled log with the report a run ends on. |
 | `src/terminal/`, `src/view/`, `src/cli/` | What every screen shares with the terminal (it imports nothing from the view); composition and backends; the screen loops and the screen routes (`src/cli/route.ts`). `bin/terminal-nexus.ts` is the game. |
-| `.claude/skills/<name>/SKILL.md` | The runnable procedures; each description says when to use it: `grid`, `playtest`, `grid-screenshots`, `skirmish`, `remeasure`, `feedback-round`, `pr-description`, `writing-for-agents`. |
+| `.claude/skills/<name>/SKILL.md` | The runnable procedures; each description says when to use it: `skirmish`, `playtest`, `remeasure`, `feedback-round`, `pr-description`, `writing-for-agents`. |
 
 ## Finishing a session
 

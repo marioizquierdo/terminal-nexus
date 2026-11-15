@@ -12,22 +12,22 @@ step**, so relative imports carry explicit `.ts` extensions and the code stays i
 TypeScript (no enums, no parameter properties). `tsconfig.json` is for type checking and editors.
 
 ```bash
-npm install         # only type checking and the OpenTUI backend need it; the kernel has no dependency
+npm install         # only type checking and the OpenTUI backend need it; the battle engine has no dependency
 
 npm run typecheck   # tsc --noEmit, then the browser page's one DOM file against tsconfig.web.json
 npm test            # Node's runner over tests/*.test.ts
 npm run test:bun    # the same suite under Bun, one file at a time
 npm run check       # ./scripts/check-repository.sh — the repository validator
 npm run test:all    # typecheck, then both runtimes: what to run before every push
-npm run verify-sandboxes # every sandbox resolves to the same hashes twenty times (CI runs this)
 
-# grid — the engine, editor and replay tool. <save> is a sandbox (sandboxes/): its path, suffix optional, or its id.
-./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish                       # watch (the default)
-./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish --headless --log-level info --ticks 120
-./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish --headless --events events.jsonl --json
-./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
-./bin/grid.ts engage-gap2-melee-vs-mix --seeds 1-12 --swap --army-a trooper:6,skyraider:6   # a trial: as built vs a variant
-./bin/grid.ts engage-bench                                             # a trial file (sandboxes/trials/), with what it expects
+# skirmish — the game, headless, for agents and tests (--help is its manual; the skirmish skill has the procedures).
+./bin/skirmish.ts --map crossing --p1 build: --p2 script:agro                         # a new battle: p1's brief
+./bin/skirmish.ts -f s.save.json --p1 build:b.json --play-to next                     # a round played from a save
+./bin/skirmish.ts --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --play-to end
+./bin/skirmish.ts --load sandboxes/rules/melee-kill.save.json --play-to next --show 0,end --log-level info   # a board written by hand
+
+# measure — many battles, the same way before and after a change (measurement.md, the remeasure skill).
+node bin/measure.ts run --spec quick --jobs 4
 
 # terminal-nexus — the game. No map: the title menu, or the place a route names (--help lists them).
 ./bin/terminal-nexus.ts                                                      # the title menu
@@ -62,8 +62,7 @@ TypeScript with no build step from 22.18; Bun runs the same sources to the same 
 are for type checking only; `@opentui/core` is the terminal backend and its native core loads under Bun, not Node;
 `gifenc` and `pngjs` are dev-only (GIFs of a scripted playtest; "is this shot unchanged?").
 
-The `grid` skill (`.claude/skills/grid/SKILL.md`) has the full command line, the report grammar and
-how to author a map.
+Each command's manual is its `--help`; the skills under `.claude/skills/` are the procedures that use them.
 
 ### The display options
 
@@ -80,11 +79,9 @@ the setting, the field and the log property:
 `--colors` was called `--capability` (`ColorDepth` was `CapabilityMode`): a saved settings file and a pasted
 export written under the old name still read, and the old flag is refused with the new name. In code, `ColorDepth`,
 `COLOR_DEPTHS`, `parseColorDepth` and `detectColorDepth` live in `src/terminal/display.ts` and
-`src/cli/grid-main.ts`, and a function that draws takes a `colors` argument.
+`src/cli/terminal-nexus.ts`, and a function that draws takes a `colors` argument.
 
-`grid`'s view takes `--colors`, `--theme`, `--glyphs`, `--no-effects`, `--reduced-motion`, `--speed`,
-`--seed`, `--cosmetic-seed`, `--backend auto|ansi|opentui` and `--save-log <file>`; the game's own are the
-four above and `--backend`. The playtest and screenshot scripts take `--colors`, `--theme` and `--glyphs`
+The game takes the four above and `--backend auto|ansi|opentui`. The playtest and screenshot scripts take `--colors`, `--theme` and `--glyphs`
 too. Each program refuses an argument it does not read, and a retired one says what changed (`--tile-width`:
 a tile is one column at every size; `--capability`: it is `--colors`). ASCII and monochrome are the floor;
 everything above them is fidelity, never information.
@@ -113,27 +110,28 @@ measurement after, testers with a goal, and only then Mario. Each step ends on a
 
 1. **Write the measurement before the change.** Write down the number it should move or the rule it must not break,
    with a threshold: "the side ahead after round 2 wins less than 70%", "engagement damage equals total damage". Pick the
-   instrument by the question: a **sandbox** is a slice of the Grid for one rule, effect, movement or ability (damage,
-   deaths, paths, timings); the **`skirmish` command** plays the whole game (Nexus, credits, rounds, who wins)
-   ([`testing.md`](docs/system-design/testing.md), two instruments; [`sandboxes.md`](docs/system-design/sandboxes.md), which
-   tool answers which question). *Done when* the sentence, the threshold and the command that counts it are written in the
+   layer the change lives at and the check that reads it there: an engine rule on a board written by hand (a sandbox),
+   the whole game through the **`skirmish` command** (Nexus, credits, rounds, who wins), the power curve through the
+   **`measure` command** ([`testing.md`](docs/system-design/testing.md), unit tests and verifiers). *Done when* the sentence, the threshold and the command that counts it are written in the
    step's notes or the pull request, before any code.
 2. **Take the before.** Commit first, then measure with the instrument step 1 named, on its own record:
    - **Whole game:** both maps, `crossing` and `pocket`, over seeds: `npm run skirmish -- --map <map> --p1 script:steady
      --p2 script:steady --commanders all --seeds 1-12 --play-to end > <date>-<what>-<map>-before.txt` (the `skirmish`
      skill). The tally is the record: the file name carries the date, and its first line the commit (`git rev-parse --short HEAD`).
-   - **One rule, effect, movement or ability:** a sandbox or a trial, `npm run grid -- <trial> --out before.json` (the
-     `grid` skill).
+   - **One rule, effect, movement or ability:** a sandbox played by the `skirmish` command, its log kept:
+     `npm run skirmish -- --load <sandbox> --play-to next --log before.log --log-level info`, on a copy of the sandbox
+     for each seed the question needs.
    - **The power curve or a route:** the kept run, `node bin/measure.ts run --out before.json` (the
      [`remeasure`](.claude/skills/remeasure/SKILL.md) skill, [`measurement.md`](docs/system-design/measurement.md)).
    *Done when* the before is saved with its date and the commit it ran on (no `+uncommitted`), for both maps when it is a
    whole-game measurement. Records kept for history go in `docs/history/measurements/`.
-3. **Build it with its second count.** Each new reading comes with a second way to count it, and that check is an
+3. **Build it with its second count**, at the lowest layer that can hold it ([`architecture.md`](docs/system-design/architecture.md),
+   the layers). Each new reading comes with a second way to count it, and that check is an
    invariant test ([`testing.md`](docs/system-design/testing.md), invariant tests). Every option you add refuses a value it
    does not use, or says what is not done, and is registered in `src/cli/args.ts` with a test that it arrives. *Done when*
    each new reading has a test that goes red when you break the reading, and each option refuses odd input.
-4. **Take the after and compare**, with the same instrument, commands and seeds: two skirmish tallies side by side; a trial
-   with `--baseline before.json`; a kept run with `node bin/measure.ts compare <before> <after>`. Sort what the change broke
+4. **Take the after and compare**, with the same instrument, commands and seeds: two skirmish tallies side by side; two
+   logs with `diff`; a kept run with `node bin/measure.ts compare <before> <after>`. Sort what the change broke
    before fixing any test (the `remeasure` skill; "Things that bite" below). *Done when* the number from step 1 met its
    threshold (on both maps, for the whole game), or the notes say what moved instead and why; a result the change makes stale
    is marked superseded ([`measurement.md`](docs/system-design/measurement.md), when a measurement goes stale).
@@ -170,8 +168,8 @@ Things that bite:
 - **A red assertion in the live-loop test looks like a hang.** `tests/lifecycle-build-phase.test.ts` leaves
   the terminal loop running when an assertion throws, so Node never exits. Run it alone with
   `node --test --test-timeout=30000`.
-- **A flag that ignores its input is a bug.** The shared parser takes an unknown option for a flag; both command lines
-  refuse what they do not read, but every value-taking option is registered in `src/cli/args.ts`.
+- **A flag that ignores its input is a bug.** The game's parser takes an unknown option for a flag; every command
+  refuses what it does not read, and every value-taking option of the game is registered in `src/cli/args.ts`.
 - **Probe on a copy.** `git checkout <file>` undoes everything uncommitted in it, a whole rewrite included; commit first.
 
 The validator, `./scripts/check-repository.sh`, is the cheapest reviewer and runs in CI. It checks
@@ -188,8 +186,8 @@ A passing test says nothing about spacing, density or where the eye goes. Look.
 **A Skirmish is where a change is seen** ([`game-modes.md`](docs/game-design/game-modes.md), one battle on screen or not).
 Headless, a Skirmish is played from a save file, a round a command: `npm run skirmish -- -f <save>` prints the brief,
 `--p1 build:b.json` checks a slot's build actions, `--play-to next` plays the round and saves the next Build Phase, and `--p2 script:rush`
-changes who plays a side (the command's manual is `npm run skirmish -- --help`; how each kind of test uses it is
-[`sandboxes.md`](docs/system-design/sandboxes.md), testing through Skirmishes). On
+changes who plays a side (the command's manual is `npm run skirmish -- --help`; how a verifier uses it is
+[`testing.md`](docs/system-design/testing.md)). On
 screen, `--load <save>` opens a save at its Build Phase, `--at 'skirmish?seed=<n>'` a new battle against Dob Hunter's
 `balanced` script, and `--at 'skirmish?setup=new'` the setup screen; open a mission by its route only when the change is
 about a mission. Which save shows what:
@@ -200,7 +198,7 @@ about a mission. Which save shows what:
 | `saves/crossing-round-4.save.json` | Three rounds in: bases built, armies regrouped, a Commander's return, Save game offering its own name |
 | `saves/mirror-vasse.save.json` | Both slots scripted: spectating, the result naming a winner |
 | `saves/pocket-short.save.json` | Four rounds on the small map: a whole battle to its result and `[m] Setup screen` in minutes |
-| `sandboxes/<folder>/*.save.json` | One Battle Round written by hand, one rule each: watched in `grid`, not on the game's screen |
+| `sandboxes/<folder>/*.save.json` | One Battle Round from a board written by hand, one rule each: played and drawn by the `skirmish` command (`--play-to next --show 0,end`), not on the game's screen |
 
 **The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on the game's screens
 without a terminal — a Skirmish from `saves/crossing-new.save.json` unless told otherwise, the title menu from a title
@@ -236,15 +234,12 @@ them and the pull request keeps them forever. Keep a GIF under about 300 KB (`--
 and a PNG under 200 KB. A picture worth keeping for the record goes in `docs/history/screenshots/`
 with a dated name and a row in its README, one or two per era.
 
-**Screenshots of the real terminal** (`node scripts/capture-screenshots.mjs`, the `grid-screenshots`
-skill) drive `grid` inside a tmux pseudo-terminal, so the ANSI backend takes the path a person gets,
-pause at an exact tick and render the pane to a PNG through the Chromium already present for
-Playwright. `scripts/capture-build-phase-screenshots.mjs` covers the Build Phase at the sizes that matter
-(80 × 24, 104 × 30, a wide 128 × 24, and 79 × 24 for the resize gate); most of its shots are composed
-in-process through the scripted playtest, a few stay on tmux because the terminal path is what they
-prove. An unchanged shot is not rewritten: every image records a hash of the page it came from, so a
-regeneration touches only the pictures a change shows up in. Set an Experiment by name with
-`--settings`, never by counting rows.
+**Screenshots of the real terminal**: `scripts/capture-build-phase-screenshots.mjs` covers the Build Phase at the sizes
+that matter (80 × 24, 104 × 30, a wide 128 × 24, and 79 × 24 for the resize gate); most of its shots are composed
+in-process through the scripted playtest, a few drive the game inside a tmux pseudo-terminal, because the terminal path
+is what they prove, and render the pane to a PNG through the Chromium already present for Playwright. An unchanged shot
+is not rewritten: every image records a hash of the page it came from, so a regeneration touches only the pictures a
+change shows up in. Set an Experiment by name with `--settings`, never by counting rows.
 
 **The browser playtest page** (`bun scripts/build-web.mjs`, one self-contained HTML file) runs the real menu, Build Phase
 and Battle Round through a stand-in terminal, opening on a Skirmish, painted on a canvas, with an on-screen key bar for the
@@ -261,8 +256,8 @@ link cannot carry an address with `=` in it, so a published page opens at a plac
 **Skirmishes put two armies against each other** (`npm run skirmish -- ...`, the `skirmish` skill): each round both
 sides keep a Nexus power and plan a Build Phase blind, then a Battle Round plays between them
 ([`battles.md`](docs/system-design/battles.md)). Scripts play in one process; a model writes each round's build actions
-from its brief (the task to give it is in [`sandboxes.md`](docs/system-design/sandboxes.md), testing through Skirmishes: a small,
-cheap model, each pairing from both sides, every round's report read for why).
+from its brief (the task to give it is in [`testing.md`](docs/system-design/testing.md), verifying through the `skirmish`
+command: a small, cheap model, each pairing from both sides, every round's report read for why).
 
 ```bash
 npm run skirmish -- --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --rounds 8 --play-to end
@@ -283,11 +278,10 @@ node bin/measure.ts compare <before.json> <after.json>
 node bin/measure.ts who structure.citizen.nexus --plan nothing          # what one unit did, round by round
 ```
 
-**The log is the feedback loop for the kernel.** `grid --headless` writes fixed-column lines to one
-stream, `[tick] LEVEL kind subject [-> object] detail...`, at `ERROR`, `WARN` (default), `INFO`,
+**The log is the feedback loop for the battle engine.** The `skirmish` command's `--log-level` writes fixed-column lines
+to one stream, `[tick] LEVEL kind subject [-> object] detail...`, at `ERROR`, `WARN` (default), `INFO`,
 `DEBUG` or `TRACE`, closed by a `report` line with the outcome, losses and hashes. It grows by adding
-kinds, never by reshaping columns. When a test needs structure rather than a story, assert on
-`--events` JSONL instead. The Build Phase and the menus have their own record, the **Activity Logs**:
+kinds, never by reshaping columns. When a test needs structure rather than a story, assert on the events themselves. The Build Phase and the menus have their own record, the **Activity Logs**:
 one structured logger (`src/log/`) whose events are declared in `src/log/activity.ts` with a default
 level and typed, described properties, and which the game menu's `[a] Activity logs` lists newest
 first, filters and exports (the clipboard, and `activity-export.txt` beside the settings export).
