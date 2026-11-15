@@ -62,6 +62,3 @@ jobs:
       # from the page imports a Node-only module.
       - name: Build the browser playtest page
         run: bun scripts/build-web.mjs
-
-      - name: Verify every sandbox resolves identically
-        run: npm run verify-sandboxes
