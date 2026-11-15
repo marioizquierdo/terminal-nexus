@@ -1,7 +1,7 @@
 // Area damage against a tight army (step 16K; the owner, 2026-10-21: "implement those to test differences in
 // formations with units"): aiming at a crowd (`ContentDef.aim`, the Ravel bomber and the Citizen mortar), burning ground
 // (`AttackDef.burn`, `MatchState.burning`: lit by a landing hit, burning every unit and worker on it of either side by
-// the kernel's own clock, weighed by the routes, put out by the regroup), and the two units as their armies define them.
+// the battle engine's own clock, weighed by the routes, put out by the regroup), and the two units as their armies define them.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -9,16 +9,16 @@ import { ARMIES } from "../src/armies/index.ts"
 import { contentProblems } from "../src/content/data.ts"
 import { FIXTURE_REGISTRY, createRegistry, rectFootprint } from "../src/content/index.ts"
 import type { ContentDef, ContentRegistry } from "../src/content/index.ts"
-import type { DomainEvent } from "../src/events/types.ts"
-import type { Coord } from "../src/grid/index.ts"
+import type { DomainEvent } from "../src/engine/events/types.ts"
+import type { Coord } from "../src/engine/geometry/index.ts"
 import { regroup } from "../src/match/index.ts"
-import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { BURNING_WEIGHT } from "../src/pulse/routes.ts"
-import { onPatch } from "../src/pulse/burning.ts"
+import { contextFor, stepTick } from "../src/engine/pulse/index.ts"
+import { BURNING_WEIGHT } from "../src/engine/pulse/routes.ts"
+import { onPatch } from "../src/engine/pulse/burning.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
-import { hashState } from "../src/state/serialize.ts"
-import type { BurningGround, MatchState, PlayerId, TargetArea } from "../src/state/types.ts"
+import { hashState } from "../src/engine/state/serialize.ts"
+import type { BurningGround, MatchState, PlayerId, TargetArea } from "../src/engine/state/types.ts"
 import { playSandbox } from "./helpers.ts"
 
 const TROOPER = "unit.citizen.trooper"

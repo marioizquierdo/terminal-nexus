@@ -10,7 +10,7 @@ import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import type { BattleState, Side } from "../src/battle/index.ts"
 import { SIDES, armyOf, beginBattle, loadoutOf, playRound, restoredOf, roundOpening } from "../src/battle/index.ts"
 import { newSkirmishLevel, positionOf } from "../src/cli/skirmish-play.ts"
-import type { MatchState } from "../src/state/types.ts"
+import type { MatchState } from "../src/engine/state/types.ts"
 
 const NONE = { build: [], stance: "attack" } as const
 

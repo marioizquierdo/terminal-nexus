@@ -6,7 +6,7 @@
 **Depends on:** Milestone 2 (campaign design decided — accepted 2026-09-12)
 
 > **Start simple, with the minimum.** Mario's own words. This is the first time anything under the
-> name `terminal-nexus` actually launches — [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 11
+> name `terminal-nexus` actually launches — [`docs/system-design/grid-engine.md`](../../system-design/architecture.md) Section 11
 > already names the split: "`grid` is the editor and replay tool, not the game; a future
 > `terminal-nexus` executable is what launches a campaign built on it." This milestone is that
 > executable's first real screen, and nothing more than that.
@@ -87,7 +87,7 @@ Campaign once there is anything to load.)
   [`docs/history/reports/2026-09-13-menu.md`](../reports/2026-09-13-menu.md). `bin/terminal-nexus.ts`, the list
   shape with displayed hotkeys, the keyboard and mouse adapters, the driver, and the shared disposer —
   with the hotkey/arrow/click equivalence test. The smallest possible screen that exercises the whole
-  input model of [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) 9.7.
+  input model of [`docs/system-design/grid-engine.md`](../../system-design/architecture.md) 9.7.
 - **3B — Settings. BUILT**, see the note above and
   [`docs/history/reports/2026-09-21-settings-screen.md`](../reports/2026-09-21-settings-screen.md). Capability tier, theme, glyph
   pack, and reduced motion as a menu, each cycling in place and persisted to a small settings file.
@@ -104,7 +104,7 @@ Campaign once there is anything to load.)
 - **A menu is its own small, reusable shape**: a vertical list of options, each showing its hotkey
   before its label (`[1] Start New Game`), selected by that key, by up/down and Enter, or by a click
   — all three producing the same named command, per
-  [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 9.7 (canon 2.10: "a hotkey that is not displayed
+  [`docs/system-design/grid-engine.md`](../../system-design/architecture.md) Section 9.7 (canon 2.10: "a hotkey that is not displayed
   does not exist"). Rendered through the existing cell frame so monochrome, every colour tier, and
   reduced motion all already work without new accessibility code.
 - **The three input adapters, built here at their smallest.** This is the first screen with a

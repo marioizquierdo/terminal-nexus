@@ -51,7 +51,7 @@
         "b"
       ],
       "legend": {
-        "b": {"content":"structure.citizen.barracks"}
+        "b": {"content":"structure.bench.barracks"}
       }
     }
   }

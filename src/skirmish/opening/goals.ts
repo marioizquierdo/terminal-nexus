@@ -1,11 +1,11 @@
-// Every side that fields a fighting unit has somewhere to go (docs/system-design/sandboxes.md): its own target,
+// Every side that fields a fighting unit has somewhere to go (docs/system-design/skirmish-saves.md): its own target,
 // or an enemy Grid Nexus to head for, as every side of the game has one. A battle where a side has neither is one the
 // game never plays — its units fall back on engaging the nearest enemy wherever it is — so a checked-in map is
-// refused one (`tests/sandboxes.test.ts`), and the engine tool warns of a map written by hand without one.
+// refused one (`tests/sandboxes.test.ts`), so no board written by hand leaves a side without one.
 
 import type { ContentRegistry } from "../../content/index.ts"
-import type { MatchState, PlayerId, TargetArea } from "../../state/types.ts"
-import { followsTarget } from "../../pulse/target.ts"
+import type { MatchState, PlayerId, TargetArea } from "../../engine/state/types.ts"
+import { followsTarget } from "../../engine/pulse/target.ts"
 
 /** The sides of `state` that field a unit that follows a target, yet have no target and no enemy Nexus. */
 export function sidesWithoutGoal(state: MatchState, registry: ContentRegistry): PlayerId[] {

@@ -3,8 +3,8 @@
 _How a Skirmish is set up, saved, loaded and played without a screen: one vocabulary for the setup screen, the save
 file, the command line and the routes. What a Skirmish is for a player is [`game-modes.md`](../game-design/game-modes.md);
 the battle it plays is [`battles.md`](battles.md); the `skirmish` command's manual is the comment it opens with
-([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts)); how a test plays one is [`sandboxes.md`](sandboxes.md),
-testing through Skirmishes. The code: the save and the steps the screen and the command share in `src/skirmish/`
+([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts)); how a test or a verifier plays one is
+[`testing.md`](testing.md). The code: the save and the steps the screen and the command share in `src/skirmish/`
 (`save.ts`, `request.ts`, `play.ts`), the screen in `src/cli/skirmish-play.ts` and `src/cli/skirmish-open.ts`, the setup
 screen in `src/cli/title-screens.ts`; what is left is in the Skirmish milestone
 ([`milestone-17-skirmish.md`](../history/milestones/milestone-17-skirmish.md))._
@@ -30,7 +30,7 @@ headless with scripts on either side.
 | **Modifier** | A named rule laid over the battle: `fast-rounds`, `double-income`. A playground for experiments; the good ones are kept |
 | **Setup** | The map, the seed, the slots, the goal, the modifiers, the round limit and the Battle Round's ticks: everything chosen before round 1 (the settings text travels beside it) |
 | **Save file** | A setup, and the battle as it stands at the opening of a Build Phase (`*.save.json`) |
-| **Sandbox** | A save that opens on a Battle Round written by hand (its `start`), both slots planning nothing: a rule, a unit, a kind of ground or a showcase, in `sandboxes/` |
+| **Sandbox** | A save whose `start` draws the board by hand: one Battle Round of the battle engine from that board, both slots planning nothing. A rule, a unit, a kind of ground or a showcase, in `sandboxes/` |
 | **Spectating** | A battle with no `player:` slot: the Build Phase has nothing to build, only Explore Map and Start next round |
 
 The code's word for the two-sided battle stays *battle* (as the engine's word for a battle is *match*); a person reads
@@ -44,7 +44,7 @@ components like this is more maintainable, flexible and easier to explain"):
 
 | Layer | What it is | Where |
 | --- | --- | --- |
-| **The battle** | The battle: a round from both sides' build actions, deterministic, the regroup after it | `src/battle/`, the kernel beneath |
+| **The battle** | The battle: a round from both sides' build actions, deterministic, the regroup after it | `src/battle/`, on the battle engine (`src/engine/`) |
 | **The record** | A save: the setup and the battle at a Build Phase, and a slot's build actions so far | `src/skirmish/save.ts` |
 | **The ask** | The words a Skirmish is asked for by (`load`, `map`, `seed`, `rounds`, `p1`, `p2-commander`, …), read by one reader whichever door they come through | `src/skirmish/ask.ts` |
 | **The seat** | Who plays each slot: a person, a build file, a script profile, later an agent; each answers the same brief, in any order | `src/skirmish/request.ts`, `slots.ts`, `play.ts` |
@@ -67,9 +67,10 @@ What follows from it:
   `skirmish --map pocket --p2-commander averno`, `terminal-nexus --map pocket --p2-commander averno` and
   `--at 'skirmish?map=pocket&p2-commander=averno'` are one battle, refused for the same reasons. The save's names are
   the setup screen's.
-- **A sandbox is not a battle.** It tests one rule on the bench's content, with no Commander, Build Phase or wave,
-  so it starts the kernel straight from the units it places. It too has one path, `playSandboxRound`
-  (`src/skirmish/sandbox-round.ts`), which `grid`, the `skirmish` command and the measurement all play it by.
+- **A sandbox is the engine from a board nobody built.** Its Battle Round is the same engine a battle's is, started from
+  the units its `start` places, with no Build Phase, Nexus Pulse or credits around it. It has one path,
+  `playSandboxRound` (`src/skirmish/sandbox-round.ts`), which the `skirmish` command, the measurement and the tests play
+  it by.
 
 ## 3. Setting up a Skirmish
 
@@ -176,14 +177,14 @@ screen moves during a Build Phase (a regroup still animating, a unit stepping of
 presentation: the Battle Round opens from the saved places, so a battle loaded from a save plays as the one played
 straight through (tested on Node and Bun).
 
-## 5. Sandboxes
+## 5. A board written by hand: sandboxes
 
-**A sandbox opens on a Battle Round written by hand** (RULE — `src/skirmish/start.ts`,
-`src/skirmish/sandboxes.ts`, `tests/skirmish-save.test.ts`, `tests/sandboxes.test.ts`): a save with a `start`,
-whose first Battle Round is what it tests. The engine's rule, unit, movement, bench and showcase battles are
-sandboxes, in [`sandboxes/`](../../sandboxes), a folder for each purpose (`rules/`, `units/`, `movement/`,
-`engage/`, `showcase/`), with the trial files that play them in `sandboxes/trials/`
-([`sandboxes.md`](sandboxes.md)). A file may be named anything; its id is its file name.
+**A sandbox is a save whose `start` draws the board by hand** (RULE — `src/skirmish/start.ts`,
+`src/skirmish/sandboxes.ts`, `tests/skirmish-save.test.ts`, `tests/sandboxes.test.ts`): its one Battle Round is the
+battle engine run from that board, to test one rule, effect, movement or ability without the game around it, like the
+context of a unit test. The checked-in ones are in [`sandboxes/`](../../sandboxes), a folder for each purpose (`rules/`,
+`units/`, `movement/`, `engage/`, `showcase/`), most of them the boards of unit tests; a session writes its own in the
+scratchpad for a question it asks once. A file may be named anything; its id is its file name.
 
 ```json
 {
@@ -210,15 +211,44 @@ sandboxes, in [`sandboxes/`](../../sandboxes), a folder for each purpose (`rules
   `target`, where its troops head (none: the enemy Nexus). `p1` is the engine's side A, `p2` side B.
 - **One Battle Round, nothing planned**: `rounds` is 1, both slots `script:idle`, no `state` and no `draft`; a slot
   names no Commander (its units are given) unless it wants one. `roundTicks` is how long the round may run.
-- **One opening, two players of it.** The round opens exactly from `start`, by the kernel (`openBattle`,
-  `src/skirmish/opening/open.ts`), not by the battle: the same entities in the same reading order, the same seed, the
-  same hash. `grid <save>` watches it, `grid <save> --seeds` makes it a trial, the measurement and every test open it,
-  and `skirmish --load <save> --play-to next` plays it and prints `grid`'s report; nothing is saved after it, since the file
-  is the battle.
+- **One opening, every door.** The round opens exactly from `start` (`openBattle`, `src/skirmish/opening/open.ts`):
+  the same entities in the same reading order, the same seed, the same hash. `skirmish --load <save> --play-to next`
+  plays it and prints its levelled log and report, `--show 0,end` draws it, and the measurement and every test open it
+  the same way; nothing is saved after it, since the file is the battle. Another seed or more ticks is a copy of the
+  file with `seed` or `roundTicks` changed.
 - **Refused whole**, as any save: every problem at once, by its place in the file, and once the shape is right the first
   unit that does not fit the ground (off the Grid, on rock, on another) as `start: ...`.
 
 The built-in maps are files in `maps/` (`crossing.map.json`, `pocket.map.json`), read by `src/battle/maps.ts` and named by id.
+
+### What a board leaves out
+
+**Any unit or building the game has stands in a sandbox with none of the game around it** (RULE —
+`tests/sandbox-spawn.test.ts`). The test loops over every content id the registry holds, each on either side, alone,
+against a trooper, among both Nexuses and sent to a target, and requires that it runs without throwing, leaves a
+sound state and leaves the same state and event hashes every run. A new unit is covered the moment it exists; one that
+breaks in a slice is fixed **in the engine or the rules between rounds**, so it handles the absence, and never by teaching the
+sandbox format to supply it.
+
+What the game builds around a unit, and what the unit does without it:
+
+| What is absent | What happens | Where |
+| --- | --- | --- |
+| **Banner** (the stance's rally point) | A side with no target heads for the enemy's Grid Nexus, and with none engages the nearest enemy. A sandbox that wants a banner writes a `target` in a start: that is the banner, mocked as the area the side heads for and holds. A stance's second leg (aggressive: there, then on) is the match layer's (`src/match/banner.ts`) and a sandbox has none. | the engine reads `targets` (`src/engine/pulse/target.ts`) and never a banner |
+| **Own Grid Nexus** | The side's march has no guide line (the band) and its units march from where they stand. A Nexus is only a building here; it is placed like one. | `src/engine/pulse/march.ts` |
+| **Enemy Grid Nexus** | Units engage the nearest enemy. With no enemy at all they stand, and the round ends on its ticks, a draw. | `src/engine/pulse/perception.ts` |
+| **Commander** | A Commander is a regular troop. A Commander's content id (`unit.citizen.vasse`) is placed like any unit and fights with its own attack and abilities; nothing else needs her on the Grid. | `src/engine/pulse/abilities.ts` reads `commander` for abilities only |
+| **Credits** | A bounty or a salvage drop is noted as an event with its credits; the rules between rounds add them up. The engine never reads credits, so a sandbox earns none and loses nothing. | `src/engine/abilities/`, `src/match/earnings.ts` |
+| **Round number, Nexus Pulse, hand, cards** | The engine has none: the round count, the hand and the cards are the match layer's and the Build Phase's. A sandbox is one round with no hand dealt. | `src/match/` |
+| **Lane** | The Grid has none. What the engine calls a lane (`march.ts`) is a side's guide line, absent without a Nexus. | `src/engine/pulse/march.ts` |
+| **A building's wave** | **A building in a Battle Round sandbox does what its army's card says** (decided by Mario, [his words](../history/feedback/2026-11-14-cleanup.md): "if you are testing a building, you are placing it in there in battle mode, and the sandbox has enough resources, then the buildings will start doing its thing"). Every placed building whose content id has a card with `spawns` in the armies is given the card's wave, the first one `firstWave` seconds in and its units leaving along their route, as a battle gives it (`src/skirmish/opening/training.ts`); a Barracks trains its four troopers, the bench Hatchery its three swarmers in place of its own spawner. Nothing is checked about resources: a wave costs no credits in a battle, so a sandbox always has enough. A building with no such card trains nothing. A recipe the caller already gave a building (`measure formations`) is kept, never doubled. A sandbox that uses a building as ground (a wall, a thing to break) places the bench's Practice Barracks (`structure.bench.barracks`), the same body with no card. | `src/skirmish/opening/training.ts`, called by `openBattle` before the entities are made, so every door gets it |
+| **A fitted building** (an upgrade or mode, `structure.x+fitting`) | Not placed: only the loader's registry resolves one, and a sandbox's is the fixture registry. | `src/content/fitted.ts` |
+
+A side that fights with nowhere to go (no target, no enemy Nexus) falls back on the nearest enemy wherever it is, a
+battle the game never plays. Checked-in sandboxes still give every fighting side a goal (RULE — `sidesWithoutGoal`, `tests/sandboxes.test.ts`), because a
+measurement of a battle the game never plays misleads; a probe in the scratchpad needs none.
+
+The attack line of the log says the damage that landed, the base beside it when an aura changed it (`dmg 8 (base 7)`).
 
 ## 6. Headless, and the same everywhere
 
@@ -227,7 +257,7 @@ The built-in maps are files in `maps/` (`crossing.map.json`, `pocket.map.json`),
 by the Build Phase's rules, plays a round or the battle to its end, many battles over seeds or every pairing of
 Commanders, two sessions handing in build actions through one save, and keeps every round as a save, a report and the battle's
 log. Its manual, every option with examples, is the comment [`src/cli/skirmish.ts`](../../src/cli/skirmish.ts) opens
-with (`npm run skirmish -- --help`); how each kind of test uses it is [`sandboxes.md`](sandboxes.md).
+with (`npm run skirmish -- --help`); how a test or a verifier uses it is [`testing.md`](testing.md).
 
 **Parity with the command** (RULE — the owner, 2026-11-12: "formalize the concept that works both from the UI and from
 the CLI"): the screen and the command open a battle by the same steps (`src/skirmish/request.ts`: a new setup or a save
@@ -247,8 +277,8 @@ for a new battle under the command's names, the defaults for what it leaves out.
 
 Round by round from a save file, as a person would: the brief of its slot, build actions written from it, checked,
 then played against the other slot's script and saved at the next Build Phase; or two agents, one a slot, each
-answering the same brief; or on the screen by keys through the scripted playtest. The commands for each are
-[`sandboxes.md`](sandboxes.md), testing through Skirmishes. The player's diary (Milestone 20) plays a whole
+answering the same brief; or on the screen by keys through the scripted playtest. The commands for each are in
+[`testing.md`](testing.md), verifying through the `skirmish` command, and the `skirmish` skill. The player's diary (Milestone 20) plays a whole
 battle on the screen this way.
 
 ## 8. Spectating

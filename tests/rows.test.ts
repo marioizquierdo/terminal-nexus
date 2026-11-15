@@ -1,17 +1,17 @@
 // A row counts two columns: the one rule of distance on the Grid (grid.md). A terminal cell is about twice as tall
 // as it is wide, so the rules count the ground the way the screen shows it: every distance, range and radius counts
 // a row up or down as two columns (`ROW_DISTANCE`), a step up or down takes twice as long as a step across, and
-// touching is a side shared. First the few functions every distance is worked out with (`src/grid/coords.ts`,
-// `src/grid/reach.ts`), then what a battle and the rules round it do with them. What the screen draws by the same
+// touching is a side shared. First the few functions every distance is worked out with (`src/engine/geometry/coords.ts`,
+// `src/engine/geometry/reach.ts`), then what a battle and the rules round it do with them. What the screen draws by the same
 // rule is tests/rows-view.test.ts's.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { auraOf } from "../src/abilities/index.ts"
+import { auraOf } from "../src/engine/abilities/index.ts"
 import { ALL_SETTINGS } from "../src/build/all-settings.ts"
 import { FIXTURE_REGISTRY, createRegistry } from "../src/content/index.ts"
 import type { ContentDef, ContentRegistry } from "../src/content/index.ts"
-import type { DomainEvent } from "../src/events/types.ts"
+import type { DomainEvent } from "../src/engine/events/types.ts"
 import {
   DIRECTIONS,
   ROW_DISTANCE,
@@ -33,19 +33,19 @@ import {
   stepLength,
   tilesWithin,
   wholeRows,
-} from "../src/grid/index.ts"
-import type { Coord, Direction, Footprint, GridTerrain } from "../src/grid/index.ts"
+} from "../src/engine/geometry/index.ts"
+import type { Coord, Direction, Footprint, GridTerrain } from "../src/engine/geometry/index.ts"
 import { foreseeIntents, regroup, resolveMissionPulse } from "../src/match/index.ts"
 import type { MissionPulseInput } from "../src/match/index.ts"
 import type { MissionDefinition } from "../src/mission/index.ts"
 import { validateMission } from "../src/mission/index.ts"
-import { contextFor, resolvePulse, stepCost, stepTick } from "../src/pulse/index.ts"
-import { fleeTrigger } from "../src/pulse/perception.ts"
-import { visionOf, followsTarget } from "../src/pulse/target.ts"
+import { contextFor, resolvePulse, stepCost, stepTick } from "../src/engine/pulse/index.ts"
+import { fleeTrigger } from "../src/engine/pulse/perception.ts"
+import { visionOf, followsTarget } from "../src/engine/pulse/target.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
-import { hashState, parseState, serializeState } from "../src/state/serialize.ts"
-import type { MatchState, PlayerId, TargetArea } from "../src/state/types.ts"
+import { hashState, parseState, serializeState } from "../src/engine/state/serialize.ts"
+import type { MatchState, PlayerId, TargetArea } from "../src/engine/state/types.ts"
 import { loadSandbox, sandboxFiles } from "./helpers.ts"
 
 const ONE: Footprint = [{ x: 0, y: 0 }]
@@ -151,7 +151,7 @@ test("a reach covers its length in columns on its own row and two columns less e
     { x: 11, y: 10 },
     { x: 10, y: 11 },
   ])
-  // For any footprint and any reach, exactly the tiles the kernel's own test puts within it, in reading order.
+  // For any footprint and any reach, exactly the tiles the battle engine's own test puts within it, in reading order.
   for (const footprint of [ONE, FIXTURE_REGISTRY.get(BARRACKS).footprint]) {
     for (const radius of [0, 1, 2, 3, 4, 6, 8]) {
       const everyTile = around(ORIGIN, radius + 4).filter((tile) => footprintWithin(ORIGIN, footprint, tile, ONE, radius))

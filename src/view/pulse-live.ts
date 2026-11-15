@@ -1,15 +1,15 @@
 // The Battle Round as the live screen plays it — the one place a resolved Pulse meets a clock.
 //
-// The kernel resolved the whole Pulse before the first frame (`src/cli/pulse-run.ts`); what is left is
+// The battle engine resolved the whole Pulse before the first frame (`src/cli/pulse-run.ts`); what is left is
 // **when to show what**, and that is presentation: a playback clock the player can pause, slow, step and
-// restart (`Playback`, `grid watch`'s own), and from it the ending's moments (`ending.ts`), every one a
+// restart (`Playback`), and from it the ending's moments (`ending.ts`), every one a
 // pure function of the Pulse's presentation time. The clock is read in one place — the caller hands in
 // `now` as a number, as `BuildAnimation` is handed it — so a test drives a whole Pulse, its last seconds
 // and its walk home included, without waiting a second.
 //
 // Two things reach back into the Build Phase's state, both as ordinary named commands (`due`): the view
 // is centred on the player's Grid Nexus when the Pulse starts and again when its ending begins. Nothing
-// here can change what the Pulse did — presentation never can (`docs/system-design/grid-engine.md`).
+// here can change what the Pulse did — presentation never can (`docs/system-design/architecture.md`).
 //
 // Two more things the presenter works out for the scene, the same way: what the player's Commander says and
 // when (`pulse-voice.ts`, planned once from the resolved Pulse, shown beside her, or in the panel while she is out
@@ -17,16 +17,16 @@
 
 import type { FallFrame } from "./commander-moments.ts"
 import { commanderArt, vignetteLengthMs } from "./commander-moments.ts"
-import { auraOf } from "../abilities/index.ts"
+import { auraOf } from "../engine/abilities/index.ts"
 import type { Barks } from "../armies/barks.ts"
 import type { BuildCommand, CommanderAbsence } from "../build/types.ts"
 import type { Camera, Viewport, VisibleRange } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import { TUNING } from "../build/tuning.ts"
-import type { Coord } from "../grid/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import type { RegroupResult } from "../match/types.ts"
 import type { MissionVerdict } from "../mission/types.ts"
-import type { Outcome, PlayerId } from "../state/types.ts"
+import type { Outcome, PlayerId } from "../engine/state/types.ts"
 import { endingTimes, missionResultOf, nexusStrain, phaseAt, redAlert, resultOf } from "./ending.ts"
 import type { EndingPhase, EndingTimes, NexusStrain, PulseResult } from "./ending.ts"
 import type { ColorDepth } from "./roles.ts"
@@ -41,7 +41,7 @@ import { VOICE, commanderOf, labelPlace, planVoice, shippedBarks, speakerOf, voi
 import { DEFAULT_PRESENTATION, createView } from "./snapshot.ts"
 import type { PresentationOptions, PulseTimeline, PulseView } from "./snapshot.ts"
 
-/** A Pulse the kernel has resolved, and the regroup that follows it — everything the screen needs to play it, built by
+/** A Pulse the battle engine has resolved, and the regroup that follows it — everything the screen needs to play it, built by
  *  the application shell (`src/cli/pulse-run.ts`, `src/cli/skirmish-play.ts`) and never by the view. */
 export type ResolvedPulse = Readonly<{
   timeline: PulseTimeline
@@ -91,7 +91,7 @@ export type MissionEnding = Readonly<{
   setup?: string
 }>
 
-/** Frames a second the playback's own single-frame step is worth (`grid watch`'s 30). */
+/** Frames a second the playback's own single-frame step is worth. */
 const STEP_FRAMES_PER_SECOND = 30
 
 /** How a frame is drawn: the player's display settings, and — for her voice — the part of the map in view (her

@@ -14,7 +14,7 @@ import { MOUSE_RIGHT } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import { nexusTile } from "../src/build/state.ts"
 import { starterContext } from "../src/cli/starter.ts"
-import { gridDistance } from "../src/grid/coords.ts"
+import { gridDistance } from "../src/engine/geometry/coords.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { frameToAnsi, frameToText } from "../src/view/frame.ts"
@@ -632,7 +632,7 @@ test("starting over from the game menu is a fresh Build Phase with the Experimen
   assert.ok(played.build.pulse !== null && played.build.pulse !== first, "a new Pulse did not start")
 })
 
-test("a Pulse the kernel cannot start from undoes the commit and says why, rather than leaving a dead screen", () => {
+test("a Pulse the battle engine cannot start from undoes the commit and says why, rather than leaving a dead screen", () => {
   const context = starterContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const build = new BuildSession({

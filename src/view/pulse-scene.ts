@@ -1,10 +1,10 @@
 // The Battle Round on the Build Phase's own screen — the fight drawn through the same
-// cursor-driven camera, in the same frame, under the same popups. The map is 96 x 40; the old Pulse view
-// (`compose.ts`) draws a fixed 48 x 16 pane with its own chrome, and so could not have shown it.
+// cursor-driven camera, in the same frame, under the same popups, so a map larger than the screen is
+// scrolled as it is while building.
 //
 // Everything here is drawing: it takes a `PulseFrame` — what the presenter (`pulse-live.ts`) has already
 // worked out for one presentation instant — and paints cells. It reads no clock and asks nothing of the
-// kernel, and the frame it draws is a pure function of the resolved Pulse and the time.
+// engine, and the frame it draws is a pure function of the resolved Pulse and the time.
 
 import type { FallFrame } from "./commander-moments.ts"
 import { barkPanelRows, quoted } from "../armies/barks.ts"
@@ -17,17 +17,17 @@ import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { CARD_TEXT, commanderName } from "../content/cards.ts"
 import { hasRoom, supplyOf } from "../content/supply.ts"
-import type { DomainEvent } from "../events/types.ts"
-import { inBounds, tileIndex } from "../grid/coords.ts"
-import { tilesWithin } from "../grid/reach.ts"
-import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
-import type { PlayerId } from "../state/types.ts"
-import { PLAYERS } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import { inBounds, tileIndex } from "../engine/geometry/coords.ts"
+import { tilesWithin } from "../engine/geometry/reach.ts"
+import type { Coord, Footprint, GridTerrain } from "../engine/geometry/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
+import { PLAYERS } from "../engine/state/types.ts"
 import type { StatusMessage } from "../build/status.ts"
 import { status } from "../build/status.ts"
 import type { EndingPhase, EndingTimes, PulseResult } from "./ending.ts"
 import { BEAM_BOLD, beamFrame, beamLight, formatTimer, timerLit, timerSeconds } from "./ending.ts"
-import { drawnBold, forceBar } from "./compose.ts"
+import { drawnBold } from "./grid-layer.ts"
 import { inView } from "./build-grid.ts"
 import { drawFire } from "./burning.ts"
 import { paintEffectCells } from "./effects/composite.ts"
@@ -199,12 +199,12 @@ const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
 
 /**
  * ***Her aura's reach*** (By the Book: her side's units near her take less damage): every tile within its radius
- * of her, by the kernel's own test (`tilesWithin`, `footprintWithin`: a row counts two columns, so a diamond twice
+ * of her, by the battle engine's own test (`tilesWithin`, `footprintWithin`: a row counts two columns, so a diamond twice
  * as wide as it is tall in tiles, as wide as it is tall on screen) — washed in her side's colour on the ground,
  * moving with her while the fight is on. A glyphless write on the ground's own band, under everything that stands:
  * a unit or a building in her reach keeps its glyph and every colour of its own, standing in the glow rather than
  * tinted by it (at 256 colours a washed glyph would change hue), and an effect draws over it. Read from the
- * content's aura (an `aura` ability, `src/abilities/aura.ts`), so a Commander with a wider one is drawn wider.
+ * content's aura (an `aura` ability, `src/engine/abilities/aura.ts`), so a Commander with a wider one is drawn wider.
  */
 export function drawAura(cells: BandCell[], view: SceneView, pulse: PulseFrame): void {
   const aura = pulse.aura
@@ -349,7 +349,7 @@ function forceLine(pulse: PulseFrame, player: PlayerId): string {
   return `${side.toUpperCase().padEnd(5)} ${String(units).padStart(2)} [${bar}] ${String(hp).padStart(4)}`
 }
 
-/** How many units `player`'s buildings owe of the waves that have come (`EntityState.owed`, `src/pulse/production.ts`):
+/** How many units `player`'s buildings owe of the waves that have come (`EntityState.owed`, `src/engine/pulse/production.ts`):
  *  those its army has a place for, waiting for room on the roof, and those waiting for a place in the army. */
 export function waitingToComeOut(
   entities: readonly Readonly<{ player: PlayerId; contentId: string; owed?: number }>[],
@@ -599,4 +599,11 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
       limit: limit - control.hotkey.length - 3,
     })
   }
+}
+
+/** Ten characters of `#` and `-`: how much of `max` is left in `current`, never empty while anything is. */
+function forceBar(current: number, max: number): string {
+  const width = 10
+  const filled = max <= 0 ? 0 : Math.max(current > 0 ? 1 : 0, Math.round((current / max) * width))
+  return `${"#".repeat(Math.min(width, filled))}${"-".repeat(Math.max(0, width - filled))}`
 }

@@ -7,13 +7,13 @@
 // No status line: whether a building is planned, standing or about to be placed "is obvious from the
 // rest of the UI", so a card says only what the thing is.
 
-import { footprintExtent, tilesOf } from "../grid/coords.ts"
+import { footprintExtent, tilesOf } from "../engine/geometry/coords.ts"
 import type { AttackDef } from "../content/types.ts"
-import { TICKS_PER_SECOND } from "../state/types.ts"
+import { TICKS_PER_SECOND } from "../engine/state/types.ts"
 import type { SettingSource } from "./all-settings.ts"
 import { setting } from "./all-settings.ts"
 import type { FieldEntity, IncomingEntity } from "./types.ts"
-import type { Coord, TerrainId } from "../grid/types.ts"
+import type { Coord, TerrainId } from "../engine/geometry/types.ts"
 import { CARD_TEXT, cardTextFor } from "../content/cards.ts"
 import type { CardText } from "../content/cards.ts"
 import type { BuildContext, BuildState } from "./state.ts"
@@ -29,7 +29,7 @@ export type CardIcon =
 
 /**
  * One of a card's numbers, as a label/value row: "HEALTH  60", "RANGE  6". A range is one number, the range across,
- * as strategy games say it: a row counts two columns in every distance (`src/grid/reach.ts`), so a range of 6 also
+ * as strategy games say it: a row counts two columns in every distance (`src/engine/geometry/reach.ts`), so a range of 6 also
  * reaches 3 rows up and down, and the map draws that shape wherever it shows a range.
  */
 export type CardStat = Readonly<{ label: string; value: string }>
@@ -99,7 +99,7 @@ export function currentCard(context: BuildContext, state: BuildState): Card | nu
 /**
  * A standing building's row for the survivors home on its roof (a wave that never walked off, or a survivor that
  * regrouped there, `src/match/regroup.ts`): how many of yours stand there, which the map draws over the building. They
- * step down to make way for its wave (`src/pulse/make-way.ts`). None for a planned building, or an empty roof.
+ * step down to make way for its wave (`src/engine/pulse/make-way.ts`). None for a planned building, or an empty roof.
  */
 function onItsRoof(context: BuildContext, structure: Readonly<{ contentId: string; anchor: Coord; planned: boolean }>): CardStat[] {
   if (structure.planned) return []

@@ -19,7 +19,7 @@ import { levelContext, starterContext } from "../src/cli/starter.ts"
 import type { ContentDef } from "../src/content/index.ts"
 import { createRegistry, FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { MissionDefinition, TriggerDefinition } from "../src/mission/index.ts"
-import { hashOf } from "../src/state/canonical.ts"
+import { hashOf } from "../src/engine/state/canonical.ts"
 import { buildSide, compose, panelLines } from "./build-helpers.ts"
 
 const WORLD: LoadWorld = { registry: FIXTURE_REGISTRY, maps: MAPS }

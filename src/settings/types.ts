@@ -1,5 +1,5 @@
 // What a player can change from the Settings screen — the same
-// four things `grid` already takes as command-line flags, exposed as a menu instead. No stdin, no
+// four things the game takes as command-line flags, exposed as a menu instead. No stdin, no
 // file access, no menu/view import here: this is the value shape and how each one cycles, nothing
 // about how it's shown or saved.
 
@@ -15,7 +15,7 @@ export type Settings = Readonly<{
 
 /**
  * What a brand-new player (or a corrupt/missing settings file — see `store.ts`) starts with.
- * Monochrome rather than `grid`'s own `detectColorDepth()` guess: a saved file is an explicit choice
+ * Monochrome rather than the command line's `detectColorDepth()` guess: a saved file is an explicit choice
  * once made, but *before* any choice exists, a fixed, honest baseline is simpler to reason about and
  * to test than probing `COLORTERM`/`TERM` from inside a settings default, and monochrome is the floor
  * that draws right on any terminal. `terminal-nexus.ts` still applies that same detection when nothing
@@ -57,8 +57,7 @@ export function toggleReducedMotion(current: boolean): boolean {
 export type SettingsStore = Readonly<{
   /**
    * `null` means nothing has ever been saved — no file, or a file that is not even valid JSON —
-   * which is the caller's cue to apply its own first-run guess (the way `grid` picks a colour depth
-   * from the terminal itself) rather than a fixed baseline. Never rejects and never throws: a file
+   * which is the caller's cue to apply its own first-run guess (`detectColorDepth`, from the terminal itself) rather than a fixed baseline. Never rejects and never throws: a file
    * that exists and is a genuine object but has a field missing, of the wrong type, or left over from
    * an older or newer version of the game still comes back as real `Settings`, with only that one
    * field falling back to `DEFAULT_SETTINGS` (see `parseSettings`) — a saved preference is not

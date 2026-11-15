@@ -8,7 +8,7 @@
 // (`retarget`) starts a new tween from wherever the old one is drawn at that instant, so a second
 // scroll in the middle of the first continues smoothly rather than snapping.
 //
-// Presentation only: nothing in `src/build` or the kernel may import this. The state always holds
+// Presentation only: nothing in `src/build` or the battle engine may import this. The state always holds
 // the destination; a tween is how the screen gets there.
 
 /** An easing curve maps progress through the window, `[0,1]`, onto progress along the path. */

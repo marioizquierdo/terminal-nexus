@@ -6,16 +6,16 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { tilesOf } from "../src/grid/index.ts"
-import { DEFAULT_PRESET, OpeningError, openBattle, phaseOf, presetDimensions, sidesWithoutGoal } from "../src/skirmish/opening/index.ts"
-import { TICKS_PER_SECOND } from "../src/state/types.ts"
+import { tilesOf } from "../src/engine/geometry/index.ts"
+import { DEFAULT_PRESET, OpeningError, openBattle, presetDimensions, sidesWithoutGoal } from "../src/skirmish/opening/index.ts"
+import { TICKS_PER_SECOND } from "../src/engine/state/types.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
-import type { DomainEvent } from "../src/events/types.ts"
-import { resolvePulse } from "../src/pulse/index.ts"
-import { VISION } from "../src/pulse/target.ts"
+import type { DomainEvent } from "../src/engine/events/types.ts"
+import { resolvePulse } from "../src/engine/pulse/index.ts"
+import { VISION } from "../src/engine/pulse/target.ts"
 import { loadSandbox, playSandbox, sandboxFiles } from "./helpers.ts"
 import { creditsEarned } from "../src/match/index.ts"
-import { VIEWPORT_TILES } from "../src/view/compose.ts"
+import { MIN_VIEWPORT } from "../src/build/camera.ts"
 
 function baseOpening(): BattleOpening {
   return {
@@ -116,7 +116,7 @@ test("a block's `at` origin offsets its rows, so the grid need not cover the Gri
 })
 
 test("ordinals follow Grid reading order, not the order the blocks are written in", () => {
-  // Ordinal is identity and the kernel's one iteration order, so it must not depend on which player
+  // Ordinal is identity and the battle engine's one iteration order, so it must not depend on which player
   // block the author happened to type first. Same two entities, blocks in both orders, same result.
   const north = block({ x: 0, y: 0 }, ["t"], { t: { content: "unit.citizen.trooper" } })
   const south = block({ x: 3, y: 2 }, ["t"], { t: { content: "unit.citizen.trooper" } })
@@ -290,23 +290,22 @@ test("every checked-in map gives each side that fights somewhere to go: its own 
   const missing: string[] = []
   for (const name of sandboxFiles()) {
     const opening = await loadSandbox(name)
-    if (phaseOf(opening) !== "battle-round") continue // in the Build Phase nobody goes anywhere
     const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY })
     for (const side of sidesWithoutGoal(loaded.state, loaded.registry)) missing.push(`${opening.id} side ${side}`)
   }
   assert.deepEqual(missing, [], `no target and no enemy Nexus: ${missing.join("; ")}`)
 })
 
-test("every sandbox fits the engine tool's Grid pane, so no map is cut or drawn over the side panel", async () => {
-  // The engine tool draws one fixed composition: a smaller Grid is centred in the pane, a bigger one is cut and its
-  // columns past the pane drawn over the panel.
+test("every sandbox fits the minimum viewport, so its Battle Round shows the whole map at the 80 x 24 floor", async () => {
+  // At the floor the Battle Round's Grid pane is at least the minimum viewport: a sandbox no bigger is watched whole,
+  // with nothing off screen to scroll to.
   const misfits: string[] = []
   for (const name of sandboxFiles()) {
     const { grid } = await loadSandbox(name)
     const { width, height } = "preset" in grid ? presetDimensions(grid.preset) : grid
-    if (width > VIEWPORT_TILES.width || height > VIEWPORT_TILES.height) misfits.push(`${name} is ${width} x ${height}`)
+    if (width > MIN_VIEWPORT.width || height > MIN_VIEWPORT.height) misfits.push(`${name} is ${width} x ${height}`)
   }
-  assert.deepEqual(misfits, [], `over the ${VIEWPORT_TILES.width} x ${VIEWPORT_TILES.height} pane: ${misfits.join("; ")}`)
+  assert.deepEqual(misfits, [], `over the ${MIN_VIEWPORT.width} x ${MIN_VIEWPORT.height} minimum viewport: ${misfits.join("; ")}`)
 })
 
 test("melee-kill: a defender dies to melee and the attackers survive", async () => {

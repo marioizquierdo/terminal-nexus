@@ -7,7 +7,7 @@
 // that just went up today; a death, a Nexus power landing, a projectile's impact later. Most of the
 // Pulse's own vocabulary (`recipes.ts`) is particles too, authored per cue before this file existed.
 
-import { footprintRing } from "../../grid/coords.ts"
+import { footprintRing } from "../../engine/geometry/coords.ts"
 import type { EffectRecipe, PositionedCell } from "./types.ts"
 import { paramNumber, paramString, progressOf } from "./types.ts"
 import { cosmeticHash, cosmeticPick, cosmeticUnit } from "./random.ts"

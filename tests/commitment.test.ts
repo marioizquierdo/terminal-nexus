@@ -6,14 +6,14 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import type { DomainEvent } from "../src/events/types.ts"
-import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { COMMIT_TICKS } from "../src/pulse/perception.ts"
-import { visionOf } from "../src/pulse/target.ts"
+import type { DomainEvent } from "../src/engine/events/types.ts"
+import { contextFor, stepTick } from "../src/engine/pulse/index.ts"
+import { COMMIT_TICKS } from "../src/engine/pulse/perception.ts"
+import { visionOf } from "../src/engine/pulse/target.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
-import type { EntityState, MatchState, PlayerId, TargetArea } from "../src/state/types.ts"
-import { hashState } from "../src/state/serialize.ts"
+import type { EntityState, MatchState, PlayerId, TargetArea } from "../src/engine/state/types.ts"
+import { hashState } from "../src/engine/state/serialize.ts"
 
 type Placed = readonly [x: number, y: number, content: string]
 

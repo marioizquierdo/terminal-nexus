@@ -2,7 +2,7 @@
 // whole rounds after it as her definition says (`roundsOut`: none for Vasse), then the Prime Nexus replicates
 // her again.
 //
-// **Beside the kernel's tick and never inside it**, like the regroup. The kernel sees a Commander as a unit like
+// **Beside the battle engine's tick and never inside it**, like the regroup. The battle engine sees a Commander as a unit like
 // any other: she fights, she dies, and a dead entity is gone from the state, so nothing in a Pulse brings
 // her back and her death decides nothing (the victory check never reads the `commander` flag). What the
 // state cannot hold is the memory that she fell, and when; that is an `Absence`, which the round loop
@@ -18,16 +18,16 @@
 //   Phase like any survivor. A side with no Grid Nexus standing has nowhere to restore her to, so her
 //   absence goes on until it has one.
 //
-// Deterministic like the kernel: no clock, no randomness; the answer depends only on the state, the
+// Deterministic like the battle engine: no clock, no randomness; the answer depends only on the state, the
 // events, the registry and the round number.
 
 import type { ContentRegistry } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
-import type { DomainEvent } from "../events/types.ts"
-import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
-import type { Coord } from "../grid/types.ts"
-import { ENTITY_LAYERS } from "../grid/types.ts"
-import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import { OccupancyIndex, maskFrom } from "../engine/geometry/occupancy.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import { ENTITY_LAYERS } from "../engine/geometry/types.ts"
+import type { EntityState, MatchState, PlayerId } from "../engine/state/types.ts"
 import { centreTile, enemyNexusMiddle, nearestFit } from "./placement.ts"
 
 /** How many whole rounds the Commander `contentId` sits out after the Battle Round she falls in: her

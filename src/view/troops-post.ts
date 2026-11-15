@@ -1,5 +1,5 @@
 // ***Your troops' target***: where the player's troops head when the battle starts — the region the level names
-// for them (a mission's `target`, kept by the kernel: `src/pulse/target.ts`) — said in the side panel under the
+// for them (a mission's `target`, kept by the battle engine: `src/engine/pulse/target.ts`) — said in the side panel under the
 // coming raid ("YOUR TROOPS / 6 head for the line", `raid-panel.ts`), and marked quietly on the map: its four
 // corners, in the player's colour, dim, on open ground only. The corners say "this ground" without a line
 // across the map that could be read as a route; how the troops get there, and what they meet, is the
@@ -14,8 +14,8 @@ import { visibleRange } from "../build/camera.ts"
 import { cellForTile } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import type { PlannedPlacement, RaidForecast, RaidGroup } from "../build/types.ts"
-import { inBounds, tilesOf } from "../grid/coords.ts"
-import type { Coord } from "../grid/types.ts"
+import { inBounds, tilesOf } from "../engine/geometry/coords.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import type { BuildCompositionInput } from "./build.ts"

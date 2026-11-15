@@ -11,10 +11,10 @@ debris, settle.
 This is the part of Terminal Nexus most likely to decide whether the game is any good, and the part
 most likely to be added late, cheaply, as "some flashes". Cogmind's roughly one thousand procedural
 particle effects are the standing proof that this is a system, authored deliberately, with its own
-vocabulary and its own consistency problems. So it is tested early, and `grid` (the engine tool, see
-[`runtime.md`](runtime.md)) is where effects are played with.
+vocabulary and its own consistency problems. So it is tested early, on the game's own Battle Round
+and in the scripted playtest's pictures.
 
-The markers are defined in [`grid-engine.md`](grid-engine.md): **RULE**, **GUIDANCE** (anything
+The markers are defined in [`architecture.md`](architecture.md): **RULE**, **GUIDANCE** (anything
 unmarked) and **IDEA**.
 
 ## What an effect is, and is not — RULE
@@ -55,13 +55,13 @@ Six rules, all load-bearing:
    particle". A frame at *t* is identical whether every earlier frame rendered or the renderer skipped
    forty of them. This is what makes pause, step, speed change, resize and a slow terminal all free:
    presentation time is independent of the Pulse's logical time.
-2. **Effects cannot touch state.** RULE — `tests/architecture.test.ts` (the kernel never reaches the
+2. **Effects cannot touch state.** RULE — `tests/architecture.test.ts` (the battle engine never reaches the
    view), `tests/effects.test.ts` ("effects are derived from the event stream, and turning them off
    changes only the picture"). No damage, no movement, no resources, no victory. An effect that needs
    to know something is given it in `params` when the instance is created.
 3. **Cosmetic randomness only, and it is a hash rather than a stream.** RULE —
    `tests/effects.test.ts` ("cosmetic randomness is a hash, not a stream", "the cosmetic seed cannot
-   reach the kernel"), `tests/determinism.test.ts` (changing only the cosmetic seed changes nothing
+   reach the battle engine"), `tests/determinism.test.ts` (changing only the cosmetic seed changes nothing
    about state or events); implemented in `src/view/effects/random.ts`. Derive every random value
    from `cosmeticSeed` and the instance's own identity, never from the gameplay stream. A generator
    cannot do this job: a stream's answers depend on how many times it has been asked, so the same

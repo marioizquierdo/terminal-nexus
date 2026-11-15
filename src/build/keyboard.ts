@@ -21,7 +21,7 @@ const ESC = String.fromCharCode(27)
 const PLACE_KEYS = new Set(["\r", "\n", " "])
 const REMOVE_KEYS = new Set([String.fromCharCode(127), String.fromCharCode(8), `${ESC}[3~`])
 
-/** `grid watch`'s keymap, kept for the Battle Round (one keymap across `grid` and
+/** The Battle Round's playback keymap (one keymap across
  *  `terminal-nexus`, in docs/system-design/input.md) — Space pauses, `[` and `]` change the speed, `.` and `,` step a frame and a tick,
  *  `r` watches it again. Only while a Pulse is on screen, and never inside a popup. */
 const PULSE_KEYS: Readonly<Record<string, PlaybackControl>> = {

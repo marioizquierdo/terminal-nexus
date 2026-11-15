@@ -1,17 +1,17 @@
 // The regroup between a battle's (and a run's) Battle Rounds (`src/match/regroup.ts`): the survivors stay on the Grid,
 // step back from a fight and form up across their march line, worked out from the round's end alone. Rules-layer code
-// beside the kernel, so these are the kernel's kind of tests: exact states, exact hashes, no screen.
+// beside the battle engine, so these are the battle engine's kind of tests: exact states, exact hashes, no screen.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
-import { gridDistance, tilesOf } from "../src/grid/coords.ts"
-import type { Coord, GridTerrain, TerrainId } from "../src/grid/types.ts"
+import { gridDistance, tilesOf } from "../src/engine/geometry/coords.ts"
+import type { Coord, GridTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { BEHIND, FRONT_GAP, REGROUP_TICKS, centreTile, openingState, regroup, regroupAt, standDown } from "../src/match/index.ts"
 import type { Force, RegroupResult, StructurePlacement } from "../src/match/index.ts"
-import { hashState } from "../src/state/serialize.ts"
-import type { EntityState, MatchState } from "../src/state/types.ts"
+import { hashState } from "../src/engine/state/serialize.ts"
+import type { EntityState, MatchState } from "../src/engine/state/types.ts"
 import { BATTLE_ROUND_TICKS, briefOf, beginBattle, playRound, scriptedPlayer } from "../src/battle/index.ts"
 import type { BattleState, Side } from "../src/battle/index.ts"
 import { createHash } from "node:crypto"
@@ -241,7 +241,7 @@ test("the regroup of a played battle round is pinned, on Node and on Bun", { tim
   const [first] = duelRounds(1, { A: "vasse", B: "averno" }, { A: "balanced", B: "rush" }, 5)
   const result = first?.regroup as RegroupResult
   // Pinned: the same end of round regroups into the same walks and the same state on every runtime; a change to the
-  // regroup, the kernel, the scripts or the armies moves it, and says so. (Moved when an army came to sort itself on the
+  // regroup, the battle engine, the scripts or the armies moves it, and says so. (Moved when an army came to sort itself on the
   // march by half speed, the Commander a regular troop, and the regroup's ranks went by the same priority list; and again when a unit came to keep the target it holds
   // until it falls: commitment.)
   assert.equal(pathsHash(result), "cc39d0c293e7f412")

@@ -4,8 +4,8 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { MovementRate } from "../src/content/index.ts"
-import { footprintExtent, TERRAIN } from "../src/grid/index.ts"
-import type { Direction } from "../src/grid/index.ts"
+import { footprintExtent, TERRAIN } from "../src/engine/geometry/index.ts"
+import type { Direction } from "../src/engine/geometry/index.ts"
 import {
   accrueCredit,
   canStep,
@@ -13,7 +13,7 @@ import {
   DEATH_SETTLE_TICKS,
   stepCost,
   stepTick,
-} from "../src/pulse/index.ts"
+} from "../src/engine/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import { loadSandbox, playAllSandboxes, playSandbox } from "./helpers.ts"
 
@@ -171,7 +171,7 @@ test("the flight window is presentation metadata that no rule reads", async () =
       : definition,
   )
   const { createRegistry } = await import("../src/content/index.ts")
-  const { resolvePulse } = await import("../src/pulse/index.ts")
+  const { resolvePulse } = await import("../src/engine/pulse/index.ts")
 
   const baselineLoaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const baseline = resolvePulse({
@@ -404,7 +404,7 @@ test("a 3x3 and a 5x2 unit fight, range-gated by footprint distance, not anchor 
     rows: block.rows.map((row) => [...row].map((symbol) => (block.legend[symbol]?.content.match(/colossus|leviathan/) === null ? " " : symbol)).join("")),
   })
   const alone = { ...showcase, placements: { A: heavyOnly(showcase.placements.A!), B: heavyOnly(showcase.placements.B!) } }
-  const { resolvePulse } = await import("../src/pulse/index.ts")
+  const { resolvePulse } = await import("../src/engine/pulse/index.ts")
   const loadedAlone = openBattle(alone, { registry: FIXTURE_REGISTRY, seed: alone.seed })
   const resolved = {
     opening: alone,
@@ -525,7 +525,7 @@ test("a 2x2 ground unit and a 2x1 air unit fight, each within its own escort", a
 // No turns, everything at once (docs/game-design/concept.md): what would destroy both Nexuses on one tick — two
 // Nexus powers firing as the round starts, two last blows — is a draw, never a win for whoever the code checked first.
 test("two Nexuses falling on the same tick make a draw; one falling alone loses", async () => {
-  const { victory } = await import("../src/pulse/victory.ts")
+  const { victory } = await import("../src/engine/pulse/victory.ts")
   const nexus = (player: "A" | "B") => ({ player, definition: { nexus: true } })
   const context = (actors: readonly unknown[]) =>
     ({ actors, tick: 40, pulse: { pulseTicks: 360, roster: { A: { hasNexus: true, hasMobile: false }, B: { hasNexus: true, hasMobile: false } } } }) as unknown as Parameters<typeof victory>[0]

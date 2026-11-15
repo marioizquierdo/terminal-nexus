@@ -11,11 +11,11 @@
 
 import type { ContentRegistry } from "../content/index.ts"
 import { FIXTURE_REGISTRY, withProduction } from "../content/index.ts"
-import type { Coord } from "../grid/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import { centreTile } from "../match/index.ts"
 import type { RoofExit } from "../match/index.ts"
 import type { PlacementBlock, BattleOpening } from "../skirmish/opening/types.ts"
-import type { PlayerId } from "../state/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
 import type { BattleRecord } from "./battle.ts"
 import { measureSave } from "./suites.ts"
 

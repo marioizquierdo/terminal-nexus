@@ -3,7 +3,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { CITIZEN_CONTENT, FIXTURE_REGISTRY, RAVEL_CONTENT } from "../src/content/index.ts"
-import { stepCost } from "../src/pulse/index.ts"
+import { stepCost } from "../src/engine/pulse/index.ts"
 import { playSandbox } from "./helpers.ts"
 
 /** Ticks between steps at a given rate — the cadence a viewer actually sees. */
@@ -102,7 +102,7 @@ test("chains are bounded: nothing detonates twice, and the cascade resolves insi
   assert.equal(resolved.run.finalState.outcome?.reason, "annihilation")
 })
 
-test("a Grid Nexus is a flag on the definition, not a content id the kernel knows by heart", async () => {
+test("a Grid Nexus is a flag on the definition, not a content id the battle engine knows by heart", async () => {
   const citizen = FIXTURE_REGISTRY.get("structure.citizen.nexus")
   const ravel = FIXTURE_REGISTRY.get("structure.ravel.nexus")
   assert.equal(citizen.nexus, true)

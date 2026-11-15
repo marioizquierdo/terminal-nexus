@@ -5,13 +5,13 @@
 import type { Supply } from "../content/supply.ts"
 import { supplyOf } from "../content/supply.ts"
 import type { LogEntry } from "../log/logger.ts"
-import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../grid/coords.ts"
+import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../engine/geometry/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { baseContentId, fittedId, fittingsOf } from "../content/fitted.ts"
 import { stepListIndex } from "../terminal/list-keys.ts"
-import type { Coord, GridTerrain } from "../grid/types.ts"
-import { TERRAIN } from "../grid/types.ts"
-import type { MatchState } from "../state/types.ts"
+import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import { TERRAIN } from "../engine/geometry/types.ts"
+import type { MatchState } from "../engine/state/types.ts"
 import type { BuildingActionCard, BuildingCard, PowerCard, Schedule } from "../armies/types.ts"
 import { ORDERS, actionKey, fittingsWith, modeIn, modeSet } from "../armies/actions.ts"
 import { lasts as effectLasts } from "../armies/effects.ts"
@@ -711,7 +711,7 @@ export function pendingPicks(context: BuildContext, state: BuildState): number {
 
 /**
  * The cursor points at a structure's **centre tile**, not its anchor — the same convention the
- * sandbox's start already uses for a placement symbol (`footprintCentre`, `src/grid/coords.ts`).
+ * sandbox's start already uses for a placement symbol (`footprintCentre`, `src/engine/geometry/coords.ts`).
  * A 3x2 barracks under the cursor therefore straddles the cursor the way it looks like it does,
  * rather than hanging south-east of it.
  */

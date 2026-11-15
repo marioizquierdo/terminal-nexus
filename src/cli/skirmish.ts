@@ -55,18 +55,19 @@
 //
 // What it writes:
 //   --show <0,120,end>       each Battle Round played as an ASCII screenshot at these ticks (end: as it ends), after its
-//                            report: the Grid as the screen draws it, with a legend and what stands under what
+//                            report: the Grid as the screen draws it, with a legend and what stands under what; a
+//                            sandbox's too
 //   --show-effects           the ASCII screenshots with the effects on (shots, bursts); without, only what stands
 //   --json                   the briefs as data rather than text: stdout is one JSON object a brief, a line each
 //                            (with its "slot"); every other line goes to stderr
 //   --out <dir>              every round played: its save (round-<n>.save.json) and its report (round-<n>.txt)
-//   --log <file>             every round's Battle Round as grid logs it, at --log-level (info: error, warn, info,
+//   --log <file>             every round's Battle Round as the battle engine logs it, at --log-level (info: error, warn, info,
 //                            debug, trace)
 //
 // Exit codes: 0 done; 1 the command could not run (it says why); 2 the rules refused part of the build actions it
 // checked. Saving and loading happen only at a Build Phase, and a save it writes opens on the game's screen
-// (terminal-nexus --load <file>). A sandbox (sandboxes/) plays its one Battle Round with --play-to and
-// prints grid's report.
+// (terminal-nexus --load <file>). A sandbox (sandboxes/, a save whose start draws the board by hand) plays its one
+// Battle Round with --play-to next, and --show draws it.
 //
 // The words for the battle and the slots are the game's too, read by one reader (src/skirmish/ask.ts): terminal-nexus
 // --map pocket --p2 script:agro opens on screen the battle skirmish --map pocket --p2 script:agro plays, and so does the

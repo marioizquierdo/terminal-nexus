@@ -1,10 +1,8 @@
 // What each entity became: one line each, hp and tile at the start and at the end of a run. Read from two states, never
-// from the kernel, and printed before the report line. The Build Phase's headless run shows this by default: a
-// regroup has no events but the spawns, so its mending and its step back show nowhere else. `--end-states` asks for it
-// of a Battle Round (grid --help).
+// from the battle engine, and printed before the report line. Tests ask for it of a Battle Round.
 
 import type { ContentRegistry } from "../content/index.ts"
-import type { MatchState } from "../state/types.ts"
+import type { MatchState } from "../engine/state/types.ts"
 import { formatCoordinate, formatLine } from "./format.ts"
 
 /** One WARN line per entity of the opening, `end` kind: `hp 100->400  at (3,4)->(3,4)`, or `gone` for one the run lost. */

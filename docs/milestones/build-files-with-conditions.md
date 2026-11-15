@@ -287,7 +287,7 @@ of a Build Phase. They are different questions, so neither replaces the other.
   should be a **narrower type the facts read** (call it `Facts` data: the id fields above, credits, supply,
   Nexuses, round), which `briefOf` produces for a battle and a mission function would produce for a mission. That is
   the moment the library moves from `src/battle/facts.ts` to a home of its own beside `src/mission/` (it imports only
-  types, so `tests/architecture.test.ts` keeps the mission files free of the kernel).
+  types, so `tests/architecture.test.ts` keeps the mission files free of the battle engine).
 - **A mission's `commitPlan` already is a build-file entry in disguise**: a side's buildings for one Pulse. A
   mission's scripted side could one day be a build file (`round`, `when`, plan), which is what
   `scripted-opponent.md` asks for when it says the opponent's planner "writes plans in this same vocabulary". Not

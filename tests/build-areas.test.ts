@@ -13,8 +13,8 @@ import { armedPreview, buildRange, buildingsOn } from "../src/build/state.ts"
 import { DEFAULT_LEVEL, openRound } from "../src/cli/levels.ts"
 import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
-import { footprintDistance, footprintSteps, footprintWithin } from "../src/grid/coords.ts"
-import type { Coord } from "../src/grid/types.ts"
+import { footprintDistance, footprintSteps, footprintWithin } from "../src/engine/geometry/coords.ts"
+import type { Coord } from "../src/engine/geometry/types.ts"
 import { reachOf, reachOutline, unitReachOf } from "../src/view/build-areas.ts"
 import { trailMarks, trailTiles } from "../src/view/build-grid.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
@@ -52,7 +52,7 @@ function open(side: Side, tile: Coord): boolean {
 
 // --- A building's reach ------------------------------------------------------------------------------
 
-/** Whether `tile` is within a reach of `radius` of a footprint at `anchor` (the kernel's own test) and has a four-way
+/** Whether `tile` is within a reach of `radius` of a footprint at `anchor` (the battle engine's own test) and has a four-way
  *  neighbour that is not: one of the last tiles the reach covers. */
 function onEdge(anchor: Coord, footprint: readonly Coord[], radius: number, tile: Coord): boolean {
   const within = (x: number, y: number): boolean => footprintWithin(anchor, footprint, { x, y }, ONE, radius)

@@ -15,11 +15,11 @@
 //   another level, its own story's or another's, so a second Commander replays a first one's rounds unchanged.
 //
 // The Story is one mode reading armies; the battle (`src/battle/`) is another, over the same cards and units. Nothing
-// here knows which mode reads it, and the kernel never reads an army. docs/system-design/army-authoring.md is the guide.
+// here knows which mode reads it, and the battle engine never reads an army. docs/system-design/army-authoring.md is the guide.
 
 import type { ContentEntry } from "../content/data.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import type { GridTerrain } from "../grid/types.ts"
+import type { GridTerrain } from "../engine/geometry/types.ts"
 import type { MissionDefinition } from "../mission/types.ts"
 import type { Barks } from "./barks.ts"
 import type { Lean } from "./curve.ts"

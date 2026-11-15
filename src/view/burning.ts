@@ -1,5 +1,5 @@
 // Burning ground, as the Battle Round draws it (the owner, 2026-10-21: "a large area that is set on fire ...
-// drawn in its own style"). The rule is the kernel's (`MatchState.burning`, `BurningGround`); this is only its
+// drawn in its own style"). The rule is the battle engine's (`MatchState.burning`, `BurningGround`); this is only its
 // picture, worked out in two steps:
 //
 //   - `fireAt` — which tiles burn at one presentation instant, and how each is lit: a pure function of the state of
@@ -12,14 +12,15 @@
 //     of constant color"). Under a unit, a building or a corpse the scorch alone, so it keeps its glyph and every
 //     colour of its own and only the ground round it changes (the corruption law).
 //
-// Both Pulse views draw it from the same `PulseSample.fire`: the engine tool's (`compose.ts`) and the Build Phase
-// screen's, the live Battle Round and the replay of the last round (`pulse-scene.ts`), and with them the browser page.
+// Every picture of a Pulse draws it from the same `PulseSample.fire`: the Build Phase screen's live Battle Round and
+// the replay of the last round (`pulse-scene.ts`), with them the browser page, and the board alone
+// (`drawGridLayers`, the ASCII screenshot).
 
-import type { Coord, GridTerrain, TerrainId } from "../grid/types.ts"
-import type { Footprint } from "../grid/types.ts"
-import { inBounds } from "../grid/coords.ts"
-import { tilesWithin } from "../grid/reach.ts"
-import type { BurningGround } from "../state/types.ts"
+import type { Coord, GridTerrain, TerrainId } from "../engine/geometry/types.ts"
+import type { Footprint } from "../engine/geometry/types.ts"
+import { inBounds } from "../engine/geometry/coords.ts"
+import { tilesWithin } from "../engine/geometry/reach.ts"
+import type { BurningGround } from "../engine/state/types.ts"
 import { cosmeticHash, cosmeticUnit } from "./effects/random.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"
@@ -69,7 +70,7 @@ const FLAMMABLE: ReadonlySet<TerrainId> = new Set<TerrainId>(["terrain.plain", "
 
 /**
  * Every tile a patch burns, in reading order: the tiles within its `radius` of its `centre`, by the Grid's own test
- * (`tilesWithin`, `footprintWithin`, which the kernel's `withinArea` is) — a row counts two columns, so a diamond twice
+ * (`tilesWithin`, `footprintWithin`, which the battle engine's `withinArea` is) — a row counts two columns, so a diamond twice
  * as wide as it is tall in tiles and as wide as it is tall on screen. What is drawn burning is what burns.
  */
 export function patchTiles(patch: Pick<BurningGround, "centre" | "radius">): Coord[] {

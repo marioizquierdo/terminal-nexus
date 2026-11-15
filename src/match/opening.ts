@@ -1,10 +1,10 @@
 // The state a Battle Round starts from — the start-of-Pulse rule in pulse.md: "At Pulse start plans reveal together and
 // valid construction becomes operational." The Build Phase's plan is a list of placements on a screen;
-// this is where it becomes entities the kernel can resolve.
+// this is where it becomes entities the battle engine can resolve.
 //
 // It follows the conventions of a sandbox's opening (`openBattle`) exactly — ids, ordinals in Grid reading order, a
 // fresh entity's fields from `freshEntityFields`, sides facing each other — so a Pulse that starts here
-// is indistinguishable, to the kernel, from one a `.save.json` file started. What it adds is the two
+// is indistinguishable, to the battle engine, from one a `.save.json` file started. What it adds is the two
 // things a Build Phase has and a file does not: structures given by an anchor (the way the Build Phase
 // stores a placement) rather than by a centre tile in a character grid, and units mustered around a
 // point on whatever free tiles the plan left them.
@@ -21,14 +21,14 @@
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { freshEntityFields, productionFields } from "../content/index.ts"
-import { gridDistance, inBounds, tileIndex, tilesOf } from "../grid/coords.ts"
-import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
-import type { Coord, GridTerrain } from "../grid/types.ts"
-import { ENTITY_LAYERS, TERRAIN } from "../grid/types.ts"
-import { gameplayRng } from "../rng/pcg32.ts"
-import { TICKS_PER_SECOND } from "../state/types.ts"
-import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
-import { SCHEMA_VERSION } from "../state/types.ts"
+import { gridDistance, inBounds, tileIndex, tilesOf } from "../engine/geometry/coords.ts"
+import { OccupancyIndex, maskFrom } from "../engine/geometry/occupancy.ts"
+import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import { ENTITY_LAYERS, TERRAIN } from "../engine/geometry/types.ts"
+import { gameplayRng } from "../engine/rng/pcg32.ts"
+import { TICKS_PER_SECOND } from "../engine/state/types.ts"
+import type { EntityState, MatchState, PlayerId } from "../engine/state/types.ts"
+import { SCHEMA_VERSION } from "../engine/state/types.ts"
 import { makeRoom } from "./make-room.ts"
 import { centreTile, enemyNexusMiddle, nearestFit } from "./placement.ts"
 import type { PulseSetup, StructurePlacement } from "./types.ts"

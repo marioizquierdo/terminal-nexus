@@ -13,12 +13,12 @@
 // **For an agent preparing a demo**: the events and the filters are data in `src/log/activity.ts` — add
 // your event and your filter there (the window opens on the first filter); nothing in this file changes.
 
-import { footprintCentre } from "../grid/coords.ts"
+import { footprintCentre } from "../engine/geometry/coords.ts"
 import type { LogEntry, LogFilter } from "../log/logger.ts"
 import type { LogLevel } from "../log/levels.ts"
 import { ACTIVITY_EVENTS, ACTIVITY_FILTERS, filteredEntries, formatActivityExport } from "../log/activity.ts"
 import { formatLogLine, formatProps } from "../log/text.ts"
-import type { Coord } from "../grid/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import type { PopupMessage } from "./types.ts"
 

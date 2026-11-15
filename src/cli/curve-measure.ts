@@ -15,7 +15,7 @@ import { buildLayout } from "../build/layout.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { createBuildState, legalityAt, missingFor, remaining, withoutScene } from "../build/state.ts"
 import type { ConstructItem, PlannedPlacement } from "../build/types.ts"
-import type { Coord } from "../grid/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import type { PlayableLevel } from "./levels.ts"
 
 /** What a scripted player buys, round by round (the last list for every round after it): in turn, the next on the

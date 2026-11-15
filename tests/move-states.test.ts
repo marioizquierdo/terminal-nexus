@@ -6,13 +6,13 @@ import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { ACTIVITY_EVENTS, ACTIVITY_FILTERS, createActivityLog } from "../src/log/index.ts"
 import { matchesFilter } from "../src/log/logger.ts"
-import { contextFor, spawnEvents, stepTick } from "../src/pulse/index.ts"
-import { VISION, visionOf } from "../src/pulse/target.ts"
+import { contextFor, spawnEvents, stepTick } from "../src/engine/pulse/index.ts"
+import { VISION, visionOf } from "../src/engine/pulse/target.ts"
 import { DEFAULT_VISION, moveStateChanges, moveStateEntry, visionReach } from "../src/report/index.ts"
 import type { MoveStateChange } from "../src/report/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
-import type { DomainEvent } from "../src/events/types.ts"
-import type { MatchState } from "../src/state/types.ts"
+import type { DomainEvent } from "../src/engine/events/types.ts"
+import type { MatchState } from "../src/engine/state/types.ts"
 import { loadSandbox, playSandbox } from "./helpers.ts"
 
 async function changesOf(name: string): Promise<Readonly<{ changes: MoveStateChange[]; states: MatchState[]; events: DomainEvent[] }>> {
@@ -31,7 +31,7 @@ async function changesOf(name: string): Promise<Readonly<{ changes: MoveStateCha
   return { changes: moveStateChanges({ states, events, registry: loaded.registry }), states, events }
 }
 
-test("the vision the record reads by is the kernel's, for every unit in the content", () => {
+test("the vision the record reads by is the battle engine's, for every unit in the content", () => {
   assert.equal(DEFAULT_VISION, VISION)
   for (const id of FIXTURE_REGISTRY.ids()) {
     const definition = FIXTURE_REGISTRY.get(id)

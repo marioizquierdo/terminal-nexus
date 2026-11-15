@@ -8,7 +8,7 @@
 // What they are for is contrast. lore.md sets the test: a player who
 // has never read a word of lore should be able to state the faction's philosophy from play alone.
 // Three of the four Ravel rule shapes in commander-armies.md are expressible with what the
-// kernel already has, and the fourth is one new rule:
+// engine already has, and the fourth is one new rule:
 //
 //   Off the beat        every rate is deliberately off the Citizen cadence, so nothing in the two
 //                       armies steps together. Three speed passes now (2026-08-22 twice, then
@@ -34,7 +34,7 @@ const GROUND_UNIT_COLLISIONS = ["obstacles", "units"] as const
 const SCAVENGER_COLLISIONS = ["obstacles", "workers"] as const
 const STRUCTURE_COLLISIONS = ["obstacles", "workers", "units"] as const
 // An air unit collides only with other air - never obstacles, workers, or units - and its mask
-// ignores terrain entirely (src/pulse/shared.ts, maskForActor). "Arrives from a direction nobody
+// ignores terrain entirely (src/engine/pulse/shared.ts, maskForActor). "Arrives from a direction nobody
 // planned for" is the runner's doctrine already; the buzzard below is that doctrine taken literally.
 const AIR_UNIT_COLLISIONS = ["air"] as const
 
@@ -150,7 +150,7 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
   },
   {
     // The `air` layer's first real content, not just its test fixture: `layer: "air"` and
-    // `collidesWith: ["air"]` are the whole difference from a one-tile ground unit - the kernel
+    // `collidesWith: ["air"]` are the whole difference from a one-tile ground unit - the battle engine
     // already ignores terrain for anything on this layer (maskForActor, shared.ts) and the loader
     // already exempts it from the on-rock-at-spawn check (skirmish/opening/open.ts), so a walled rock room
     // no ground unit could ever leave is just a tile to this thing - see

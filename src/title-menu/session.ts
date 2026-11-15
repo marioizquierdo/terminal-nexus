@@ -5,7 +5,7 @@
 // real adapter dispatch, not a parallel copy of it built for tests.
 //
 // No stdin, no ANSI, no backend, and no `src/view` import here on purpose — a `MenuSession` is
-// exactly as terminal-agnostic as `src/pulse` is renderer-agnostic. Composing what it looks like is
+// exactly as terminal-agnostic as `src/engine/pulse` is renderer-agnostic. Composing what it looks like is
 // `src/view/menu.ts`'s job; wiring it to a real terminal is `src/cli/menu.ts`'s.
 
 import { keysFromChunk } from "../terminal/playback.ts"
@@ -96,7 +96,7 @@ export class MenuSession {
   /**
    * The driver's raw-bytes path — a scripted list of raw key and mouse events (`input.md`) —
    * and what a live terminal's `stdin.on("data", ...)` handler calls too, for the common case of one
-   * screen handling its own whole chunk. `keysFromChunk` is the same split `grid watch` already uses
+   * screen handling its own whole chunk. `keysFromChunk` is the same split the Battle Round's playback uses
    * (`src/terminal/playback.ts`).
    */
   handleData(rawChunk: string, layout: MenuLayout): void {

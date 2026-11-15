@@ -9,7 +9,7 @@ import assert from "node:assert/strict"
 import { EXPERIMENT_FIELDS } from "../src/build/experiments.ts"
 import type { Experiments } from "../src/build/experiments.ts"
 import { TUNING } from "../src/build/tuning.ts"
-import type { Outcome } from "../src/state/types.ts"
+import type { Outcome } from "../src/engine/state/types.ts"
 import {
   BEAM_FADE_MS,
   BEAM_GLOW,
@@ -192,7 +192,7 @@ test("red means one thing: the player's Nexus is hurt — its first hit, very lo
 })
 
 test("the strain on a Nexus is read from the Pulse: its first hit, when it was nearly gone, when it fell", () => {
-  // No units of your own and a heavy raid: it goes for the Nexus, and the Nexus falls (a kernel ending) — so all
+  // No units of your own and a heavy raid: it goes for the Nexus, and the Nexus falls (a engine ending) — so all
   // three happen.
   const lost = play({ crew: "none", raid: "heavy" }).pulse.timeline
   const strain = nexusStrain(lost)

@@ -2,9 +2,9 @@
 // as the round opened and as it ended (whole percent: 0 at its own Nexus, 100 at theirs), and the nearest any enemy
 // unit came to its Nexus, in tiles (a row counting two). The end less the start is how far the front moved. Public.
 
-import type { DomainEvent } from "../../events/types.ts"
-import { gridDistance } from "../../grid/coords.ts"
-import type { MatchState } from "../../state/types.ts"
+import type { DomainEvent } from "../../engine/events/types.ts"
+import { gridDistance } from "../../engine/geometry/coords.ts"
+import type { MatchState } from "../../engine/state/types.ts"
 import type { Side } from "../types.ts"
 import type { RoundContext } from "./context.ts"
 import type { Tracker } from "./index.ts"

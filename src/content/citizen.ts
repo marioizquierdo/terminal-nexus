@@ -88,7 +88,7 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     // (`src/content/art.ts`). Slow enough that you watch it arrive, and tough enough that arriving
     // is the whole event.
     //
-    // It exists to put weight on the parts of the kernel a one-tile actor never touches: a nine-tile
+    // It exists to put weight on the parts of the battle engine a one-tile actor never touches: a nine-tile
     // mask against terrain and neighbours, a centre-tile placement two tiles from its own anchor,
     // and a death collapse that has an area to fill.
     id: "unit.citizen.colossus",

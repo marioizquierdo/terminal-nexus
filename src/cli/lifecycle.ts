@@ -2,7 +2,7 @@
 // interrupt byte, SIGINT, SIGTERM, a setup failure, a caught render failure) restores the terminal
 // exactly once, regardless of which one triggered it, and that calling it twice is harmless.
 //
-// Extracted out of `watch.ts` rather than reinvented for the menu: `grid watch`, the title menu and the
+// One disposer rather than one per screen: the title menu and the
 // Build Phase all build their session lifecycle on this one implementation. "There must not be a second
 // one" only holds if every caller actually goes through it.
 

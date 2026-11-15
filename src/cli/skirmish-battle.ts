@@ -15,13 +15,13 @@ import type { ContentRegistry } from "../content/index.ts"
 import type { BattleState } from "../battle/index.ts"
 import { actionsFor, briefOf, checkBuildActions } from "../battle/index.ts"
 import { titleOf } from "../battle/index.ts"
-import type { DomainEvent } from "../events/types.ts"
-import { spawnEvents } from "../pulse/index.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import { spawnEvents } from "../engine/pulse/index.ts"
 import { asciiScreenshot, asciiScreenshotLines } from "../view/ascii-screenshot.ts"
 import { createView, DEFAULT_PRESENTATION } from "../view/index.ts"
 import { drawBattleMap } from "./battle-map.ts"
 import { timelineOf } from "./timeline.ts"
-import { hashEvents } from "../events/serialize.ts"
+import { hashEvents } from "../engine/events/serialize.ts"
 import type { LogLevel } from "../report/index.ts"
 import { buildLog } from "../report/index.ts"
 import type { Played, Ran, RoundWatch } from "../skirmish/play.ts"
@@ -32,8 +32,8 @@ import type { Opened, Seated } from "../skirmish/request.ts"
 import { loadedBattle, newBattle, openSave } from "../skirmish/request.ts"
 import { BATTLE_OVER_REFUSAL } from "../skirmish/words.ts"
 import { battleLine, historyLines, roundLines, slotLabel, standing } from "../skirmish/lines.ts"
-import { hashState } from "../state/serialize.ts"
-import type { MatchState } from "../state/types.ts"
+import { hashState } from "../engine/state/serialize.ts"
+import type { MatchState } from "../engine/state/types.ts"
 import { playStrategies } from "./play-strategies.ts"
 import type { SkirmishRequest } from "./skirmish.ts"
 import { readGameFile } from "./skirmish-files.ts"
@@ -116,7 +116,7 @@ export const keepOf = (request: SkirmishRequest, more: Partial<Keep> = {}): Keep
   ...more,
 })
 
-/** The battle's log for a round played, as `grid` writes one (`buildLog`). */
+/** The battle's levelled log for a round played (`buildLog`). */
 function roundLog(played: Played, setup: SaveSetup, round: number, level: LogLevel): string[] {
   if (played.final === null || played.registry === null) return []
   const lines = buildLog(
@@ -173,7 +173,7 @@ export function playRounds(setup: SaveSetup, start: BattleState, builds: Seated[
  * ends (`end`): the round's states and events made into the view the screen plays (`createView`), sampled at each tick
  * — so each is what the screen draws there — with its ruler, legend and overlaps. Effects only when asked for.
  */
-function roundScreenshots(states: readonly MatchState[], events: readonly DomainEvent[], registry: ContentRegistry, seed: number, ticks: readonly (number | "end")[], effects: boolean): string[] {
+export function roundScreenshots(states: readonly MatchState[], events: readonly DomainEvent[], registry: ContentRegistry, seed: number, ticks: readonly (number | "end")[], effects: boolean): string[] {
   const first = states[0]
   if (first === undefined) return []
   const timeline = timelineOf({ id: "skirmish", name: "Skirmish" }, states, [...spawnEvents(first, registry), ...events], states.length - 1, seed, registry)

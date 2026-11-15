@@ -2,7 +2,7 @@
 // (hit-testing) both read, so a click can never target a tile or a row the frame did not draw there.
 // `src/title-menu/layout.ts` is the same idea for the menu.
 
-import type { Coord, GridTerrain } from "../grid/types.ts"
+import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
 import type { PlaybackControl } from "../terminal/playback.ts"
 import type { BuildState } from "./state.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, mapMode, startEntry } from "./state.ts"

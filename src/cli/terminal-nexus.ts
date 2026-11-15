@@ -1,5 +1,4 @@
-// The `terminal-nexus` executable's own CLI: the game's actual entry
-// point, as distinct from `grid`'s. No subcommand and no map file: a bare `terminal-nexus` opens the title
+// The `terminal-nexus` executable's own CLI: the game's entry point. No subcommand and no map file: a bare `terminal-nexus` opens the title
 // menu, `--at <route>` opens any other place in the game (`./route.ts`) — a screen of the title menu, a Skirmish, or
 // a story mission's Build Phase at one of its rounds — and the `skirmish` command's own words open a Skirmish as that
 // command opens it: `--load <file>` a save at its Build Phase, `--map pocket --p2-commander averno` a new battle,
@@ -12,16 +11,15 @@
 // them (`./launch.ts`); this file only says they came from `--at`, `--settings` and `--keys`.
 //
 // The Settings screen makes what a session starts with layered: a saved choice
-// (from a previous run's Settings screen) beats `grid`'s own first-run colour-depth guess, and an
-// explicit command-line flag beats either — the same override order `grid` itself already uses for
-// most of its own flags, just with a saved file added underneath.
+// (from a previous run's Settings screen) beats the first-run colour-depth guess (`detectColorDepth`), and an
+// explicit command-line flag beats either.
 
 import { execFileSync } from "node:child_process"
 import { mkdir, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 import { parseColorDepth, parseGlyphPack, parseTheme } from "../view/index.ts"
-import { detectColorDepth } from "./grid-main.ts"
+import type { ColorDepth } from "../view/index.ts"
 import { parseArgs, parseInteger, retiredOption } from "./args.ts"
 import { runMenu } from "./menu.ts"
 import { runBuildPhase } from "./build-phase.ts"
@@ -121,7 +119,7 @@ ${levels}
       "nextRound=auto jumpStep=12" or "jumpStep=12&reducedMotion=true". On and off
       settings take true and false too.
 
-A first launch guesses colour depth the way \`grid\` does; every launch after that remembers whatever
+A first launch guesses colour depth from what the terminal advertises; every launch after that remembers whatever
 was last chosen on the Settings screen (~/.terminal-nexus/settings.json). Any flag above overrides
 its own setting for this one run without changing what is saved.
 
@@ -148,7 +146,7 @@ const SKIRMISH_FLAGS = ["p1", "p2"] as const
 const ASK_FLAGS: readonly string[] = Object.keys(ASK_WORDS).filter((word) => !(SKIRMISH_FLAGS as readonly string[]).includes(word))
 
 /** Everything the game reads from its command line; anything else is refused rather than ignored, so a command
- *  pasted from an older note never opens somewhere it did not mean. (`grid` shares the parser and reads others.) */
+ *  pasted from an older note never opens somewhere it did not mean. */
 const GAME_FLAGS: ReadonlySet<string> = new Set(["help", "reduced-motion"])
 const GAME_OPTIONS: ReadonlySet<string> = new Set(["at", "note", ...Object.keys(ASK_WORDS), "settings", "keys", "colors", "theme", "glyphs", "backend", "scroll-margin"])
 
@@ -241,7 +239,7 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   const settingsStore = createSettingsStore(defaultSettingsPath())
   const saved = await settingsStore.load()
-  // Nothing saved yet: guess the way `grid` always has, rather than a fixed baseline nobody chose.
+  // Nothing saved yet: guess from what the terminal advertises, rather than a fixed baseline nobody chose.
   // Once anything is saved, that choice is what a plain relaunch (no flags) sees from here on.
   const base: Settings = saved ?? { ...DEFAULT_SETTINGS, colors: detectColorDepth() }
 
@@ -404,4 +402,13 @@ export function terminalExporter(stdout: TerminalOutput, path: string): Exporter
 /** OSC 52: "set the clipboard to this base64 text", ended by BEL, which more terminals accept than ST. */
 export function osc52(text: string): string {
   return `\u001b]52;c;${Buffer.from(text, "utf8").toString("base64")}\u0007`
+}
+
+/** The colour depth the terminal advertises: COLORTERM, then TERM; monochrome when neither says more. */
+export function detectColorDepth(env: NodeJS.ProcessEnv = process.env): ColorDepth {
+  const colorterm = env["COLORTERM"]
+  if (colorterm === "truecolor" || colorterm === "24bit") return "truecolor"
+  const term = env["TERM"] ?? ""
+  if (term.includes("256color")) return "color256"
+  return "monochrome"
 }

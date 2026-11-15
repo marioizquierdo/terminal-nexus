@@ -2,8 +2,8 @@
 
 _A design sketch of the persisted, levelled game log. **Not built:** no code reads or writes a `.replay.json` file, and AGENTS.md lists the replay format among what no step asks for yet. Everything here is GUIDANCE except the parts marked IDEA._
 
-**Status.** Built today: `grid --headless --events file.jsonl` (one canonical `DomainEvent` per line), `--save-log`,
-`--verify` (re-resolve and compare hashes), and a Skirmish's session record for playtest notes
+**Status.** Built today: a Battle Round's levelled log and its report's state and event hashes (the `skirmish`
+command's `--log`), the determinism tests that re-resolve and compare hashes, and a Skirmish's session record for playtest notes
 ([`skirmish-saves.md`](skirmish-saves.md)), which is not a replay. Not built: everything below. Read it as a
 recommendation for whoever picks the work up; build none of it until a milestone step asks.
 
@@ -15,13 +15,13 @@ committed plans per Build Phase; ordered events per Pulse; final hashes; outcome
 explicitly excluded from verification". It does not say what file holds that or what shape it takes. Every field
 below traces back to a clause in that sentence; this page adds no new commitment.
 
-A persisted, versioned, levelled log turns a run of `grid` ([`runtime.md`](runtime.md)) from "a fight that happened
+A persisted, versioned, levelled log turns a Battle Round ([`runtime.md`](runtime.md)) from "a fight that happened
 once, in a terminal, and is gone" into a durable artifact: a bug report, a regression fixture, a feedback recording,
 a highlight to watch back.
 
 ## What the format leaves open
 
-- **The Build Phase's plan.** The kernel has no notion of a plan; `committedPlans` is reserved shape, the way an API
+- **The Build Phase's plan.** The battle engine has no notion of a plan; `committedPlans` is reserved shape, the way an API
   surface is reserved at zero cost, so that whatever defines the plan format does not reopen this file.
 - **Armies.** Armies exist as data (`armies/`, [`army-authoring.md`](army-authoring.md)); `armyId` and `faction` are
   reserved fields, bare strings or references into the army registry, not pre-decided here.
@@ -38,15 +38,15 @@ a highlight to watch back.
 type ReplayFile = Readonly<{
   /** This document's own schema, independent of MatchState's schemaVersion (see "The format's own version"). */
   replayFormatVersion: number
-  /** "grid-playground": one implicit build phase, one Pulse. "match": the real thing. */
-  replayType: "grid-playground" | "match"
-  /** == ENGINE_VERSION at record time (src/pulse/resolve.ts). */
-  gridEngineVersion: string
+  /** "sandbox": one implicit build phase, one Pulse. "match": the real thing. */
+  replayType: "sandbox" | "match"
+  /** == ENGINE_VERSION at record time (src/engine/pulse/resolve.ts). */
+  engineVersion: string
   /** == contentLockOf(registry) at record time. */
   contentLock: string
   /** Named because the game log's contents name it, even though there is exactly one today. */
   prng: "pcg32"
-  /** ISO 8601. Metadata for a human browsing saved replays. The kernel never reads it. */
+  /** ISO 8601. Metadata for a human browsing saved replays. The battle engine never reads it. */
   recordedAt: string
   setup: ReplaySetup
   /** Build and Pulse phases, strictly alternating, in play order. */
@@ -56,7 +56,7 @@ type ReplayFile = Readonly<{
 }>
 ```
 
-`Outcome` is `src/state/types.ts`'s existing type, reused rather than re-declared: `{ winner:
+`Outcome` is `src/engine/state/types.ts`'s existing type, reused rather than re-declared: `{ winner:
 PlayerId | null, reason: VictoryReason, tick: number }`.
 
 ### Setup — the starting point
@@ -68,7 +68,7 @@ type ReplaySetup = Readonly<{
    *  placement (src/skirmish/opening/types.ts). */
   map: Readonly<{ battleId: string }> | Readonly<{ opening: BattleOpening }>
   /** hashOf(the resolved BattleOpening) either way: the game log's "map id and hash". One
-   *  hash function, already built (src/state/canonical.ts), no new machinery. */
+   *  hash function, already built (src/engine/state/canonical.ts), no new machinery. */
   mapHash: string
   players: Readonly<Record<PlayerId, ReplayPlayerSetup>>
 }>
@@ -111,14 +111,14 @@ type ReplayPhase =
     }>
 ```
 
-A "grid-playground" replay has exactly one `build` phase (the sandbox's static placements, standing in
+A "sandbox" replay has exactly one `build` phase (the sandbox's static placements, standing in
 for a real Build Phase) followed by exactly one `pulse` phase. A "match" replay is the general case:
 `build`, `pulse`, `build`, `pulse`, … until the last Pulse's `finalState.outcome` is non-null. Each
 `build` and `pulse` pair is one round, and `pulseNumber` counts rounds.
 
 ## Log levels: a second axis
 
-The engine tool already has five log levels for its **live headless report**: a human or an agent
+A Battle Round's **live headless report** already has five log levels: a human or an agent
 watching one run scroll by right now. A stored file asks a different question wearing the same five
 names: how much of a Pulse's story is worth **paying to store**, permanently, in a file that might hold
 a whole match. Reusing the live report's table unchanged would be wrong: its `INFO` already includes
@@ -141,7 +141,7 @@ So: same five names, same cumulative-threshold mechanism (`src/report/levels.ts`
 ```ts
 type EngagementDetected = Readonly<{
   /** Not a DomainEventKind. Computed by the replay writer from the resolved event stream, never
-   *  emitted by the kernel: the kernel has no notion of "area" or "cooldown". Named distinctly so
+   *  emitted by the battle engine: the battle engine has no notion of "area" or "cooldown". Named distinctly so
    *  no consumer mistakes an aggregate for something the simulation itself asserted. */
   kind: "engagement.detected"
   startTick: number
@@ -168,7 +168,7 @@ reproducible needs three things nailed down:
   far enough past it to confirm the silence; this cannot be decided while a Pulse is still resolving,
   only by scanning the completed event stream afterward. That is why engagement detection belongs in
   the replay writer, as a derived read over an already-canonical event log, and never as something the
-  kernel tracks: the same boundary the three worlds ([`grid-engine.md`](grid-engine.md)) draw between
+  engine tracks: the same boundary the three worlds ([`architecture.md`](architecture.md)) draw between
   simulation and presentation applies between simulation and its own log.
 - **Power.** No content definition carries a "power" scalar today (`src/content/types.ts` has `maxHp`
   and per-attack `damage`, nothing unified). Default, not locked: `totalPower = Σ (maxHp +
@@ -192,25 +192,25 @@ change with the view.
 
 Get this wrong, and hash the array that actually got written, and two replay files of the identical
 Pulse at different log levels get different `eventsHash` values, which breaks every comparison the
-format exists to make possible: `grid --verify` against a saved file, one file against another, a
+format exists to make possible: re-resolving against a saved file, one file against another, a
 `TRACE` capture against a `WARN` capture of the same seed. The divergence between log levels lives
 entirely in `events`' contents, never in `stateHash`/`eventsHash`.
 
 This is also what makes a low-level file **fully verifiable despite storing almost nothing**:
 verification was never "does the stored event list match"; it is "re-run the recorded seed, initial
-state, content lock and engine version, and compare the resulting hashes", exactly what `grid --verify`
-already does today. A `WARN`-level file re-derives its own full stream on demand; it never needs to have
+state, content lock and engine version, and compare the resulting hashes", exactly what the determinism tests
+already do today. A `WARN`-level file re-derives its own full stream on demand; it never needs to have
 stored one.
 
 ### Raising a level is always sound; lowering one is destructive
 
 Because of the above, "save this Pulse back at a higher log level" has a precise, safe meaning:
 re-resolve it from its own recorded `seed` + `initialState` + `contentLock` (refusing if the installed
-`gridEngineVersion` no longer matches the recorded one), take the freshly computed full stream, filter
+`engineVersion` no longer matches the recorded one), take the freshly computed full stream, filter
 it to the new level, and overwrite `events` (and `ticksRecorded`, if now `TRACE`). `stateHash` and
 `eventsHash` should come out identical to what was already stored; if they do not, that is itself the
-finding: an engine or content drift the tool must report loudly, the same failure mode `grid --verify`
-already has, never a silent overwrite.
+finding: an engine or content drift the tool must report loudly, the same failure mode the determinism tests
+already have, never a silent overwrite.
 
 Determinism is what makes this well-defined rather than a request to remember detail nobody captured.
 The inverse, discarding detail a file already has to save space, is not unsound, but it is a
@@ -220,16 +220,16 @@ confirmation.
 ### Version skew is a refusal, not a silent divergence
 
 `ENGINE_VERSION`'s own doc comment is "bumped whenever a rule changes an outcome", which means
-re-resolving a file's recorded seed under a *different* installed `gridEngineVersion` than the one it
+re-resolving a file's recorded seed under a *different* installed `engineVersion` than the one it
 carries can legitimately produce a different result, and that is expected, not a bug. Reading or
-writing back a replay file compares its recorded `gridEngineVersion` and `contentLock` against what is
+writing back a replay file compares its recorded `engineVersion` and `contentLock` against what is
 currently installed and refuses to overwrite on any mismatch: write to a new file, or fail loudly and
 say which of the two drifted. Never let a rule change quietly rewrite a stored history under the hashes
 that were supposed to prove it never would.
 
 ### A partial file is a valid file
 
-A "grid-playground" replay's single Pulse may end on the tick limit with `outcome: null`: a draw is not
+A "sandbox" replay's single Pulse may end on the tick limit with `outcome: null`: a draw is not
 corruption, and neither is a `.replay.json` written mid-match, before its last `build`/`pulse` pair has
 happened. `ReplayFile.outcome` mirrors `MatchState.outcome` exactly for this reason: `null` means "not
 decided yet", the meaning it already carries on every in-flight `MatchState`. Nothing reading this
@@ -237,11 +237,10 @@ format may assume the last entry in `phases` is a finished game.
 
 ### One canonical event encoding, two containers
 
-`grid x.save.json --headless --events file.jsonl` already exists and already emits one `DomainEvent` per
-line, canonically serialized (`src/events/serialize.ts`, held by `tests/determinism.test.ts` and
-`tests/grid-cli.test.ts`). A `pulse` phase's `events` array should serialize each entry through that exact same
+The battle engine already serializes each `DomainEvent` canonically, one per line
+(`src/engine/events/serialize.ts`, held by `tests/determinism.test.ts`). A `pulse` phase's `events` array should serialize each entry through that exact same
 per-event encoding, so `hashEvents` agrees whether the events came from a `.replay.json` phase or a
-standalone JSONL export of the identical run. The wrapper around phases and setup is necessarily a
+standalone export of the identical run. The wrapper around phases and setup is necessarily a
 single JSON document, since the file has real nested structure, but nothing about that requires a
 second way to write down what an event *is*.
 
@@ -252,29 +251,24 @@ shape*: adding a phase kind, changing what a level includes. They change indepen
 should be read as a sign about the other; conflating them would make an unrelated engine change look
 like a file-format break, or the reverse.
 
-## How `grid` would read and write these files — IDEA
+## How the `skirmish` command and the game would read and write these files — IDEA
 
-Not built. The shape the tool could grow into:
+Not built. The shape it could grow into:
 
-- **`grid <save> --headless --save-replay <file> [--log-level LEVEL] [--type grid-playground]`**:
-  today's `grid <save> --headless` plus persistence: one implicit `build` phase (the map's own
-  placements), one `pulse` phase resolved and filtered to `LEVEL`, written to a new `.replay.json`.
-  This is packaging, not new machinery: `resolvePulse` and the existing JSONL event encoding already do
-  the work; this only adds the setup and provenance wrapper. A flag, not a subcommand: `grid`'s first
-  argument is always the map or replay to load, never a verb.
-- **`grid <file> --headless --replay-pulse N [--log-level LEVEL]`**: re-resolves Pulse `N` (default: the
-  last one) as described under "Raising a level" and writes the richer result back in place, after the
-  version-skew check.
-- **`grid <file>`** (the default action, watch): a replay's `setup.map` is already a full map (embedded
-  or by id), so watching a saved replay should need no new rendering: the same viewer that plays a
-  `.save.json` map today plays a `.replay.json`'s setup the same way, then steps through its recorded
-  Pulse the same way `grid` already steps through a live resolution.
+- **`skirmish ... --save-replay <file> [--log-level LEVEL]`**: a battle or a sandbox played as today, plus
+  persistence: each Build Phase's build actions and each Battle Round resolved and filtered to `LEVEL`, written to a
+  new `.replay.json`. This is packaging, not new machinery: the battle engine and its events already do the work;
+  this only adds the setup and provenance wrapper.
+- **Re-resolving round `N`** of a replay as described under "Raising a level", writing the richer result back in
+  place after the version-skew check.
+- **Watching a replay on the game's screen**: a replay's setup is already a save's, so the screen that plays a
+  Battle Round today plays a recorded one the same way, stepping through its recorded events.
 
 ## Naming, and the engine version
 
-`replayType: "grid-playground"` is a single Pulse using the build phase as setup, spelled to match the tool's own
-name. The engine version is recorded from the first file the format writes: `ReplayFile.gridEngineVersion` is
-`ENGINE_VERSION` (`src/pulse/resolve.ts`). One gap in the current code, not in this design: `PulseRun` has no `prng`
+`replayType: "sandbox"` is a single Battle Round from a board written by hand, the build phase standing in as its
+setup. The engine version is recorded from the first file the format writes: `ReplayFile.engineVersion` is
+`ENGINE_VERSION` (`src/engine/pulse/resolve.ts`). One gap in the current code, not in this design: `PulseRun` has no `prng`
 field though the game log's required contents name one; with one PRNG nothing depends on it, and it is cheap to add
 whenever `PulseRun`'s shape is next touched.
 

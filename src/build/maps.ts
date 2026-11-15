@@ -6,7 +6,7 @@
 // shown with (`./catalog.ts`, which re-exports it) because the armies name it and that menu is built from the
 // armies: one file holding both would be a circular import.
 
-import type { Coord, GridTerrain, TerrainId } from "../grid/types.ts"
+import type { Coord, GridTerrain, TerrainId } from "../engine/geometry/types.ts"
 import type { MapEdgeStyle, StandingStructure } from "./types.ts"
 
 /**
@@ -63,7 +63,7 @@ const DEPOSITS: readonly Readonly<{ x: number; y: number }>[] = [
 /**
  * Built by a function rather than checked in as a sandbox (`.save.json`): a sandbox is
  * simulation input and the determinism suite replays every one of them twenty times. This Grid never
- * reaches the kernel. Deterministic all the same — no randomness, no clock, the same tiles each run.
+ * reaches the battle engine. Deterministic all the same — no randomness, no clock, the same tiles each run.
  */
 export function starterGrid(): GridTerrain {
   const { width, height } = STARTER_GRID_SIZE

@@ -24,8 +24,8 @@ A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and
   10 seconds), a building's actions (`e` onto a Barracks, then `c`), and the Nexus shooting back. In Settings, under
   Experiments, try the keyboard's Arrow step, Shift step, Shift pace and Hold pace, then export the settings and paste
   them with your notes.
-- **Watch, five minutes: troops at a narrow door.** `./bin/grid.ts sandboxes/engage/engage-gap2-melee-vs-mix`, then
-  `./bin/grid.ts sandboxes/engage/engage-gap2-airmix-vs-mix`: twelve troopers lose at a door two rows wide, and the same
+- **Watch, five minutes: troops at a narrow door.** `npm run skirmish -- --load sandboxes/engage/engage-gap2-melee-vs-mix.save.json --play-to next --show 0,60,120,240,end`,
+  then the same with `engage-gap2-airmix-vs-mix`: twelve troopers lose at a door two rows wide, and the same
   number with half of them in the air win. Does that read as good ground (a choice that matters) or as air too strong
   where the ground is tight? Does a unit that keeps its target read as commitment or as stubbornness?
 - **Decide, one line: letter keys for buildings.** Your notes once said "press 'b' to build a barracks". Was `b` an
@@ -72,8 +72,8 @@ Small, none blocking. What rounds on PERIMETER left unfinished moved to
 
 - A recipe costs nothing and nothing competes, so the seeded contention process is not built; it comes with
   cost and supply in the worker economy.
-- Only the buildings a mission offers spawn: a barracks in a sandbox still spawns nothing,
-  and the bench Hatchery there keeps its own breeding.
+- A building spawns in a mission's battles, and in a Battle Round sandbox, as its army's card says (Mario's
+  decision, [Q94](../history/answered-questions.md)); a map that merely has a barracks on it in the Build Phase does not.
 
 **From the Build Phase and the menu spike** ([report](../history/reports/2026-09-30-menu-spike.md)):
 

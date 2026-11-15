@@ -110,7 +110,7 @@ worker. Whether the dragging is visible still wants someone to watch it.
 The feedback half moved on 2026-11-12: a playtest note that replays its moment is step 17D of the Skirmish milestone,
 built on a session record rather than the replay format. The sandbox and rewind halves stay parked.
 
-The owner, after playing the Pulse Playground (now `grid`): "I will want to start improving the Pulse
+The owner, after playing the Pulse Playground (a battle viewer since removed; sandboxes now play through the `skirmish` command): "I will want to start improving the Pulse
 Playground to have 'sandbox mode' starting with an empty map... have the cursor that can choose units
 and place them wherever, then run the simulation. I will love to implement rewind and fast forward (1, 5,
 10, 20 turns)... a full replay engine that will also be used to replay existing games, which will be
@@ -125,12 +125,12 @@ mind... but not needed for now." Three things are bundled:
   scrubbing is cheap later. `src/terminal/playback.ts` already addresses presentation time arbitrarily; scrubbing
   backward and by named tick counts is the new part.
 - **Sandbox placement** is an early, reduced battle editor, but lighter in purpose than the competitive Build
-  Phase: a fast unit-matchup tool for exploring the kernel, with no cost, supply or hidden plan.
+  Phase: a fast unit-matchup tool for exploring the battle engine, with no cost, supply or hidden plan.
 
 | Option | Cost |
 | --- | --- |
 | A. **Fold all three into a future battle editor** | One editor, one thing to build. The sandbox waits for the editor's much larger scope |
-| B. **A lightweight placement mode in `grid` itself**, ahead of any editor: a cursor, the existing fixture rosters, and `run` | Keeps the ask small and close to what exists; two placement UIs to reconcile later |
+| B. **A lightweight placement mode on the game's screen**, ahead of any editor: a cursor, the existing fixture rosters, and run the Battle Round | Keeps the ask small and close to what exists; two placement UIs to reconcile later |
 | C. **Do nothing until a battle editor is scheduled** | Free. The owner said this is fine |
 
 **Recommendation: C for now, then B if the owner wants to play with matchups sooner.** Whichever step first
@@ -150,7 +150,7 @@ of the state/presentation line the jitter lives on**.
 
 | Option | Cost |
 | --- | --- |
-| A. **Pure presentation: interpolation only.** A hash of `(ordinal, from, to)` perturbs only how `Playback` draws the in-between frames, never the tick the kernel resolved | Cheap and safe, same shape as `fx.move.trail`. Ceiling on variety: two troopers still arrive on the same tick |
+| A. **Pure presentation: interpolation only.** A hash of `(ordinal, from, to)` perturbs only how `Playback` draws the in-between frames, never the tick the battle engine resolved | Cheap and safe, same shape as `fx.move.trail`. Ceiling on variety: two troopers still arrive on the same tick |
 | B. **A per-actor cosmetic "phase"**, assigned at spawn from a hash, shifting when in its cadence window a step visibly commits, without changing the tick arithmetic | More convincing desync. A per-entity value threaded from spawn to the view without a rule ever reading it (the discipline `facing` gets), plus a test proving it never perturbs the hashes |
 | C. **Terrain-keyed rather than actor-keyed**: a rocky tile jitters more than plain ground | Most literal reading, but conflates an individual's gait with ground that is hard to cross. If terrain should change the *feel* of crossing, that is a `movementRate` modifier, a real rule and a bigger question |
 
@@ -318,12 +318,12 @@ routing field; the central path the army keeps to is unchanged.
 A marcher keeps near a straight **central path** from its own Nexus to the goal, used only to break ties between
 equally good steps; it runs through rock when rock is in the way, and nothing on screen shows it. The **march route**
 would be the side's march field walked downhill to the goal, round rock and buildings: one line, the same at the start
-of the round as the kernel's own field.
+of the round as the battle engine's own field.
 
 | Option | Cost |
 | --- | --- |
-| A. **Draw the march route from the Commander, and make it the central path**; perhaps the Commander also becomes the point the army regroups on | Shows placement bending the enemy's way; a small kernel change and a new layer on the map. Ties the army's line to a unit that can fall, so it needs a rule for when she is out |
-| B. **Draw the route from Nexus to goal; keep the central path straight** | No kernel change; the drawn line and the line the army keeps to differ wherever rock stands between |
+| A. **Draw the march route from the Commander, and make it the central path**; perhaps the Commander also becomes the point the army regroups on | Shows placement bending the enemy's way; a small engine change and a new layer on the map. Ties the army's line to a unit that can fall, so it needs a rule for when she is out |
+| B. **Draw the route from Nexus to goal; keep the central path straight** | No engine change; the drawn line and the line the army keeps to differ wherever rock stands between |
 | C. **Neither, until the stance and the banner are built** | Free; placement stays read from the rules, not the screen |
 
 **Recommendation: C for now, then A**, as the owner said: the march route drawn from the Commander once the stance and
@@ -472,16 +472,16 @@ digit contract stays a rule. Ask him once whether `b` was an example of a key or
 
 [`story.md`](../game-design/story.md) gives the trigger runner an `order` action — a group "advances,
 holds, or withdraws toward a region" — and the owner asked for incoming units to show their intention. **The
-kernel has one movement rule: every unit engages the nearest enemy.** It has no field for an order and no phase
-that reads one. So `order` is built with one verb, `advance`, which means exactly what the kernel already does;
-the region it names is the stated destination, shown to the player as intention, not a path the kernel steers
+engine has one movement rule: every unit engages the nearest enemy.** It has no field for an order and no phase
+that reads one. So `order` is built with one verb, `advance`, which means exactly what the battle engine already does;
+the region it names is the stated destination, shown to the player as intention, not a path the battle engine steers
 by. `hold` and `withdraw` are refused when a mission is loaded, with this question's number in the message.
 
 | Option | Cost |
 | --- | --- |
-| A. **Keep `advance` only**; intentions stay words the mission writes | Free; but a raid can never feint, wait at the ridge, or pull back, and "Break through at the ridge" is a promise the kernel keeps only because the nearest enemy happens to be that way |
-| B. **An order field on an entity and a goal in the intents phase**: a group holds (never moves, still fires), withdraws (moves away from the region), or heads for a region before it engages | A kernel change: a new `EntityState` field (a schema bump), a rule in the intents phase with its own named sandbox, the determinism suite. It is also the seam the Campaign's opponent AI needs ([`scripted-opponent.md`](../game-design/scripted-opponent.md)) |
-| C. **Orders as scripted content swaps** (a "holding" variant of a unit with a static behaviour) | No kernel change, but a unit's identity changes under it and every unit needs variants: content bloat to avoid a rule |
+| A. **Keep `advance` only**; intentions stay words the mission writes | Free; but a raid can never feint, wait at the ridge, or pull back, and "Break through at the ridge" is a promise the battle engine keeps only because the nearest enemy happens to be that way |
+| B. **An order field on an entity and a goal in the intents phase**: a group holds (never moves, still fires), withdraws (moves away from the region), or heads for a region before it engages | A engine change: a new `EntityState` field (a schema bump), a rule in the intents phase with its own named sandbox, the determinism suite. It is also the seam the Campaign's opponent AI needs ([`scripted-opponent.md`](../game-design/scripted-opponent.md)) |
+| C. **Orders as scripted content swaps** (a "holding" variant of a unit with a static behaviour) | No engine change, but a unit's identity changes under it and every unit needs variants: content bloat to avoid a rule |
 
 **Recommendation: B, as its own small step**, scoped to `hold` and "head for a region, then engage", because
 that is what a readable intention needs and what a mission's scripted opponent will be made of.
@@ -561,7 +561,7 @@ matches rather than one. Time a match once workers gather, and tune the draft's 
 
 The owner named the moment that opens each round the Nexus Pulse, and the battle that ends it is the Battle Round in
 every document and on every screen. The engine kept its own word: the code calls the battle step "the Pulse"
-(`src/pulse/`, `startPulse`, `pulse-run.ts`, the three worlds in `AGENTS.md`), and so does a mission's data, which a
+(`src/engine/pulse/`, `startPulse`, `pulse-run.ts`, the three worlds in `AGENTS.md`), and so does a mission's data, which a
 modder writes: `pulses` (how many Battle Rounds), `pulseTicks` (how long each), a trigger's `when: { "pulse": 2 }`
 and the event `pulse.end`, with the loader's messages saying "Pulse 2". Since "Nexus Pulse" now means something else,
 a modder reading `pulses: 3` beside a game that says Nexus Pulse could take one for the other.
@@ -570,7 +570,7 @@ a modder reading `pulses: 3` beside a game that says Nexus Pulse could take one 
 | --- | --- |
 | A. **Keep the engine's word, documented** (as now): "the Pulse" in code and data is the engine's name for the Battle Round, never the Nexus Pulse | Nothing now; one more line in the vocabulary, and a trap for a reader who skips it |
 | B. **Rename a mission's data and messages** (`pulses` → `rounds`, `pulseTicks` → `roundTicks`, `when.pulse` → `when.round`, `pulse.end` → `round.end`), reading the old names for a while | A format change across the army files, the sandboxes, the loader and the trigger runner, and every test that writes a mission |
-| C. **Rename the engine too** (`src/pulse/` → `src/battle/`, `startPulse` → `startBattle`, the three worlds' "Pulse") | About two thousand names; a long, mechanical pull request with nothing for a player to see |
+| C. **Rename the engine too** (`src/engine/pulse/` → `src/battle/`, `startPulse` → `startBattle`, the three worlds' "Pulse") | About two thousand names; a long, mechanical pull request with nothing for a player to see |
 
 **Recommendation: B before modding opens, C never on its own.** What a modder writes should use the game's words,
 and that is a contained change best made with the next change to the mission format; the engine's internal names

@@ -1,7 +1,7 @@
 // The Aid Station: what Vasse's Aid Station Permit adds, a building that heals (commander-armies.md, her Nexus
 // powers: "The Aid Station repairs the units beside it each Battle Round"). The story is the sandbox
 // `sandboxes/rules/aid-station-repair.save.json`; here are the rule's edges, each on a few units placed to show one thing
-// (the kernel's healer on a building: `behavior: "support"`, a heal attack, its layers), how a heal looks on
+// (the battle engine's healer on a building: `behavior: "support"`, a heal attack, its layers), how a heal looks on
 // screen, and its card at the 80 x 24 floor.
 
 import { test } from "node:test"
@@ -15,14 +15,15 @@ import { CONTENT_ART, PLACEMENT_ART } from "../src/content/art.ts"
 import { CARD_TEXT } from "../src/content/cards.ts"
 import type { ContentDef } from "../src/content/index.ts"
 import { createRegistry, FIXTURE_REGISTRY } from "../src/content/index.ts"
-import type { DomainEvent } from "../src/events/types.ts"
-import { contextFor, resolvePulse, stepTick } from "../src/pulse/index.ts"
+import type { DomainEvent } from "../src/engine/events/types.ts"
+import { contextFor, resolvePulse, stepTick } from "../src/engine/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
-import type { MatchState, PlayerId } from "../src/state/types.ts"
+import type { MatchState, PlayerId } from "../src/engine/state/types.ts"
 import { placementRun } from "../src/view/placement.ts"
-import { COLOR_DEPTHS, DEFAULT_PRESENTATION, EFFECT_RECIPES, MEND_GLYPH, STYLE_ROLES, cellAt, createView, gridOrigin, mendTile } from "../src/view/index.ts"
+import { COLOR_DEPTHS, DEFAULT_PRESENTATION, EFFECT_RECIPES, MEND_GLYPH, STYLE_ROLES, cellAt, mendTile } from "../src/view/index.ts"
 import type { EffectContext, EffectInstance, EffectRecipe } from "../src/view/index.ts"
+import { battleRoundScreen } from "./battle-round-frame.ts"
 import { MAXIMUM, MINIMUM, buildSide, compose, keys, panelLines } from "./build-helpers.ts"
 import { loadSandbox, playSandbox } from "./helpers.ts"
 
@@ -213,7 +214,7 @@ test("aid-station-repair: the trooper beside the station wins its battle and is 
   const { run: battle } = await playSandbox("aid-station-repair.save.json")
   const opening = battle.initialState.entities
   const station = opening.find((entity) => entity.contentId === AID)
-  const barracks = opening.find((entity) => entity.contentId === "structure.citizen.barracks")
+  const barracks = opening.find((entity) => entity.contentId === "structure.bench.barracks")
   assert.ok(station !== undefined && barracks !== undefined)
   const heals = healsOf(battle.events)
   assert.ok(heals.length > 0, "the station mended nobody")
@@ -259,9 +260,10 @@ test("the bench medic, the one healer before buildings could heal, heals exactly
 // (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
 // Its state's hash pinned again when every map came to give each side that fights a goal: the raid now has a target
 // of its own, where the station's side stands, carried in the state; its events are the same battle's.
+// Pinned again when a building in a sandbox came to train as its card says: the sandbox's Barracks became the bench's Practice Barracks, which trains nothing, so the battle is the same one under another content id.
 const PINNED_AID_STATION = [
-  "512a020fdcc41a5f62ac9a5252221c83f38eeac3f797833a1a1dfa8a1b288072",
-  "4f9602c34e41efda28e1407e2aab36d892197d01b5be69b9c81c264da4835a93",
+  "9f8c5b4541be010815cae01a90c9f2946fcc38b3e042c7b455c8a7cac7fe27c4",
+  "ab9bdcca53a9dc31d9e60e9cf0c852f530aa23e906a70ff55db674a0fa73e168",
 ]
 // Its state's hash was the one from before the Aid Station, its events' pinned again when a unit among equally near
 // enemies came to keep the one it holds, then take the weakest (no side wins by where it stands): the same battle,
@@ -287,29 +289,28 @@ test("a heal shows on screen: a cross of light beside the mended unit, then rise
   assert.ok(patch !== undefined && patch.kind === "heal.applied")
   const mended = timeline.states[patch.tick]?.entities.find((entity) => entity.ordinal === patch.ordinal)
   assert.ok(mended !== undefined)
-  const origin = gridOrigin(timeline.grid)
-  const cellOf = (x: number, y: number) => ({ x: origin.column + x, y: origin.row + y })
-  const above = cellOf(mended.anchor.x, mended.anchor.y - 1)
-  const higher = cellOf(mended.anchor.x, mended.anchor.y - 2)
-  const own = cellOf(mended.anchor.x, mended.anchor.y)
+  const tickMs = 1000 / timeline.ticksPerSecond
+  const screen = battleRoundScreen(timeline)
+  const above = screen.cellOf({ x: mended.anchor.x, y: mended.anchor.y - 1 })
+  const higher = screen.cellOf({ x: mended.anchor.x, y: mended.anchor.y - 2 })
+  const own = screen.cellOf(mended.anchor)
   for (const colors of ["monochrome", "truecolor"] as const) {
-    const view = createView(timeline)
-    const landing = view.snapshotAt((patch.tick + 1) * view.tickDurationMs, colors)
+    const landing = screen.frameAt((patch.tick + 1) * tickMs, colors)
     assert.equal(cellAt(landing, above.x, above.y).glyph, MEND_GLYPH, `${colors}: no cross above the mended unit`)
     assert.deepEqual(cellAt(landing, above.x, above.y).style, { fgRole: "fx.flash" })
     assert.equal(cellAt(landing, own.x, own.y).glyph, "t", "the mended unit's own glyph was replaced")
-    const rising = view.snapshotAt((patch.tick + 3) * view.tickDurationMs, colors)
+    const rising = screen.frameAt((patch.tick + 3) * tickMs, colors)
     assert.equal(cellAt(rising, higher.x, higher.y).glyph, MEND_GLYPH, `${colors}: the cross did not rise`)
     assert.deepEqual(cellAt(rising, higher.x, higher.y).style, { fgRole: "fx.flash", dim: true })
     // Reduced motion: the cross held where it landed, no rise.
-    const still = createView(timeline, { ...DEFAULT_PRESENTATION, reducedMotion: true })
-    const held = still.snapshotAt((patch.tick + 3) * still.tickDurationMs, colors)
+    const still = battleRoundScreen(timeline, { presentation: { ...DEFAULT_PRESENTATION, reducedMotion: true } })
+    const held = still.frameAt((patch.tick + 3) * tickMs, colors)
     assert.equal(cellAt(held, above.x, above.y).glyph, MEND_GLYPH, `${colors}: reduced motion dropped the cross`)
     assert.notEqual(cellAt(held, higher.x, higher.y).glyph, MEND_GLYPH, `${colors}: reduced motion still rose`)
   }
   // With effects off, the same moment shows nothing there: the cross is the heal's, and only presentation's.
-  const off = createView(timeline, { ...DEFAULT_PRESENTATION, effects: false })
-  assert.notEqual(cellAt(off.snapshotAt((patch.tick + 1) * off.tickDurationMs, "monochrome"), above.x, above.y).glyph, MEND_GLYPH)
+  const off = battleRoundScreen(timeline, { presentation: { ...DEFAULT_PRESENTATION, effects: false } })
+  assert.notEqual(cellAt(off.frameAt((patch.tick + 1) * tickMs, "monochrome"), above.x, above.y).glyph, MEND_GLYPH)
 })
 
 test("a heal's mark keeps the effect contract: a pure function of time, one ASCII cell in a declared role, all three forms at the impact beat", () => {

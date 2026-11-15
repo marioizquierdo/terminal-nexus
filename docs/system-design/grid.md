@@ -6,7 +6,7 @@ _The play surface: its size and shape, orientation, the viewport and scrolling, 
 
 The **Grid** is the rectangular integer playfield a match is fought on. The replica of a Nexus that
 sits on it is a **Grid Nexus**; the one that stays home is a **Prime Nexus**. A Grid Nexus is a flag
-on a content definition, the `nexus` field (RULE — `src/content/types.ts`; [`grid-engine.md`](grid-engine.md)).
+on a content definition, the `nexus` field (RULE — `src/content/types.ts`; [`architecture.md`](architecture.md)).
 
 ## 2. Size and shape
 
@@ -54,8 +54,7 @@ A preset is a convenience, not a constraint. A sandbox may declare explicit dime
 closes the Grid's top) and a 2-row footer (the rule that closes the Grid's bottom, then one line of contextual
 help). **The floor measures against 8 rows** (RULE — `tests/build-camera.test.ts`): the resize gate keeps the old
 8-row budget, so 16 + 8 = **24 rows** and 80 × 24 stays a literal floor, and the two rows the one-line footer saves
-go to the Grid: 18 rows of Grid at 80 × 24 (whether 80 × 24 is a hard minimum was Q12, answered). `grid watch`'s own
-view, not built on the Build Phase's frame, uses 8 rows, split 3 and 3.
+go to the Grid: 18 rows of Grid at 80 × 24 (whether 80 × 24 is a hard minimum was Q12, answered).
 
 ## 3. Orientation is a rendering choice — RULE
 
@@ -185,7 +184,7 @@ There is no minimap.**
 
 ### 5.1 Layers — RULE
 
-**RULE — `src/grid/types.ts`, `tests/grid.test.ts`.** The Grid is not one plane of tiles. It is five,
+**RULE — `src/engine/geometry/types.ts`, `tests/grid.test.ts`.** The Grid is not one plane of tiles. It is five,
 stacked:
 
 | # | Layer | Holds |
@@ -203,7 +202,7 @@ something is. **Layers do not define collision.** That is a separate question, a
 
 ### 5.2 Collision masks — RULE
 
-**RULE — `src/grid/occupancy.ts`, `tests/grid.test.ts`.** Occupancy and blocking are computed by
+**RULE — `src/engine/geometry/occupancy.ts`, `tests/grid.test.ts`.** Occupancy and blocking are computed by
 composing layers into a **collision mask**, a per-tile boolean grid built from a chosen set of layers
 and a predicate:
 
@@ -232,7 +231,7 @@ layer: not because of a rule about layers, but because of how their masks are co
 still collides with a building on a different layer, because its mask includes `obstacles`. Both
 follow from the same mechanism, and cross-layer collision is normal.
 
-**A worker crosses its own troops and never the enemy's** (RULE — `sideLayerOf`, `src/pulse/shared.ts`,
+**A worker crosses its own troops and never the enemy's** (RULE — `sideLayerOf`, `src/engine/pulse/shared.ts`,
 `tests/route-saves.test.ts`). The ground layer a unit does not collide with — `units` for a worker, `workers` for
 a trooper — is added to its mask for the enemy's occupants only (`MaskSpec.sideLayers`): the owner's "workers walk
 over their own side's units", and the enemy's stop them. A building's wave is never set down on an enemy's worker or
@@ -242,7 +241,7 @@ trooper either.
 Nothing may compute occupancy by scanning entity lists in an inner loop, and nothing may assume a
 layer's collision behaviour from its position in the render order.
 
-How masks are held is also a rule (RULE — `src/grid/occupancy.ts`), because arbitration mutates
+How masks are held is also a rule (RULE — `src/engine/geometry/occupancy.ts`), because arbitration mutates
 claimed tiles part-way through a tick and a naive once-per-tick cache is stale exactly when it
 matters. **A mask is never materialised:**
 
@@ -262,13 +261,13 @@ or thousands of units is in [`runtime.md`](runtime.md).
 
 ## 6. Placement, footprint, anchor and facing
 
-**Coordinates** (RULE — `tests/sandboxes.test.ts`, `src/grid/coords.ts`). `(0,0)` is the Grid's
+**Coordinates** (RULE — `tests/sandboxes.test.ts`, `src/engine/geometry/coords.ts`). `(0,0)` is the Grid's
 north-west tile; `x` grows **east**, `y` grows **south**. The direction `n` points toward `y - 1`. A
 sandbox's terrain and placement rows are listed north to south, so the file reads the way the
-Grid draws. Every module (kernel, loader, compositor) uses this one convention; it is the cheapest
+Grid draws. Every module (engine, loader, compositor) uses this one convention; it is the cheapest
 possible source of mirror-image bugs.
 
-Every entity on the Grid has a placement (RULE — `src/grid/types.ts`):
+Every entity on the Grid has a placement (RULE — `src/engine/geometry/types.ts`):
 
 ```ts
 type Coord = Readonly<{ x: number; y: number }>
@@ -302,7 +301,7 @@ interface Placement {
   question, Q9, answered as no). It is derived from the last movement step, or from the current target when
   stationary. Nothing in the rules reads it; it is in state so that a renderer does not guess and jitter, and
   because arcs may want it later. It is the one deliberate exception to "state carries nothing only presentation
-  reads" ([`grid-engine.md`](grid-engine.md)).
+  reads" ([`architecture.md`](architecture.md)).
 
 ## 7. Distance, reach and movement
 
@@ -317,7 +316,7 @@ the game does; the rest are drawn by hand.
 ### 7.1 A row counts two columns
 
 **Distance is counted on the squares, the four ways a unit walks** (RULE — `gridDistance` and `ROW_DISTANCE`,
-`src/grid/coords.ts`; `tests/rows.test.ts`). A tile across is one square away, and a tile up or down is two:
+`src/engine/geometry/coords.ts`; `tests/rows.test.ts`). A tile across is one square away, and a tile up or down is two:
 
 ```text
 distance = columns across + 2 × rows up or down
@@ -341,7 +340,7 @@ because a row is as tall as two columns are wide, so equal numbers ring `T` as w
 walk is longer than a straight line: the 8 in a corner is about 5.7 columns from `T` as the crow flies, and 8 by
 any walk there. Every range, reach and radius in the game is this distance — melee aside, whose range of 1 is
 touching — measured between the nearest tiles of two footprints (section 6), and every distance is worked out by
-the functions in `src/grid/coords.ts` and `src/grid/reach.ts`, never by hand.
+the functions in `src/engine/geometry/coords.ts` and `src/engine/geometry/reach.ts`, never by hand.
 
 **Touching is a side shared** (RULE — `gridSteps`, `footprintSteps`): beside, or straight above or below. It asks
 whether two bodies meet, not how far apart their middles are, so it is the one count in which a row is one step,
@@ -367,7 +366,7 @@ gathered beside another touches it, and two units meeting at a corner do not tou
 
 **Within a reach of R** is every tile at distance R or less; **a reach of 1 is touching**, the tiles beside and the
 tiles straight above and below, and every longer reach covers what touches too (RULE — `footprintWithin`,
-`tilesWithin` in `src/grid/reach.ts`):
+`tilesWithin` in `src/engine/geometry/reach.ts`):
 
 <!-- grid-picture: reaches -->
 ```text
@@ -435,7 +434,7 @@ the same time. With a diamond, "in range" and "can get there in that time" are o
 left or right, so a viewer can always say where a unit goes next.
 
 **A step takes as long as the distance it covers** (RULE — `stepLength`, and `stepCost` in
-`src/pulse/movement.ts`; `tests/rows.test.ts`): a unit's **beat** is the whole number of ticks its step across
+`src/engine/pulse/movement.ts`; `tests/rows.test.ts`): a unit's **beat** is the whole number of ticks its step across
 takes, and a step up or down takes exactly two beats. The integer movement credit that spaces the steps in time is
 in [`pulse.md`](pulse.md). So a walk takes as many beats as its distance, and each unit crosses as much ground on
 screen per second whichever way it walks. Two troopers set off on the same tick, one eight columns across and one
@@ -454,7 +453,7 @@ X            4 rows down: there at 2.7 s
 ```
 
 **A walk on a slant is a staircase along the screen's own diagonal** (RULE — `directionOf` and `rankSteps`; the
-picture is the kernel's own walk). Every step toward a goal closes distance in proportion to the time it takes, so
+picture is the battle engine's own walk). Every step toward a goal closes distance in proportion to the time it takes, so
 no step is better than another by pace alone, and the way straight at the goal decides: a mover steps along
 whichever way has more columns left, a row counting two, and across on a tie. Toward a goal on the screen's 45° it
 walks two columns across for every row down, and two columns by one row is that 45°; toward any other it walks
@@ -540,13 +539,13 @@ walks to the anchor it can reach nearest its goal and stands there, saying it ha
 
 ### 7.7 Terrain and positions
 
-**Terrain can make a step dearer** (RULE — `TerrainKind.stepWeight`, `src/grid/types.ts`; `route-slow-ground`,
+**Terrain can make a step dearer** (RULE — `TerrainKind.stepWeight`, `src/engine/geometry/types.ts`; `route-slow-ground`,
 `route-scrub-crossing`). Scrub weighs 2: a step onto it costs twice its length in movement credit, so a unit crosses
 it at half its pace, and a route counts it so, going round a band of it when that is quicker. A wide body pays the
 heaviest ground it would cover. Air ignores it, as it ignores rock. On slow ground a walk no longer takes its
 distance, and "in range" and "can get there in that time" part, as they should there. Immutable terrain cannot be
 attacked; only blockers explicitly marked destructible enter targeting and damage.
 
-There is **no fractional authoritative position** (RULE — `src/grid/types.ts`). A unit stands on a whole tile, both
-its squares at once; between-tile positions are something the renderer invents for smoothness and the kernel never
+There is **no fractional authoritative position** (RULE — `src/engine/geometry/types.ts`). A unit stands on a whole tile, both
+its squares at once; between-tile positions are something the renderer invents for smoothness and the battle engine never
 hears about.

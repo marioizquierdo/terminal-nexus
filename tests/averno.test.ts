@@ -14,7 +14,7 @@ import { measureCurve } from "../src/cli/curve-measure.ts"
 import { levelById, openRound } from "../src/cli/levels.ts"
 import { keepPower } from "../src/cli/pulse-run.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { VISION, visionOf } from "../src/pulse/target.ts"
+import { VISION, visionOf } from "../src/engine/pulse/target.ts"
 import { buildSide, compose, keys, panelLines } from "./build-helpers.ts"
 import { undecided } from "./level-walk.ts"
 

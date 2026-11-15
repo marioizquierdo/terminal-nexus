@@ -11,8 +11,8 @@ import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { cellForTile, menuEntryAt, startRow } from "../src/build/layout.ts"
 import type { RaidForecast, RaidGroup } from "../src/build/types.ts"
 import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
-import { gridDistance } from "../src/grid/coords.ts"
-import type { Coord } from "../src/grid/types.ts"
+import { gridDistance } from "../src/engine/geometry/coords.ts"
+import type { Coord } from "../src/engine/geometry/types.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import { COLOR_DEPTHS, SEE_THROUGH_STEP, resolveCell, seeThroughColours } from "../src/view/roles.ts"
@@ -157,7 +157,7 @@ test("the panel says the coming raid in every round, inside the panel's free row
   const expected: readonly (readonly RegExp[])[] = [
     [/^AS THE ROUND STARTS$/, /^5 from the north-east$/, /^ {2}3 runners, 2 raiders$/, /^ {2}targets your Nexus$/, ...troops],
     [/^AS THE ROUND STARTS$/, /^7 from the north-east$/, /^ {2}targets your /, /^7 SECONDS IN$/, /^2 from the east$/, /^ {2}targets your /, ...troops],
-    // What a group goes for first is the kernel's choice (tests/intent.test.ts): one of the player's buildings, or
+    // What a group goes for first is the battle engine's choice (tests/intent.test.ts): one of the player's buildings, or
     // Vasse, who is named.
     [/^AS THE ROUND STARTS$/, /^13 from the north-east$/, /^ {2}targets your /, /^8 SECONDS IN$/, /^6 from the east$/, /^ {2}targets (your |Vasse$)/, ...troops],
   ]

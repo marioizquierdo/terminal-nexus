@@ -6,7 +6,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { measureSave } from "../src/measure/index.ts"
-import { contextFor, resolvePulse, stepTick } from "../src/pulse/index.ts"
+import { contextFor, resolvePulse, stepTick } from "../src/engine/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import { loadSandbox, playSandbox, sandboxFiles } from "./helpers.ts"
 
@@ -72,7 +72,7 @@ test("route-breach: buildings closing the only way, far from the straight line, 
   for (const seed of SEEDS) {
     const { run } = await playSandbox("route-breach.save.json", { seed })
     const fell = run.events.flatMap((event) => (event.kind === "structure.destroyed" ? [event.contentId] : []))
-    assert.deepEqual(fell, ["structure.citizen.barracks", "structure.bench.nexus"], `seed ${seed}: ${run.finalState.outcome?.reason}`)
+    assert.deepEqual(fell, ["structure.bench.barracks", "structure.bench.nexus"], `seed ${seed}: ${run.finalState.outcome?.reason}`)
     assert.equal(run.finalState.outcome?.winner, "A")
   }
   // The same gap closed with rock instead: nothing to break, and nothing the troopers strike; they stand as near as

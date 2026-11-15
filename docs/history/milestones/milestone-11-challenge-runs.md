@@ -145,7 +145,7 @@ so how they move, sort themselves and choose what to fight is what a player read
 - [x] **The testing ground** (the owner, 2026-10-30): the maps in folders by purpose, five legacy maps retired, every
       side that fights given a goal; trials in `grid` over seeds from both ends with variants, trial files with what they
       expect, and a comparison before and after a change
-      ([the testing ground](../../system-design/sandboxes.md)). The engage maps rebuilt symmetric; their test is the
+      ([the testing ground](../../system-design/skirmish-saves.md)). The engage maps rebuilt symmetric; their test is the
       bench's trial. Then the tools themselves: idle units, target switches and stall queues in every record, what a
       tick costs (`--profile`), another build beside this one (`--against`), trials across processes, the battles worth
       watching, and the spec as a playbook for each kind of change.

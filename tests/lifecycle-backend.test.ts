@@ -9,12 +9,9 @@ import { EventEmitter } from "node:events"
 import { AnsiBackend } from "../src/view/backends/ansi.ts"
 import { selectBackend } from "../src/view/backends/index.ts"
 import { createTerminalSession } from "../src/cli/lifecycle.ts"
-import { COMPOSITION_SIZE, DEFAULT_PRESENTATION, composeBands } from "../src/view/index.ts"
-import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { buildTimeline } from "../src/cli/timeline.ts"
-import { watchPulse } from "../src/cli/watch.ts"
-import { openBattle } from "../src/skirmish/opening/index.ts"
-import { RUNTIME_IS_BUN, loadSandbox } from "./helpers.ts"
+import { composeBands } from "../src/view/index.ts"
+import { MENU_SIZE } from "../src/view/menu.ts"
+import { RUNTIME_IS_BUN } from "./helpers.ts"
 
 const ESC = String.fromCharCode(27)
 
@@ -53,7 +50,7 @@ function fakes(): { stdout: FakeStdout; stdin: FakeStdin } {
   return { stdout: new FakeStdout(), stdin: new FakeStdin() }
 }
 
-// The shared disposer itself (src/cli/lifecycle.ts) — extracted out of `watch.ts` so `grid watch` and `terminal-nexus`'s menu build on one implementation, not two.
+// The shared disposer itself (src/cli/lifecycle.ts) — so every screen of `terminal-nexus` builds on one implementation, not two.
 
 test("createTerminalSession runs every dispose step exactly once, in order, no matter how many times dispose() is called", async () => {
   const order: string[] = []
@@ -166,7 +163,7 @@ function backendOptions() {
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
     colors: "monochrome" as const,
-    ...COMPOSITION_SIZE,
+    ...MENU_SIZE,
   }
 }
 
@@ -186,189 +183,3 @@ if (!RUNTIME_IS_BUN) {
     await auto.stop()
   })
 }
-
-async function watchSession(
-  end: (stdin: FakeStdin) => void,
-): Promise<{ stdout: FakeStdout; stdin: FakeStdin; exits: number[] }> {
-  const opening = await loadSandbox("melee-kill.save.json")
-  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
-  const timeline = buildTimeline(
-    opening,
-    loaded.state,
-    loaded.registry,
-    opening.pulseTicks,
-    opening.seed,
-  )
-  const { stdout, stdin } = fakes()
-  const exits: number[] = []
-
-  const session = watchPulse({
-    timeline,
-    colors: "monochrome",
-    speed: 1,
-    backend: "ansi",
-    presentation: DEFAULT_PRESENTATION,
-    stdout: stdout as unknown as NodeJS.WriteStream,
-    stdin: stdin as unknown as NodeJS.ReadStream,
-    exit: (code) => {
-      exits.push(code)
-    },
-  })
-
-  // Let the loop start, end it the way this case is about, then let the disposer settle.
-  await new Promise((resolve) => setTimeout(resolve, 60))
-  end(stdin)
-  await new Promise((resolve) => setTimeout(resolve, 60))
-  void session
-  return { stdout, stdin, exits }
-}
-
-test("quitting with q runs the disposer and restores the terminal", async () => {
-  const { stdout, stdin, exits } = await watchSession((input) => {
-    input.emit("data", Buffer.from("q"))
-  })
-  assert.deepEqual(exits, [0])
-  assert.equal(stdin.raw, false, "q left the terminal in raw mode")
-  assert.ok(stdout.written.includes(`${ESC}[?1049l`), "q did not leave the alternate screen")
-  assert.ok(stdout.written.includes(`${ESC}[?25h`), "q did not restore the cursor")
-  assert.match(stdout.written, /melee-kill  ticks \d+  state sha256:/)
-})
-
-test("q also finishes the playback itself, so whatever ran the Pulse can carry on", async () => {
-  // The bug the browser playtest page found: q restored the terminal, then the loop waited forever
-  // on a promise nothing settled. A terminal hid it (exit ends the process first); anything that runs
-  // a Pulse and then carries on — the page, and later a Pulse handing back to the Build Phase — hung.
-  const opening = await loadSandbox("melee-kill.save.json")
-  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
-  const timeline = buildTimeline(opening, loaded.state, loaded.registry, opening.pulseTicks, opening.seed)
-  const { stdout, stdin } = fakes()
-  const hooked: Array<() => void> = []
-  const errors: string[] = []
-  const exits: number[] = []
-  const finished = watchPulse({
-    timeline,
-    colors: "monochrome",
-    speed: 1,
-    backend: "ansi",
-    presentation: DEFAULT_PRESENTATION,
-    stdout,
-    stdin,
-    // A host with no process at all — the browser page's shape: no signals, and text, not bytes.
-    host: {
-      onInterrupt: (leave) => {
-        hooked.push(leave)
-        return () => hooked.splice(hooked.indexOf(leave), 1)
-      },
-      exit: (code) => exits.push(code),
-      reportError: (text) => errors.push(text),
-    },
-  })
-  await new Promise((resolve) => setTimeout(resolve, 60))
-  assert.equal(hooked.length, 1, "the host's interrupt hook was not used")
-  stdin.emit("data", "q")
-  const code = await Promise.race([finished, new Promise((resolve) => setTimeout(() => resolve("hung"), 1000))])
-  assert.equal(code, 0, "q did not finish the playback")
-  assert.deepEqual(exits, [0])
-  assert.equal(hooked.length, 0, "the interrupt hook outlived the session")
-  assert.deepEqual(errors, [])
-  assert.equal(stdout.written.match(/state sha256:/gu)?.length, 1, "the hashes were printed twice")
-})
-
-test("an interrupt byte in raw mode ends the session the same way", async () => {
-  const { stdout, stdin, exits } = await watchSession((input) => {
-    input.emit("data", Buffer.from([3]))
-  })
-  assert.deepEqual(exits, [0])
-  assert.equal(stdin.raw, false)
-  assert.ok(stdout.written.includes(`${ESC}[?1049l`))
-})
-
-test("SIGINT and SIGTERM reach the same disposer", async () => {
-  for (const signal of ["SIGINT", "SIGTERM"] as const) {
-    const { stdout, stdin, exits } = await watchSession(() => {
-      process.emit(signal)
-    })
-    assert.deepEqual(exits, [0], `${signal} did not end the session`)
-    assert.equal(stdin.raw, false, `${signal} left the terminal in raw mode`)
-    assert.ok(stdout.written.includes(`${ESC}[?1049l`), `${signal} did not restore the screen`)
-  }
-})
-
-test("watch holds on the final frame after the Pulse ends, and only quits on q", async () => {
-  // The owner's finding: watch used to end the session on its own a couple of seconds after the
-  // Pulse finished, which could vanish a fight out from under someone still looking at it. Speed is
-  // cranked so the Pulse (180 ticks, 15s of presentation time) finishes in well under a second of
-  // real test time, rather than waiting it out at 1x.
-  const opening = await loadSandbox("melee-kill.save.json")
-  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
-  const timeline = buildTimeline(
-    opening,
-    loaded.state,
-    loaded.registry,
-    opening.pulseTicks,
-    opening.seed,
-  )
-  const { stdout, stdin } = fakes()
-  const exits: number[] = []
-
-  const session = watchPulse({
-    timeline,
-    colors: "monochrome",
-    speed: 200,
-    backend: "ansi",
-    presentation: DEFAULT_PRESENTATION,
-    stdout: stdout as unknown as NodeJS.WriteStream,
-    stdin: stdin as unknown as NodeJS.ReadStream,
-    exit: (code) => {
-      exits.push(code)
-    },
-  })
-
-  // Long enough for presentation time to run well past the Pulse's own end (15s at 1x, so under
-  // 100ms at 200x) and past the old two-second grace window besides.
-  await new Promise((resolve) => setTimeout(resolve, 400))
-  assert.deepEqual(exits, [], "watch exited on its own once the Pulse ended")
-  assert.ok(stdout.written.includes("pulse over -"), "the footer never reported the outcome")
-
-  stdin.emit("data", Buffer.from("q"))
-  await new Promise((resolve) => setTimeout(resolve, 60))
-  assert.deepEqual(exits, [0], "q did not end a session held past the Pulse's end")
-  assert.equal(stdin.raw, false, "q left the terminal in raw mode")
-  void session
-})
-
-test("a render failure is caught, and still restores the terminal", async () => {
-  const opening = await loadSandbox("melee-kill.save.json")
-  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
-  const timeline = buildTimeline(
-    opening,
-    loaded.state,
-    loaded.registry,
-    opening.pulseTicks,
-    opening.seed,
-  )
-  const { stdout, stdin } = fakes()
-  // A stdout that throws on the first frame stands in for any failure inside present().
-  let frames = 0
-  stdout.write = (text: string): boolean => {
-    stdout.written += text
-    frames += 1
-    if (frames === 2) throw new Error("render exploded")
-    return true
-  }
-
-  const status = await watchPulse({
-    timeline,
-    colors: "monochrome",
-    speed: 1,
-    backend: "ansi",
-    presentation: DEFAULT_PRESENTATION,
-    stdout: stdout as unknown as NodeJS.WriteStream,
-    stdin: stdin as unknown as NodeJS.ReadStream,
-    exit: () => {},
-  })
-
-  assert.equal(status, 1, "a caught render failure should report a failure")
-  assert.equal(stdin.raw, false, "a render failure left the terminal in raw mode")
-  assert.ok(stdout.written.includes(`${ESC}[?1049l`), "a render failure left the alternate screen")
-})

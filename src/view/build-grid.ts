@@ -2,9 +2,9 @@
 // and their effects), the ghost of the building being placed, the cursor, and a refused try's flash —
 // all drawn through the camera and clipped to the view.
 
-import { ROW_DISTANCE, gridDistance, inBounds, inColumns, nearestTile, tilesOf } from "../grid/coords.ts"
-import type { PlayerId } from "../state/types.ts"
-import type { Coord } from "../grid/types.ts"
+import { ROW_DISTANCE, gridDistance, inBounds, inColumns, nearestTile, tilesOf } from "../engine/geometry/coords.ts"
+import type { PlayerId } from "../engine/state/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import type { VisibleRange } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile } from "../build/layout.ts"
@@ -32,7 +32,7 @@ import { drawTroopsPost } from "./troops-post.ts"
 import { regroupAt } from "../match/types.ts"
 import { makeRoom } from "../match/make-room.ts"
 import type { FieldEntity } from "../build/types.ts"
-import { TICKS_PER_SECOND } from "../state/types.ts"
+import { TICKS_PER_SECOND } from "../engine/state/types.ts"
 
 /** Every tile of a preview that would be refused: a block of `x`, so shape carries the refusal. */
 const ILLEGAL_PREVIEW_GLYPH = "x"
@@ -203,7 +203,7 @@ const INCOMING_WASH = 0.2
  * group comes and what it will hit, and sees both move when a building changes the answer. In the Build
  * Phase only: a Pulse shows what happens, not what was foreseen.
  *
- * - The trail follows the way the group's front unit would walk (`RaidGroup.path`, the kernel's own step
+ * - The trail follows the way the group's front unit would walk (`RaidGroup.path`, the battle engine's own step
  *   rule): an arrow every few columns of the Grid's own distance along it (`trailSpacing`, the owner's "1 arrow
  *   every 3 tiles" made whole rows: four columns, or two rows), each pointing a whole
  *   stair on along the way (`LOOK_AHEAD`) — the glyph pack's own arrowheads where the way runs straight, its

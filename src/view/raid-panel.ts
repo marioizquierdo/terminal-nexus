@@ -12,7 +12,7 @@
 // Information, not a menu row: nothing here is a choice, so the keyboard never lands on it and a click on it
 // does nothing (`menuEntryAt` knows no such row). Plain words sized to the panel at 80 x 24, never a cut
 // word; where the panel has fewer free rows (a longer menu), the kinds go first, then whole groups, and the
-// last line says how many groups the panel had no room for. What a group targets is the kernel's own first
+// last line says how many groups the panel had no room for. What a group targets is the battle engine's own first
 // choice on the plan as it stands (`BuildSession.raid`), so the words change with the plan, as the trail
 // and the mark on the map do (`drawRaidIntent`).
 
@@ -22,9 +22,9 @@ import type { BuildContext } from "../build/state.ts"
 import { nexusTile } from "../build/state.ts"
 import { cardText, counted } from "../build/card.ts"
 import type { RaidForecast, RaidGroup, RaidTarget } from "../build/types.ts"
-import { inColumns } from "../grid/coords.ts"
-import type { Coord } from "../grid/types.ts"
-import { TICKS_PER_SECOND } from "../state/types.ts"
+import { inColumns } from "../engine/geometry/coords.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import { TICKS_PER_SECOND } from "../engine/state/types.ts"
 import type { BandCell } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import { text, wrapWords } from "./draw.ts"

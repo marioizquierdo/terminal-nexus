@@ -7,15 +7,15 @@
 // log never is (the owner, 2026-11-12: "Logging is a separate concern").
 //
 // A save may instead open on a Battle Round written by hand: a **sandbox** (`sandboxes/`), whose `start`
-// says what each slot has on the Grid before round 1 (`./start.ts`). It is opened by the kernel from that `start`
+// says what each slot has on the Grid before round 1 (`./start.ts`). It is opened by the battle engine from that `start`
 // (`src/skirmish/opening/`), not by the battle, and both its slots plan nothing.
 
-import { inBounds, tileIndex, tilesOf } from "../grid/coords.ts"
-import type { Coord, TerrainId } from "../grid/types.ts"
-import { TERRAIN } from "../grid/types.ts"
+import { inBounds, tileIndex, tilesOf } from "../engine/geometry/coords.ts"
+import type { Coord, TerrainId } from "../engine/geometry/types.ts"
+import { TERRAIN } from "../engine/geometry/types.ts"
 import type { Armies } from "../armies/index.ts"
 import { ARMIES } from "../armies/index.ts"
-import type { MatchState, TargetArea } from "../state/types.ts"
+import type { MatchState, TargetArea } from "../engine/state/types.ts"
 import type { BattleMap, BattleSetup, BattleState, Side, BuildActions } from "../battle/index.ts"
 import { BATTLE_MAPS, BATTLE_ROUND_TICKS, BATTLE_ROUNDS, battleArmy, battleGrid, beginBattle, readBuildActions, scriptedName } from "../battle/index.ts"
 import { isObject, isWhole } from "../content/shape.ts"

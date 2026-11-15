@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { main } from "../src/cli/terminal-nexus.ts"
 
-// Mirrors bin/grid.ts: a broken pipe downstream (`terminal-nexus --help | head`) is a normal exit,
+// A broken pipe downstream (`terminal-nexus --help | head`) is a normal exit,
 // not an unhandled exception with a stack trace.
 for (const stream of [process.stdout, process.stderr]) {
   stream.on("error", (error: NodeJS.ErrnoException) => {

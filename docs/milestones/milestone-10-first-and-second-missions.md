@@ -69,7 +69,7 @@ the endless stand (Milestone 18) and the final battle follow, each its own miles
 
 ## How it is judged
 
-Automated: RIGHT OF SALVAGE gets the same determinism bar as every other mission and kernel change.
+Automated: RIGHT OF SALVAGE gets the same determinism bar as every other mission and engine change.
 Named sandboxes hash the same across runs and runtimes, and are diffed against the state before this
 milestone.
 
@@ -127,7 +127,7 @@ settled by the pathfinding milestone.
 - Vasse's return is never seen in PERIMETER: she cannot fall before round 2 there, and a fall in round 2 is
   back in a round 4 that does not exist. Vasse's second test level shows it:
   `--at 'story?mission=vasse-test-2&round=3'`.
-- Her doctrine's "hold, then advance" waits on an order the kernel can keep (Q69); she engages the nearest
+- Her doctrine's "hold, then advance" waits on an order the battle engine can keep (Q69); she engages the nearest
   enemy like every unit, from just behind the line.
 - In round 1 she is incoming with the squads, so her card is the incoming one ("Yours, next round"), not her
   own ("Your Commander"); from round 2 on it is hers.

@@ -67,9 +67,9 @@ Everything that is the Commander is in her army file. Dob Hunter's, shortened:
 ### Content: a unit or a structure as data
 
 An entry of `content` is either a **string**, naming content the engine defines in TypeScript (the bench rosters in
-`src/content/`, which the bench maps and kernel tests are written against), or an **object**, defining it here
-(`src/content/data.ts`). An object is three things the game keeps apart: the **definition** the kernel reads, the
-**card** a player reads, and the **glyph** only the view draws (the kernel never sees a glyph).
+`src/content/`, which the bench maps and engine tests are written against), or an **object**, defining it here
+(`src/content/data.ts`). An object is three things the game keeps apart: the **definition** the battle engine reads, the
+**card** a player reads, and the **glyph** only the view draws (the battle engine never sees a glyph).
 
 Every field of the definition is the `ContentDef` field of the same name (`src/content/types.ts` says what each
 does), but:
@@ -160,10 +160,10 @@ the union in `src/armies/types.ts` and its row here.
 ## 4. Abilities: what a unit does on its own
 
 An ability is how a Commander or a unit does something besides fighting — an aura, a bounty, a lucky hit — written once
-as an `AbilityKind` (`src/abilities/`) and named by data, `{ "kind": "aura", ... }`. A kind declares its numbers
+as an `AbilityKind` (`src/engine/abilities/`) and named by data, `{ "kind": "aura", ... }`. A kind declares its numbers
 (checked when the army is loaded), the sentence its card says, how far it reaches (for the view to draw), and any of
-four **hooks**, which the kernel calls at fixed moments (RULE — `src/pulse/abilities.ts`, `tests/abilities.test.ts`;
-the kernel's side of it is in [`pulse.md`](pulse.md), tick order):
+four **hooks**, which the battle engine calls at fixed moments (RULE — `src/engine/pulse/abilities.ts`, `tests/abilities.test.ts`;
+the battle engine's side of it is in [`pulse.md`](pulse.md), tick order):
 
 | Hook | When | What it may do |
 | --- | --- | --- |
@@ -177,14 +177,14 @@ the kernel's side of it is in [`pulse.md`](pulse.md), tick order):
 | `aura` | `name`, `radius`, `damageTakenPercent` (a guard, below 100) or `damageDealtPercent` (a boost, above 100) | `damageModifiers` |
 | `bounty` | `name`, `radius`, `credits`, `structureCredits` | `death`: notes the credits; the rules between rounds add them to its side's next Build Phase (`src/match/earnings.ts`) |
 | `loadedDice` | `name`, `chanceIn`, `times` | `hitDealt`, rolling the battle's own seeded stream |
-| `shove` | `name`, `tiles`, `everyTicks` | `tick`: pushes each enemy touching the bearer `tiles` away, by the kernel's rule for a unit that did not walk (the bench bulwark's; [`pulse.md`](pulse.md), routes) |
+| `shove` | `name`, `tiles`, `everyTicks` | `tick`: pushes each enemy touching the bearer `tiles` away, by the battle engine's rule for a unit that did not walk (the bench bulwark's; [`pulse.md`](pulse.md), routes) |
 
-**An ability never touches the kernel's state.** It reads `Body`s and acts through the `AbilityWorld` it is handed —
-`bodies`, `within`, `random`, `heal`, `damage`, `push`, `note` — each of which goes through the kernel's own rules and leaves
-an event, so an ability is deterministic, hashed and replayed like everything else. `src/abilities/` imports nothing
-of the kernel (RULE — `tests/architecture.test.ts`): a mod's kind needs only that folder's types.
+**An ability never touches the battle engine's state.** It reads `Body`s and acts through the `AbilityWorld` it is handed —
+`bodies`, `within`, `random`, `heal`, `damage`, `push`, `note` — each of which goes through the battle engine's own rules and leaves
+an event, so an ability is deterministic, hashed and replayed like everything else. `src/engine/abilities/` imports nothing
+of the battle engine (RULE — `tests/architecture.test.ts`): a mod's kind needs only that folder's types.
 
-**A new kind** is a module in `src/abilities/` and one line in `ABILITIES` (`src/abilities/index.ts`). The kernel also
+**A new kind** is a module in `src/engine/abilities/` and one line in `ABILITIES` (`src/engine/abilities/index.ts`). The battle engine also
 takes a table of kinds as an argument (`PulseContext.abilities`), which is the seam a mod's kinds would come through;
 `tests/abilities.test.ts` runs one that the game does not ship.
 
@@ -210,8 +210,8 @@ what it unlocks, a schedule if it bends the default, and a mission (`docs/game-d
   by path. A rule that is only written here is a rule to move into the loader.
 - **Each side owns its content.** What a side's kept powers change is that side's alone (`PulseContext.sides`); two
   armies of one faction never share a change.
-- **Pure.** The loader, the effects, the abilities and the battle's rules keep to the kernel's purity
-  ([`grid-engine.md`](grid-engine.md)): no clock, no disk, no randomness but the battle's seeded stream.
+- **Pure.** The loader, the effects, the abilities and the battle's rules keep to the battle engine's purity
+  ([`architecture.md`](architecture.md)): no clock, no disk, no randomness but the battle's seeded stream.
 - **Numbers carry their reason.** A content entry's `notes` say why each number is what it is, and that it is a first
   guess until it is measured.
 
@@ -219,10 +219,10 @@ what it unlocks, a schedule if it bends the default, and a mission (`docs/game-d
 
 1. `armies/<id>/army.json`: `requires` her faction (and any army whose cards leak to her); her unit as a content entry,
    with its card (pronouns) and glyph; her own powers; her `commander` with `lean`, `start`, and her voice.
-2. A new skill that no kind expresses: a module in `src/abilities/` and a line in `ABILITIES`, with a test.
+2. A new skill that no kind expresses: a module in `src/engine/abilities/` and a line in `ABILITIES`, with a test.
 3. A new kind of power: an entry in `EFFECTS` and its line in the `PowerEffect` union, with a test.
 4. One line in `src/shipped.ts`. Run `npm test`: the loader says what is wrong.
-5. Play her: `npm run skirmish -- --map crossing --p1-commander <id> --p1 script:steady --p2 script:steady --play-to end`, and against every Commander with `--commanders all --seeds 1-6` ([`sandboxes.md`](sandboxes.md), testing through Skirmishes), and a story when she has one
+5. Play her: `npm run skirmish -- --map crossing --p1-commander <id> --p1 script:steady --p2 script:steady --play-to end`, and against every Commander with `--commanders all --seeds 1-6` (the `skirmish` skill), and a story when she has one
    (`stories/<id>/story.json`, its levels extending existing ones where they can).
 6. A test that she reads apart from the others where it counts (`tests/averno.test.ts` is the pattern).
 
@@ -230,5 +230,5 @@ what it unlocks, a schedule if it bends the default, and a mission (`docs/game-d
 
 **With data alone:** new units and structures, Commanders, factions, building cards, powers of the kinds above,
 stories and missions. **Needs code:** a new kind of ability or effect, a new map, a new battle player. **Cannot:**
-load files from outside the repository (no mod loader, by rule), change the kernel's phases, or read presentation from
+load files from outside the repository (no mod loader, by rule), change the battle engine's phases, or read presentation from
 the rules.

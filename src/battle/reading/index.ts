@@ -12,8 +12,8 @@
 
 import type { ContentRegistry } from "../../content/index.ts"
 import type { ConstructItem } from "../../build/types.ts"
-import type { DomainEvent } from "../../events/types.ts"
-import type { MatchState } from "../../state/types.ts"
+import type { DomainEvent } from "../../engine/events/types.ts"
+import type { MatchState } from "../../engine/state/types.ts"
 import type { Side } from "../types.ts"
 import type { AdvanceReading } from "./advance.ts"
 import { readAdvance } from "./advance.ts"

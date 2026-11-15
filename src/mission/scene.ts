@@ -6,12 +6,12 @@
 // exactly the same Grid. What is here is what the screen needs to show a round's scene — `sceneOf` — and
 // the load-time checks on a `say`, which `validate.ts` reports with every other problem at once.
 //
-// Pure data, like the rest of `src/mission`: no kernel, no view, no glyph. A speaker who is a unit is named
+// Pure data, like the rest of `src/mission`: no engine, no view, no glyph. A speaker who is a unit is named
 // by its content id here; its name and its glyph are the shell's and the view's to find.
 
 import type { ContentRegistry } from "../content/index.ts"
 import { wrapWords } from "../terminal/wrap-words.ts"
-import type { PlayerId } from "../state/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
 import type {
   MissionDefinition,
   PresentationAction,

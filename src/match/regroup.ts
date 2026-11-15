@@ -5,7 +5,7 @@
 // When the Nexus announces the pause, troops respect it: they disengage, step back, and form up to start again.
 //
 // Like Recall was, it is a pure function of the state a Battle Round ended in and the content, worked out **beside the
-// kernel's tick and never inside it** — `stepTick` does not call it, no Pulse's hash moves, and nothing the player
+// engine's tick and never inside it** — `stepTick` does not call it, no Pulse's hash moves, and nothing the player
 // does in the Build Phase reaches it — so a scripted battle and a battle play the same on every machine. It returns the
 // state the next round opens from and every survivor's walk, tick by tick, which the Build Phase plays over its first
 // ten seconds (presentation only: the state is already where the walk ends).
@@ -13,8 +13,8 @@
 // The rule, in the terms the state can express:
 //
 // - **Everything stays on the Grid.** Structures stand where they stand; a survivor walks, a step at a time at its own
-//   pace (movement credit, `src/pulse/movement.ts`), downhill on a distance field (`src/routing/`), never onto rock, an
-//   enemy's building or another body. Nothing attacks, trains or shoots: the kernel does not run.
+//   pace (movement credit, `src/engine/pulse/movement.ts`), downhill on a distance field (`src/engine/routing/`), never onto rock, an
+//   enemy's building or another body. Nothing attacks, trains or shoots: the battle engine does not run.
 // - **The step back, 2 seconds** (`STEP_BACK_TICKS`): a survivor in a fight — an enemy unit or building within
 //   `FIGHT_REACH` of it — walks toward its own Grid Nexus. One not in a fight stands.
 // - **The formation, 6 seconds** (`FORM_TICKS`), then **2 seconds standing formed** (`STAND_TICKS`), in which the
@@ -38,14 +38,14 @@
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { formationRank, freshEntityFields } from "../content/index.ts"
-import { DIRECTIONS, footprintBox, footprintDistance, step, tilesOf } from "../grid/coords.ts"
-import { tilesWithin } from "../grid/reach.ts"
-import type { Coord, Direction, Footprint } from "../grid/types.ts"
-import { TERRAIN } from "../grid/types.ts"
-import { accrueCredit, stepCost } from "../pulse/movement.ts"
-import type { DistanceField } from "../routing/index.ts"
-import { DistanceField as Field, UNREACHABLE, addWall, bodyKey, goalsNear, groundFor, wallsOf } from "../routing/index.ts"
-import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
+import { DIRECTIONS, footprintBox, footprintDistance, step, tilesOf } from "../engine/geometry/coords.ts"
+import { tilesWithin } from "../engine/geometry/reach.ts"
+import type { Coord, Direction, Footprint } from "../engine/geometry/types.ts"
+import { TERRAIN } from "../engine/geometry/types.ts"
+import { accrueCredit, stepCost } from "../engine/pulse/movement.ts"
+import type { DistanceField } from "../engine/routing/index.ts"
+import { DistanceField as Field, UNREACHABLE, addWall, bodyKey, goalsNear, groundFor, wallsOf } from "../engine/routing/index.ts"
+import type { EntityState, MatchState, PlayerId } from "../engine/state/types.ts"
 import { centreTile, nearestFit } from "./placement.ts"
 import type { RegroupPath, RegroupResult, RegroupStep } from "./types.ts"
 import { REGROUP_TICKS, STEP_BACK_TICKS } from "./types.ts"
@@ -277,7 +277,7 @@ export function regroup(state: MatchState, registry: ContentRegistry, sides?: Re
    * Walks every walker `fieldOf` gives a field, from tick `first` to tick `last`: each tick each gains its credit and,
    * nearest its goal first (the sides in turn on a tie, alternating each tick), takes the best step downhill whose
    * ground is free, once it can pay for it. One held up three ticks running looks for a way round the bodies that stand
-   * (the kernel's detour), on a field of its own until it next steps.
+   * (the battle engine's detour), on a field of its own until it next steps.
    */
   const walk = (first: number, last: number, fieldOf: (walker: EntityState) => DistanceField | null, detourOf: (walker: EntityState, standing: readonly Readonly<{ anchor: Coord; footprint: Footprint }>[]) => DistanceField | null): void => {
     const held = new Map<number, number>()

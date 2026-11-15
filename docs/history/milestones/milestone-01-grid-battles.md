@@ -72,11 +72,11 @@ that fits the viewport entirely**, so none of that is needed yet. They arrive wi
 ## 2. Read before coding
 
 1. [`terminal-nexus-concept.md`](../../game-design/concept.md)
-2. [`engine.md`](../../system-design/grid-engine.md) **Section 0 first** — the authority markers, and take them literally.
+2. [`engine.md`](../../system-design/architecture.md) **Section 0 first** — the authority markers, and take them literally.
    Then Sections 1, 3, and 4: the three worlds, the Grid, and the Pulse.
 3. this document
 4. [`open-questions.md`](../../milestones/open-questions.md) Section 4
-5. For the view: [`engine.md`](../../system-design/grid-engine.md) Section 9. For Gate 1B:
+5. For the view: [`engine.md`](../../system-design/architecture.md) Section 9. For Gate 1B:
    [`ascii-effects.md`](../../system-design/effects.md)
 6. `AGENTS.md`, then existing source, tests, and evidence
 
@@ -123,7 +123,7 @@ every other check in Section 3.9 would still pass. The same rule makes the log a
 guaranteed to be describing the same fight.
 
 **Agree these five things before splitting work across sessions**, because they are what the modules
-meet through: the coordinate convention ([`engine.md`](../../system-design/grid-engine.md) 3.5), the `DomainEvent` union and
+meet through: the coordinate convention ([`engine.md`](../../system-design/architecture.md) 3.5), the `DomainEvent` union and
 its serialization, the scenario module API, the log line grammar of 3.3, and the `CellStyle` role
 vocabulary. The first four are written down; the role list is not, and whoever opens the gate should
 commit it — even if it is eight strings — before a second session starts.
@@ -351,13 +351,13 @@ costs a week.
 ### 3.7 Rules in scope
 
 - the Grid, its five layers, and **collision masks composed from layers**
-  ([`engine.md`](../../system-design/grid-engine.md) 3.4.1) — not a per-layer occupancy rule;
+  ([`engine.md`](../../system-design/architecture.md) 3.4.1) — not a per-layer occupancy rule;
 - placement with anchor, footprint, and facing; multi-tile movers testing their **whole footprint**
   against their mask; facing derived from movement or target, and read by no rule;
 - eight-way movement, uniform step cost, Chebyshev distance;
-- the integer movement credit of [`engine.md`](../../system-design/grid-engine.md) 4.2, including the cap and the
+- the integer movement credit of [`engine.md`](../../system-design/architecture.md) 4.2, including the cap and the
   keep-credit-when-blocked rule;
-- the tick order of [`engine.md`](../../system-design/grid-engine.md) 4.3, with economy and production as **empty phases that
+- the tick order of [`engine.md`](../../system-design/architecture.md) 4.3, with economy and production as **empty phases that
   exist and do nothing** — the slot matters, the content does not;
 - target selection: nearest enemy by Chebyshev distance across every hostile layer, ties broken by
   entity id. That is the whole scoring function, and resisting the urge to improve it is part of the
@@ -383,7 +383,7 @@ filtering, the Build Phase, selection, inspection, scrolling.
 ### 3.8 The view
 
 The smallest thing that shows a Pulse honestly. It is the real presentation stack from
-[`engine.md`](../../system-design/grid-engine.md) Section 9, just barely populated — not a debug printer that will be thrown
+[`engine.md`](../../system-design/architecture.md) Section 9, just barely populated — not a debug printer that will be thrown
 away.
 
 - `ReadonlyCellFrame`, roles rather than colours, and the band compositor with the Grid layers mapped
@@ -394,7 +394,7 @@ away.
 - 12 logical ticks per second, 30 frames per second;
 - `snapshotAt(timeMs, capability, tileWidth)` is pure — same arguments, same frame;
 - controls: pause, resume, step one frame, step one tick, speed, restart, quit;
-- **the resize gate**, because [`engine.md`](../../system-design/grid-engine.md) 9.6 makes it a RULE and a terminal is a thing
+- **the resize gate**, because [`engine.md`](../../system-design/architecture.md) 9.6 makes it a RULE and a terminal is a thing
   people drag: below the composition size, show the gate and freeze presentation time; resizing back
   resumes **from the same presentation time**. Scrolling stays out of scope — the Grid fits — so this
   is the gate and nothing more;
@@ -435,7 +435,7 @@ still for the gate — that is a REVISE with the criterion named, not a re-plan.
 
 **Rules**
 
-- movement credit reproduces the cadence table in [`engine.md`](../../system-design/grid-engine.md) 4.1 exactly, at every rate;
+- movement credit reproduces the cadence table in [`engine.md`](../../system-design/architecture.md) 4.1 exactly, at every rate;
 - a blocked actor keeps its credit and steps the tick the tile frees; credit never exceeds one step;
 - two equal-speed actors that kill each other on the same tick **both die**;
 - a named scenario file exercises each of: melee kill, ranged kill, mutual kill, worker flight,
@@ -558,7 +558,7 @@ Milestone 1 passes when both gates are accepted. Durable outputs — and note th
   raised, each registered with a recommendation. **Not Q7** — workers-carry-versus-produce-in-place
   needs an economy, and this milestone deliberately has none;
 - the confirmed or corrected 12 Hz hypothesis and movement-credit rules, promoted into
-  [`engine.md`](../../system-design/grid-engine.md) Section 4 as RULE;
+  [`engine.md`](../../system-design/architecture.md) Section 4 as RULE;
 - explicit authorization — or refusal — to begin the Build Phase.
 
 ## 7. Working notes from this session — personal, not canon

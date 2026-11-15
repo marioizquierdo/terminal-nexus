@@ -11,8 +11,8 @@
 //     frame draws it as the line appears, lit.
 
 import { visibleRange } from "../build/camera.ts"
-import { inBounds } from "../grid/coords.ts"
-import type { Coord } from "../grid/types.ts"
+import { inBounds } from "../engine/geometry/coords.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import { cellForTile } from "../build/layout.ts"
 import { placePopup, popupSpec, speakerTitle } from "../build/popup.ts"
 import type { DialogLine } from "../build/types.ts"

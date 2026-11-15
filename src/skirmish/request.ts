@@ -131,7 +131,7 @@ export type Opened = Readonly<{ save: SaveFile; setup: SaveSetup; state: BattleS
  * Problems a build file's reader dropped come back in `seated.problems`; the caller writes them or refuses them.
  */
 export function openSave(save: SaveFile, options: OpenSave): Opened {
-  if (save.start !== undefined) throw new Error("this save is a sandbox: it plays one Battle Round in grid (grid <file>), not from a Build Phase")
+  if (save.start !== undefined) throw new Error("this save is a sandbox: it plays its one Battle Round from its board (skirmish --load <file> --play-to next), not from a Build Phase")
   const mismatch = mapMismatch(save)
   if (mismatch !== null) throw new Error(`${options.file ?? (save.name === undefined ? "this save" : `the save "${save.name}"`)} does not fit its map: ${mismatch}`)
   const readFile = options.readFile ?? ((path: string): string => { throw new Error(`no files to read ${path} from`) })

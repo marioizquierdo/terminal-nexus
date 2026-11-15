@@ -1,21 +1,52 @@
 ---
 name: skirmish
-description: Skirmish battles played headless (bin/skirmish.ts) to see how armies and their power curves behave: one battle from a save or a new setup, every Commander pairing, many seeds, build actions by script or model agent. Use to measure balance or gameplay after a rule, army, power or ability change, to play a person's save on, and when Mario asks how armies compare.
+description: The skirmish command (bin/skirmish.ts), the game played headless: a Battle Round from a board written by hand (a sandbox), a battle from a save or a new setup, every Commander pairing, many seeds, build actions by script or model agent. Use to verify a rule, unit, ability or army change, to debug a Battle Round from its log, to write a sandbox, to play a person's save on, and when Mario asks how armies compare.
 ---
 
-# Skirmishes: armies against each other, headless
+# The `skirmish` command: the game, headless
 
-Balance and gameplay are measured here, over seeds and both maps. A script is not a person: a result says where to look, and Mario's play says how it feels.
+The same Skirmish the screen plays, for an agent: every Battle Round runs on the battle engine the game runs on, so what a
+run shows is what a player meets. It is the verifier for most changes ([`testing.md`](../../../docs/system-design/testing.md),
+unit tests and verifiers); a rule that must stay true becomes a unit test at its layer. A script is not a person: a
+result says where to look, and Mario's play says how it feels.
 
 This page is the procedure; the owners of each meaning:
 
 - **The command's manual** is the comment [`src/cli/skirmish.ts`](../../../src/cli/skirmish.ts) opens with
   (`npm run skirmish -- --help`): every option, what it refuses, the exit codes.
-- **How each kind of test uses it**, with the commands and the task for a model agent:
-  [`sandboxes.md`](../../../docs/system-design/sandboxes.md), "Testing through Skirmishes".
+- **Which check at which layer, and the shapes a verifier takes**: [`testing.md`](../../../docs/system-design/testing.md).
 - **The rules, the brief, the build actions, formations, biases, the maps for testing and how a battle is read**:
   [`battles.md`](../../../docs/system-design/battles.md).
-- **The save file**: [`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md).
+- **The save file, and a board written by hand (a sandbox) with what it leaves out**:
+  [`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md).
+
+## 0. One Battle Round from a board written by hand
+
+For an engine question (a hit, a death, a step, an ability, an effect on state, how units engage on a kind of ground):
+a sandbox, the engine with nothing of the game around it. Done when the log shows the decision that produced the
+outcome and the pictures show where it happened.
+
+```bash
+npm run sandboxes                                                         # the checked-in boards
+npm run skirmish -- --load sandboxes/rules/melee-kill.save.json --play-to next --show 0,20,end
+npm run skirmish -- --load <sandbox> --play-to next --log-level debug --log run.log   # every decision, per tick
+```
+
+- **Write one** by copying the nearest (`sandboxes/rules/melee-kill.save.json` is the smallest; a multi-tile unit is
+  `sandboxes/showcase/heavies-clash.save.json`) into the scratchpad, `notes` saying the one thing it shows. Draw only
+  what the question needs: the map inline, both slots `script:idle`, `rounds` 1, a box of units per slot; a symbol is a
+  unit's centre tile, `(0,0)` the north-west tile, `p1` side A (west). Give each side that fights somewhere to go: a
+  `target`, or an enemy Nexus. A wrong board is refused whole, naming slot, symbol and tile.
+- **Another seed, more ticks, another unit** is a copy with `seed`, `roundTicks` or a legend changed: one way to play a
+  board, no second tool.
+- **The log**: one stream, `[tick] LEVEL kind subject [-> object] detail`, fixed columns, closed by the `report` line
+  (outcome, losses, state and event hashes). Levels add up: `warn` (the default: stuck actors, arbitration at its bound,
+  and the report), `info` (spawns, engagements, attacks that landed, deaths, victory), `debug` (target scoring,
+  movement intents, arbitration), `trace` (every entity every tick). An `ERROR` line fails the run. `grep` it for an
+  entity (`A:trooper#1`) or a kind (`engage`).
+- **Keep it** only when its rule must hold for every later change: check it in under `sandboxes/<folder>/` (`rules/`,
+  `units/`, `movement/`, `engage/`, `showcase/`) and assert on its events in a test; run the Bun suite too, since a test
+  looping over every sandbox needs an explicit `{ timeout }`. Otherwise it stays in the scratchpad.
 
 ## 1. Every pairing first (seconds, free)
 
@@ -56,13 +87,12 @@ Mechanics worth knowing:
   into a parser.
 - `--show 0,120,end` is an **ASCII screenshot** of the Battle Round at those ticks: the Grid as the screen draws it,
   then its legend, the overlaps (what stands under a unit on a roof) and a standing line (each Nexus's health and
-  units). Ticks past the round's end are named, not drawn. It takes one battle, never `--seeds` or a sandbox (a
-  sandbox is drawn by `grid`).
+  units). Ticks past the round's end are named, not drawn. It takes one battle or a sandbox, never `--seeds`.
 
 **Reach for an ASCII screenshot** when where units stand is the question (a formation came out tight or loose, a
 regroup's line, an army reaching a building, troops held at a gap, a moment from a playtest note): two or three ticks,
 since the readings already say how much and the picture says where. For how it looks to a person (colour, effects,
-panels) use the `playtest` or `grid-screenshots` skill.
+panels) use the `playtest` skill.
 
 Formations (`rush-block` against `rush-apart`) and the power curve over many battles belong to the measurement
 (`node bin/measure.ts run --spec quick --parts duels --players rush --formations block,apart`; the `remeasure` skill).

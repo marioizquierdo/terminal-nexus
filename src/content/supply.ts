@@ -7,7 +7,7 @@
 // production and are never held back; they count once they stand.
 //
 // A side whose structures give no supply has no cap — every map and sandbox from before supply resolves exactly as
-// it did. Pure, and content's own arithmetic: the kernel holds production to it (`src/pulse/production.ts`) and the
+// it did. Pure, and content's own arithmetic: the battle engine holds production to it (`src/engine/pulse/production.ts`) and the
 // Build Phase reads the same numbers for its supply line (`src/view/build-menu.ts`).
 
 import type { ContentDef } from "./types.ts"

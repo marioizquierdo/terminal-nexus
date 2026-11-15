@@ -3,7 +3,7 @@
 //
 // The level is its story's army's (`src/armies`); its map is the map table's (`src/build/maps.ts`); what it
 // offers becomes the build menu and the Nexus Pulse's hand in `src/build/catalog.ts`. Assembling them into round 1
-// needs the mission (`./pulse-run.ts`), which reaches the kernel, and `src/build` may never do that
+// needs the mission (`./pulse-run.ts`), which reaches the battle engine, and `src/build` may never do that
 // (`tests/architecture.test.ts`) — so the assembly lives here, in the application shell, beside the other half of
 // the mission's connection. The levels the game opens by id are `./levels.ts`.
 

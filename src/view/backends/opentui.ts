@@ -13,7 +13,7 @@
 //
 // The adapter boundary is what keeps "the terminal library and the runtime are independent
 // choices" true: the library that cannot run on Node is one of two interchangeable backends, and
-// neither the compositor nor the kernel knows which one presented a frame.
+// neither the compositor nor the battle engine knows which one presented a frame.
 
 import type { ReadonlyCellFrame } from "../frame.ts"
 import { padFrame } from "../frame.ts"

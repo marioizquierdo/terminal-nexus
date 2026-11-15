@@ -1,4 +1,4 @@
-// **Her voice in battle**: what Vasse says during a Battle Round, worked out from the round the kernel has
+// **Her voice in battle**: what Vasse says during a Battle Round, worked out from the round the battle engine has
 // already resolved (the owner, 2026-10-04, on her voice in battle: "yes that is fantastic! let's experiment with
 // this to see if it gets into the battle or enhances the experience even more. A little strategic usage of our
 // effect library should go a long way here too"; and once he had played it: "it looks cool when they "speak"
@@ -32,12 +32,12 @@ import type { BarkMoment, Barks } from "../armies/barks.ts"
 import { barkMapWidth, quoted } from "../armies/barks.ts"
 import { ARMIES } from "../armies/index.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import { abilityReach } from "../abilities/index.ts"
+import { abilityReach } from "../engine/abilities/index.ts"
 import { commanderName } from "../content/cards.ts"
-import type { DomainEvent } from "../events/types.ts"
-import { footprintWithin, tilesOf } from "../grid/coords.ts"
-import type { Coord, Footprint } from "../grid/types.ts"
-import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import { footprintWithin, tilesOf } from "../engine/geometry/coords.ts"
+import type { Coord, Footprint } from "../engine/geometry/types.ts"
+import type { EntityState, MatchState, PlayerId } from "../engine/state/types.ts"
 import { buildFlightHoldTicks, flightHoldTicks } from "./effects/derive.ts"
 import { cosmeticHash } from "./effects/random.ts"
 import type { EffectInstance } from "./effects/types.ts"

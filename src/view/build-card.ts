@@ -11,7 +11,7 @@ import type { BuildLayout } from "../build/layout.ts"
 import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, menuEntryRow, menuFloor } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import { cardEntry, menuEntries } from "../build/state.ts"
-import { abilityLines } from "../abilities/index.ts"
+import { abilityLines } from "../engine/abilities/index.ts"
 import { artFor } from "../content/art.ts"
 import type { BandCell } from "./frame.ts"
 import { BANDS } from "./frame.ts"
@@ -314,7 +314,7 @@ const NO_SKILL: SkillLines = { name: "", lines: [] }
 
 /**
  * What a card says of the skills its unit has on its own — a Commander's aura, a bounty, a lucky hit: each ability's
- * own sentence (`abilityLines`, `src/abilities/`), its name opening it ("By the Book: she and her units within range 4
+ * own sentence (`abilityLines`, `src/engine/abilities/`), its name opening it ("By the Book: she and her units within range 4
  * take 25% less damage."), wrapped to the panel. The first ability's name is drawn bold. Nothing for anything without
  * one. The name opens the sentence rather than standing on a line of its own, so it takes no more rows than it needs:
  * at 80 x 24 a Commander's card has none to spare.

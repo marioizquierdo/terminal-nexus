@@ -4,7 +4,7 @@ _How a battle is measured, so that a result taken before a rule changes and one 
 
 **Where to measure what.** The game's gameplay and balance are measured in Skirmish (the duels below, and the
 `skirmish` command), the ground that tests the real game: the Grid Nexus, credits, rounds, who wins. A sandbox measures one
-rule on a slice of the Grid ([sandboxes and trials](sandboxes.md)). Story levels are played by fixed plans only so a rule change is seen
+rule on a slice of the Grid ([sandboxes and trials](skirmish-saves.md)). Story levels are played by fixed plans only so a rule change is seen
 on them too; they serve Story's puzzles and intros, built on what Skirmish settles (section 7). How to start a change
 from its measurement is in `DEVELOPMENT.md`, "Developing and testing a change".
 
@@ -18,7 +18,7 @@ and no current document states them as fact. This page is the spec every later r
 
 **One record for every battle, from its states and events alone** (RULE — `src/measure/battle.ts`,
 `tests/measure.test.ts`). A sandbox, a mission's round and a duel's round are recorded the same way, by
-whatever rule the kernel walks by. For the battle: the ticks it ran, who won, and why it ended (a Nexus fell, a side
+whatever rule the battle engine walks by. For the battle: the ticks it ran, who won, and why it ended (a Nexus fell, a side
 was wiped out, time ran out). For each side:
 
 | What | Read from |
@@ -49,7 +49,7 @@ was wiped out, time ran out). For each side:
   open, a gap six rows wide, a gap two rows wide, a corridor and two lanes, twelve units a side, each side given the
   enemy's Nexus as its target, each played to a result. They are the bench for how fast battles are decided and how many
   units ever strike; what they show, how to put another army or unit on them, and the trial that holds them to it
-  (`engage-bench`) belong to [sandboxes and trials](sandboxes.md).
+  (`engage-bench`) belong to [sandboxes and trials](skirmish-saves.md).
 - **Every other map** under `sandboxes/` on its own seed (the full spec): the rule fixtures and the bench, so a change of
   routes that moves one is seen.
 - **Duels** ([`battles.md`](battles.md)): every ordered pair of the Commanders, mirrors included, so each plays from both
@@ -58,7 +58,7 @@ was wiped out, time ran out). For each side:
   is played as a Skirmish, by the same steps the `skirmish` command and the game's screen take (a new battle's save,
   each slot seated with `script:<player>`, every round played by `playOn`, `src/skirmish/play.ts`), so what a
   measurement says of a battle is what `skirmish --p1 script:<player> --p2 script:<player> --play-to end` plays.
-  Every map is played the way `grid` plays it (`playSandboxRound`, `src/skirmish/sandbox-round.ts`).
+  Every map is played the way the `skirmish` command plays it (`playSandboxRound`, `src/skirmish/sandbox-round.ts`).
 - **Every Story level** played to its end by two fixed plans, **nothing built** and **a defended base**, each round
   recording its battle (section 7).
 
@@ -146,7 +146,7 @@ measurement file with no row in the index.
   beside one of units that struck.
 - **Seeded layouts and enough battles.** A mirrored army with one layout turns on tie draws alone; vary the starting
   layout by seed and play each from both ends (a trial's `--shuffle` and `--swap`, [the testing
-  ground](sandboxes.md)), twelve seeds or more, since differences between targeting rules are a few percent and a
+  ground](skirmish-saves.md)), twelve seeds or more, since differences between targeting rules are a few percent and a
   stall count has a standard error of about 0.3 a round.
 - **A tick's time is the machine's.** It compares two runs on one machine, played the same way (one process, or the
   same number side by side), never two machines.
@@ -199,4 +199,3 @@ the failures):
 | `tests/mission.test.ts`, `tests/mission-loop.test.ts` | PERIMETER: who wins and loses it with which plan |
 | `tests/lifecycle-build-phase.test.ts`, `tests/playtest.test.ts` | how long PERIMETER's first round runs with the defence plan, on the clock the screen shows |
 | `tests/fairness.test.ts`, `tests/route-saves.test.ts` | mirrors split evenly between the two ends; the route saves are walked |
-| `tests/engage-bench.test.ts` | the engage bench's trial holds what it expects ([sandboxes and trials](sandboxes.md)) |

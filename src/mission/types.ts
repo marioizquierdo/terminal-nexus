@@ -17,11 +17,11 @@
 // which nothing reads. The army loader checks a mission's JSON against these shapes first
 // (`src/armies/mission-shape.ts`): a kind added to the vocabulary here is added there too, or it is refused.
 //
-// Pure data: nothing here imports the kernel, so the Build Phase may read a mission's shape without ever
-// reaching `src/pulse` (tests/architecture.test.ts).
+// Pure data: nothing here imports the battle engine, so the Build Phase may read a mission's shape without ever
+// reaching `src/engine/pulse` (tests/architecture.test.ts).
 
-import type { Coord } from "../grid/types.ts"
-import type { PlayerId } from "../state/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
 
 /** A named rectangle of the map — where a group arrives, where a side's troops head, what a line of dialog
  *  looks at. Inclusive of its top-left tile, `width` by `height` tiles. */
@@ -45,10 +45,10 @@ export type Region = Readonly<{
  *
  * - `{ pulse, tick }` — a moment in a Pulse. Tick 0 is the Pulse's opening state: what arrives then is
  *   there when the Pulse starts, and is what the Build Phase before it can show as incoming. A later
- *   tick is applied between two ticks of the kernel.
+ *   tick is applied between two ticks of the battle engine.
  * - `{ event: "pulse.end" }` — a Pulse is over (for one Pulse, or every one when `pulse` is absent).
  * - `{ event: "nexus.destroyed", side }` — that side's Grid Nexus stood when the mission began and does
- *   not now. Read at a Pulse's end (the kernel ends a Pulse the moment a Nexus falls).
+ *   not now. Read at a Pulse's end (the battle engine ends a Pulse the moment a Nexus falls).
  * - `{ event: "build.start", pulse }` — that round's Build Phase opens. Only presentation actions run
  *   here (`say`): nothing is resolved between two Pulses, so nothing about the Grid can change then.
  */
@@ -80,12 +80,12 @@ export type SpawnAction = Readonly<{
 /**
  * **A side's target**: from this moment, every fighting unit of `side` — those on the Grid, those a building
  * trains, those carried into later rounds — heads for `region`, engages an enemy that comes within its reach
- * on the way, and stands there when nothing does (the kernel's rule: `src/pulse/target.ts`). It holds, round
+ * on the way, and stands there when nothing does (the battle engine's rule: `src/engine/pulse/target.ts`). It holds, round
  * after round, until another `target` for the side moves it. A side no `target` names heads for the enemy's
- * Grid Nexus, engaging what comes within its reach on the way (`headsForNexus`, `src/pulse/perception.ts`).
+ * Grid Nexus, engaging what comes within its reach on the way (`headsForNexus`, `src/engine/pulse/perception.ts`).
  *
- * It replaced the `order` a spawned group once carried (`{ advance: region }`), which the kernel never read:
- * a side's target is what the kernel keeps, and a group's line of `intent` is what the player reads.
+ * It replaced the `order` a spawned group once carried (`{ advance: region }`), which the battle engine never read:
+ * a side's target is what the battle engine keeps, and a group's line of `intent` is what the player reads.
  */
 export type TargetAction = Readonly<{ target: Readonly<{ side: PlayerId; region: string }> }>
 
@@ -159,7 +159,7 @@ export type MissionDefinition = Readonly<{
   name: string
   /** How many Pulses the mission plans for. The last one's end must decide the mission. */
   pulses: number
-  /** Every Pulse's length in ticks: the kernel's tick limit. */
+  /** Every Pulse's length in ticks: the battle engine's tick limit. */
   pulseTicks: number
   /** The gameplay seed of Pulse 1; later Pulses carry the one stream on from where it stopped. */
   seed: number

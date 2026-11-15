@@ -16,7 +16,7 @@ import { bottomLine, hint } from "../src/build/help.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import { COLOR_DEPTHS } from "../src/view/roles.ts"
-import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
+import type { GridTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { MAXIMUM, MINIMUM, WIDE } from "./build-helpers.ts"
 

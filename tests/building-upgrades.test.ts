@@ -3,7 +3,7 @@
 // "Buildings can also have a state change ... you can select the building to change the mode"). Selected in Explore
 // Map, a building of the player's lists its card's actions under their keys; an upgrade is bought at once, kept by that
 // building alone for the rest of the match, and carried by the regroup into every round after; a mode is switched between
-// rounds and stays switched. The kernel sees a building that carries any as a content id of its own
+// rounds and stays switched. The battle engine sees a building that carries any as a content id of its own
 // (`structure.citizen.barracks+production-line`), which its side's registry resolves.
 
 import { test } from "node:test"
@@ -17,11 +17,11 @@ import { createBuildState, remaining, withoutScene } from "../src/build/state.ts
 import { DEFAULT_LEVEL } from "../src/cli/levels.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
 import { FIXTURE_REGISTRY, baseContentId, fittedId } from "../src/content/index.ts"
-import type { DomainEvent } from "../src/events/types.ts"
-import type { Coord, GridTerrain } from "../src/grid/types.ts"
+import type { DomainEvent } from "../src/engine/events/types.ts"
+import type { Coord, GridTerrain } from "../src/engine/geometry/types.ts"
 import { opening } from "../src/match/index.ts"
-import { contextFor, stepTick } from "../src/pulse/index.ts"
-import type { MatchState } from "../src/state/types.ts"
+import { contextFor, stepTick } from "../src/engine/pulse/index.ts"
+import type { MatchState } from "../src/engine/state/types.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { buildSide, clickCell, compose, keys } from "./build-helpers.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"

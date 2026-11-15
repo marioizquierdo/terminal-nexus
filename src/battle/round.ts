@@ -5,7 +5,7 @@
 //
 // What it reuses rather than restates: the dealer (`dealHand`), the effect table (`applyEffect`, through each side's
 // loadout), the Build Phase's legality (`legalityAt`: build range, footprint, rock, cost — the rules a player's cursor
-// is held to), the opening and the regroup between rounds (`src/match`), the Commander's absence and return, and the kernel
+// is held to), the opening and the regroup between rounds (`src/match`), the Commander's absence and return, and the battle engine
 // itself, each side on its own content (`PulseContext.sides`).
 
 import type { PowerCard } from "../armies/index.ts"
@@ -17,15 +17,15 @@ import { legalityAt, missingFor } from "../build/state.ts"
 import type { ConstructItem, FieldEntity, PlannedPlacement } from "../build/types.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { baseContentId, fittedId, fittingsOf } from "../content/index.ts"
-import type { DomainEvent } from "../events/types.ts"
-import { footprintDistance, footprintExtent, footprintSteps, tilesOf } from "../grid/coords.ts"
-import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import { footprintDistance, footprintExtent, footprintSteps, tilesOf } from "../engine/geometry/coords.ts"
+import type { Coord, Footprint, GridTerrain } from "../engine/geometry/types.ts"
 import { centreTile, creditsEarned, fallen, regroup, spawningRegistry, standDown } from "../match/index.ts"
 import type { RegroupResult, StructurePlacement } from "../match/index.ts"
 import { roundOpening } from "./round-opening.ts"
-import { contextFor, stepTick } from "../pulse/index.ts"
-import { TICKS_PER_SECOND } from "../state/types.ts"
-import type { MatchState, TargetArea } from "../state/types.ts"
+import { resolvePulse } from "../engine/pulse/index.ts"
+import { TICKS_PER_SECOND } from "../engine/state/types.ts"
+import type { MatchState, TargetArea } from "../engine/state/types.ts"
 import type { BattleMap } from "./maps.ts"
 import { BATTLE_MAPS, battleGrid } from "./maps.ts"
 import type { BattleArmy } from "./sides.ts"
@@ -489,19 +489,24 @@ export function playRound(
   const targets: Record<Side, TargetArea> = { A: targetOf(state, "A", plans.A.stance, sides), B: targetOf(state, "B", plans.B.stance, sides) }
   const start: MatchState = { ...opened, targets }
 
-  // The Battle Round, each side on its own content.
-  const context = contextFor(start, sides.A, state.setup.pulseTicks, { sides })
-  const events: DomainEvent[] = []
+  // The Battle Round, each side on its own content: the battle engine run from the opening until a Nexus falls or the
+  // round's ticks run out, read as it goes. The same engine entry a sandbox, a measurement and a test run one by.
   const reader = roundReader(start, sides, { A: phases.A.catalog, B: phases.B.catalog })
-  let current = start
-  watch?.(current, [], sides.A, sides)
-  while (current.outcome === null && current.tick < state.setup.pulseTicks) {
-    const step = stepTick(current, context)
-    current = step.state
-    events.push(...step.events)
-    reader.step(current, step.events)
-    watch?.(current, step.events, sides.A, sides)
-  }
+  const run = resolvePulse({
+    initialState: start,
+    registry: sides.A,
+    sides,
+    pulseTicks: state.setup.pulseTicks,
+    seed: state.setup.seed,
+    openingSpawns: false,
+    watch: (battle, happened) => {
+      // The opening is shown first, with no events; the reader starts from it already.
+      if (battle.tick > start.tick) reader.step(battle, happened)
+      watch?.(battle, happened, sides.A, sides)
+    },
+  })
+  const current = run.finalState
+  const events = run.events
 
   // After it: who fell, what each side earned, what the next round starts from.
   const fell = fallen(events, sides.A, round)

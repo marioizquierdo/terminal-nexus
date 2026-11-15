@@ -14,7 +14,7 @@ get authored, one card at a time, each judged in a Skirmish. A mission teaches i
 
 Since 2026-11-11 this is how the game grows ([the owner's words](../history/feedback/2026-11-11-game-modes.md)): "keep
 adding a few units, keep polishing how to automatically test units, formations, balance adjustments". Each pass also
-improves the sandboxes and trials, so the next unit is cheaper to judge ([`sandboxes.md`](../system-design/sandboxes.md)).
+improves the sandboxes and the `skirmish` command, so the next unit is cheaper to judge ([`testing.md`](../system-design/testing.md)).
 
 **What the first pass starts from** (moved here from the "Waiting on Mario" list on 2026-11-12):
 
@@ -63,8 +63,8 @@ A loop, not a line.
 ### Step 12B — Measure
 
 - [ ] Pick rate and win rate per card and per tier, from battles and driver-played Skirmish battles under a few simple
-      policies and from human sessions, in a small report derived from events the way the `grid`
-      report already is.
+      policies and from human sessions, in a small report derived from events the way a Battle
+      Round's report already is.
 - [ ] Follow the Slay the Spire discipline from the game-modes design: weekly-sized changes, metrics
       read with suspicion, fun judged by people.
 
@@ -81,7 +81,7 @@ A loop, not a line.
 - New modes.
 - Multiplayer.
 - A public mod loader. Content contracts stay mod-shaped (see the content notes in
-  [`docs/system-design/grid-engine.md`](../system-design/grid-engine.md)) without building the loader.
+  [`docs/system-design/architecture.md`](../system-design/architecture.md)) without building the loader.
 
 ## How it is judged
 
@@ -103,7 +103,7 @@ rather than bench fixtures.
 
 - Many sandboxes in `sandboxes/` field content no army uses (workers, haulers, the colossus, sentinel,
   corsair, leviathan, bench units). Once this milestone settles the roster, prune the sandboxes that only exercise
-  content no Commander fields, keeping the ones that pin a kernel rule.
+  content no Commander fields, keeping the ones that pin a engine rule.
 
 ## Found by a player's eye (2026-11-13)
 

@@ -1,6 +1,6 @@
 // The Commander (pulse.md): a persistent `@` on the units layer who, when she falls, is absent for the
 // rest of that round's Pulse and for as many whole rounds after it as her definition says (`roundsOut`: none for
-// Vasse), and is then restored beside her side's Grid Nexus. The kernel's half is that it knows nothing of her, so
+// Vasse), and is then restored beside her side's Grid Nexus. The battle engine's half is that it knows nothing of her, so
 // her death decides nothing; the match's half is the absence and the restoration (`src/match/commander.ts`),
 // proven on a named fixture (`tests/commander-fixture.ts`) that hashes the same on every run and both runtimes,
 // played with Vasse as she is and with a test-only Vasse who sits one round out, or two. What a player reads of
@@ -12,7 +12,7 @@ import { STARTER_STANDING, starterGrid } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY, createRegistry } from "../src/content/index.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
 import { artFor } from "../src/content/art.ts"
-import { footprintSteps } from "../src/grid/coords.ts"
+import { footprintSteps } from "../src/engine/geometry/coords.ts"
 import {
   fallen,
   openingState,
@@ -25,8 +25,8 @@ import type { Absence, MissionPulse, Restoration } from "../src/match/index.ts"
 import { PERIMETER } from "../src/armies/index.ts"
 import { MissionError, validateMission } from "../src/mission/index.ts"
 import type { MissionDefinition } from "../src/mission/index.ts"
-import { hashState } from "../src/state/serialize.ts"
-import type { MatchState } from "../src/state/types.ts"
+import { hashState } from "../src/engine/state/serialize.ts"
+import type { MatchState } from "../src/engine/state/types.ts"
 import { entityGlyph } from "../src/view/theme.ts"
 import { COMMANDER_FALLS, VASSE, sittingOut } from "./commander-fixture.ts"
 

@@ -1,22 +1,22 @@
-// Abilities (src/abilities/, the kernel's half in src/pulse/abilities.ts): what a unit does on its own besides fighting,
+// Abilities (src/engine/abilities/, the battle engine's half in src/engine/pulse/abilities.ts): what a unit does on its own besides fighting,
 // written once as a kind with hooks and named by data. Here: the hooks run where they say, a bounty pays for what falls
 // in its reach and nothing else, loaded dice throw from the battle's own stream, a Nexus power changes an ability's
-// numbers, and the kernel takes a table of kinds as an argument — a kind the game does not ship runs the same way.
+// numbers, and the battle engine takes a table of kinds as an argument — a kind the game does not ship runs the same way.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import type { AbilityKind, AbilityTable } from "../src/abilities/index.ts"
-import { ABILITIES, abilityLines, abilityProblems, abilityReach } from "../src/abilities/index.ts"
+import type { AbilityKind, AbilityTable } from "../src/engine/abilities/index.ts"
+import { ABILITIES, abilityLines, abilityProblems, abilityReach } from "../src/engine/abilities/index.ts"
 import { applyEffect } from "../src/armies/index.ts"
 import type { ContentDef } from "../src/content/index.ts"
 import { createRegistry, FIXTURE_REGISTRY, rectFootprint } from "../src/content/index.ts"
 import { literal, positiveWholeNumber, record } from "../src/content/shape.ts"
-import type { DomainEvent } from "../src/events/types.ts"
+import type { DomainEvent } from "../src/engine/events/types.ts"
 import { creditsEarned } from "../src/match/index.ts"
-import { contextFor, stepTick } from "../src/pulse/index.ts"
+import { contextFor, stepTick } from "../src/engine/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
-import type { PlayerId } from "../src/state/types.ts"
+import type { PlayerId } from "../src/engine/state/types.ts"
 
 /** A unit that stands where it is put and has `abilities` — nothing else, so a test sees the ability alone. */
 const stander = (id: string, abilities: ContentDef["abilities"], extra: Partial<ContentDef> = {}): ContentDef => ({
@@ -127,7 +127,7 @@ test("loaded dice throw from the battle's own stream: the same seed lands the sa
   assert.notDeepEqual(other.filter((event) => event.kind === "ability.triggered").map((event) => event.tick), lucky.map((event) => event.tick))
 })
 
-test("a kind the game does not ship runs the same way: the kernel takes its table of kinds as an argument", () => {
+test("a kind the game does not ship runs the same way: the battle engine takes its table of kinds as an argument", () => {
   // A mod's ability, in a few lines: every unit of its side within its reach mends `amount` whenever anyone dies.
   type Wake = Readonly<{ kind: "wake"; radius: number; amount: number }>
   const wake: AbilityKind<Wake> = {
@@ -144,7 +144,7 @@ test("a kind the game does not ship runs the same way: the kernel takes its tabl
   const registry = createRegistry([...REGISTRY.ids().map((id) => REGISTRY.get(id)), stander("unit.test.mourner", [{ kind: "wake", radius: 4, amount: 5 }], { maxHp: 40 })])
   const events = run({ A: [[2, 2, "unit.test.mourner"], [4, 2, "unit.test.killer"]], B: [[5, 2, "unit.test.prey"], [9, 5, "unit.test.killer"]] }, 20, registry, table)
   assert.equal(triggered(events).filter((event) => event.ability === "wake").length, 1)
-  // Without the kind in the table, the kernel skips it: the loader is what refuses an unknown kind, before a battle.
+  // Without the kind in the table, the battle engine skips it: the loader is what refuses an unknown kind, before a battle.
   assert.equal(triggered(run({ A: [[2, 2, "unit.test.mourner"], [4, 2, "unit.test.killer"]], B: [[5, 2, "unit.test.prey"]] }, 20, registry)).length, 0)
   assert.deepEqual(abilityProblems({ kind: "wake", radius: 4, amount: 5 }, "it"), ['it is of the kind "wake", which is not an ability the game has ("aura", "bounty", "loadedDice", "shove")'])
   assert.deepEqual(abilityProblems({ kind: "wake", radius: 4, amount: 5 }, "it", table), [])

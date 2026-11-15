@@ -10,7 +10,7 @@ import { playStrategies } from "../src/cli/play-strategies.ts"
 import type { BattleSetup, BattleState, Roster, BuildActions } from "../src/battle/index.ts"
 import { armyOf, briefOf, battleArmy, handOf, loadoutOf, beginBattle, playToEnd, playRound, readBuildActions, SCRIPTED } from "../src/battle/index.ts"
 import { drawBattleMap } from "../src/cli/battle-map.ts"
-import { hashOf } from "../src/state/canonical.ts"
+import { hashOf } from "../src/engine/state/canonical.ts"
 
 const setup = (extra: Partial<BattleSetup> = {}): BattleSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
 const hold: BuildActions = { build: [], stance: "hold" }

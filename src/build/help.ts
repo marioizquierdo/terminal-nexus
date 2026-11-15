@@ -303,7 +303,7 @@ function shiftText({ arrowStep, shiftStep, shiftStepDown }: MoveNumbers): string
  *
  * One group has no keys: THE GROUND, after THE MAP, the one thing on the page that is not a key — that units
  * stand tall, so more fit side by side than one behind another, and a row up or down counts two steps across
- * (the rule every range on the map is drawn by, `src/grid/reach.ts`). It is the page that
+ * (the rule every range on the map is drawn by, `src/engine/geometry/reach.ts`). It is the page that
  * teaches how to play, so how the ground is counted is said here once.
  */
 export function controlsPage(numbers: MoveNumbers = defaultMoveNumbers()): readonly ControlsSection[] {

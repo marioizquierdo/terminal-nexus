@@ -9,8 +9,7 @@ import { parseSettings } from "./types.ts"
 import type { Settings, SettingsStore } from "./types.ts"
 
 /** `~/.terminal-nexus/settings.json` — a dotfolder in the home directory, the same convention many
- *  command-line tools use for their own small local config. Not read by `grid`, which stays
- *  flags-only; this is `terminal-nexus`'s own file. */
+ *  command-line tools use for their own small local config. It is `terminal-nexus`'s own file. */
 export function defaultSettingsPath(): string {
   return join(homedir(), ".terminal-nexus", "settings.json")
 }

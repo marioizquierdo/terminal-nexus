@@ -54,7 +54,7 @@
 // next use — a unit's attack interrupting its walk, a fast-forwarded Pulse — is a request, not a new
 // system.
 //
-// Presentation only: nothing in `src/build`, `src/pulse` or the kernel may import this.
+// Presentation only: nothing in `src/build`, `src/engine/pulse` or the battle engine may import this.
 
 import type { EffectInstance } from "./effects/types.ts"
 

@@ -1,7 +1,7 @@
-import type { Coord, EntityLayer, Footprint } from "../grid/types.ts"
+import type { Coord, EntityLayer, Footprint } from "../engine/geometry/types.ts"
 
 /** A rational rate: steps across a column per second, a step up or down taking `ROW_DISTANCE` times as long
- *  (`stepCost`, src/pulse/movement.ts). Never a float (pulse.md). */
+ *  (`stepCost`, src/engine/pulse/movement.ts). Never a float (pulse.md). */
 export type MovementRate = Readonly<{ numerator: number; denominator: number }>
 
 export type AttackKind = "melee" | "ranged" | "heal"
@@ -20,7 +20,7 @@ export type UnitClass = "tank" | "fighter" | "support" | "siege"
  * at two different trigger moments, not two mechanisms that happen to share a shape.
  */
 export type AreaDamage = Readonly<{
-  /** How far it reaches, measured as range is (`footprintWithin`, src/grid/coords.ts): from the impact point to the
+  /** How far it reaches, measured as range is (`footprintWithin`, src/engine/geometry/coords.ts): from the impact point to the
    *  nearest occupied tile of each victim, a row counting two columns. 1 is what touches it along a side; 2 is two
    *  columns either side and one row up and down. */
   radius: number
@@ -42,9 +42,9 @@ export type Burn = Readonly<{
 
 export type AttackDef = Readonly<{
   kind: AttackKind
-  /** How far it reaches, measured as range is (`footprintWithin`, src/grid/coords.ts): to the nearest occupied tile
+  /** How far it reaches, measured as range is (`footprintWithin`, src/engine/geometry/coords.ts): to the nearest occupied tile
    *  of the target, a row counting two columns, so a range of 6 reaches 6 columns either side and 3 rows up and
-   *  down. A melee range is 1: melee reaches what touches it along a side (`inAttackRange`, src/pulse/shared.ts). */
+   *  down. A melee range is 1: melee reaches what touches it along a side (`inAttackRange`, src/engine/pulse/shared.ts). */
   range: number
   /** For `kind: "heal"`, this is the amount restored, not damage dealt. */
   damage: number
@@ -72,7 +72,7 @@ export type AttackDef = Readonly<{
    */
   splash?: AreaDamage
   /**
-   * If present, a landing hit also sets the ground round the impact burning (`BurningGround`, src/state/types.ts):
+   * If present, a landing hit also sets the ground round the impact burning (`BurningGround`, src/engine/state/types.ts):
    * every unit and worker standing within `radius` of the impact tile, of either side, takes `damage` every
    * `everyTicks` ticks for `ticks` ticks, and routes weigh the ground as dear while it burns. The Citizen mortar's
    * shell (the owner, 2026-10-21: "set the ground on fire ... when the units walk through it, they all take damage").
@@ -83,7 +83,7 @@ export type AttackDef = Readonly<{
    * consecutive successful hits only — reset the instant perception reassigns a new target (including
    * losing one). The focus-turret rule shape: `effectiveDamage = round(damage * min(maxPercent, 100 +
    * focusStreak * perHitPercent) / 100)`. Punishes a target for standing and eating it, not for merely
-   * existing. Integer percentages, not a fraction — every canonical value the kernel hashes is an
+   * existing. Integer percentages, not a fraction — every canonical value the battle engine hashes is an
    * integer (`state/canonical.ts`), content definitions included, so `0.5` here is not a legal value
    * even though it would be a legal *runtime* multiplier; the division happens only at attack time,
    * never in the stored definition.
@@ -98,7 +98,7 @@ export type AbilityValue = number | string | readonly AbilityValue[]
 
 /**
  * An ability a unit has, as its content names it (`ContentDef.abilities`): its `kind`, which names the code that runs
- * it (`src/abilities/`), and that kind's own numbers. `{ "kind": "aura", "radius": 4, "damageTakenPercent": 75 }`.
+ * it (`src/engine/abilities/`), and that kind's own numbers. `{ "kind": "aura", "radius": 4, "damageTakenPercent": 75 }`.
  */
 export type AbilityUse = Readonly<{ kind: string } & Record<string, AbilityValue>>
 
@@ -152,7 +152,7 @@ export type ContentDef = Readonly<{
    * This unit is its side's Commander (pulse.md): a persistent frontline unit that, when it falls, is
    * absent for the rest of that round's Pulse and the `roundsOut` whole rounds after it, and is then restored
    * beside its side's Grid Nexus. Only the rules between rounds read it (`src/match/commander.ts`); the
-   * kernel sees a unit like any other, so a Commander's death is never the victory condition.
+   * engine sees a unit like any other, so a Commander's death is never the victory condition.
    */
   commander?: true
   /**
@@ -164,13 +164,13 @@ export type ContentDef = Readonly<{
   roundsOut?: number
   /**
    * How near an enemy must come before this unit turns from its side's target to fight it (`vision`,
-   * `src/pulse/target.ts`), when it is not the shared one: Averno's charge, a Commander who leaves the line for
+   * `src/engine/pulse/target.ts`), when it is not the shared one: Averno's charge, a Commander who leaves the line for
    * what comes at it. Measured as range is; undefined for every other unit, which keeps the shared reach.
    */
   vision?: number
   /**
-   * What it does on its own besides fighting, each run by the code its `kind` names (`src/abilities/`): an aura, a
-   * bounty on what dies near it, a lucky hit. The kernel calls each kind's hooks at the moments it declares
+   * What it does on its own besides fighting, each run by the code its `kind` names (`src/engine/abilities/`): an aura, a
+   * bounty on what dies near it, a lucky hit. The battle engine calls each kind's hooks at the moments it declares
    * (docs/system-design/army-authoring.md, "Abilities"); a kind it does not know stops the registry from loading.
    * Absent: none.
    */
@@ -244,7 +244,7 @@ export type ContentDef = Readonly<{
    * Construction territory (pulse.md): a structure with this projects a build range — its player may build
    * within this many tiles of it, measured as range is (`footprintWithin`), to the nearest tile of its footprint, a
    * row counting two columns — while it is linked to its side's Grid Nexus. Absent: it projects none. Only the Build Phase reads it
-   * (`src/build/territory.ts`); the kernel never does. While the "Build range" Experiment is being felt, its
+   * (`src/build/territory.ts`); the battle engine never does. While the "Build range" Experiment is being felt, its
    * value replaces this number on every structure that has one.
    */
   constructionRadius?: number
@@ -252,7 +252,7 @@ export type ContentDef = Readonly<{
    * Supply (the owner, 2026-10-16: "Supply should be controlled by another building"): a structure with this lets its
    * side field this many more units at once. A side's supply is the sum of what its standing structures give; a side
    * whose structures give none has no cap, so every map and sandbox from before supply resolves exactly as it did.
-   * The kernel reads it, in production only (`src/content/supply.ts`).
+   * The battle engine reads it, in production only (`src/content/supply.ts`).
    */
   supplyProvided?: number
   /**
@@ -274,7 +274,7 @@ export type ContentDef = Readonly<{
  * decide. Cost and supply arrive with the worker economy.
  *
  * It spawns in **waves** (the owner's word for the units a building sets down at once, and only that): every
- * unit of a wave on the same tick, so they stand together beside the building (`src/pulse/production.ts`).
+ * unit of a wave on the same tick, so they stand together beside the building (`src/engine/pulse/production.ts`).
  * Every number is a positive whole number (`withProduction` refuses any other). A later Nexus power that
  * gives a building a second or third wave raises `waves` and nothing else.
  */
@@ -299,7 +299,7 @@ export type ProductionRecipe = Readonly<{
 
 /**
  * The default per-entity fields every fresh instance of this content starts with — shared by the
- * opening of a sandbox (its own initial placements, `skirmish/opening/open.ts`) and the kernel's own
+ * opening of a sandbox (its own initial placements, `skirmish/opening/open.ts`) and the battle engine's own
  * spawn point (a unit created mid-Pulse, `pulse/spawn.ts`), so a fresh entity's defaults are declared
  * once rather than kept in sync by hand in two files that create entities for two different reasons.
  * Lives here rather than in `state/types.ts` because it reads `ContentDef` fields; `state` stays

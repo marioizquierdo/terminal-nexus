@@ -161,9 +161,8 @@ title menu's Load game lists the same examples, and its New game the shipped scr
 The page reads its address as a launch (`src/cli/launch.ts`): its parts are the launch's, so a part added
 there is one the address reads.
 
-The mode buttons that are game screens open their routes (Menu is `menu`, Skirmish is `skirmish`, PERIMETER is
-`story?mission=vasse-test-1`); the two battle replays are the engine tool's battles, not places in the
-game.
+Each mode button opens its route (Menu is `menu`, Skirmish is `skirmish`, PERIMETER is
+`story?mission=vasse-test-1`).
 
 **A link on claude.ai cannot carry a `#` part with `=` in it**; a copy of the page opened from disk can.
 A published page opens at a place through a demo instead: a demo in `scripts/demos/*.json` may carry an

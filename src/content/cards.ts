@@ -1,7 +1,7 @@
 // What each thing on the Grid says about itself on a card (Mario, 2026-09-30: "the cards
 // have title, subtitle, description, stats"): its name, one short line on what it is for, and two or
 // three plain sentences with a little more detail. Keyed by the same ids as the content definitions and
-// the terrain — like the art table beside it (`art.ts`), a table the kernel never reads, so the words a
+// the terrain — like the art table beside it (`art.ts`), a table the battle engine never reads, so the words a
 // player reads live with the content they describe and not in the view that draws them. A card's
 // numbers are not here: they come from the content definition and the catalog (`src/build/card.ts`).
 //
@@ -31,6 +31,11 @@ const BUILT_IN_CARD_TEXT: Readonly<Record<string, CardText>> = {
     title: "Barracks",
     subtitle: "Trains troopers",
     description: "Trains a wave of troopers, a few seconds into each Battle Round. They fight, and come home to it after.",
+  },
+  "structure.bench.barracks": {
+    title: "Practice Barracks",
+    subtitle: "A wall that trains nothing",
+    description: "A Barracks for the engine's own test maps: the same body, but it trains no troopers.",
   },
   "structure.bench.nexus": {
     title: "Practice Nexus",

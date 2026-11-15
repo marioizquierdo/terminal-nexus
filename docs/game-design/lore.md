@@ -63,7 +63,16 @@ Prime Nexuses exist across the galaxy. They are always recognizably pyramidal, b
 - a political throne that legitimizes control of its territory;
 - a mirror that responds differently to each claimant civilization.
 
-**RULE: when the ancient protocol demands a challenge, a Prime Nexus stays home and replicates a Grid Nexus.** The play surface is the **Grid**; the replica standing on it is a **Grid Nexus**, and the one that stays home is a **Prime Nexus**. The kernel recognises a Grid Nexus by a flag on its content definition, never by a name (`src/content/types.ts`). The Prime Nexus projects or fabricates a smaller copy of itself on a remote Grid, along with bounded matter, stored patterns, and its chosen Commander. The settlement in a match grows around this replica; mature cities do not travel with it.
+**RULE: when the ancient protocol demands a challenge, a Prime Nexus stays home and replicates a Grid Nexus.** The play surface is the **Grid**; the replica standing on it is a **Grid Nexus**, and the one that stays home is a **Prime Nexus**. The battle engine recognises a Grid Nexus by a flag on its content definition, never by a name (`src/content/types.ts`). The Prime Nexus projects or fabricates a smaller copy of itself on a remote Grid, along with bounded matter, stored patterns, and its chosen Commander. The settlement in a match grows around this replica; mature cities do not travel with it.
+
+**What a Grid is.** Where two claims touch, the network does not send armies onto open country; it squares the
+country off. A Grid is ground the ancient protocol has taken under its own law: a lattice laid over a valley, a ruin or
+a city block, every cell counted, every step across it paid for in the network's own measure. Inside it the heartbeat
+is physics. Bodies move cell by cell, time advances in pulses, and when a Battle Round's beat runs out both replicas
+pull their forces back and the Grid holds still for the next plan. Nothing inside it is luck the protocol did not
+deal: the same plans on the same ground play out the same way, which is why Commanders study a Grid like a board and
+plan where they cannot watch. From outside, a Grid is a scar of right angles across a world; from the player's chair,
+it is exactly what the screen shows, a field of characters where everything that happens can be read.
 
 The Grid Nexus is a real extension of the Prime, not a hologram. Destroying it ends the local claim, collapses dependent infrastructure, and releases a fragment of authority that the victor may absorb. It does not automatically exterminate the faction or destroy the distant Prime Nexus.
 
@@ -114,7 +123,7 @@ The faction shapes the Nexus, and the Nexus reinforces the faction. It does not 
 - Glitch becomes inseparable from its silent Nexus Queen.
 - Alder treats refusal of Nexus power as proof of moral and biological superiority, even while using or containing the replication protocol to deny it to others.
 
-Not every civilization controls ancient technology. Many peoples live between claimants, serve as clients, resist the protocol, worship it from afar, salvage its debris, or become Grids when replicas appear. The playable factions are exceptional because each has seized, bound, contained, or become symbiotic with a Prime Nexus.
+Not every civilization controls ancient technology. Many peoples live between claimants, serve as clients, resist the protocol, worship it from afar, salvage its debris, or wake to find their land squared off into a Grid when replicas appear. The playable factions are exceptional because each has seized, bound, contained, or become symbiotic with a Prime Nexus.
 
 The Activation exposed active claims to one another and made accumulated authority strategically decisive. Abstention is unstable:
 

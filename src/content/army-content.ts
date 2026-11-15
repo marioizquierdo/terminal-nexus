@@ -1,5 +1,5 @@
 // The units and structures the army files define as data (`src/content/data.ts`), each split into its three parts:
-// the definition the kernel reads, the words its card says, and the glyph that draws it. The registry takes the
+// the definition the battle engine reads, the words its card says, and the glyph that draws it. The registry takes the
 // definitions (`./index.ts`), the card table the words (`./cards.ts`) and the art table the glyphs (`./art.ts`), so
 // a unit written in an army file is drawn, named and fought with like one written in TypeScript.
 //
@@ -15,7 +15,7 @@ import type { Glyph } from "./data.ts"
 import { definitionOf, entriesOf } from "./data.ts"
 import type { ContentDef } from "./types.ts"
 
-/** A unit or a structure an army file defines: what the kernel reads, what its card says, how it is drawn. */
+/** A unit or a structure an army file defines: what the battle engine reads, what its card says, how it is drawn. */
 export type ArmyContent = Readonly<{ definition: ContentDef; card: CardText; glyph: Glyph }>
 
 /** Everything the shipped army files define, in the order they list it. */

@@ -13,7 +13,7 @@
 import { BUILD_MOMENTS } from "../src/view/commander-moments.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { auraOf } from "../src/abilities/index.ts"
+import { auraOf } from "../src/engine/abilities/index.ts"
 import { BARK_MOMENTS, BARK_ROOM, barkProblem, quoted } from "../src/armies/barks.ts"
 import type { Barks } from "../src/armies/barks.ts"
 import { ARMIES } from "../src/armies/index.ts"
@@ -30,13 +30,13 @@ import { cellForTile } from "../src/build/layout.ts"
 import { missionPlay, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import type { DomainEvent } from "../src/events/types.ts"
-import { footprintWithin } from "../src/grid/coords.ts"
-import type { Coord } from "../src/grid/types.ts"
+import type { DomainEvent } from "../src/engine/events/types.ts"
+import { footprintWithin } from "../src/engine/geometry/coords.ts"
+import type { Coord } from "../src/engine/geometry/types.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { ACTIVITY_FILTERS, filteredEntries } from "../src/log/activity.ts"
-import { hashState } from "../src/state/serialize.ts"
-import type { EntityState, MatchState, PlayerId } from "../src/state/types.ts"
+import { hashState } from "../src/engine/state/serialize.ts"
+import type { EntityState, MatchState, PlayerId } from "../src/engine/state/types.ts"
 import type { BuildSession } from "../src/view/build-session.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
@@ -261,7 +261,7 @@ test("which line she says is a hash of the moment's identity: the same every tim
     // Two rounds running never say the same line at the same moment.
     for (let index = 1; index < picks.length; index += 1) assert.notEqual(picks[index], picks[index - 1], moment)
   }
-  // The cosmetic seed moves where each moment starts in its list — the view's own seed, never the kernel's.
+  // The cosmetic seed moves where each moment starts in its list — the view's own seed, never the battle engine's.
   const seeded = (seed: number): string[] => BARK_MOMENTS.map((moment) => pickLine(lines, moment, 1, seed))
   assert.notDeepEqual(seeded(7), seeded(8))
 })

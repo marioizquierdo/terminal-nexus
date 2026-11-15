@@ -5,11 +5,11 @@
 // be tested without a TTY.
 //
 // **A tile is one terminal column, at every terminal size.** A cell is about twice as tall as it is wide, and a row
-// counts two columns in every distance (`ROW_DISTANCE`, src/grid/coords.ts), so a tile one column wide draws every
+// counts two columns in every distance (`ROW_DISTANCE`, src/engine/geometry/coords.ts), so a tile one column wide draws every
 // reach as wide as it is tall on screen. A viewport's width in tiles is its width in columns, and a terminal wider
 // than the largest viewport buys centring, never a wider tile.
 
-import type { Coord, GridTerrain } from "../grid/types.ts"
+import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
 
 /** RULE (docs/system-design/grid.md): below this the game is not playable and the renderer shows a resize gate. */
 export const MIN_VIEWPORT = { width: 48, height: 16 } as const

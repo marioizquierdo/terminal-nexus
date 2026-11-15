@@ -10,7 +10,7 @@
 // state; cosmetic randomness only; tile coordinates, never columns; an effect that shows an area the
 // rules decide draws the rules' own tiles; and an effect never carries a required cue alone.
 
-import type { Coord } from "../../grid/types.ts"
+import type { Coord } from "../../engine/geometry/types.ts"
 import type { ColorDepth, RoleTint, SeeThrough, StyleRole } from "../roles.ts"
 
 /** Effects may paint here and nowhere else (`effects.md`). */

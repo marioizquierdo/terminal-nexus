@@ -1,19 +1,19 @@
 // A Commander's aura in the damage step (docs/system-design/pulse.md): Vasse's By the Book, the owner's
 // "Commanders ... should be like heroes on warcraft3 ... Vasse should provide boost to nearby units". The
 // story is the sandbox `sandboxes/rules/aura-by-the-book.save.json` (tests/sandboxes.test.ts); here are the
-// rule's edges, each on a few units placed to show one thing. An aura is an ability (`src/abilities/aura.ts`), named by
+// rule's edges, each on a few units placed to show one thing. An aura is an ability (`src/engine/abilities/aura.ts`), named by
 // a unit's content as data: `{ "kind": "aura", "radius": 4, "damageTakenPercent": 75 }`.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import type { ContentDef } from "../src/content/index.ts"
 import { createRegistry, FIXTURE_REGISTRY, rectFootprint } from "../src/content/index.ts"
-import type { DomainEvent } from "../src/events/types.ts"
-import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { auraOf, boostedAmount, guardedAmount } from "../src/abilities/index.ts"
+import type { DomainEvent } from "../src/engine/events/types.ts"
+import { contextFor, stepTick } from "../src/engine/pulse/index.ts"
+import { auraOf, boostedAmount, guardedAmount } from "../src/engine/abilities/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
-import type { PlayerId } from "../src/state/types.ts"
+import type { PlayerId } from "../src/engine/state/types.ts"
 
 const VASSE = "unit.citizen.vasse"
 

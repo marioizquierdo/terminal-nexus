@@ -3,26 +3,26 @@
 // her buildings live in one file a modder can write without TypeScript (docs/system-design/army-authoring.md).
 //
 // The engine's own bench rosters are still TypeScript (`citizen.ts`, `ravel.ts`, `proving-grounds.ts`): the bench
-// maps and the kernel's tests are written against them. An army may name one of those by its id instead of defining
+// maps and the battle engine's tests are written against them. An army may name one of those by its id instead of defining
 // it; everything an army defines comes through here.
 //
 // One entry is three things, split here and never mixed again:
 //
-// - **the definition** (`ContentDef`): what the kernel reads. Every field is a `ContentDef` field under the same
+// - **the definition** (`ContentDef`): what the battle engine reads. Every field is a `ContentDef` field under the same
 //   name, but `size` (the footprint, as `[width, height]`) and the defaults below;
 // - **the card** (`CardText`): what a card says of it, read by the Build Phase (`src/content/cards.ts`);
-// - **the glyph** (`UnitArt`): how it is drawn, read only by the view (`src/content/art.ts`). The kernel never sees
+// - **the glyph** (`UnitArt`): how it is drawn, read only by the view (`src/content/art.ts`). The battle engine never sees
 //   a glyph (presentation.md): the registry is built from the definition alone.
 //
 // Pure: the JSON is an argument, every problem is said at once, by path.
 
-import type { EntityLayer } from "../grid/types.ts"
-import { ENTITY_LAYERS } from "../grid/types.ts"
+import type { EntityLayer } from "../engine/geometry/types.ts"
+import { ENTITY_LAYERS } from "../engine/geometry/types.ts"
 import type { Say, Shape } from "./shape.ts"
 import { dictionary, fieldAt, list, literal, positiveWholeNumber, record, text, wholeNumber } from "./shape.ts"
 import type { AbilityUse, AreaDamage, AttackDef, Behavior, Burn, ContentDef, Detonation, FormationLine, MovementRate, UnitClass } from "./types.ts"
 import { rectFootprint } from "./types.ts"
-import { abilityProblems } from "../abilities/index.ts"
+import { abilityProblems } from "../engine/abilities/index.ts"
 import type { CardText } from "./cards.ts"
 
 /** How a unit or a structure is drawn: rows north to south, one glyph per tile (`src/content/art.ts`). */
@@ -98,7 +98,7 @@ const attack = record<AttackDef>(
   },
 )
 const detonation = record<Detonation>({ radius: positiveWholeNumber, damage: positiveWholeNumber }, { hits: literal("enemies"), triggerRange: positiveWholeNumber })
-/** An ability as content names it: its kind and its own numbers, checked by its kind (`src/abilities/`). */
+/** An ability as content names it: its kind and its own numbers, checked by its kind (`src/engine/abilities/`). */
 const abilityUse: Shape<AbilityUse> = {
   check(value: unknown, at: string, say: Say): value is AbilityUse {
     if (!dictionary(abilityValue).check(value, at, say)) return false
@@ -184,7 +184,7 @@ export function entryProblems(entry: ContentEntry): string[] {
   for (const [what, reach] of Object.entries(reaches)) {
     if (reach !== undefined && reach !== 1 && reach % 2 !== 0) problems.push(`${whose}'s ${what} is ${reach}: a reach is 1, which is touching, or even, a whole number of rows`)
   }
-  // A crowd is counted within the unit's area (`areaOf`, src/pulse/perception.ts): a unit with none has no crowd to aim at.
+  // A crowd is counted within the unit's area (`areaOf`, src/engine/pulse/perception.ts): a unit with none has no crowd to aim at.
   if (entry.aim === "crowd" && entry.attack?.burn === undefined && entry.attack?.splash === undefined && entry.detonation === undefined) {
     problems.push(`${whose} aims at a crowd, and has no area to count one in: a splash, a burn or a detonation`)
   }
@@ -193,7 +193,7 @@ export function entryProblems(entry: ContentEntry): string[] {
   return problems
 }
 
-/** The kernel's definition of an entry: its fields, its size as a footprint, and the defaults filled in. */
+/** The battle engine's definition of an entry: its fields, its size as a footprint, and the defaults filled in. */
 export function definitionOf(entry: ContentEntry): ContentDef {
   const { size, card: _card, glyph: _glyph, notes: _notes, short, speedTier, collidesWith, behavior, salvage, ...rest } = entry
   const moves = entry.layer !== "obstacles"

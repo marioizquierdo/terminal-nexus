@@ -1,8 +1,8 @@
-// The sandboxes (docs/system-design/skirmish-saves.md, docs/system-design/sandboxes.md): the Skirmish saves in
+// The sandboxes (docs/system-design/skirmish-saves.md, docs/system-design/skirmish-saves.md): the Skirmish saves in
 // `sandboxes/` that open on a Battle Round written by hand, each a rule, a unit, a kind of ground or a showcase
 // the engine is checked against. Found by id, read as any save is (`readSave`, every problem at once), and turned into
-// the opening the kernel starts from (`openingOf`, `./start.ts`), so `grid`, a trial, the measurement and every test
-// open exactly the Battle Round the file writes.
+// the opening the battle engine starts from (`openingOf`, `./start.ts`), so the `skirmish` command, the measurement and every
+// test open exactly the Battle Round the file writes.
 
 import { existsSync, readdirSync } from "node:fs"
 import { readFile } from "node:fs/promises"
@@ -22,7 +22,7 @@ export const SANDBOX_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..
 /**
  * Every sandbox, as `{ id, path, folder }`, sorted by id: the `.save.json` files anywhere under
  * `sandboxes/`, one folder per purpose (rules, units, movement, engage, showcase —
- * docs/system-design/sandboxes.md). A save's id is its file name, unique across the folders, so a save moves
+ * docs/system-design/skirmish-saves.md). A save's id is its file name, unique across the folders, so a save moves
  * between folders without anything that names it changing.
  */
 export function sandboxCatalog(root: string = SANDBOX_ROOT): readonly Readonly<{ id: string; path: string; folder: string }>[] {
@@ -42,8 +42,8 @@ export function sandboxCatalog(root: string = SANDBOX_ROOT): readonly Readonly<{
 
 /**
  * `path` may name the file exactly, omit the `.save.json` suffix, or be a sandbox's bare id —
- * `grid sandboxes/rules/ravel-cascade.save.json`, `grid sandboxes/rules/ravel-cascade` and
- * `grid ravel-cascade` all resolve to the same file. A path whose file is not there falls back to its last part as an
+ * `sandboxes/rules/ravel-cascade.save.json`, `sandboxes/rules/ravel-cascade` and `ravel-cascade` all resolve to
+ * the same file. A path whose file is not there falls back to its last part as an
  * id, so a path naming another folder still finds it.
  */
 export function resolveSandbox(path: string): string {

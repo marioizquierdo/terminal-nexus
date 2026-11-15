@@ -1,18 +1,18 @@
 // Reconstruct entity state from the event stream alone.
 //
 // This is what makes `src/report` honest. The report derives everything it prints from the events
-// and the final state, never from kernel internals — and the
+// and the final state, never from engine internals — and the
 // cheapest way to *prove* that is to rebuild the cast from the events and check the result against
-// the state the kernel actually finished with. A report that can do that cannot be narrating a
+// the state the battle engine actually finished with. A report that can do that cannot be narrating a
 // story the events do not contain.
 //
 // Position, health, life, and target are reconstructible. Two fields deliberately are not:
 // `facing`, which is a rendering hint no rule reads, and `moveCredit`, which appears on the events
 // that carry a movement decision and nowhere else. Neither is invented here.
 
-import type { DomainEvent } from "../events/types.ts"
-import type { Coord } from "../grid/types.ts"
-import type { PlayerId } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
 
 export type ReplayEntity = {
   ordinal: number

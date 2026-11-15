@@ -68,7 +68,7 @@
 //
 // Under reduced motion both snap: the view jumps and the cursor jumps.
 //
-// Presentation only (`docs/system-design/grid-engine.md`: "presentation may interpolate... without changing
+// Presentation only (`docs/system-design/architecture.md`: "presentation may interpolate... without changing
 // simulation"): state, commands and a scripted playtest all use the state's own camera and cursor —
 // the state is already where things are going. The one place the drawn camera reaches input is the
 // mouse, so a click lands on the tile drawn under the pointer while the view is still sliding. The
@@ -76,11 +76,11 @@
 // is heading for places there even mid-glide.
 
 import type { Camera } from "../build/camera.ts"
-import type { Coord } from "../grid/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import type { BuildState } from "../build/state.ts"
 import type { FieldEntity } from "../build/types.ts"
 import { REGROUP_TICKS } from "../match/types.ts"
-import { TICKS_PER_SECOND } from "../state/types.ts"
+import { TICKS_PER_SECOND } from "../engine/state/types.ts"
 import { cardEntry } from "../build/state.ts"
 import type { Tuning } from "../build/tuning.ts"
 import { TUNING } from "../build/tuning.ts"
@@ -88,7 +88,7 @@ import type { BuildCompositionInput, CardReveal, RowAck } from "./build.ts"
 import type { PopupBorder, PopupFlash } from "./build-popup.ts"
 import { POPUP_FLASH, POPUP_OPENINGS, openingLengthMs } from "./build-popup.ts"
 import type { ColorDepth } from "./roles.ts"
-import type { Footprint } from "../grid/types.ts"
+import type { Footprint } from "../engine/geometry/types.ts"
 import type { PlacedStructure, PlacementClock, PlacementTuning, RemovalClock } from "./placement.ts"
 import { placementRequest, removalSchedule } from "./placement.ts"
 import { scheduleTrack, trackBusyAt } from "./animation.ts"

@@ -59,7 +59,7 @@ what it does is worked out fresh every tick from what stands on the Grid.
 
 ## Where an army goes — the enemy Nexus
 
-RULE (`headsForNexus`, `src/pulse/perception.ts`; a side's target, `src/pulse/target.ts`). **An army's goal is the
+RULE (`headsForNexus`, `src/engine/pulse/perception.ts`; a side's target, `src/engine/pulse/target.ts`). **An army's goal is the
 enemy's Grid Nexus.** A mission may name a target instead, a region the side heads for and holds; a battle's side
 may hold in front of its own Nexus (the battle's stance). The stance and banners in the Build Phase come next (below).
 
@@ -96,7 +96,7 @@ placement before the stance; the stance row is the fallback). How it is placed i
 side heads there and holds it. Aggressive, it heads there, and from the tick at least half its fighting units stand in
 or beside the banner's area (3 × 3 round a spot, or a structure's footprint and a ring of one) it has no target, so it
 marches on the enemy's Grid Nexus as by default. The rules layer sets this between ticks (`src/match/banner.ts`); the
-kernel is unchanged. With no banner, a level's own target and the march on the enemy Nexus are as before.
+engine is unchanged. With no banner, a level's own target and the march on the enemy Nexus are as before.
 
 | Order | What the troops do | In the machinery |
 | --- | --- | --- |
@@ -110,7 +110,7 @@ milestone's first steps ([`milestone-17-skirmish.md`](../history/milestones/mile
 
 ## Troop spawning
 
-RULE (`src/pulse/spawn.ts`, `src/pulse/production.ts`, `src/pulse/make-way.ts`). **A building that trains sends one
+RULE (`src/engine/pulse/spawn.ts`, `src/engine/pulse/production.ts`, `src/engine/pulse/make-way.ts`). **A building that trains sends one
 wave a round**, a few seconds into the Battle Round (5 seconds, a tuned setting), so every building's production
 restarts and lines up with the round: a Barracks sends four troopers, a Den five runners. The wave comes out **on the
 building's own roof**, on the tiles nearest where the side is heading, so a base's units come out on the side facing
@@ -128,7 +128,7 @@ the fight.
 
 The owner, 2026-10-27: "we should explain and implement this as states: march (exploring and walking), in battle or
 retreating." A unit is always in one of three, worked out every tick from what it sees (`MoveState`,
-`src/pulse/march.ts`):
+`src/engine/pulse/march.ts`):
 
 | State | When | What it does |
 | --- | --- | --- |
@@ -141,7 +141,7 @@ from its body as range is, and its own attack's range when that is longer. Conte
 Commander who charges (Averno) sees 12.
 
 Each change of state is recorded after the round: a `unit.state` line in the Activity Logs, under the **Movement**
-filter, read back from the round's states and events (`src/report/move-states.ts`). The kernel keeps no record of it,
+filter, read back from the round's states and events (`src/report/move-states.ts`). The battle engine keeps no record of it,
 so no hash moved.
 
 ## Troop formation
@@ -212,7 +212,7 @@ favour a side by where it stands. Three refinements, from what a unit is for:
   round them; a flanker first to the enemies behind the melee line; a healer chooses among wounded allies.
 
 **Commitment.** In a line: a troop sticks to its enemy until it falls, and gives up only after 2½ seconds of not being
-able to hit it. In detail, RULE (`keptTarget`, `COMMIT_TICKS` in `src/pulse/perception.ts`, `tests/commitment.test.ts`):
+able to hit it. In detail, RULE (`keptTarget`, `COMMIT_TICKS` in `src/engine/pulse/perception.ts`, `tests/commitment.test.ts`):
 once chosen, a target is kept until it falls (or stops being one the unit may choose), or until the unit has gone **30
 ticks (2½ seconds) unable to strike it**. "Unable" is counted tick by tick from where the unit stood as the tick began: the
 count starts again on every tick the target is within the unit's attack range, and on every tick the unit has come
@@ -226,7 +226,7 @@ anything, so it takes only what its attack reaches (and lets go when it leaves).
 any other. The count lives in the state (`commitGap`, `commitStall`), absent when a unit holds nothing, so a state with
 no fight in it hashes as it did. Some units may be exceptions later; commitment is the default.
 
-**When the enemy cannot be reached.** RULE (`walksToIt` and `searchWider` in `src/pulse/perception.ts`,
+**When the enemy cannot be reached.** RULE (`walksToIt` and `searchWider` in `src/engine/pulse/perception.ts`,
 `tests/commitment.test.ts`). A melee troop in the second rank of a fight often holds an enemy that fighters already
 surround: no tile from which it could strike is free. So a unit that holds a target it can neither strike from where it
 stands nor walk to **lets it go at once** and chooses afresh among the enemies it can reach, the nearest to walk to. If
@@ -267,7 +267,7 @@ broken; a unit that cannot strike a building walks as near as it can get.
 The worker economy is Milestone 7 ([`milestone-07-worker-economy.md`](../milestones/milestone-07-worker-economy.md));
 today a worker only runs.
 
-**Built** (RULE — `src/pulse/routes.ts`, `tests/route-saves.test.ts`, [`grid.md`](grid.md), collision masks):
+**Built** (RULE — `src/engine/pulse/routes.ts`, `tests/route-saves.test.ts`, [`grid.md`](grid.md), collision masks):
 
 - **A worker never fights** and follows no target or banner. It keeps no place in the formation.
 - **It retreats from any threat that comes within that threat's range and two more** (a trooper's touch: 4 columns, 2
@@ -289,8 +289,8 @@ today a worker only runs.
 
 ## The machinery
 
-Everything above is made of five small parts, each tested alone (`src/routing/`, `tests/routing.test.ts`), put
-together by the tick (`src/pulse/routes.ts`, `src/pulse/intents.ts`).
+Everything above is made of five small parts, each tested alone (`src/engine/routing/`, `tests/routing.test.ts`), put
+together by the tick (`src/engine/pulse/routes.ts`, `src/engine/pulse/intents.ts`).
 
 ### In one paragraph
 
@@ -315,8 +315,8 @@ It is the "flow field" of crowd games (Supreme Commander 2 made it known) and th
 worked out lazily, from the goal outward, only as far as the furthest unit asking needs, with a bucket for each
 distance since steps cost small whole numbers, and it says at once, from the patch of ground a unit stands on, whether
 it can reach the goal at all. About 200 units and buildings in an eighth-round battle cost about 5½ ms a tick
-([`scripts/profile-routes.ts`](../../scripts/profile-routes.ts), 2026-10-21); the same script fingerprints every battle
-it plays, so a change meant to make routes faster is proved to change no outcome.
+(profiled on 2026-10-21); a change meant to make routes faster is proved to change no outcome by the determinism tests'
+hashes.
 
 ### The building blocks
 
@@ -376,7 +376,7 @@ Every way a unit moves is one of three things: **a new goal** for the same field
 | Pushed or pulled | Not a step: moved a tile at a time while its body fits (`displace`) | Yes (the bulwark's Shove) |
 | Going round burning ground | A weight: four times its ground while it burns | Yes (the mortar's fire) |
 | The raid's trail in the Build Phase | The same field, walked ahead of time over the plan | Yes |
-| Regrouping between rounds | A goal per unit, its slot in its side's formation across the march line, walked beside the kernel's tick (`src/match/regroup.ts`) | Yes |
+| Regrouping between rounds | A goal per unit, its slot in its side's formation across the march line, walked beside the battle engine's tick (`src/match/regroup.ts`) | Yes |
 | Making room for a building | The walk to the nearest free ground off every building, pushing on whoever stands there in turn (`src/match/make-room.ts`) | Yes |
 | A banner | A goal: the banner, then the Nexus; or the banner's tiles, held | Prototype, behind the Battle banner Experiment ("Banners — prototype" above); a second banner is IDEA |
 | A worker's job | A goal: every free job slot | IDEA (Milestone 7) |

@@ -682,9 +682,9 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
   without the plan, and a building planned where an arrival would stand moves it when the Battle Round starts.
   (RULE — `tests/mission-loop.test.ts`, `tests/raid-view.test.ts`)
 - ***The raid's intent*** (a named pattern): in the Build Phase, never during a Battle Round, each coming group has a
-  **trail** to what it targets first, and **that target is marked**. The target is the kernel's own choice on
+  **trail** to what it targets first, and **that target is marked**. The target is the battle engine's own choice on
   the Battle Round's first tick, worked out on the plan as it stands (`src/match/intent.ts`), so placing, undoing or
-  removing a building changes it at once. The trail is the kernel's own steps, round a ridge, or pressing on it when
+  removing a building changes it at once. The trail is the battle engine's own steps, round a ridge, or pressing on it when
   nothing gets through. Its arrows stand four apart along the way by the Grid's own distance, four columns or two rows
   (the owner's "1 arrow every 3 tiles", made whole rows), in the glyph pack's arrowheads and strokes, dim and faded, on
   open ground only and never over a glyph, and **they move** (the owner: "a slow-moving line of arrows ... leaving a
@@ -701,7 +701,7 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
   **The build range is an area.** While a building is armed, every open tile inside it shows the ground's own
   dot, dim, so the densely dotted ground is where a building may have a tile, lit by a faint grey wash where colours
   blend; a building may hang over its edge. **A reach is an outline.** The last tiles a building reaches, as the
-  kernel measures range, are drawn round its ghost in strokes: `-` and `|` along the footprint's sides, `/` and `\`
+  engine measures range, are drawn round its ghost in strokes: `-` and `|` along the footprint's sides, `/` and `\`
   across the corners (`─ │ ╱ ╲` in Unicode). The outline is dim, in the ghost's own look (the hotkey's colour where
   Enter would place it, grey where it would refuse), moves with the ghost, and in Explore Map and plain navigation is
   drawn round what the cursor rests on, in the hotkey's colour: a placed building, or a unit of either side that shoots
@@ -854,7 +854,7 @@ for the answer to come back precise. The procedure (logging his words, rounds, h
 - **The claude.ai playtest page** is where they meet: the build is a link, both exports land in text boxes
   under the screen, and a demo button opens the game exactly where the question is.
 
-The determinism underneath — a seeded kernel, a Build Phase with no clock, every input a named command, the
+The determinism underneath — a seeded engine, a Build Phase with no clock, every input a named command, the
 build stamped on every export — makes a pasted export reproducible with `--settings` and `--keys`. Keep it
 that way.
 
@@ -900,11 +900,11 @@ that way.
   meaning — so the schema in `src/log/activity.ts` is the documentation, and `activity.log(event, props)`
   accepts only what it declares. Entries are kept in memory, the oldest dropped past a limit.
   (RULE — `tests/log.test.ts`)
-- **A log is a record, never an input**: the kernel and the match layer never reach it, and nothing the
+- **A log is a record, never an input**: the battle engine and the match layer never reach it, and nothing the
   rules decide reads one. (RULE — `tests/architecture.test.ts`)
 - **The window** is the game menu's `[a]` (*Settings, the export, the Controls page and the Activity logs*), deliberately
   plain; `node scripts/playtest.mjs … --activity [filter]` prints what a scripted run recorded.
-- **An agent asking about an interaction** adds the event where it happens (never in the kernel), and a
+- **An agent asking about an interaction** adds the event where it happens (never in the battle engine), and a
   filter for its question at the top of `ACTIVITY_FILTERS` (the window opens on the first); both are removed
   once answered, as an Experiment is.
 - **Movement** (`unit.state`, debug): every unit's change of movement state in the Battle Round just ended, read back

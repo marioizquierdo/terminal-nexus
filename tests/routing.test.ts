@@ -1,13 +1,13 @@
-// Routing's parts, each alone (src/routing/; milestone 16, "the parts"): where a body may stand, the anchors that
+// Routing's parts, each alone (src/engine/routing/; milestone 16, "the parts"): where a body may stand, the anchors that
 // reach a goal, distance fields against a plain search on small Grids and mazes, and the choice of a step — before
 // anything in a battle leans on them.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { footprintSteps, footprintWithin } from "../src/grid/coords.ts"
-import type { Coord, Footprint, GridTerrain, TerrainId } from "../src/grid/types.ts"
-import { canStand, DistanceField, goalsInside, goalsNear, groundFor, isWall, patchesOf, rankSteps, UNREACHABLE, wallsOf } from "../src/routing/index.ts"
-import type { Ground } from "../src/routing/index.ts"
+import { footprintSteps, footprintWithin } from "../src/engine/geometry/coords.ts"
+import type { Coord, Footprint, GridTerrain, TerrainId } from "../src/engine/geometry/types.ts"
+import { canStand, DistanceField, goalsInside, goalsNear, groundFor, isWall, patchesOf, rankSteps, UNREACHABLE, wallsOf } from "../src/engine/routing/index.ts"
+import type { Ground } from "../src/engine/routing/index.ts"
 import { starterGrid } from "../src/build/maps.ts"
 
 const ONE: Footprint = [{ x: 0, y: 0 }]

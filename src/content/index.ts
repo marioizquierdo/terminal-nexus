@@ -86,7 +86,7 @@ export function withFitter(registry: ContentRegistry, fitter: Fitter): ContentRe
   )
 }
 
-/** The engine's own content, written in TypeScript: the bench rosters the bench maps and the kernel's tests stand on. */
+/** The engine's own content, written in TypeScript: the bench rosters the bench maps and the battle engine's tests stand on. */
 export const BENCH_CONTENT: readonly ContentDef[] = [...CITIZEN_CONTENT, ...RAVEL_CONTENT, ...PROVING_GROUND_CONTENT]
 
 /**
@@ -95,7 +95,7 @@ export const BENCH_CONTENT: readonly ContentDef[] = [...CITIZEN_CONTENT, ...RAVE
  * blamed on balance; the Ravels were added so that something which happens can be blamed on *contrast*.
  * The Proving Grounds roster (from the unit-architecture spike) adds a third, faction-neutral set for a
  * different reason again: not contrast, but coverage — a batch of deliberately varied unit mechanics
- * to stress the content/kernel boundary. All three are disposable bench content, not Commander Armies.
+ * to stress the content/engine boundary. All three are disposable bench content, not Commander Armies.
  * Beside them stands everything the army files define as data (`./army-content.ts`): the Commanders, and the units
  * and buildings their armies and factions bring.
  */

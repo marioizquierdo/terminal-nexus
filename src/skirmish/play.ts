@@ -3,11 +3,11 @@
 // both play through here, so a battle played headless and one played on screen are the same battle.
 
 import type { ContentRegistry } from "../content/index.ts"
-import type { DomainEvent } from "../events/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
 import type { BuildActions, BuildEntry, BattleState, RoundReport, Side } from "../battle/index.ts"
 import { actionsFor, briefOf, playRound, scriptedPlayer } from "../battle/index.ts"
 import type { RegroupResult } from "../match/index.ts"
-import type { MatchState } from "../state/types.ts"
+import type { MatchState } from "../engine/state/types.ts"
 import type { Profiles, SaveSetup, Slot } from "./save.ts"
 import { controllerKind, battleSetupOf, IDLE_SCRIPT, scriptPlayed, SIDE_OF, SLOTS } from "./save.ts"
 import { BATTLE_OVER_REFUSAL } from "./words.ts"

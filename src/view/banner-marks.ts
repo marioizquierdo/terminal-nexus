@@ -12,8 +12,8 @@
 // - **Planting** it plays a ring that opens out from the banner over the first `DROP_MS`: a style-only write, inverse
 //   in the player's colour, so it reads in monochrome too — the building placement's light, for a banner.
 
-import { gridDistance, inBounds } from "../grid/coords.ts"
-import type { Coord } from "../grid/types.ts"
+import { gridDistance, inBounds } from "../engine/geometry/coords.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile } from "../build/layout.ts"
 import { setting } from "../build/all-settings.ts"

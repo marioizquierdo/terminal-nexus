@@ -24,7 +24,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 
 ## The game
 
-- **ability** — what a unit does on its own, by a kind from one table (`src/abilities/`): an aura, a bounty, loaded
+- **ability** — what a unit does on its own, by a kind from one table (`src/engine/abilities/`): an aura, a bounty, loaded
   dice. A Commander's own ability is her **skill** (Vasse's By the Book, Dob's Bounty and Loaded Dice).
 - **advance** — how far each side's army moved toward the enemy Nexus during a round; a battle reading
   ([`battles.md`](../system-design/battles.md)).
@@ -37,14 +37,14 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   enemy Nexus, aggressive); **the battle banner** is the panel that starts a Battle Round with it. Behind the Battle
   banner Experiment ([`ui-patterns.md`](../system-design/ui-patterns.md)).
 - **battle** — one Grid, two sides, rounds until a result: the unit of play. The code is `src/battle/` (`BattleState`,
-  `BattleSetup`, `BattleResult`); the kernel says *match* ([`battles.md`](../system-design/battles.md)).
+  `BattleSetup`, `BattleResult`); the battle engine says *match* ([`battles.md`](../system-design/battles.md)).
 - **battle reading** — what a battle says, read in one place (`src/battle/reading/`) for the brief, the round's report
   and the scripts: the score; each side's army (composition and army value at the round's start and end, its losses);
   its buildings (standing, damaged, lost and what destroyed each); the advance; the nearest an enemy came to each Nexus;
   damage taken by source; and the engagements. Every reading is **public** (what the Battle Round shows both sides); the Build Phase's
   credits, hand and build actions are private, and no reading touches them ([`battles.md`](../system-design/battles.md)).
 - **Battle Round** — the fixed-tick, deterministic battle that ends each round and plays both sides' build actions out
-  in ASCII; the player's word everywhere. The code calls it the Pulse (`src/pulse/`).
+  in ASCII; the player's word everywhere. The code calls it the Pulse (`src/engine/pulse/`).
 - **build actions** — a side's answer for one round: the power it keeps, what it builds and where, its building
   actions, its formation and its stance; both sides answer blind. The code and a few screen lines still say *plan*.
 - **Build Phase** — the hidden, simultaneous, untimed phase where each player makes their build actions; saving and
@@ -52,7 +52,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **build range** — the ground a new building needs a tile in: within the construction radius of the Grid Nexus and of
   every standing building linked to it.
 - **building**, **unit** — what a player places in the Build Phase, and what a building makes to fight; a Commander is
-  a unit too. A building that makes units is a **producer**. Content ids and the kernel say *structure*
+  a unit too. A building that makes units is a **producer**. Content ids and the battle engine say *structure*
   (`structure.citizen.barracks`).
 - **building action** — something done to a standing building in the Build Phase: an upgrade, a mode, or an order
   ("Hold production"). No building has levels.
@@ -192,8 +192,8 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
   ([`next-steps.md`](../milestones/next-steps.md)).
 - **backlog**, **carry-over**, **cleanup queue** — work no milestone owns yet; small items that rode along; refactors
   waiting their turn.
-- **the bench**, **bench roster** — `sandboxes/engage/`, twelve units a side on six grounds, the yardstick for how
-  fast battles are decided; and the Citizen, Ravel and Proving Grounds units the sandboxes and tests use.
+- **the bench**, **bench roster** — `sandboxes/engage/`, twelve units a side on open ground and through a gap; and the
+  Citizen, Ravel and Proving Grounds units the sandboxes and tests use.
 - **brief** — what a player reads before a round: the board, the hand, the credits, what each building costs and does,
   the score and the last round's battle reading. A person, a script and a model read the same one
   ([`battles.md`](../system-design/battles.md)).
@@ -205,8 +205,8 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
 - **Experiment** — a design choice put behind a switch in Settings, so Mario can feel both answers and send back the
   settings export; it names the question it serves, and once settled it becomes a tuned value.
 - **feedback round** — one batch of Mario's feedback, logged item by item and worked through; never a battle's round.
-- **`grid`** — the engine tool, editor and replay viewer (`bin/grid.ts`); its headless output is the **levelled log**,
-  and a run ends with a **report**.
+- **levelled log**, **report** — a Battle Round's events as fixed-column lines at a log level (`--log-level`), closed by
+  a **report** line with the outcome, losses and hashes; the `skirmish` command prints them (`src/report/`).
 - **lesson** — something learned the hard way, dated in `docs/history/lessons-learned.md`.
 - **measurement** — battles played the same way before and after a change, so the numbers compare: sandboxes, duels
   (scripted battles over seeds) and missions (`bin/measure.ts`, [`measurement.md`](../system-design/measurement.md)).
@@ -224,15 +224,15 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
 - **route** — a place in the game written like a web address without its site (`skirmish?map=pocket`); `--at`, the
   title menu and the browser page read it ([`routing.md`](../system-design/routing.md)).
 - **RULE**, **GUIDANCE**, **IDEA** — a statement built and held by a test, the default, a sketch
-  ([`grid-engine.md`](../system-design/grid-engine.md)).
-- **sandbox** — a testing ground, like a unit test's context: a save that opens one round set by hand, a slice of the
-  Grid where units fight or move around obstacles, to test one rule, effect, movement or ability. It measures what
-  happens in the slice (damage, deaths, paths, timings), not who wins; the whole game is the `skirmish` command's. It
-  opens in the Battle Round, or in the Build Phase (`start.phase`), in `sandboxes/` ([`sandboxes.md`](../system-design/sandboxes.md)).
+  ([`architecture.md`](../system-design/architecture.md)).
+- **sandbox** — a save whose `start` draws the board by hand: one Battle Round of the battle engine from that board, to
+  test one rule, effect, movement or ability, like a unit test's context. It measures what happens on the board
+  (damage, deaths, paths, timings), not who wins; the whole game is the `skirmish` command's. In `sandboxes/`, or a
+  session's scratchpad ([`skirmish-saves.md`](../system-design/skirmish-saves.md), a board written by hand).
 - **save file** — a setup and the battle as it stands at the opening of a Build Phase (`*.save.json`); every way into
   a Skirmish opens one ([`skirmish-saves.md`](../system-design/skirmish-saves.md)).
-- **screenshot** — an image (PNG) of the screen, made by the playtest and grid-screenshots tools. Never an ASCII
-  screenshot.
+- **screenshot** — an image (PNG) of the screen, made by the scripted playtest and the capture scripts. Never an ASCII
+  screenshot, which is the `skirmish` command's `--show`.
 - **script** — a coded player (`src/battle/players.ts`): `balanced`, `rush`, `turtle` and their variants, and
   `reactive`, which plans from the battle reading; a **script profile** is one with its options, in
   `players/scripts/`. None is a good player.
@@ -249,44 +249,48 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
 - **spectating** — a battle with no player slot: two scripts, watched.
 - **spike** — a small, throwaway build that answers one question reading cannot ([`DEVELOPMENT.md`](../../DEVELOPMENT.md)).
 - **story file** — `stories/<id>/story.json`, a Commander's missions as data; a mission's entry is a **level**.
-- **trial** — a sandbox played over many seeds, as built and as **variants** change it (`grid <sandbox> --seeds`);
-  a **trial file** in `sandboxes/trials/` names several.
 - **trigger** — a condition and the actions a mission takes when it holds, in the **simulation** band or the
   **presentation** band ([`story.md`](story.md)).
 - **tuned value** — a number set by feel and kept in one place (`src/build/tuning.ts`); never copied into prose.
+- **unit test**, **verifier** — a check kept in `tests/`, run on every build and pull request, fast, holding one rule at
+  the layer that owns it; and the check a session runs to show its own task works (the `skirmish` or `measure` command,
+  the scripted playtest, a probe or a throwaway test), kept only if it becomes a unit test
+  ([`testing.md`](../system-design/testing.md)).
 
 ## The engine and the code
 
+- **battle engine** — the deterministic core (`src/engine/`): given a state on a map, content and a seed, it plays a
+  Battle Round tick by tick and records its events; no rounds, credits, players or screens, no clock or `Math.random`.
+  Every Battle Round runs on it, the game's, the `skirmish` command's, the measurement's and a test's
+  ([`architecture.md`](../system-design/architecture.md), the layers).
 - **content id** — a thing's name in content: `unit.citizen.trooper`, `structure.citizen.nexus`, `fx.light.flash`.
 - **the corruption law** — an effect may recolour something but never replace its glyph; a **glyphless** write keeps
   the glyph under it and changes only its colour.
 - **distance field** — the walking cost from every tile to a goal, shared by every unit going there; the code calls the
-  parts that build it routes (`src/routing/`, [`movement.md`](../system-design/movement.md)).
+  parts that build it routes (`src/engine/routing/`, [`movement.md`](../system-design/movement.md)).
 - **effect** — a pure function from presentation time to cells, made by a **recipe** and painted in a **band**; it
   never touches state. Its **four families** are animations, particles, shading and tweens, and each owes **three
   forms**: full, reduced motion and monochrome ([`effects.md`](../system-design/effects.md)).
-- **event** — what the kernel emits as a tick resolves (`entity.died`); an Activity Logs event is a different,
+- **event** — what the battle engine emits as a tick resolves (`entity.died`); an Activity Logs event is a different,
   declared thing.
 - **footprint** — the tiles a body covers; with its **anchor** and **facing**, where it stands
   ([`grid.md`](../system-design/grid.md)).
 - **gameplay stream**, **cosmetic seed** — the seeded PCG32 randomness the rules draw from, and the hash effects draw
   theirs from; they never touch.
-- **kernel** — the deterministic core (`src/pulse/`, `src/state/`, `src/grid/`, `src/events/`, `src/rng/`): no
-  terminal, clock or `Math.random`.
-- **logical time**, **presentation time** — ticks, as the kernel counts them; and the clock the screen and effects read.
-- **match** — the kernel's word for a battle (`MatchState`); the **match layer** (`src/match/`) is the rules between the
-  Build Phase and the kernel: openings, the regroup, banners.
+- **logical time**, **presentation time** — ticks, as the battle engine counts them; and the clock the screen and effects read.
+- **match** — the battle engine's word for a battle (`MatchState`); the **rules between rounds** (`src/match/`) build each
+  Battle Round's opening from the battle so far: the regroup, banners, Commanders returning, training.
 - **movement state** — **march**, **battle** or **retreat**, the one a unit is always in (`MoveState`)
   ([`movement.md`](../system-design/movement.md)).
 - **named command** — an action with a name, which keyboard, mouse and a script all send
   ([`input.md`](../system-design/input.md)).
-- **opening** — the state a Battle Round starts from; a sandbox's `start` writes one by hand
+- **opening** — the state a Battle Round starts from; a sandbox's `start` draws one by hand
   (`src/skirmish/opening/`).
-- **the Pulse** — the engine's name for the simulation that plays a Battle Round (`src/pulse/`,
+- **the Pulse** — the battle engine's tick loop, which plays a Battle Round (`src/engine/pulse/`,
   [`pulse.md`](../system-design/pulse.md)); not the Nexus Pulse.
 - **style role** — what a cell carries instead of a colour (`src/view/roles.ts`); a **reserved colour** means one thing
   (red, the player's own Nexus hurt).
-- **the three worlds** — state, the Pulse and presentation ([`grid-engine.md`](../system-design/grid-engine.md)).
+- **the three worlds** — state, the Pulse and presentation ([`architecture.md`](../system-design/architecture.md)).
 - **tick** — one step of a Battle Round's simulation; a Battle Round lasts 360 of them, thirty seconds, unless a setup
   says otherwise.
 
@@ -299,13 +303,13 @@ Say which job, every time.
 | battle | a whole fight, rounds until a result | a unit's movement state, fighting what it sees |
 | goal | what wins a battle (elimination) | where a unit's walk ends (`goalsNear`) |
 | target | where a side's troops head (`target` in a trigger) | the enemy one unit is fighting |
-| route | a place in the game (`skirmish?seed=1`, `src/cli/route.ts`) | a unit's walk round rock and buildings (`src/routing/`, the `route-*` sandboxes) |
+| route | a place in the game (`skirmish?seed=1`, `src/cli/route.ts`) | a unit's walk round rock and buildings (`src/engine/routing/`, the `route-*` sandboxes) |
 | hold | the ground a slot's troops stand on in a map | the `hold` stance; *Hold production* |
 | draft | choosing a power from a hand | the save's field for build actions handed in so far |
 | card | a building or power an army offers | the side panel's description of what has the map's attention |
 | map | the ground (the Crossing, a map file) | the screen's region that draws the Grid |
 | band | where an effect paints (`effects`, `highlights`) | a trigger's action kind: simulation or presentation |
-| bench | the bench roster (units for tests) | the bench of engage sandboxes (`sandboxes/engage/`) |
+| bench | the bench roster (units for tests) | the engage sandboxes (`sandboxes/engage/`) |
 | ask | a Skirmish asked for in words | something waiting on Mario |
 | slot | a side of a Skirmish (`p1`, `p2`) | a Story save slot |
 | round | a Nexus Pulse, a Build Phase and a Battle Round | a feedback round |
@@ -342,5 +346,9 @@ the words it was written with. A line that quotes one on purpose ends with `<!--
 | canon | the design documents | The design is the current shelf, edited in place | <!-- stale-ok -->
 | gate, gate report, `GATED` | milestone step, the pull request, `PLANNED` | Milestones and steps replaced gates | <!-- stale-ok -->
 | `specs/`, `evidence/` | `docs/game-design/`, `docs/system-design/`; screenshots on the pull request | The folders were dissolved | <!-- stale-ok -->
+| `grid` (the command), `bin/grid.ts`, the engine tool, `grid-engine.md` | the `skirmish` command, `architecture.md` | A sandbox is a save the `skirmish` command plays and draws; one command for one game. The Grid stays the playfield's name | <!-- stale-ok -->
+| engine, `src/engine/pulse/`, `src/engine/state/`, `src/engine/geometry/` | battle engine, `src/engine/` | Named for what it does: plays a Battle Round from a state | <!-- stale-ok -->
+| trial, trial file, variant | `skirmish --seeds`, or a copy of the sandbox changed for the question | One way to play a board, not a second tool | <!-- stale-ok -->
+| `sandboxes.md` | `skirmish-saves.md` (a board written by hand), `testing.md` | A sandbox is a save; testing is one page | <!-- stale-ok -->
 | `--capability`, `CapabilityMode` | `--colors`, `ColorDepth` | One name for the colour depth everywhere |
 | `--tile-width` | nothing | A tile is one column at every size |

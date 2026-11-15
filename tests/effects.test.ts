@@ -7,9 +7,9 @@ import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { rectFootprint } from "../src/content/types.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
-import { footprintCentre, tilesOf } from "../src/grid/coords.ts"
-import { tilesWithin } from "../src/grid/reach.ts"
-import type { Coord } from "../src/grid/types.ts"
+import { footprintCentre, tilesOf } from "../src/engine/geometry/coords.ts"
+import { tilesWithin } from "../src/engine/geometry/reach.ts"
+import type { Coord } from "../src/engine/geometry/types.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import { outlineWithin } from "../src/view/reach-outline.ts"
 import {
@@ -37,6 +37,7 @@ import type {
   EffectInstance,
   PositionedCell,
 } from "../src/view/index.ts"
+import { battleRoundScreen } from "./battle-round-frame.ts"
 import { loadSandbox, playSandbox, sandboxFiles } from "./helpers.ts"
 
 const GRID = { width: 24, height: 12 }
@@ -437,13 +438,11 @@ test("fade is never set outside fx.damage.flash - the departure stays narrow", (
   }
 })
 
-test("a real fight's damage flash carries fade all the way to the composed frame", async () => {
-  // The engine-owned frame (frame.ts) is colors-agnostic by design - compose.ts's own `void
-  // colors` says so - so `snapshotAt`'s colors argument cannot change which cells carry a
-  // `fade`; only the later ANSI/RGB resolution (roles.ts's sgrFor/rgbFor, tested directly in
-  // roles.test.ts and end-to-end in view.test.ts) gates it by tier. This test's job is narrower and
-  // upstream of that: proving the real recipe -> real compositor -> compose.ts wiring actually
-  // produces a `fade` on a real cell during a real fight, not a hand-built one.
+test("a real fight's damage flash carries fade all the way to the Battle Round's frame", async () => {
+  // Only the later ANSI/RGB resolution (roles.ts's sgrFor/rgbFor, tested directly in roles.test.ts and
+  // end-to-end in view.test.ts) gates `fade` by tier. This test's job is narrower and upstream of that:
+  // proving the real recipe -> real compositor -> Battle Round frame wiring actually produces a `fade` on
+  // a real cell during a real fight, not a hand-built one.
   const opening = await loadSandbox("citizens-versus-ravels.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
@@ -453,12 +452,13 @@ test("a real fight's damage flash carries fade all the way to the composed frame
     opening.pulseTicks,
     opening.seed,
   )
-  const view = createView(timeline)
+  const screen = battleRoundScreen(timeline)
   const tickMs = 1000 / 12
+  const durationMs = timeline.states.length * tickMs
 
   let foundAt: number | undefined
-  for (let timeMs = 0; timeMs < view.durationMs && foundAt === undefined; timeMs += tickMs) {
-    const frame = view.snapshotAt(timeMs, "truecolor")
+  for (let timeMs = 0; timeMs < durationMs && foundAt === undefined; timeMs += tickMs) {
+    const frame = screen.frameAt(timeMs, "truecolor")
     if (frame.cells.some((cell) => cell.style.fade !== undefined)) foundAt = timeMs
   }
   assert.ok(foundAt !== undefined, "no frame across the whole fight ever carried a fade")
@@ -480,7 +480,7 @@ test("cosmetic randomness is a hash, not a stream: the same instance always scat
   assert.notEqual(elsewhere, once, "the cosmetic seed changes nothing, so it is not being used")
 })
 
-test("the cosmetic seed cannot reach the kernel", async () => {
+test("the cosmetic seed cannot reach the battle engine", async () => {
   // The load-bearing separation: presentation randomness must not perturb a single hash.
   const opening = await loadSandbox("citizens-versus-ravels.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
@@ -498,9 +498,10 @@ test("the cosmetic seed cannot reach the kernel", async () => {
   for (const cosmeticSeed of [1, 2, 0xbeef, 0x0c05e7]) {
     const view = createView(timeline, { ...DEFAULT_PRESENTATION, cosmeticSeed })
     hashes.add(`${view.timeline.stateHash}:${view.timeline.eventsHash}`)
+    const screen = battleRoundScreen(timeline, { presentation: { ...DEFAULT_PRESENTATION, cosmeticSeed } })
     framesPerSeed.set(
       cosmeticSeed,
-      sampleTimes.map((timeMs) => frameToText(view.snapshotAt(timeMs, "color256"))),
+      sampleTimes.map((timeMs) => frameToText(screen.frameAt(timeMs, "color256"))),
     )
   }
   assert.equal(hashes.size, 1, "a cosmetic seed changed a gameplay hash")
@@ -533,12 +534,12 @@ test("effects are derived from the event stream, and turning them off changes on
   // already moved it once (every mover in the fixture reaches contact sooner).
   const timeMs = 25 * (1000 / 12) + 40
   assert.notEqual(
-    frameToText(withEffects.snapshotAt(timeMs, "monochrome")),
-    frameToText(without.snapshotAt(timeMs, "monochrome")),
+    frameToText(battleRoundScreen(timeline).frameAt(timeMs, "monochrome")),
+    frameToText(battleRoundScreen(timeline, { presentation: { ...DEFAULT_PRESENTATION, effects: false } }).frameAt(timeMs, "monochrome")),
   )
 })
 
-test("composed frames stay inside the Grid, one ASCII cell each, at every render tier", async () => {
+test("a Battle Round's frames stay the 80 x 24 floor, one ASCII cell each, at every render tier", async () => {
   for (const name of ["citizens-versus-ravels.save.json", "ravel-cascade.save.json", "citizen-mirror-skirmish.save.json"]) {
     const opening = await loadSandbox(name)
     const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
@@ -550,10 +551,11 @@ test("composed frames stay inside the Grid, one ASCII cell each, at every render
       opening.seed,
     )
     for (const reducedMotion of [false, true]) {
-      const view = createView(timeline, { ...DEFAULT_PRESENTATION, reducedMotion })
+      const screen = battleRoundScreen(timeline, { presentation: { ...DEFAULT_PRESENTATION, reducedMotion } })
+      const durationMs = timeline.states.length * (1000 / timeline.ticksPerSecond)
       for (const colors of COLOR_DEPTHS) {
         for (const fraction of [0.1, 0.35, 0.5, 0.8]) {
-          const frame = view.snapshotAt(view.durationMs * fraction, colors)
+          const frame = screen.frameAt(durationMs * fraction, colors)
           assert.equal(frame.width, 80)
           assert.equal(frame.height, 24)
           assert.equal(offendingGlyph(frame), null, `${name} at ${colors}`)
@@ -576,11 +578,11 @@ test("every render tier shows the same Pulse, and only monochrome shows no colou
     opening.pulseTicks,
     opening.seed,
   )
-  const view = createView(timeline)
+  const screen = battleRoundScreen(timeline)
   const timeMs = 200 * (1000 / 12)
 
   const glyphs = new Set(
-    COLOR_DEPTHS.map((colors) => frameToText(view.snapshotAt(timeMs, colors))),
+    COLOR_DEPTHS.map((colors) => frameToText(screen.frameAt(timeMs, colors))),
   )
   assert.equal(glyphs.size, 1, "a render tier changed which glyphs are on screen")
 })
@@ -628,12 +630,12 @@ test("the glyph pack changes the field and the frame, never the actors", async (
     opening.pulseTicks,
     opening.seed,
   )
-  const ascii = createView(timeline, { ...DEFAULT_PRESENTATION, glyphPack: "ascii" })
-  const unicode = createView(timeline, { ...DEFAULT_PRESENTATION, glyphPack: "unicode" })
+  const ascii = battleRoundScreen(timeline, { presentation: { ...DEFAULT_PRESENTATION, glyphPack: "ascii" } })
+  const unicode = battleRoundScreen(timeline, { presentation: { ...DEFAULT_PRESENTATION, glyphPack: "unicode" } })
   const timeMs = 178 * (1000 / 12)
 
-  const asciiFrame = ascii.snapshotAt(timeMs, "truecolor")
-  const unicodeFrame = unicode.snapshotAt(timeMs, "truecolor")
+  const asciiFrame = ascii.frameAt(timeMs, "truecolor")
+  const unicodeFrame = unicode.frameAt(timeMs, "truecolor")
   assert.notEqual(frameToText(asciiFrame), frameToText(unicodeFrame))
   assert.equal(offendingGlyph(asciiFrame), null)
   assert.equal(offendingGlyph(unicodeFrame), null, "the pack put a glyph on screen it may not use")
@@ -657,7 +659,7 @@ test("the glyph pack changes the field and the frame, never the actors", async (
 test("a same-tick ranged kill holds its death and blast until the tracer lands, not before", async () => {
   // Owner playtest, 2026-08-22: "the timings for shooting and taking damage are much better now...
   // look for more opportunities to do that, specially when the effect is resolved within the same
-  // turn so it doesn't really affect the gameplay." The kernel resolves a ranged kill in the tick
+  // turn so it doesn't really affect the gameplay." The battle engine resolves a ranged kill in the tick
   // the shot is launched - attack.launched, damage.applied, entity.died and any entity.detonated it
   // triggers all carry the same tick - but the impact burst already waits for the flight window
   // (docs/system-design/pulse.md, events) to end before it plays. The death collapse and any resulting blast did not, so a
@@ -1096,7 +1098,7 @@ test("a blast spreads along the ease-out curve, fast and then slowing, from what
 })
 
 test("what flashes is what was hit: a blast draws only the ground its rule reaches, round the whole body, in every form", () => {
-  // The blast's rule (`detonate`, src/pulse/death.ts): everything within its radius of any tile of the body, a row
+  // The blast's rule (`detonate`, src/engine/pulse/death.ts): everything within its radius of any tile of the body, a row
   // counting two columns. A blast of 2 from one tile reaches two columns either side and one row up and down - so it
   // never flashes two rows up or down, which a square ring of 2 would.
   const blast = EFFECT_RECIPES["fx.blast.detonation"]
@@ -1190,7 +1192,7 @@ test("a blast sets off radius-scaled sub-explosions on its own ground, round the
 })
 
 test("every blast in a battle flashes only what the battle's own blast reached", async () => {
-  // From the kernel's own events: each detonation's ring and sub-bursts, at every instant of their window, stay on
+  // From the battle engine's own events: each detonation's ring and sub-bursts, at every instant of their window, stay on
   // the ground within its radius of the whole body that blew up - the same footprint the rule measured from.
   const blast = EFFECT_RECIPES["fx.blast.detonation"]
   assert.ok(blast !== undefined)

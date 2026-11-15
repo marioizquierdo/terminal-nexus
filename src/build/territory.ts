@@ -3,7 +3,7 @@
 // reflect that." On screen it is the **build range**, his word for it.
 //
 // - **Every structure that projects** (its content has a `constructionRadius`) lets its player build within
-//   that many tiles of it, measured as range is measured (`footprintWithin`, `src/grid/coords.ts`): to the
+//   that many tiles of it, measured as range is measured (`footprintWithin`, `src/engine/geometry/coords.ts`): to the
 //   nearest tile of its footprint, a row counting two columns, so a build range of 6 reaches 6 columns either side
 //   of the building and 3 rows above and below it — as far on screen either way. While the "Build range"
 //   Experiment is being felt, its value is every projecting structure's radius (it replaces the number on the
@@ -31,9 +31,9 @@
 //
 // Pure: the reducer's legality and the view's drawing all read one answer (`territoryOf`).
 
-import { footprintDistance, footprintWithin, inBounds } from "../grid/coords.ts"
-import { tilesWithin } from "../grid/reach.ts"
-import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
+import { footprintDistance, footprintWithin, inBounds } from "../engine/geometry/coords.ts"
+import { tilesWithin } from "../engine/geometry/reach.ts"
+import type { Coord, Footprint, GridTerrain } from "../engine/geometry/types.ts"
 import type { ContentDef } from "../content/types.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { StandingStructure } from "./types.ts"

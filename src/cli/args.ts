@@ -1,47 +1,30 @@
 export type ParsedArgs = Readonly<{
-  /** `positional[0]` is the map file path when one was given; there is no subcommand any more. */
+  /** Words that are not options: the game takes none. */
   positional: readonly string[]
   options: ReadonlyMap<string, string>
   flags: ReadonlySet<string>
 }>
 
+/** The game's options that take a value (`terminal-nexus`, src/cli/terminal-nexus.ts). Every one must be here, or the
+ *  parser would take it for a flag and drop its text (tests/launch.test.ts, tests/route.test.ts). */
 export const VALUE_OPTIONS: ReadonlySet<string> = new Set([
-  "seed",
-  "ticks",
-  "from-tick",
-  "log-level",
-  "save-log",
-  "events",
-  "runs",
+  // How it looks.
   "colors",
-  "speed",
-  "backend",
-  "cosmetic-seed",
-  "glyphs",
   "theme",
+  "glyphs",
+  "backend",
   "scroll-margin",
-  // A trial's and a variant's (src/cli/trial.ts): the seeds, what changes about the map, where the battles are written.
-  "seeds",
-  "set",
-  "army-a",
-  "army-b",
-  "tune",
-  "terrain",
-  "target-a",
-  "target-b",
-  "out",
-  "baseline",
-  "against",
-  "jobs",
-  // A launch's parts (src/cli/launch.ts): where the game opens, the settings text and the keys it starts from.
-  // Every one must be here (tests/launch.test.ts), or the parser would take it for a flag and drop its text.
+  // A launch's parts (src/cli/launch.ts): where the game opens, the settings text and the keys it starts from; a
+  // playtest note to open.
   "at",
   "settings",
   "keys",
-  // The game's Skirmish (src/cli/terminal-nexus.ts): the `skirmish` command's words for a battle, every one
-  // (`ASK_WORDS`, src/skirmish/ask.ts; tests/route.test.ts holds the two lists together).
+  "note",
+  // The `skirmish` command's words for a battle, every one (`ASK_WORDS`, src/skirmish/ask.ts).
   "load",
   "map",
+  "seed",
+  "ticks",
   "rounds",
   "modifiers",
   "p1",
@@ -53,7 +36,7 @@ export const VALUE_OPTIONS: ReadonlySet<string> = new Set([
 ])
 
 /**
- * Retired options, each with what to say instead of reading it: `grid` and `terminal-nexus` both refuse one with its
+ * Retired options, each with what to say instead of reading it: `terminal-nexus` refuses one with its
  * reason, so a command copied from an older note is told what changed rather than run as something it did not mean.
  * Each takes a value, which is refused with it rather than read as a map or a stray word.
  */

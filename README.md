@@ -31,14 +31,14 @@ Terminal Nexus is a next-gen ASCII auto-battler linux shell strategy game. Choos
 Terminal Nexus is at version 0.1 until its first public release. The design documents under
 [docs/](docs/README.md) describe the current design, and a merged pull request is the change.
 
-Two programs exist today.
+Three programs exist today, all on one deterministic battle engine.
 
-**`grid`** is the engine, editor and replay tool: units on a Grid resolving a deterministic battle
-from a seed, with a levelled report and an ASCII view. It is not the game. It is the tool that builds
-and replays it.
-
-**`terminal-nexus`** is the game's own executable. It opens on a menu (Skirmish, Story, Settings, About,
+**`terminal-nexus`** is the game. It opens on a menu (Skirmish, Story, Settings, About,
 Exit) that works by hotkey, by arrows and Enter, or by mouse.
+
+**`skirmish`** plays the same game headless, for agents and tests: a battle from a save, a round at a time
+or to the end, with a levelled report and ASCII pictures. **`measure`** plays many battles the same way
+before and after a change.
 
 The game has three modes ([the game modes](docs/game-design/game-modes.md)): **Skirmish**, one battle against a scripted
 Commander Army; **Story**, a Commander's story of missions; and **Versus**, later. Skirmish on the menu starts one battle
@@ -59,7 +59,7 @@ mission, opened with `--at 'story?mission=vasse-test-1'`, and at any of its roun
   open design questions you can flip while playing. Export settings copies them as text to paste into
   a pull request, and `--settings` reads them back.
 
-Start Battle Round runs the battle, the **Battle Round**: the unmodified rules kernel resolves the plan you built. You
+Start Battle Round runs the battle, the **Battle Round**: the unmodified rules engine resolves the plan you built. You
 watch it with a countdown, a score and a feed of events, and you can pause, change speed, step and
 watch again. The first mission, **PERIMETER**, is three Battle Rounds, with the raid arriving in each.
 After each round there is a result, and Next round opens the next Build Phase on what survived.
@@ -78,89 +78,49 @@ no build step.
 npm install
 ```
 
-Only type checking and the OpenTUI terminal backend need it. The kernel, the report and the view
-have no runtime dependency, so every `grid` command works from a clean checkout.
+Only type checking and the OpenTUI terminal backend need it. The battle engine, the report and the view
+have no runtime dependency, so the game and the `skirmish` command work from a clean checkout.
 
 ### Play it
 
 Make your terminal **at least 80 x 24** — bigger is fine — then:
 
 ```bash
-npm install     # only needed once, and only for typechecking and the OpenTUI backend
-npm run grid -- citizens-versus-ravels --glyphs unicode --colors truecolor
-```
-
-`<save>` is a sandbox from `sandboxes/`: its path, the `.save.json` suffix optional, or only its id; there
-is no subcommand: the first argument is always the save, and the default action is `watch`, the ASCII view.
-
-| While it runs |                                            |
-| -------------- | ----------------------------------------- |
-| `space`        | pause and resume                          |
-| `.`            | step one frame                            |
-| `,`            | step one tick — the way to study a moment |
-| `[` `]`        | slower, faster                            |
-| `r`            | restart from the beginning                |
-| `q`            | quit, restoring your terminal             |
-
-A few more worth watching, in this order:
-
-```bash
-npm run grid -- ravel-cascade --glyphs unicode --colors truecolor --speed 0.5
-npm run grid -- citizens-versus-ravels --no-effects --glyphs unicode --colors truecolor
-npm run grid -- citizens-versus-ravels --colors monochrome   # can you still follow it?
-npm run grid -- citizen-mirror-skirmish                          # the baseline mirror battle
-```
-
-`npm run sandboxes` lists every sandbox. `watch` takes the same options on any of them:
-
-```bash
-npm run grid -- <save> \
-  --colors monochrome|color256|truecolor \
-  --glyphs ascii|unicode \
-  --speed 2 --no-effects --reduced-motion --seed 0x1234 --from-tick 90
-```
-
-**If the screen says `TERMINAL TOO SMALL`,** it needs 80 x 24 and your window is smaller — resize and
-it resumes from the same instant. That is the resize screen, not a crash. `--from-tick 90` seeks straight to
-tick 90 instead of playing from the start, in watch, headless and verify alike.
-
-### The game
-
-```bash
 npm run terminal-nexus              # the menu: Skirmish, Story, Settings, About, Exit
 npm run terminal-nexus -- --at 'skirmish?seed=7'                      # a Skirmish on seed 7
 npm run terminal-nexus -- --load mine.save.json                       # a saved Skirmish, at its Build Phase
+npm run terminal-nexus -- --load saves/mirror-vasse.save.json         # two scripts, watched
 npm run terminal-nexus -- --at 'story?mission=vasse-test-1'           # PERIMETER: the Build Phase and the Battle Round
-npm run terminal-nexus -- --at 'story?mission=vasse-test-1&round=3'   # its last round
 npm run terminal-nexus -- --at settings                                # any screen of the title menu
 ```
 
 Every menu row shows its hotkey (`[1] Skirmish`) and works three ways: press the hotkey, arrow to it
 and press Enter, or click it. Inside the Build Phase, press `?` for every key. Esc opens the game
-menu, and `d` jumps to the Experiments.
+menu, and `d` jumps to the Experiments. While a Battle Round plays, `space` pauses, `[` and `]` change
+the speed, and `r` watches it again.
 
-### Read what happened
+**If the screen says `TERMINAL TOO SMALL`,** it needs 80 x 24 and your window is smaller — resize and
+it resumes from the same instant. That is the resize screen, not a crash.
 
-`watch` is one of three actions. `--headless` resolves without a terminal and prints the levelled
-log — one stream, closed by a `report` line carrying the outcome, losses, and hashes:
+### Play it headless
 
-```bash
-./bin/grid.ts citizens-versus-ravels --headless                  # WARN by default
-./bin/grid.ts ravel-cascade --headless | grep blast              # just the detonations
-./bin/grid.ts citizens-versus-ravels --headless --log-level info # the story, not just anomalies
-./bin/grid.ts citizens-versus-ravels --headless --from-tick 90        # jump straight to tick 90
-```
-
-`--verify` is the same resolution, re-run 10 times by default, and fails if any run's hashes
-disagree — also headless:
+The `skirmish` command plays the same game without a screen, for agents and tests: a battle from a save
+or a new setup, a round at a time or to the end, scripts or build files on each side. `--help` is its manual.
 
 ```bash
-./bin/grid.ts citizen-mirror-skirmish --verify              # same hashes every time?
-./bin/grid.ts citizen-mirror-skirmish --verify --runs 20
+npm run skirmish -- --map crossing --p1 script:agro --p2 script:defensive --play-to end
+npm run skirmish -- --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --play-to end
 ```
 
-`--save-log <file>` writes the levelled log to a file in any of the three actions, so you can watch
-or verify and keep a full record without a second terminal or a redirect.
+A **sandbox** (`sandboxes/`, `npm run sandboxes` lists them) is a save whose board is drawn by hand: one
+Battle Round for one rule, unit or kind of ground. The command plays it, prints the levelled log (one
+stream, closed by a `report` line with the outcome, losses and hashes) and draws it as ASCII at the ticks
+asked for:
+
+```bash
+npm run skirmish -- --load sandboxes/showcase/citizens-versus-ravels.save.json --play-to next --show 0,60,end
+npm run skirmish -- --load sandboxes/rules/ravel-cascade.save.json --play-to next --log-level info | grep blast
+```
 
 ### Run tests
 
@@ -194,18 +154,18 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the toolchain, testing and how work is 
 ├── docs/                  The design, the plan and the history, in five folders
 │   ├── README.md              Index of every document
 │   ├── game-design/           What the game is: concept, lore, modes, Commander Armies, Story
-│   ├── system-design/         How it is built: the engine, the Pulse, effects, UI patterns, testing
+│   ├── system-design/         How it is built: the architecture, the battle engine, effects, UI patterns, testing
 │   ├── milestones/            What is next: milestones, open questions, backlog
 │   ├── history/               What happened: timeline, reports, feedback, the visual record
 │   └── claude-web.md          Setting up Claude Code on the web
-├── src/                   The game and its tools: pulse (the rules kernel), match, mission, content,
-│                          skirmish, state, events, grid, report, log, terminal, view, build (the Build
-│                          Phase), title-menu, cli, settings, web (the browser playtest page)
+├── src/                   engine (the battle engine), match and mission (the rules between rounds),
+│                          battle and skirmish (the game), content, armies, report, log, measure,
+│                          terminal, view, build (the Build Phase), title-menu, cli, settings, web
 ├── tests/                 The test suite; Node's runner and Bun both run it
-├── sandboxes/      Sandboxes: Skirmish saves whose first Battle Round is written by hand, one per rule
+├── sandboxes/             Sandboxes: Skirmish saves whose board is drawn by hand, one per rule
 ├── saves/                 Example Skirmish saves and the save format's JSON Schema
 ├── scripts/               Repository validation and development tooling (its README lists them)
-├── bin/                   grid.ts and terminal-nexus.ts, the two entry points
+├── bin/                   terminal-nexus.ts, skirmish.ts and measure.ts, the three entry points
 ├── .claude/               Skills for coding agents working in this repository
 ├── .devcontainer/         Codespaces configuration
 ├── .github/               CI, code owners and the pull request template

@@ -181,7 +181,7 @@ milestone brings (the owner, of a placeholder Nexus power's value: "that is mino
 Bad:
 
 > Q57 built to its recommendation: focus after a placement returns to wherever the arming came from
-> (grid-engine.md 9.7); lockReason split into editLock and commitLock.
+> (architecture.md 9.7); lockReason split into editLock and commitLock.
 
 Good:
 

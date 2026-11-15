@@ -7,7 +7,7 @@
 // compile until it is added here; an action or a condition added to the vocabulary is added here too, or the
 // loader refuses it by name.
 
-import type { Coord } from "../grid/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import type {
   CommitPlanAction,
   MissionDefinition,
@@ -19,7 +19,7 @@ import type {
   TriggerCondition,
   TriggerDefinition,
 } from "../mission/types.ts"
-import type { PlayerId } from "../state/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
 import type { Say, Shape } from "../content/shape.ts"
 import { dictionary, fieldAt, isObject, keyed, list, literal, number, record, shown, text } from "../content/shape.ts"
 

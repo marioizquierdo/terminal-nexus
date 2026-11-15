@@ -2,9 +2,9 @@
 // are damaged and how badly — the Nexus among them, as any building — each one destroyed, with what destroyed it, and
 // the Nexus's health as the round opened and ended. Public.
 
-import type { DomainEvent } from "../../events/types.ts"
-import type { Coord } from "../../grid/types.ts"
-import type { MatchState } from "../../state/types.ts"
+import type { DomainEvent } from "../../engine/events/types.ts"
+import type { Coord } from "../../engine/geometry/types.ts"
+import type { MatchState } from "../../engine/state/types.ts"
 import type { Side } from "../types.ts"
 import type { Composition, RoundContext } from "./context.ts"
 import type { Tracker } from "./index.ts"

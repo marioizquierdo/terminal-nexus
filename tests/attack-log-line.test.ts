@@ -1,4 +1,4 @@
-// The levelled log's attack line says what landed (docs/system-design/sandboxes.md, reading a run): under an aura the
+// The levelled log's attack line says what landed (docs/system-design/skirmish-saves.md, reading a run): under an aura the
 // swing and the hit differ, and the line must agree with its own hp change.
 
 import { test } from "node:test"

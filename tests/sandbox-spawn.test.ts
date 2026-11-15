@@ -1,18 +1,18 @@
-// A sandbox is a testing ground, like a unit test's context (docs/system-design/sandboxes.md): a slice of the Grid,
+// A sandbox is a testing ground, like a unit test's context (docs/system-design/skirmish-saves.md): a slice of the Grid,
 // not the game. So every unit and building the game has must stand in the smallest slice there is, with none of what
 // the game builds around it (a banner, a Nexus, an enemy Nexus, a Commander, credits, a round number, a lane), and
 // run for some ticks without throwing, leaving a state hash that is the same every run. A new content id is covered
 // the moment it exists: this test loops over the registry, so a unit that breaks in a sandbox fails the suite.
 //
 // Why no dependency needs a mock (each is a case here, and the page says how it is handled):
-//   banner         the match layer sets a side's target from it (`src/match/banner.ts`); the kernel reads `targets`, and a side
+//   banner         the match layer sets a side's target from it (`src/match/banner.ts`); the battle engine reads `targets`, and a side
 //                  with none heads for the enemy Nexus, else engages the nearest enemy
 //   Nexus          its march line starts at its Grid Nexus, and a side with none marches from where it stands
 //   enemy Nexus    a side with none engages the nearest enemy
 //   Commander      a Commander is a regular troop; `Body.commander` is read by abilities only
-//   credits        an ability `note`s them as an event; the rules between rounds add them up, the kernel never reads them
-//   round, lane    the kernel has neither: a round is the match layer's count, and the Grid has no lanes
-//   Pulse          a sandbox's state starts the kernel directly
+//   credits        an ability `note`s them as an event; the rules between rounds add them up, the battle engine never reads them
+//   round, lane    the battle engine has neither: a round is the match layer's count, and the Grid has no lanes
+//   Pulse          a sandbox's state starts the battle engine directly
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -21,7 +21,7 @@ import type { PlacementBlock, PlacementEntry, BattleOpening } from "../src/skirm
 import { buildLog } from "../src/report/index.ts"
 import { playSandboxRound } from "../src/skirmish/sandbox-round.ts"
 import { ARMY_FILES } from "../src/shipped.ts"
-import type { PlayerId, TargetArea } from "../src/state/types.ts"
+import type { PlayerId, TargetArea } from "../src/engine/state/types.ts"
 
 const WIDTH = 48
 const HEIGHT = 24

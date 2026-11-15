@@ -6,10 +6,10 @@
 // Pure: the same battle and input give the same opening.
 
 import type { ContentRegistry } from "../content/index.ts"
-import type { Coord } from "../grid/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import type { Absence, Force, Restoration, StructurePlacement } from "../match/index.ts"
 import { opening, restoreCommanders } from "../match/index.ts"
-import type { MatchState } from "../state/types.ts"
+import type { MatchState } from "../engine/state/types.ts"
 import { battleGrid } from "./maps.ts"
 import { armyOf } from "./sides.ts"
 import { mapOf, musterOf, standingOf } from "./round.ts"

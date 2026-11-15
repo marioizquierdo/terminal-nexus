@@ -1,10 +1,10 @@
 // What each piece of content looks like, drawn as rows.
 //
-// **This lives next to the content definitions and nowhere near the kernel, on purpose.**
+// **This lives next to the content definitions and nowhere near the battle engine, on purpose.**
 // presentation.md has a RULE: "The simulation knows semantic ids such as `unit.worker` and
 // `structure.nexus`. **It never knows a glyph.**" So the art is not a field on `ContentDef` — the
-// kernel reads those — it is a separate table keyed by the same ids, imported only by the view.
-// `tests/architecture.test.ts` asserts `src/pulse` can never reach this file, which is a stronger
+// engine reads those — it is a separate table keyed by the same ids, imported only by the view.
+// `tests/architecture.test.ts` asserts `src/engine/pulse` can never reach this file, which is a stronger
 // guarantee than the old arrangement had: the glyph table used to live in `src/view/theme.ts`, which
 // nothing enforced either way.
 //
@@ -132,7 +132,9 @@ const BUILT_IN_ART: Readonly<Record<string, UnitArt>> = {
   "unit.bench.flanker": ["k"],
   /** An egg sac, split down the middle - a diamond hull built to open, not to fight. */
   "structure.bench.hatchery": ["/\\", "\\/"],
-  /** The Citizen Nexus's own shape: the bench's passive one is a target for the kernel's sandboxes, not a new look. */
+  /** The Citizen Barracks' own shape: the bench's wall is the same building with nothing to train. */
+  "structure.bench.barracks": ["[b]", "|_|"],
+  /** The Citizen Nexus's own shape: the bench's passive one is a target for the battle engine's sandboxes, not a new look. */
   "structure.bench.nexus": [".n.", "[=]"],
   /** The smallest possible mark - a comma-sized thing, spawned by the hatch or spilled by the
    * shard-giant's death alike. */
@@ -173,7 +175,7 @@ export function artExtent(art: UnitArt): { width: number; height: number } {
  * frame means "nothing here in this frame", not a literal blank glyph: `src/view/effects/recipes.ts`
  * falls back to the generic debris fill for that one tile rather than painting a hole.
  *
- * Read only by `fx.death.collapse` (`src/view/effects/recipes.ts`), never by the kernel: the same
+ * Read only by `fx.death.collapse` (`src/view/effects/recipes.ts`), never by the battle engine: the same
  * boundary `CONTENT_ART` already draws, for the same reason (presentation.md — the simulation never
  * knows a glyph, and a death frame is exactly that, played over time).
  */
@@ -237,7 +239,7 @@ export function deathFramesFor(contentId: string): readonly UnitArt[] | undefine
  *
  * Optional and purely additive: a structure with no entry gets a generic run derived from its own
  * finished art (`src/view/placement.ts`), so no content ever waits on an artist. Read only by the
- * Build Phase view, never by the kernel (presentation.md: the simulation never knows a glyph).
+ * Build Phase view, never by the battle engine (presentation.md: the simulation never knows a glyph).
  *
  * Case is applied later, as for every other piece of art: author in lower case.
  */
