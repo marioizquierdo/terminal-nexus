@@ -1,4 +1,4 @@
-// What a building does in a sandbox's Battle Round: what its army's card says (docs/system-design/sandboxes.md,
+// What a building does in a sandbox's Battle Round: what its army's card says (docs/system-design/skirmish-saves.md,
 // "A building's wave"). The owner's decision: "if you are testing a building, you are placing it in there in battle
 // mode, and the sandbox has enough resources, then the buildings will start doing its thing."
 //

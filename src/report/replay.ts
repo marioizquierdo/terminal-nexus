@@ -1,9 +1,9 @@
 // Reconstruct entity state from the event stream alone.
 //
 // This is what makes `src/report` honest. The report derives everything it prints from the events
-// and the final state, never from kernel internals — and the
+// and the final state, never from engine internals — and the
 // cheapest way to *prove* that is to rebuild the cast from the events and check the result against
-// the state the kernel actually finished with. A report that can do that cannot be narrating a
+// the state the battle engine actually finished with. A report that can do that cannot be narrating a
 // story the events do not contain.
 //
 // Position, health, life, and target are reconstructible. Two fields deliberately are not:

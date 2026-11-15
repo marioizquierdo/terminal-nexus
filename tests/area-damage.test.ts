@@ -1,7 +1,7 @@
 // Area damage against a tight army (step 16K; the owner, 2026-10-21: "implement those to test differences in
 // formations with units"): aiming at a crowd (`ContentDef.aim`, the Ravel bomber and the Citizen mortar), burning ground
 // (`AttackDef.burn`, `MatchState.burning`: lit by a landing hit, burning every unit and worker on it of either side by
-// the kernel's own clock, weighed by the routes, put out by the regroup), and the two units as their armies define them.
+// the battle engine's own clock, weighed by the routes, put out by the regroup), and the two units as their armies define them.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"

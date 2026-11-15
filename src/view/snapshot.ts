@@ -1,6 +1,6 @@
 // PRESENTATION — what it looks like. It consumes state and events, samples them at an arbitrary
 // presentation time, and composes cells. It may interpolate, skip, pause, accelerate and lie about
-// timing freely, because none of it can change an outcome (`docs/system-design/grid-engine.md`).
+// timing freely, because none of it can change an outcome (`docs/system-design/architecture.md`).
 //
 // `sampleAt` is pure: same arguments, same sample. It never reads a clock, so a sample at time t is
 // identical whether every earlier frame rendered or most were skipped.
@@ -33,7 +33,7 @@ export type PulseTimeline = Readonly<{
 }>
 
 /**
- * How the view is dressed. None of it can reach the kernel: the cosmetic seed feeds effects only,
+ * How the view is dressed. None of it can reach the battle engine: the cosmetic seed feeds effects only,
  * and a test asserts that changing it moves no state or event hash.
  */
 export type PresentationOptions = Readonly<{

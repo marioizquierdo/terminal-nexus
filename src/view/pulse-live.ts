@@ -1,6 +1,6 @@
 // The Battle Round as the live screen plays it — the one place a resolved Pulse meets a clock.
 //
-// The kernel resolved the whole Pulse before the first frame (`src/cli/pulse-run.ts`); what is left is
+// The battle engine resolved the whole Pulse before the first frame (`src/cli/pulse-run.ts`); what is left is
 // **when to show what**, and that is presentation: a playback clock the player can pause, slow, step and
 // restart (`Playback`), and from it the ending's moments (`ending.ts`), every one a
 // pure function of the Pulse's presentation time. The clock is read in one place — the caller hands in
@@ -9,7 +9,7 @@
 //
 // Two things reach back into the Build Phase's state, both as ordinary named commands (`due`): the view
 // is centred on the player's Grid Nexus when the Pulse starts and again when its ending begins. Nothing
-// here can change what the Pulse did — presentation never can (`docs/system-design/grid-engine.md`).
+// here can change what the Pulse did — presentation never can (`docs/system-design/architecture.md`).
 //
 // Two more things the presenter works out for the scene, the same way: what the player's Commander says and
 // when (`pulse-voice.ts`, planned once from the resolved Pulse, shown beside her, or in the panel while she is out
@@ -41,7 +41,7 @@ import { VOICE, commanderOf, labelPlace, planVoice, shippedBarks, speakerOf, voi
 import { DEFAULT_PRESENTATION, createView } from "./snapshot.ts"
 import type { PresentationOptions, PulseTimeline, PulseView } from "./snapshot.ts"
 
-/** A Pulse the kernel has resolved, and the regroup that follows it — everything the screen needs to play it, built by
+/** A Pulse the battle engine has resolved, and the regroup that follows it — everything the screen needs to play it, built by
  *  the application shell (`src/cli/pulse-run.ts`, `src/cli/skirmish-play.ts`) and never by the view. */
 export type ResolvedPulse = Readonly<{
   timeline: PulseTimeline

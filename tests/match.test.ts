@@ -1,6 +1,6 @@
 // The match layer. The opening state a Pulse starts from, and the rules at the other
-// end of it (the regroup, src/match/regroup.ts). Both are deterministic rules-layer code beside the kernel, so the
-// tests are the kernel's kind: exact states, exact hashes, no screen.
+// end of it (the regroup, src/match/regroup.ts). Both are deterministic rules-layer code beside the battle engine, so the
+// tests are the battle engine's kind: exact states, exact hashes, no screen.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"

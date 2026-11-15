@@ -31,7 +31,7 @@ async function changesOf(name: string): Promise<Readonly<{ changes: MoveStateCha
   return { changes: moveStateChanges({ states, events, registry: loaded.registry }), states, events }
 }
 
-test("the vision the record reads by is the kernel's, for every unit in the content", () => {
+test("the vision the record reads by is the battle engine's, for every unit in the content", () => {
   assert.equal(DEFAULT_VISION, VISION)
   for (const id of FIXTURE_REGISTRY.ids()) {
     const definition = FIXTURE_REGISTRY.get(id)

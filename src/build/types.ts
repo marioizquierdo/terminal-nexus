@@ -372,7 +372,7 @@ export type PopupMessage = Readonly<{ title: string; text: string }>
  */
 export type Ack = Readonly<{ seq: number; kind: "pressed" | "refused"; entry: number }>
 
-/** A structure the player has planned but not committed. Nothing here ever reaches the kernel: a
+/** A structure the player has planned but not committed. Nothing here ever reaches the battle engine: a
  *  plan is a plan on a screen, and committing it is what turns it into one. */
 export type PlannedPlacement = Readonly<{
   ordinal: number
@@ -463,7 +463,7 @@ export type RaidTarget = Readonly<{
 }>
 
 /**
- * One group the coming round brings, and its intent as the kernel will act on it (the owner: "reading
+ * One group the coming round brings, and its intent as the battle engine will act on it (the owner: "reading
  * the enemy intent is very important"): how many and of what, when it arrives, where it stands, what it
  * goes for first and the way it would go — worked out by the shell on the plan as it stands
  * (`src/match/intent.ts`), so placing, undoing or removing a building can change it. Plain data, so the
@@ -485,7 +485,7 @@ export type RaidGroup = Readonly<{
   centre: Coord
   /** What most of its units go for first, or `null` when there is nothing to go for. */
   target: RaidTarget | null
-  /** The way it would go to the target by the kernel's own steps, a tile a step, ending next to it — or,
+  /** The way it would go to the target by the battle engine's own steps, a tile a step, ending next to it — or,
    *  when none of its units can get there, pressed on what stops them. */
   path: readonly Coord[]
 }>

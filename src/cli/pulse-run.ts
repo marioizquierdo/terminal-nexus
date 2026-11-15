@@ -1,8 +1,8 @@
 // A mission played on the Build Phase's screen — the application shell's part of the
-// connection, and the only place the Build Phase, the mission, the rules layer, the kernel and the view
+// connection, and the only place the Build Phase, the mission, the rules layer, the battle engine and the view
 // meet.
 //
-// `src/build` and `src/view` may never reach the kernel (`tests/architecture.test.ts`), so neither can
+// `src/build` and `src/view` may never reach the battle engine (`tests/architecture.test.ts`), so neither can
 // start a Pulse or work out what the next round looks like: they are handed the two functions here
 // (`BuildSession`'s `startPulse` and `nextRound`) and get back a Pulse to play and the next Build Phase to
 // open. Both are pure functions of the mission and of what the round's context carries — the state the
@@ -10,7 +10,7 @@
 // about how it is watched can change it:
 //
 // - **starting a round's Pulse**: the plan and the carried state go to the trigger runner
-//   (`src/match/mission.ts`), which resolves the Pulse on the unmodified kernel and says how the mission
+//   (`src/match/mission.ts`), which resolves the Pulse on the unmodified engine and says how the mission
 //   stands; the survivors' regroup is worked out from the state it ended in (`src/match/regroup.ts`): nobody goes home,
 //   they step back and form up where they fought;
 // - **the next round**: a Build Phase whose map is where the regroup left everyone — the player's buildings as
@@ -77,7 +77,7 @@ export type MissionPlay = Readonly<{
   startPulse: (context: BuildContext, state: BuildState) => ResolvedPulse | null
   nextRound: (context: BuildContext, state: BuildState, resolved: ResolvedPulse) => BuildContext | null
   /** What each group of the raid the round brings goes for first, and the way it would go, on the plan as
-   *  it stands: the kernel's own first choice (`src/match/intent.ts`), for the Build Phase to draw and say. */
+   *  it stands: the battle engine's own first choice (`src/match/intent.ts`), for the Build Phase to draw and say. */
   foresee: (context: BuildContext, state: BuildState) => RaidForecast
 }>
 
@@ -179,7 +179,7 @@ function spawnsOf(context: Pick<BuildContext, "catalog">): Readonly<Record<strin
   return spawns
 }
 
-/** How far into a round every building's first wave comes, in the kernel's ticks: the owner's tuned number. */
+/** How far into a round every building's first wave comes, in the battle engine's ticks: the owner's tuned number. */
 const firstWaveTicks = (state: BuildState): number => setting(state, "firstWave") * TICKS_PER_SECOND
 
 /** What the next Build Phase's first line says of the player's Commander — restored beside the Nexus by the Nexus

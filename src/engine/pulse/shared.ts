@@ -66,7 +66,7 @@ export type TickContext = {
    *  the field by is the field as the tick began, so which of two buildings spawns first changes nothing. */
   bornFrom: number
   /**
-   * Reverse index from a target's ordinal to the actors currently aiming at it (grid-engine.md, on scaling).
+   * Reverse index from a target's ordinal to the actors currently aiming at it (architecture.md, on scaling).
    * Maintained by `setTarget` at every targetOrdinal write site (all in perception.ts) so death
    * resolution can find who was watching a dying entity without scanning every actor. Values are
    * Actor references rather than ordinals: an actor that already died earlier in the same
@@ -77,7 +77,7 @@ export type TickContext = {
   targetObservers: Map<number, Set<Actor>>
   /**
    * Where each side's fighting units head when no enemy is within reach — the state's own `targets`, read
-   * and never changed by the kernel (`intents.ts`, `perception.ts`). Empty for a battle with no target.
+   * and never changed by the battle engine (`intents.ts`, `perception.ts`). Empty for a battle with no target.
    */
   targets: Readonly<Partial<Record<PlayerId, TargetArea>>>
   /**
@@ -113,7 +113,7 @@ export type DamageSource = Readonly<{ id: string; ordinal: number }>
  * `targetOrdinal = ...` writes and death resolution's reverse-index read have to agree. Reassigning
  * the same value is a harmless no-op remove-then-add, not a special case: correctness never depends
  * on insertion order, because a target's observer set is sorted by ordinal wherever it is read
- * (grid-engine.md, on scaling) — the same order the old scan of `context.actors` always produced.
+ * (architecture.md, on scaling) — the same order the old scan of `context.actors` always produced.
  */
 export function setTarget(context: TickContext, actor: Actor, targetOrdinal: number | null): void {
   if (actor.targetOrdinal !== null) {

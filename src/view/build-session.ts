@@ -90,7 +90,7 @@ export type BuildSessionOptions = Readonly<{
   onSettingsChange?: (settings: Settings) => void
   /**
    * Resolves the Battle Round the player has just committed to, or `null` when there is none to
-   * start. **Injected, because `src/build` may never reach the kernel** (`tests/architecture.test.ts`):
+   * start. **Injected, because `src/build` may never reach the battle engine** (`tests/architecture.test.ts`):
    * the application shell owns that connection (`src/cli/pulse-run.ts`), and the session only hands it the
    * plan and plays what comes back. Absent — a hand-built session in a test — committing freezes the plan
    * and nothing more.
@@ -104,7 +104,7 @@ export type BuildSessionOptions = Readonly<{
   nextRound?: (context: BuildContext, state: BuildState, resolved: ResolvedPulse, alternative?: boolean) => BuildContext | null
   /**
    * What each group of the raid the round brings goes for first, and the way it would go, on the plan as
-   * it stands — the kernel's own first choice. Injected for the same reason as `startPulse`, and asked
+   * it stands — the battle engine's own first choice. Injected for the same reason as `startPulse`, and asked
    * only when the screen draws it (`raid`). Absent: no raid is foreseen.
    */
   foresee?: (context: BuildContext, state: BuildState) => RaidForecast

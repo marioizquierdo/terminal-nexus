@@ -1,5 +1,5 @@
 // What a side earned in a battle, to spend from its next Build Phase: the credits its abilities noted (a bounty's,
-// `src/engine/abilities/bounty.ts`). The kernel knows no credits; an ability notes what it earned on an `ability.triggered`
+// `src/engine/abilities/bounty.ts`). The battle engine knows no credits; an ability notes what it earned on an `ability.triggered`
 // event, and the rules between rounds add those up for each side here — so an economy that runs on the fight is read
 // from the fight's own record, the same way in a story and a battle.
 

@@ -1,7 +1,7 @@
 // The three movement states, read back from a resolved Pulse: when each unit went from marching to battle, from
 // battle to retreat, and back (docs/system-design/movement.md, "Three states").
 //
-// The kernel decides a unit's state every tick (`moveStateOf`, src/engine/pulse/march.ts) and keeps no record of it: a state
+// The battle engine decides a unit's state every tick (`moveStateOf`, src/engine/pulse/march.ts) and keeps no record of it: a state
 // is worked out from the unit's purpose and its target, and storing it, or emitting an event each time it changes,
 // would change every pinned state or event hash for something nothing the rules decide ever reads. So the record is
 // made here, after the fact, from what the Pulse did keep — every tick's settled state and its events — by the same
@@ -14,10 +14,10 @@
 // - **march**: anything else: walking for its side's goal, standing with nothing to fight, or making way for an ally
 //   of higher priority (a `march.made-way` event).
 //
-// Distances are taken where the tick began (the state before it), as the kernel takes them when it decides. One
-// moment reads differently from the kernel's: a unit stepping off a roof its building tells it to leave is marching
-// there by the kernel's word and in battle by this one's, for the few ticks the step takes, when it already has a
-// target. A test holds the vision rule here to the kernel's (`tests/move-states.test.ts`).
+// Distances are taken where the tick began (the state before it), as the battle engine takes them when it decides. One
+// moment reads differently from the battle engine's: a unit stepping off a roof its building tells it to leave is marching
+// there by the battle engine's word and in battle by this one's, for the few ticks the step takes, when it already has a
+// target. A test holds the vision rule here to the battle engine's (`tests/move-states.test.ts`).
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { ContentDef } from "../content/types.ts"
@@ -27,7 +27,7 @@ import { wholeRows } from "../engine/geometry/reach.ts"
 import type { Coord } from "../engine/geometry/types.ts"
 import type { EntityState, MatchState, PlayerId } from "../engine/state/types.ts"
 
-/** What a unit is doing, in a word: the kernel's `MoveState`. */
+/** What a unit is doing, in a word: the battle engine's `MoveState`. */
 export type MoveStateName = "march" | "battle" | "retreat"
 
 /** A unit changing state: the tick it changed on, who, where it stood, and from what to what. */
@@ -42,15 +42,15 @@ export type MoveStateChange = Readonly<{
   to: MoveStateName
 }>
 
-/** The vision a unit turns to fight within: the kernel's `VISION` (src/engine/pulse/target.ts), held equal by a test. */
+/** The vision a unit turns to fight within: the battle engine's `VISION` (src/engine/pulse/target.ts), held equal by a test. */
 export const DEFAULT_VISION = 6
 
-/** The kernel's `visionOf`, restated here because a report may not reach the kernel (tests/architecture.test.ts). */
+/** The battle engine's `visionOf`, restated here because a report may not reach the battle engine (tests/architecture.test.ts). */
 export function visionReach(definition: ContentDef): number {
   return wholeRows(Math.max(definition.vision ?? DEFAULT_VISION, definition.attack?.range ?? 0))
 }
 
-/** Whether this entity is a unit whose state is worth a line: one that walks. A turret has a state by the kernel's
+/** Whether this entity is a unit whose state is worth a line: one that walks. A turret has a state by the battle engine's
  *  word too, battle whenever it has a target, but it never moves, so it is left out. */
 function hasState(definition: ContentDef): boolean {
   return definition.layer !== "obstacles" && definition.movementRate !== undefined && definition.behavior !== "static"

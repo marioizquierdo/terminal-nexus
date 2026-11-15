@@ -1,7 +1,7 @@
 // Goals: the anchors a body must reach to do what it came for (milestone 16, "the parts"). One idea for every unit —
 // "a place I can act from" — so walking and attacking agree by construction: a melee unit's goal is every anchor from
 // which it touches its target, a shot's every anchor from which its target is within range, measured as range is, and
-// a side's target every anchor from which some tile of the body stands inside it. The same tests the kernel attacks
+// a side's target every anchor from which some tile of the body stands inside it. The same tests the battle engine attacks
 // and stands by (`footprintSteps`, `footprintWithin`, `src/engine/geometry/coords.ts`), so a route ends exactly where an attack
 // begins.
 //

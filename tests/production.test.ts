@@ -1,6 +1,6 @@
 // Automatic production: a building with a recipe spawns its unit in waves during a Pulse (pulse.md,
 // "Automatic production") — every unit of a wave on the same tick, side by side round the building, the first
-// wave a fixed delay into the Pulse and the rest a fixed gap apart. The kernel's half — the schedule, the cap,
+// wave a fixed delay into the Pulse and the rest a fixed gap apart. The battle engine's half — the schedule, the cap,
 // where a wave stands, that a crowded building never spawns fewer, and that nothing without a recipe changes by
 // a byte — and the match's half: a Barracks the player placed spawns, its survivors come home to it, and the
 // counters start each Pulse afresh. PERIMETER's Barracks, round by round, on the screen, is
@@ -97,7 +97,7 @@ test("a building makes its units one way in a battle: given a recipe, the Hatche
   assert.ok(born.every((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined), "a swarmer was bred by the old timer")
 })
 
-// --- The kernel's production phase -----------------------------------------------------------------
+// --- The battle engine's production phase -----------------------------------------------------------------
 
 test("a wave comes whole on its tick: every unit of it at once, side by side on the building's roof", () => {
   const { run } = lone(recipe())

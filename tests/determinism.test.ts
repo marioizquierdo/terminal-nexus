@@ -56,7 +56,7 @@ test("resolving in one call equals resolving tick by tick", async () => {
   }
 })
 
-test("the kernel calls no clock and no Math.random", async () => {
+test("the battle engine calls no clock and no Math.random", async () => {
   const opening = await loadSandbox("citizen-mirror-skirmish.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
 
@@ -64,7 +64,7 @@ test("the kernel calls no clock and no Math.random", async () => {
   const realNow = Date.now
   const realHrtime = performance.now.bind(performance)
   const forbidden = (what: string) => (): never => {
-    throw new Error(`the kernel called ${what}`)
+    throw new Error(`the battle engine called ${what}`)
   }
   Math.random = forbidden("Math.random") as unknown as typeof Math.random
   Date.now = forbidden("Date.now") as unknown as typeof Date.now
@@ -141,7 +141,7 @@ test("the JSONL event stream round-trips, and every kind it emits is a declared 
   for (const kind of seen) {
     assert.ok(
       (DOMAIN_EVENT_KINDS as readonly string[]).includes(kind),
-      `the kernel emitted "${kind}", which the DomainEvent union does not declare`,
+      `the battle engine emitted "${kind}", which the DomainEvent union does not declare`,
     )
   }
   // The fixtures between them should exercise most of the union; anything never emitted is either

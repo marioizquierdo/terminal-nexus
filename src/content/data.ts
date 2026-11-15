@@ -3,15 +3,15 @@
 // her buildings live in one file a modder can write without TypeScript (docs/system-design/army-authoring.md).
 //
 // The engine's own bench rosters are still TypeScript (`citizen.ts`, `ravel.ts`, `proving-grounds.ts`): the bench
-// maps and the kernel's tests are written against them. An army may name one of those by its id instead of defining
+// maps and the battle engine's tests are written against them. An army may name one of those by its id instead of defining
 // it; everything an army defines comes through here.
 //
 // One entry is three things, split here and never mixed again:
 //
-// - **the definition** (`ContentDef`): what the kernel reads. Every field is a `ContentDef` field under the same
+// - **the definition** (`ContentDef`): what the battle engine reads. Every field is a `ContentDef` field under the same
 //   name, but `size` (the footprint, as `[width, height]`) and the defaults below;
 // - **the card** (`CardText`): what a card says of it, read by the Build Phase (`src/content/cards.ts`);
-// - **the glyph** (`UnitArt`): how it is drawn, read only by the view (`src/content/art.ts`). The kernel never sees
+// - **the glyph** (`UnitArt`): how it is drawn, read only by the view (`src/content/art.ts`). The battle engine never sees
 //   a glyph (presentation.md): the registry is built from the definition alone.
 //
 // Pure: the JSON is an argument, every problem is said at once, by path.
@@ -193,7 +193,7 @@ export function entryProblems(entry: ContentEntry): string[] {
   return problems
 }
 
-/** The kernel's definition of an entry: its fields, its size as a footprint, and the defaults filled in. */
+/** The battle engine's definition of an entry: its fields, its size as a footprint, and the defaults filled in. */
 export function definitionOf(entry: ContentEntry): ContentDef {
   const { size, card: _card, glyph: _glyph, notes: _notes, short, speedTier, collidesWith, behavior, salvage, ...rest } = entry
   const moves = entry.layer !== "obstacles"

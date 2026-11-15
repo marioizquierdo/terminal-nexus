@@ -128,7 +128,7 @@ test("the INFO log tells the story an agent can assert on", async () => {
 
 test("the report can rebuild the whole cast from the events alone", async () => {
   // The honesty check behind "src/report derives everything from the event stream and the final
-  // state": if the events are complete, replaying them reproduces the kernel's own final state.
+  // state": if the events are complete, replaying them reproduces the battle engine's own final state.
   for (const name of sandboxFiles()) {
     const resolved = await playSandbox(name)
     const replay = replayEvents(resolved.run.events)

@@ -1,7 +1,7 @@
 // Turning a resolved Pulse into effect instances.
 //
 // Effects subscribe to **semantic cues** — the ordered event stream — and take their coordinates
-// from the state the kernel settled. That split is deliberate: an event says *what happened and to
+// from the state the battle engine settled. That split is deliberate: an event says *what happened and to
 // whom*, and presentation is entitled to know where everything stood, but a recipe must never have
 // to reverse-engineer a mechanic out of a cell (see `docs/system-design/presentation.md`).
 //
@@ -82,7 +82,7 @@ export function mendTile(state: MatchState, registry: ContentRegistry, anchor: C
 /**
  * Which tick's shots are still "in flight" toward a given target, and for how many more ticks -
  * shared by every consumer that has to hold something until a ranged hit visibly lands, not just
- * the effect system. The kernel resolves a ranged kill in the same tick it launches the shot -
+ * the effect system. The battle engine resolves a ranged kill in the same tick it launches the shot -
  * `attack.launched`, `damage.applied`, `entity.died` and any `entity.detonated` it triggers all
  * carry the identical `tick` (the attack event's flight window, described in `pulse.md`, is presentation metadata; no rule reads
  * it) - so without this, a unit's death collapse (and the unit's own glyph disappearing) fired the

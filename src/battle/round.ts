@@ -5,7 +5,7 @@
 //
 // What it reuses rather than restates: the dealer (`dealHand`), the effect table (`applyEffect`, through each side's
 // loadout), the Build Phase's legality (`legalityAt`: build range, footprint, rock, cost — the rules a player's cursor
-// is held to), the opening and the regroup between rounds (`src/match`), the Commander's absence and return, and the kernel
+// is held to), the opening and the regroup between rounds (`src/match`), the Commander's absence and return, and the battle engine
 // itself, each side on its own content (`PulseContext.sides`).
 
 import type { PowerCard } from "../armies/index.ts"

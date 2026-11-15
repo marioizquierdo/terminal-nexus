@@ -9,7 +9,7 @@
 // - **Every event is declared here first**, with its default level, what it means, and each property's
 //   type and meaning. `activity.log(event, props)` accepts only what is declared (`src/log/logger.ts`).
 //   Add an event for the interaction you want feedback on, log it where it happens (never from the
-//   kernel or the match layer, which may not reach this folder), and default it to `debug` when it is
+//   engine or the match layer, which may not reach this folder), and default it to `debug` when it is
 //   chatty.
 // - **Add a filter for your question** at the top of `ACTIVITY_FILTERS` — the window opens on the
 //   first — naming the question in words a playtester reads ("Tap speed-up: how far each tap moved").

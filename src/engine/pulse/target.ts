@@ -15,7 +15,7 @@
 //   standing there (`gatheredAt`), so a target with no room left gathers its troops round it rather than
 //   leaving them pressing on each other.
 //
-// Read from the state the tick began with, like every phase before the moves settle; the kernel never
+// Read from the state the tick began with, like every phase before the moves settle; the battle engine never
 // changes a target (`MatchState.targets`). The nearest tile is nearest by the Grid's own distance (`gridDistance`:
 // a row counts two columns), and "beside" is touching along a side (`stepsBetween`); integers, reading and
 // ordinal order: nothing here can make two runs differ.

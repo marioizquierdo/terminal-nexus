@@ -1,5 +1,5 @@
 // STATE — what is true. Plain serializable data that knows nothing about time passing and nothing
-// about drawing (grid-engine.md). Only the Pulse mutates it.
+// about drawing (architecture.md). Only the Pulse mutates it.
 
 import type { Coord, Direction, GridTerrain, VacatedEntry } from "../geometry/types.ts"
 import type { RngState } from "../rng/pcg32.ts"
@@ -20,7 +20,7 @@ export type EntityState = Readonly<{
   anchor: Coord
   /**
    * Presentation-only, and the single deliberate exception to "state carries nothing only
-   * presentation reads" (grid-engine.md). Whether facing should ever affect
+   * presentation reads" (architecture.md). Whether facing should ever affect
    * a rule was settled as no (Q9, answered). Derived from the last step, or from the current target
    * when stationary. No rule reads it.
    */
@@ -134,7 +134,7 @@ export type MatchState = Readonly<{
    * Where each side's fighting units head when no enemy is within their reach: the target a story
    * level names for a side (pulse.md). A side with none heads for the enemy's Grid Nexus, engaging what comes
    * within its reach on the way (`headsForNexus`, `src/engine/pulse/perception.ts`). Only the trigger runner sets it (`src/match/mission.ts`),
-   * at a Pulse's start or between two ticks; the kernel reads it and never changes it.
+   * at a Pulse's start or between two ticks; the battle engine reads it and never changes it.
    *
    * Absent, never empty, when no side has one — so a state without a target serializes and hashes byte for
    * byte as it did before targets existed, which is also why adding it did not bump `SCHEMA_VERSION`, the
@@ -156,5 +156,5 @@ export type MatchState = Readonly<{
  */
 export const SCHEMA_VERSION = 3
 
-/** How many ticks make one second of a Battle Round: the kernel's clock, read by everything that turns ticks into seconds. */
+/** How many ticks make one second of a Battle Round: the battle engine's clock, read by everything that turns ticks into seconds. */
 export const TICKS_PER_SECOND = 12

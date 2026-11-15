@@ -88,5 +88,5 @@ export function powerOf(army: BattleArmy, id: string): PowerCard | undefined {
   return army.powers.find((card) => card.id === id)
 }
 
-/** The content a side's battles run on, by its loadout: what the round hands the kernel for that side. */
+/** The content a side's battles run on, by its loadout: what the round hands the battle engine for that side. */
 export type SideContent = Readonly<{ registry: ContentRegistry; catalog: readonly ConstructItem[] }>

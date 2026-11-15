@@ -9,7 +9,7 @@
 // The two timings are the owner's tuned values (`src/build/tuning.ts`); `endingTimes` takes them as a
 // parameter so a test can try any.
 //
-// **The kernel decided the ending long before any of this plays**: the timeline is resolved whole before
+// **The battle engine decided the ending long before any of this plays**: the timeline is resolved whole before
 // the first frame, so presentation knows when the last tick is and can count down to it. That is what
 // makes it pacing — "just an idea for UX, to create anticipation and not just stop the pulse right
 // away" (Mario) — and why it means the same for a Nexus that fell, a force wiped out, and the
@@ -280,10 +280,10 @@ export function commanderLine(round: Round): string | undefined {
 }
 
 /**
- * The result in a mission. A round the mission goes on from keeps the kernel's own headline —
+ * The result in a mission. A round the mission goes on from keeps the battle engine's own headline —
  * the fight was won, lost or ran out of time, and that is true — and says under it which round this was
  * and that the Nexus stands. A mission a trigger ended says so instead, in the mission's own words: the
- * hold's "The perimeter held." is not a draw, whatever the kernel's tick limit calls the last Pulse
+ * hold's "The perimeter held." is not a draw, whatever the battle engine's tick limit calls the last Pulse
  * (the mission's goal is read one level above the victory check, which a mission never changes).
  */
 export function missionResultOf(fight: PulseResult, round: Round | undefined): PulseResult {
@@ -320,9 +320,9 @@ export function missionResultOf(fight: PulseResult, round: Round | undefined): P
 }
 
 /**
- * The result for the player, side A. The kernel's own three endings (`pulse.md`) — a Nexus destroyed,
+ * The result for the player, side A. The battle engine's own three endings (`pulse.md`) — a Nexus destroyed,
  * a force wiped out, the tick limit — and both sides' luck at once. A time-out is a draw here, as the
- * kernel has it: whether "still standing when the raid's schedule ends" should read as a win is a
+ * engine has it: whether "still standing when the raid's schedule ends" should read as a win is a
  * mission's question, not this view's. `enemy` is what the other side is called: a mission's "raid", a
  * Skirmish's "enemy".
  */

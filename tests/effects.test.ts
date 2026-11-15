@@ -480,7 +480,7 @@ test("cosmetic randomness is a hash, not a stream: the same instance always scat
   assert.notEqual(elsewhere, once, "the cosmetic seed changes nothing, so it is not being used")
 })
 
-test("the cosmetic seed cannot reach the kernel", async () => {
+test("the cosmetic seed cannot reach the battle engine", async () => {
   // The load-bearing separation: presentation randomness must not perturb a single hash.
   const opening = await loadSandbox("citizens-versus-ravels.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
@@ -659,7 +659,7 @@ test("the glyph pack changes the field and the frame, never the actors", async (
 test("a same-tick ranged kill holds its death and blast until the tracer lands, not before", async () => {
   // Owner playtest, 2026-08-22: "the timings for shooting and taking damage are much better now...
   // look for more opportunities to do that, specially when the effect is resolved within the same
-  // turn so it doesn't really affect the gameplay." The kernel resolves a ranged kill in the tick
+  // turn so it doesn't really affect the gameplay." The battle engine resolves a ranged kill in the tick
   // the shot is launched - attack.launched, damage.applied, entity.died and any entity.detonated it
   // triggers all carry the same tick - but the impact burst already waits for the flight window
   // (docs/system-design/pulse.md, events) to end before it plays. The death collapse and any resulting blast did not, so a
@@ -1192,7 +1192,7 @@ test("a blast sets off radius-scaled sub-explosions on its own ground, round the
 })
 
 test("every blast in a battle flashes only what the battle's own blast reached", async () => {
-  // From the kernel's own events: each detonation's ring and sub-bursts, at every instant of their window, stay on
+  // From the battle engine's own events: each detonation's ring and sub-bursts, at every instant of their window, stay on
   // the ground within its radius of the whole body that blew up - the same footprint the rule measured from.
   const blast = EFFECT_RECIPES["fx.blast.detonation"]
   assert.ok(blast !== undefined)

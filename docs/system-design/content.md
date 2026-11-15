@@ -27,7 +27,7 @@ engine takes the registry as an argument, so a mod could plug in; no loader and 
 The interfaces below are sketches. Names and shapes will change the first time real content touches
 them, and that is expected; the shape built today is `ContentDef` in `src/content/types.ts`.
 The content built so far is the bench rosters (Citizen, Ravel and Proving Grounds, used by the tests and
-the engine tool) and the starter map's catalog; none of it is a Commander Army.
+the sandboxes) and the starter map's catalog; none of it is a Commander Army.
 **Do not build these interfaces before content needs them.**
 
 ```ts

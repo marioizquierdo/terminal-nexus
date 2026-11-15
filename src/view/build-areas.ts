@@ -15,7 +15,7 @@
 //   that keeps room and round the armed one's ghost, moving with it. A tick, not a gap: an apron with no dots
 //   would read as ground outside the range, where a building may still hang. Inside the range it keeps the
 //   range's light, so it reads as drawn on that floor.
-// - ***A building's reach*** is an **outline**: the last tiles a building with a range reaches, as the kernel
+// - ***A building's reach*** is an **outline**: the last tiles a building with a range reaches, as the battle engine
 //   measures range (`footprintWithin`: to the nearest tile of its footprint, a row counting two columns, so a
 //   reach of 6 is 13 tiles wide and 7 tall, as wide as it is tall on screen), drawn as a ring of strokes round it —
 //   `-` and `|` where the ring runs straight along the footprint, `/` and `\` where it runs diagonally. It follows
@@ -118,7 +118,7 @@ export type RingStroke = "level" | "upright" | "rise" | "fall"
 export type RingTile = Readonly<{ tile: Coord; stroke: RingStroke }>
 
 /**
- * The outline of a reach (`outlineWithin`: the last tiles it reaches, as the kernel measures range), each with its
+ * The outline of a reach (`outlineWithin`: the last tiles it reaches, as the battle engine measures range), each with its
  * stroke: `level` straight above or below the footprint, `upright` straight beside it, and across the corners
  * `rise` (`/`, north-west and south-east) or `fall` (`\`, north-east and south-west). In reading order. A row
  * counts two columns, so a slant of the outline runs two tiles across for each row, two strokes a row with no gap
@@ -151,7 +151,7 @@ type Reaching = Readonly<{ anchor: Coord; footprint: Footprint; radius: number; 
  * (`shift`), in the ghost's look: the hotkey's colour when Enter would place it, grey when not — or, with nothing
  * armed and the map looked at (Explore Map, plain navigation), round what is under the cursor, in the hotkey's
  * colour (`EXPLORED_REACH`): a building, standing or planned, or a unit of either side that shoots past the
- * tiles touching it (`unitReachOf`). Measured as the kernel measures range (`reachOutline`). Dim, in the
+ * tiles touching it (`unitReachOf`). Measured as the battle engine measures range (`reachOutline`). Dim, in the
  * `highlights` band, on open ground only: a tile with anything on it, rock and
  * deposits included, or one of the raid's trail marks (`avoid`), keeps its own look. A stroke on the build
  * range's ground keeps its light, so the outline reads as drawn on that floor.

@@ -1,5 +1,5 @@
 // The opening of a Battle Round written by hand (a sandbox's `start`, src/skirmish/start.ts), as the state the
-// kernel starts from. **Validation lives here, not in a later linter** — dimension mismatch,
+// engine starts from. **Validation lives here, not in a later linter** — dimension mismatch,
 // unknown legend key, overlapping footprint, and unknown content id all fail loudly, naming the
 // offending line and column.
 
@@ -26,7 +26,7 @@ export class OpeningError extends Error {}
  * at load time instead of degrading silently, tick after tick. The largest current preset
  * (extra-large-extra-wide, 72x24 = 1728 tiles) has roughly 5x headroom under it; raise it
  * deliberately, with measurements, when a sandbox actually needs to be bigger — see
- * docs/system-design/grid-engine.md ("Scaling toward hundreds or thousands of units").
+ * docs/system-design/architecture.md ("Scaling toward hundreds or thousands of units").
  */
 export const MAX_DECLARED_GRID_TILES = 10_000
 
@@ -80,7 +80,7 @@ export function openBattle(
   opening: BattleOpening,
   options: Readonly<{ registry?: ContentRegistry; seed?: number }> = {},
 ): OpenedBattle {
-  // A Battle Round's buildings train as their army's card says; the registry returned is the one the kernel runs on.
+  // A Battle Round's buildings train as their army's card says; the registry returned is the one the battle engine runs on.
   const registry = trainingRegistry(opening, options.registry ?? FIXTURE_REGISTRY)
   const { width, height } = dimensionsOf(opening)
 
@@ -105,7 +105,7 @@ export function openBattle(
 
   // Placements — one block per player, gathered first and only then turned into entities, because
   // **ordinals are assigned in Grid reading order, not in the order the file happens to list the
-  // players**. Ordinal is identity and the kernel's one iteration order (state/types.ts), so letting
+  // players**. Ordinal is identity and the battle engine's one iteration order (state/types.ts), so letting
   // it depend on whether the A block or the B block was typed first would let a purely editorial
   // change move every id, every event, and the state hash with them.
   const placed: Array<{
@@ -191,7 +191,7 @@ export function openBattle(
             `outside the ${width}x${height} Grid`,
         )
       }
-      // A ground entity may not start inside terrain it could never walk into. The kernel builds
+      // A ground entity may not start inside terrain it could never walk into. The battle engine builds
       // that entity's mask with `terrain: "impassable"` (src/engine/pulse/shared.ts), so a unit placed on
       // rock is entombed from tick zero: it cannot leave the tile, and every tick after that it
       // reports itself blocked. Nothing downstream errors, which is why four units in

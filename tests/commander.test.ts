@@ -1,6 +1,6 @@
 // The Commander (pulse.md): a persistent `@` on the units layer who, when she falls, is absent for the
 // rest of that round's Pulse and for as many whole rounds after it as her definition says (`roundsOut`: none for
-// Vasse), and is then restored beside her side's Grid Nexus. The kernel's half is that it knows nothing of her, so
+// Vasse), and is then restored beside her side's Grid Nexus. The battle engine's half is that it knows nothing of her, so
 // her death decides nothing; the match's half is the absence and the restoration (`src/match/commander.ts`),
 // proven on a named fixture (`tests/commander-fixture.ts`) that hashes the same on every run and both runtimes,
 // played with Vasse as she is and with a test-only Vasse who sits one round out, or two. What a player reads of

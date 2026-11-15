@@ -1,7 +1,7 @@
 // The three worlds and the layers, asserted rather than trusted (docs/system-design/architecture.md).
 //
 // "`src/engine/pulse` must not import `src/view`. Assert it in a test rather than trusting it." The same
-// goes for the report: a report that can read kernel internals can narrate a story the events do
+// goes for the report: a report that can read engine internals can narrate a story the events do
 // not contain, and because the log is only ever compared with itself, every other determinism
 // check would still pass.
 
@@ -61,7 +61,7 @@ function assertNoDependencyOn(from: string, forbidden: readonly string[]): void 
     const path = relative(SRC, file)
     for (const target of forbidden) {
       // A directory (`view`) or one exact file (`content/art.ts`) — the second is what lets a single
-      // presentation-only table live inside an otherwise kernel-visible folder.
+      // presentation-only table live inside an otherwise engine-visible folder.
       const reaches = target.endsWith(".ts") ? path === target : path.startsWith(`${target}/`)
       assert.ok(!reaches, `src/${from} reaches src/${path}, which it must never import`)
     }
@@ -69,31 +69,31 @@ function assertNoDependencyOn(from: string, forbidden: readonly string[]): void 
 }
 
 test("src/engine/pulse never reaches the view, the report, the shell, or the match layer", () => {
-  // The match layer (the opening state and the regroup) sits beside the tick kernel and is never
+  // The match layer (the opening state and the regroup) sits beside the tick engine and is never
   // called from inside it, so no Pulse's hashes can depend on it.
   assertNoDependencyOn("engine/pulse", ["view", "report", "cli", "match"])
 })
 
-test("src/engine/abilities is the kernel's world, handed in: it never reaches the tick, the rules layer, the armies, the view or the shell", () => {
-  // An ability acts through the narrow world the kernel hands it (`AbilityWorld`), never through the kernel's own
-  // functions: so a kind a mod writes needs nothing but this folder's types, and the kernel takes its table of kinds
+test("src/engine/abilities is the battle engine's world, handed in: it never reaches the tick, the rules layer, the armies, the view or the shell", () => {
+  // An ability acts through the narrow world the battle engine hands it (`AbilityWorld`), never through the battle engine's own
+  // functions: so a kind a mod writes needs nothing but this folder's types, and the battle engine takes its table of kinds
   // as an argument (`PulseContext.abilities`).
   assertNoDependencyOn("engine/abilities", ["engine/pulse", "match", "armies", "view", "report", "cli", "build"])
 })
 
 test("src/engine/routing is routing's parts alone: it knows the Grid and nothing of a tick, a unit, a side or a screen", () => {
-  // Each part is tested alone on small Grids (tests/routing.test.ts); the kernel builds its routes from them.
+  // Each part is tested alone on small Grids (tests/routing.test.ts); the battle engine builds its routes from them.
   assertNoDependencyOn("engine/routing", ["engine/pulse", "engine/state", "match", "content", "armies", "view", "report", "cli", "build"])
 })
 
 test("src/match never reaches the view, the report, the shell, or the Build Phase", () => {
-  // Rules-layer code around the kernel: deterministic, and blind to how anything is drawn or asked for.
+  // Rules-layer code around the battle engine: deterministic, and blind to how anything is drawn or asked for.
   assertNoDependencyOn("match", ["view", "report", "cli", "build"])
 })
 
 test("src/battle and src/match sit below the mode: they never reach src/skirmish, the view or the shell", () => {
   // A Skirmish plays a battle; the battle and the rules under it never know which mode plays them. The tick rate they
-  // share with every layer is the kernel's (src/engine/state/types.ts), not a Skirmish's.
+  // share with every layer is the battle engine's (src/engine/state/types.ts), not a Skirmish's.
   assertNoDependencyOn("battle", ["skirmish", "view", "cli", "web"])
   assertNoDependencyOn("match", ["skirmish"])
 })
@@ -104,15 +104,15 @@ test("src/skirmish is a mode, pure: it never reaches the view, the shell or the 
   assertNoDependencyOn("skirmish", ["view", "cli", "web"])
 })
 
-test("src/mission is data: it never reaches the kernel's tick, the rules layer, the view, the shell or the Build Phase", () => {
+test("src/mission is data: it never reaches the battle engine's tick, the rules layer, the view, the shell or the Build Phase", () => {
   // A mission is typed literals and the checks on them. The Build Phase and the view may read its
-  // shapes, so it must not bring the kernel along with it; the runner that steps the kernel is src/match's.
+  // shapes, so it must not bring the battle engine along with it; the runner that steps the battle engine is src/match's.
   // Nor does it know which missions there are: those are the armies' (src/armies), which read it.
   assertNoDependencyOn("mission", ["engine/pulse", "match", "view", "report", "cli", "build", "armies"])
 })
 
-test("src/armies is data: it never reaches the kernel's tick, the rules layer, the view or the shell, and the loader not even the Build Phase", () => {
-  // The Build Phase's catalog reads the armies (what the first level offers), so they must not bring the kernel
+test("src/armies is data: it never reaches the battle engine's tick, the rules layer, the view or the shell, and the loader not even the Build Phase", () => {
+  // The Build Phase's catalog reads the armies (what the first level offers), so they must not bring the battle engine
   // along. The loader takes the content and the maps as arguments; only the game's own list of armies
   // (src/armies/index.ts) names the map table, which is still code beside the Build Phase (src/build/maps.ts).
   assertNoDependencyOn("armies", ["engine/pulse", "match", "view", "report", "cli"])
@@ -127,9 +127,9 @@ test("src/armies is data: it never reaches the kernel's tick, the rules layer, t
 test("the simulation never reaches a glyph", () => {
   // docs/system-design/presentation.md, RULE: "The simulation knows semantic ids such as `unit.worker` and
   // `structure.nexus`. **It never knows a glyph.**" src/content/art.ts sits *inside* a folder the
-  // kernel reads all the time, so the rule holds only as long as nothing on the kernel's side of
+  // engine reads all the time, so the rule holds only as long as nothing on the battle engine's side of
   // that folder imports it — which is exactly the kind of thing that lasts until someone wants a
-  // glyph "just for one log line". Checked from every door the kernel actually comes through,
+  // glyph "just for one log line". Checked from every door the battle engine actually comes through,
   // rather than only from src/engine/pulse.
   const art = resolve(SRC, "content/art.ts")
   for (const entry of [
@@ -155,16 +155,16 @@ test("the simulation never reaches a glyph", () => {
   assert.ok(view.has(art), "src/view no longer reaches the art table; nothing would be drawn")
 })
 
-test("the logs are a leaf: the kernel and the match layer never reach them, and they reach nothing of the game's", () => {
+test("the logs are a leaf: the battle engine and the match layer never reach them, and they reach nothing of the game's", () => {
   // A log records what happened and is only ever shown or exported:
-  // the rules may not depend on one, and a logger takes its clock as an argument, which the kernel may
+  // the rules may not depend on one, and a logger takes its clock as an argument, which the battle engine may
   // not have.
   assertNoDependencyOn("engine/pulse", ["log"])
   assertNoDependencyOn("match", ["log"])
   assertNoDependencyOn("log", ["engine/pulse", "match", "view", "cli", "build", "title-menu", "terminal", "web"])
 })
 
-test("src/report never reaches the kernel or the view", () => {
+test("src/report never reaches the battle engine or the view", () => {
   // It may read content definitions and shared state types; it may not read how a tick is resolved.
   assertNoDependencyOn("report", ["engine/pulse", "view", "cli"])
 })
@@ -189,12 +189,12 @@ test("the battle engine (src/engine) imports nothing outside itself but the cont
   }
 })
 
-test("src/view never reaches the kernel", () => {
+test("src/view never reaches the battle engine", () => {
   assertNoDependencyOn("view", ["engine/pulse", "cli"])
 })
 
 test("the deterministic modules name no clock, no Math.random, and no terminal", () => {
-  const kernel = ["engine/geometry", "engine/rng", "content", "engine/events", "engine/state", "skirmish", "engine/pulse", "match", "mission", "armies", "engine/abilities", "battle"]
+  const engine = ["engine/geometry", "engine/rng", "content", "engine/events", "engine/state", "skirmish", "engine/pulse", "match", "mission", "armies", "engine/abilities", "battle"]
   const forbidden = [
     /\bMath\s*\.\s*random\b/,
     /\bDate\s*\.\s*now\b/,
@@ -202,20 +202,20 @@ test("the deterministic modules name no clock, no Math.random, and no terminal",
     /\bperformance\s*\.\s*now\b/,
     /\bprocess\s*\.\s*(stdout|stderr|stdin|hrtime)\b/,
   ]
-  for (const directory of kernel) {
+  for (const directory of engine) {
     for (const file of sourceFiles(join(SRC, directory))) {
       const source = readFileSync(file, "utf8")
       for (const pattern of forbidden) {
         assert.ok(
           !pattern.test(source),
-          `src/${relative(SRC, file)} mentions ${String(pattern)}, which the kernel may not use`,
+          `src/${relative(SRC, file)} mentions ${String(pattern)}, which the battle engine may not use`,
         )
       }
     }
   }
 })
 
-test("the Build Phase reducer and its Experiments name no clock and never reach the kernel's tick", () => {
+test("the Build Phase reducer and its Experiments name no clock and never reach the battle engine's tick", () => {
   // The Experiments' timing flags are read by the live loop (src/cli/build-phase.ts), never here —
   // the reducer stores a number and nothing more, so it stays a pure function a driver can replay.
   assertNoDependencyOn("build", ["engine/pulse", "cli"])

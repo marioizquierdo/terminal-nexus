@@ -126,7 +126,7 @@ function resolveDeaths(context: TickContext, dying: readonly Actor[]): void {
     // is still in hand — so the event names the entity rather than a bare ordinal, and the loss is
     // reported on the tick it actually happened.
     //
-    // Observers come from the reverse index (grid-engine.md, on scaling) rather than a scan of every actor:
+    // Observers come from the reverse index (architecture.md, on scaling) rather than a scan of every actor:
     // perception maintains `targetObservers` at every targetOrdinal write, so this is O(observers
     // of this one entity) instead of O(N) — the saving a chain detonation with several simultaneous
     // deaths actually collects. Sorted by ordinal because that is the order the old scan of

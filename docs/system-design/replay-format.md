@@ -118,7 +118,7 @@ for a real Build Phase) followed by exactly one `pulse` phase. A "match" replay 
 
 ## Log levels: a second axis
 
-The engine tool already has five log levels for its **live headless report**: a human or an agent
+A Battle Round's **live headless report** already has five log levels: a human or an agent
 watching one run scroll by right now. A stored file asks a different question wearing the same five
 names: how much of a Pulse's story is worth **paying to store**, permanently, in a file that might hold
 a whole match. Reusing the live report's table unchanged would be wrong: its `INFO` already includes

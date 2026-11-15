@@ -1,5 +1,5 @@
 // Burning ground, as the Battle Round draws it (the owner, 2026-10-21: "a large area that is set on fire ...
-// drawn in its own style"). The rule is the kernel's (`MatchState.burning`, `BurningGround`); this is only its
+// drawn in its own style"). The rule is the battle engine's (`MatchState.burning`, `BurningGround`); this is only its
 // picture, worked out in two steps:
 //
 //   - `fireAt` — which tiles burn at one presentation instant, and how each is lit: a pure function of the state of
@@ -70,7 +70,7 @@ const FLAMMABLE: ReadonlySet<TerrainId> = new Set<TerrainId>(["terrain.plain", "
 
 /**
  * Every tile a patch burns, in reading order: the tiles within its `radius` of its `centre`, by the Grid's own test
- * (`tilesWithin`, `footprintWithin`, which the kernel's `withinArea` is) — a row counts two columns, so a diamond twice
+ * (`tilesWithin`, `footprintWithin`, which the battle engine's `withinArea` is) — a row counts two columns, so a diamond twice
  * as wide as it is tall in tiles and as wide as it is tall on screen. What is drawn burning is what burns.
  */
 export function patchTiles(patch: Pick<BurningGround, "centre" | "radius">): Coord[] {

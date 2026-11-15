@@ -1,5 +1,5 @@
 // What an ability is: the code a unit's `abilities` entry names by its `kind` (`ContentDef.abilities`), and the
-// narrow world the kernel hands it (docs/system-design/army-authoring.md, "Abilities").
+// narrow world the battle engine hands it (docs/system-design/army-authoring.md, "Abilities").
 //
 // An ability is the way a Commander or a unit does something on its own besides fighting — an aura that guards, a
 // bounty on what dies near it, a lucky hit — written once as an `AbilityKind` and named by data:
@@ -7,7 +7,7 @@
 //   "abilities": [{ "kind": "aura", "name": "By the Book", "radius": 4, "damageTakenPercent": 75 }]
 //
 // A kind declares its numbers (`params`, checked when an army file is loaded) and any of the **hooks** below; the
-// kernel calls each hook at one fixed moment of a tick, for every living unit that has the ability, in ordinal order:
+// engine calls each hook at one fixed moment of a tick, for every living unit that has the ability, in ordinal order:
 //
 // | hook               | when                                                     | what it may do                      |
 // | ------------------ | -------------------------------------------------------- | ----------------------------------- |
@@ -16,13 +16,13 @@
 // | `tick`             | once a tick, after the attacks, before deaths settle      | heal, damage, note, earn credits    |
 // | `death`            | once for each unit that died this tick, after the deaths | heal, damage, note, earn credits    |
 //
-// **An ability never touches the kernel's state itself.** It reads `Body`s (a unit as an ability sees it) and acts
-// through `AbilityWorld`, whose every act goes through the kernel's own rules (a heal is the heal rule, a hit is the
+// **An ability never touches the battle engine's state itself.** It reads `Body`s (a unit as an ability sees it) and acts
+// through `AbilityWorld`, whose every act goes through the battle engine's own rules (a heal is the heal rule, a hit is the
 // damage rule) and leaves an event behind — so an ability is deterministic, hashed and replayed like everything else:
 // whole numbers only, the gameplay stream for chance (`random`), no clock, nothing from presentation.
 //
 // The kinds the game ships are in `index.ts`. A mod's kinds would be passed beside them where a battle starts
-// (`PulseContext.abilities`): the kernel takes its table as an argument; nothing looks for kinds on disk.
+// (`PulseContext.abilities`): the battle engine takes its table as an argument; nothing looks for kinds on disk.
 
 import type { Coord, EntityLayer, Footprint } from "../geometry/types.ts"
 import type { Shape } from "../../content/shape.ts"
@@ -59,7 +59,7 @@ export type AbilityView = Readonly<{
   within: (a: Body, b: Body, radius: number) => boolean
 }>
 
-/** What an ability can do, through the kernel's own rules. */
+/** What an ability can do, through the battle engine's own rules. */
 export type AbilityWorld = AbilityView &
   Readonly<{
   /** A whole number from 0 to `bound - 1`, from the battle's one gameplay stream: the only chance an ability has. */
@@ -70,7 +70,7 @@ export type AbilityWorld = AbilityView &
    *  brings to nothing dies this tick. */
   damage: (target: Body, source: Body, amount: number) => void
   /** Pushes `target` up to `tiles` tiles straight away from `source`, stopping where its body would not fit — the
-   *  kernel's rule for a unit that did not walk (`entity.displaced`). A building never moves. */
+   *  engine's rule for a unit that did not walk (`entity.displaced`). A building never moves. */
   push: (target: Body, source: Body, tiles: number) => void
   /**
    * Says the ability did something: an `ability.triggered` event naming the bearer and the ability, and what it

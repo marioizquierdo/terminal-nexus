@@ -1,4 +1,4 @@
-// The kernel's half of abilities (`src/engine/abilities/`): where in a tick each hook runs, and the world it is handed.
+// The battle engine's half of abilities (`src/engine/abilities/`): where in a tick each hook runs, and the world it is handed.
 //
 // - **`decideDamageModifiers`**, as the attacks begin (`attacks.ts`), once the moves have settled: every bearer's
 //   `damageModifiers` offers units a share of their damage, and each unit keeps the strongest of each channel — the
@@ -12,7 +12,7 @@
 //   each unit that died, in ordinal order of the bearers and then of the dead.
 //
 // Bearers are visited in ordinal order and each one's abilities in the order its content lists them, so nothing an
-// ability does depends on iteration order the kernel does not already fix. A unit's abilities are looked up in the
+// ability does depends on iteration order the battle engine does not already fix. A unit's abilities are looked up in the
 // battle's table (`PulseContext.abilities`, the game's own when it gives none).
 
 import type { AbilityKind, AbilityTable, AbilityWorld, Body } from "../abilities/index.ts"
@@ -50,7 +50,7 @@ function bodyOf(actor: Actor): Body {
   }
 }
 
-/** The world an ability acts in this tick: every act through the kernel's own rules, every act an event. */
+/** The world an ability acts in this tick: every act through the battle engine's own rules, every act an event. */
 function worldOf(context: TickContext): AbilityWorld {
   const actorOf = (body: Body): Actor | undefined => context.byOrdinal.get(body.ordinal)
   return {

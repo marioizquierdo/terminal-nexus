@@ -68,7 +68,7 @@
 //
 // Under reduced motion both snap: the view jumps and the cursor jumps.
 //
-// Presentation only (`docs/system-design/grid-engine.md`: "presentation may interpolate... without changing
+// Presentation only (`docs/system-design/architecture.md`: "presentation may interpolate... without changing
 // simulation"): state, commands and a scripted playtest all use the state's own camera and cursor —
 // the state is already where things are going. The one place the drawn camera reaches input is the
 // mouse, so a click lands on the tile drawn under the pointer while the view is still sliding. The

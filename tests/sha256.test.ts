@@ -2,7 +2,7 @@
 // against the runtime's own `node:crypto` — which this test may use, being a test and not the game.
 //
 // Why the switch was allowed (measured 2026-09-27, this container, Node 22.22.2):
-//   `for map in sandboxes/*.save.json; do ./bin/grid.ts "$map" --verify --runs 20; done`
+//   twenty runs of every sandbox, re-resolved and their hashes compared
 //   node:crypto 19.8 s, plain JavaScript 20.7 s (about 4% slower); `npm test` 44.7 s -> 46.3 s.
 // Hashing alone is about 4.5x slower (15 ms per MB), but it is a small share of resolving a battle.
 

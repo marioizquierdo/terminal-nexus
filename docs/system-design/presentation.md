@@ -211,7 +211,7 @@ the fight ends is put out once everything in flight has landed, as the regroup p
 motion** holds each tile's look still (the dying down stays: it is the patch's state, not decoration). **In
 monochrome** no fill is drawn and the flames carry the patch alone, by their glyphs: under half its tiles at any
 instant, flaring in turn across it, so its shape is drawn over a second. Both Pulse views draw it from one list worked out with the rest of a
-presentation instant (`PulseSample.fire`): the engine tool's and the Build Phase screen's, the live Battle Round and
+presentation instant (`PulseSample.fire`): the Build Phase screen's, the live Battle Round and
 the replay of the last round alike, and with them the browser page.
 
 **The Battle Round's view shows everything by default.** Selection is an addition the player reaches for, never a
@@ -223,7 +223,7 @@ presentation has failed and no panel will rescue it.
 **RULE** — `tests/rows-view.test.ts`, `tests/build-camera.test.ts`, `tests/view.test.ts`.
 
 **One Grid tile is one terminal cell, one column wide, at every terminal size**: the Build Phase, the Battle Round,
-the engine tool's own view and the browser page alike. A cell is about twice as tall as it is wide, and the rules
+the `skirmish` command's ASCII screenshots and the browser page alike. A cell is about twice as tall as it is wide, and the rules
 count a row as two columns in every distance ([`grid.md`](grid.md), distance, reach and movement), so a reach is
 twice as wide as it is tall in tiles and, drawn a column a tile, as wide as it is tall on screen; a unit walking
 down the screen crosses it at the pace of one walking across. A larger terminal never widens a tile: past the

@@ -1,7 +1,7 @@
-// What each group a mission's round brings will go for first — the raid's intent, as the kernel will act
+// What each group a mission's round brings will go for first — the raid's intent, as the battle engine will act
 // on it (the owner: "reading the enemy intent is very important for basic ui/ux interaction").
 //
-// **The kernel's own choice, never a second guess.** A unit's first target is whatever the kernel picks on
+// **The battle engine's own choice, never a second guess.** A unit's first target is whatever the battle engine picks on
 // the round's first tick, so that is what is read: the round's opening state is built with the plan as it
 // stands (`missionOpening`, the very function that starts the real Pulse), the round's later arrivals are
 // set down beside it the way the Build Phase's forecast sets them down (`laterArrivals`), one unmodified
@@ -10,24 +10,24 @@
 // the round starts, that is exactly what the Pulse will do on its first tick (`tests/intent.test.ts` holds
 // the two together); for a group that arrives later it is a forecast against the opening positions, since
 // by its tick everything has moved. Place a building nearer the raid and the answer changes, because the
-// kernel's answer does: every unit of a side with no target — the raid's — engages the nearest enemy
+// engine's answer does: every unit of a side with no target — the raid's — engages the nearest enemy
 // (`src/engine/pulse/perception.ts`). The player's troops head out on that same first tick, so the raid soon meets
 // them on the way; what it goes for *first* is still this, and the panel says no more than that.
 //
-// **Along which way**: the path one of the group's units would take toward that target by the kernel's own
+// **Along which way**: the path one of the group's units would take toward that target by the battle engine's own
 // routes (`src/engine/routing/`: a distance field to the tiles beside the target, walked downhill), over the terrain and the
 // buildings as they stand when the round starts — the nearest unit whose walk gets there. Units are left out of what
 // blocks it, since they move. A forecast of the approach that never walks through a ridge, so a trail drawn on it
 // cannot lie about the way round; a group none of whose units can get there is shown as far as it can go. The
-// kernel's own ranking walks it, so the trail follows the screen's diagonal as the units will, and "next to it" is
+// engine's own ranking walks it, so the trail follows the screen's diagonal as the units will, and "next to it" is
 // touching along a side, as melee's touch is.
 //
 // **And where the player's own troops head** (`foreseeRound`): the target the level names for their side,
 // read off the same opening — which units go, those standing and those the round's waves will bring, and the
 // region they head for, by the name the mission gives it. That much is data, not a guess; how they get there,
-// and whom they meet on the way, is the kernel's to play and is not foreseen (the owner: "don't over-promise").
+// and whom they meet on the way, is the battle engine's to play and is not foreseen (the owner: "don't over-promise").
 //
-// Deterministic like the kernel: no clock, no randomness, nothing drawn. It reads the mission and the
+// Deterministic like the battle engine: no clock, no randomness, nothing drawn. It reads the mission and the
 // state and never changes either.
 
 import type { ContentDef, ContentRegistry, ProductionRecipe } from "../content/index.ts"
@@ -128,7 +128,7 @@ function middleOf(tiles: readonly Coord[]): Coord {
   return nearestTile(mean, tiles) ?? { x: 0, y: 0 }
 }
 
-/** A later arrival as the entity it will be — the kernel's conventions for a fresh entity, as the trigger
+/** A later arrival as the entity it will be — the battle engine's conventions for a fresh entity, as the trigger
  *  runner sets one down between ticks. */
 function entityOf(registry: ContentRegistry, arrival: Arrival): EntityState {
   const definition = registry.get(arrival.contentId)
@@ -159,12 +159,12 @@ function chosenTarget(arrivals: readonly Arrival[], after: ReadonlyMap<number, E
 }
 
 /**
- * The way `walker`, standing at `from`, would walk toward `target` by the kernel's routes (`src/engine/routing/`), over the
+ * The way `walker`, standing at `from`, would walk toward `target` by the battle engine's routes (`src/engine/routing/`), over the
  * terrain and `structures` (an index of the structures alone): every step's anchor, downhill on the distance field to
  * the tiles beside the target — touching it along a side — until it stands there, or no route reaches it. Next to it
  * rather than in range: a group's ranged units stop short and its others close in, and the way is drawn to what it
- * goes for. A step as good as another goes by the turn from the way the walker faces the target, as the kernel's does;
- * a tie still left, which the kernel breaks with a draw, takes the first in compass order here: a forecast draws nothing.
+ * goes for. A step as good as another goes by the turn from the way the walker faces the target, as the battle engine's does;
+ * a tie still left, which the battle engine breaks with a draw, takes the first in compass order here: a forecast draws nothing.
  */
 function walk(structures: OccupancyIndex, registry: ContentRegistry, walker: ContentDef, from: Coord, target: IntentTarget): Coord[] {
   const footprint = registry.get(target.contentId).footprint
@@ -204,7 +204,7 @@ export function foreseeIntents(input: MissionPulseInput, side: PlayerId = "B"): 
  * Where a side's troops head this round: the target its level names for it (a `target` action, by the region
  * the mission names), and who goes — every unit of the side that follows a target, standing on the Grid as the
  * round opens, and every one its buildings will spawn in the round's waves, which head there the moment they
- * are set down. Not a forecast of the way: the kernel walks them there and has them fight what comes within
+ * are set down. Not a forecast of the way: the battle engine walks them there and has them fight what comes within
  * reach on it (`src/engine/pulse/target.ts`), and that is not foreseen; nor is a round that ends before a wave comes.
  */
 export type TroopsIntent = Readonly<{

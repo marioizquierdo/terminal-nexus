@@ -3,7 +3,7 @@
 // A save with a `start` is a **sandbox** (`sandboxes/`): it opens on a Battle Round written by hand, which
 // is what it tests, and both slots plan nothing (`script:idle`).
 //
-// Pure: it turns a save's text, already read, into the opening the kernel starts from (`BattleOpening`,
+// Pure: it turns a save's text, already read, into the opening the battle engine starts from (`BattleOpening`,
 // `src/skirmish/opening/`), and names what is wrong with a `start`. It imports the save's types only, so the browser
 // page can open a sandbox without the battle.
 

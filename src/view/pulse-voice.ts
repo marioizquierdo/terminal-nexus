@@ -1,4 +1,4 @@
-// **Her voice in battle**: what Vasse says during a Battle Round, worked out from the round the kernel has
+// **Her voice in battle**: what Vasse says during a Battle Round, worked out from the round the battle engine has
 // already resolved (the owner, 2026-10-04, on her voice in battle: "yes that is fantastic! let's experiment with
 // this to see if it gets into the battle or enhances the experience even more. A little strategic usage of our
 // effect library should go a long way here too"; and once he had played it: "it looks cool when they "speak"

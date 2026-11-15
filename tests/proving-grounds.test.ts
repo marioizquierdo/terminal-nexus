@@ -1,6 +1,6 @@
-// The Proving Grounds roster and the kernel rules it needed — the unit-design-architecture spike.
+// The Proving Grounds roster and the battle engine rules it needed — the unit-design-architecture spike.
 // content.test.ts already covers footprint/art agreement generically for every registered content id,
-// this roster included; what belongs here is behavioral proof for each *new kernel rule*, the same way
+// this roster included; what belongs here is behavioral proof for each *new engine rule*, the same way
 // ravel.test.ts proves volatile munitions rather than just asserting the fixture loads.
 
 import { test } from "node:test"

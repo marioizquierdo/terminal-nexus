@@ -14,7 +14,7 @@
 //
 // Chosen because its state is two 64-bit words — trivially serialisable into hashed state and
 // trivially restorable — and because it ships published vectors, which a hand-rolled mixer does
-// not. BigInt keeps the 64-bit arithmetic exact and identical on every runtime; the kernel draws
+// not. BigInt keeps the 64-bit arithmetic exact and identical on every runtime; the battle engine draws
 // only for arbitration tie-breaks, so the cost never appears in a measurement.
 
 const MASK_64 = (1n << 64n) - 1n
@@ -60,7 +60,7 @@ export class Pcg32 {
 
   static restore(serialized: RngState): Pcg32 {
     if (serialized.name !== PRNG_NAME) {
-      throw new Error(`unknown PRNG ${serialized.name}; this kernel implements ${PRNG_NAME}`)
+      throw new Error(`unknown PRNG ${serialized.name}; this engine implements ${PRNG_NAME}`)
     }
     return new Pcg32(BigInt(`0x${serialized.state}`) & MASK_64, BigInt(`0x${serialized.inc}`) & MASK_64)
   }
@@ -107,11 +107,11 @@ export class Pcg32 {
 /**
  * Streams are separated by the `initseq` parameter, which is what PCG provides them for. Only
  * gameplay draws from a stream; cosmetic randomness is a hash of an effect instance's identity,
- * never a stream, so presentation can never consume a gameplay draw (grid-engine.md).
+ * never a stream, so presentation can never consume a gameplay draw (architecture.md).
  */
 export const STREAM_GAMEPLAY = 0n
 export const STREAM_COSMETIC = 1n
-/** The Nexus Pulse's own seeded stream (`src/armies/deal.ts`): gameplay, deterministic, and never the kernel's, so
+/** The Nexus Pulse's own seeded stream (`src/armies/deal.ts`): gameplay, deterministic, and never the battle engine's, so
  *  dealing a hand never moves a battle's draws. */
 export const STREAM_DRAFT = 2n
 // Streams 3 and 4 were the retired Challenge runs' (their battles, their drafts): left unused, so a later stream never

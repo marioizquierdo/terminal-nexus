@@ -1,6 +1,6 @@
 // Burning ground (pulse.md, the attacks and the tick order): a patch with a place, a size and a lifetime, kept in the
 // state (`MatchState.burning`), lit by a landing hit of an attack that `burn`s (`attacks.ts`) and hurting by the
-// kernel's own clock, here, after the attacks and the abilities' ticks and before the deaths settle. The owner,
+// engine's own clock, here, after the attacks and the abilities' ticks and before the deaths settle. The owner,
 // 2026-10-21, on the Citizen mortar: "set the ground on fire ... when the units walk through it, they all take damage".
 //
 // Every unit and worker within a patch's radius of its centre, measured as range is, of either side, takes its damage

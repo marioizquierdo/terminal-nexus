@@ -12,7 +12,7 @@
 //
 // Gameplay randomness, so seeded and repeatable: the same pool, the same powers kept, the same buildings standing,
 // the same schedule, seed and round deal the same hand on every runtime, every time. It draws from a PCG32 stream of
-// its own (`STREAM_DRAFT`), never the kernel's, so dealing a hand never moves a single draw of a battle. Pure: no
+// its own (`STREAM_DRAFT`), never the battle engine's, so dealing a hand never moves a single draw of a battle. Pure: no
 // clock, no state.
 
 import { Pcg32, STREAM_DRAFT } from "../engine/rng/pcg32.ts"

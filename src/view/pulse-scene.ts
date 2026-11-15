@@ -4,7 +4,7 @@
 //
 // Everything here is drawing: it takes a `PulseFrame` — what the presenter (`pulse-live.ts`) has already
 // worked out for one presentation instant — and paints cells. It reads no clock and asks nothing of the
-// kernel, and the frame it draws is a pure function of the resolved Pulse and the time.
+// engine, and the frame it draws is a pure function of the resolved Pulse and the time.
 
 import type { FallFrame } from "./commander-moments.ts"
 import { barkPanelRows, quoted } from "../armies/barks.ts"
@@ -199,7 +199,7 @@ const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
 
 /**
  * ***Her aura's reach*** (By the Book: her side's units near her take less damage): every tile within its radius
- * of her, by the kernel's own test (`tilesWithin`, `footprintWithin`: a row counts two columns, so a diamond twice
+ * of her, by the battle engine's own test (`tilesWithin`, `footprintWithin`: a row counts two columns, so a diamond twice
  * as wide as it is tall in tiles, as wide as it is tall on screen) — washed in her side's colour on the ground,
  * moving with her while the fight is on. A glyphless write on the ground's own band, under everything that stands:
  * a unit or a building in her reach keeps its glyph and every colour of its own, standing in the glow rather than

@@ -157,7 +157,7 @@ test("every sandbox reads as a save, plays one Battle Round with idle slots, and
   }
 })
 
-test("a sandbox's start opens the kernel as the map it came from did: the same entities, targets and seed", async () => {
+test("a sandbox's start opens the battle engine as the map it came from did: the same entities, targets and seed", async () => {
   // melee-kill, as its map file wrote it before the maps became saves: two troopers at (10,5) and (10,6) close on one
   // at (13,5), each side's target the other.
   const opening = await loadSandbox("melee-kill")

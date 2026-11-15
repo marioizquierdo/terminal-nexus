@@ -1,5 +1,5 @@
 // THE PULSE — how state changes. A pure function stepping state forward in fixed logical ticks,
-// with no clock, no terminal, no frames, and no colour (grid-engine.md).
+// with no clock, no terminal, no frames, and no colour (architecture.md).
 //
 // The nine phases below are the ones pulse.md describes, in order. The economy-and-production phase
 // holds only production so far (a building training its recipe, `production.ts`); a resource yield
@@ -167,7 +167,7 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
   return { state: next, events: context.events }
 }
 
-/** Exposed for the collision invariant test: the occupancy the kernel would build for a state. */
+/** Exposed for the collision invariant test: the occupancy the battle engine would build for a state. */
 export function occupancyFor(state: MatchState, pulse: PulseContext): OccupancyIndex {
   const index = new OccupancyIndex(state.grid)
   for (const entity of state.entities) {

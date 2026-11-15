@@ -3,7 +3,7 @@
 // smoothly to their new positions, and they may push and re-arrange other units around them").
 //
 // A pure function of the state between rounds and the buildings a plan puts down, worked out by the rules layer
-// beside the kernel, never inside it: the opening applies it as the Battle Round starts (`opening.ts`), and the Build
+// beside the battle engine, never inside it: the opening applies it as the Battle Round starts (`opening.ts`), and the Build
 // Phase draws the same walks while the player plans (presentation only; for its own plan, since the enemy's is
 // revealed with the round).
 //

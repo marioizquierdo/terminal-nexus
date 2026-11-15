@@ -1,6 +1,6 @@
 # Terminal Nexus — concept art
 
-_The index of the images in this folder: early concept art, and dated captures of the engine tool `grid` running._
+_The index of the images in this folder: early concept art, and dated captures of the battle viewer the project had then (`grid`, since removed)._
 
 ## What this is
 

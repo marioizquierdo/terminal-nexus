@@ -28,7 +28,7 @@ export type SandboxRoundOptions = Readonly<{
 /** A sandbox's Battle Round played: the run, and what its report is written from (`buildLog`). */
 export type SandboxRound = Readonly<{ run: PulseRun; registry: ContentRegistry; report: ReportInput }>
 
-/** **A sandbox's round**, from its opening to its end or its last tick: the Battle Round the kernel plays. */
+/** **A sandbox's round**, from its opening to its end or its last tick: the Battle Round the battle engine plays. */
 export function playSandboxRound(opening: BattleOpening, options: SandboxRoundOptions = {}): SandboxRound {
   const seed = options.seed ?? opening.seed
   const pulseTicks = options.ticks ?? opening.pulseTicks

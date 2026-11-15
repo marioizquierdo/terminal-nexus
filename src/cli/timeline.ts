@@ -1,7 +1,7 @@
 // Building a presentable timeline from a resolved Pulse.
 //
-// This lives in the application shell rather than in `src/view`, because it is where the kernel and
-// the presentation meet: the view never imports the kernel, and the kernel never hears about the
+// This lives in the application shell rather than in `src/view`, because it is where the battle engine and
+// the presentation meet: the view never imports the battle engine, and the battle engine never hears about the
 // view. The shell resolves the Pulse, keeps the state settled at every tick, and hands the pair
 // (states, events) to the view, so what is drawn and what is reported can be asserted to agree.
 
@@ -41,7 +41,7 @@ export function buildTimeline(
 
 /**
  * A timeline from a Pulse already resolved elsewhere — a mission's, by the trigger runner, which steps
- * the same kernel and keeps the same states and events (`src/match/mission.ts`). Hashed the same way, so a
+ * the same engine and keeps the same states and events (`src/match/mission.ts`). Hashed the same way, so a
  * mission's Pulse and a sandbox's are compared by the same two numbers.
  */
 export function timelineOf(

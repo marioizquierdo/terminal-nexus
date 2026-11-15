@@ -1,5 +1,5 @@
 // A mission as data and the trigger runner that plays it: load-time validation, the simulation
-// band on the unmodified kernel, the state carried from one Pulse to the next, and how a mission ends.
+// band on the unmodified engine, the state carried from one Pulse to the next, and how a mission ends.
 // The screen's half — the loop into the next Build Phase — is tests/mission-loop.test.ts.
 
 import { test } from "node:test"
@@ -109,7 +109,7 @@ test("validation refuses every broken shape by name, and reports them all at onc
   assert.ok(problemsOf(many).length >= 4, JSON.stringify(problemsOf(many)))
 })
 
-// --- The runner on the unmodified kernel -----------------------------------------------------------
+// --- The runner on the unmodified engine -----------------------------------------------------------
 
 // It plays PERIMETER six times over: longer than Bun's five seconds a test, so it says how long it may take.
 test("a whole mission is the same mission every run: the same plans give the same hashes, Pulse by Pulse", { timeout: 60_000 }, () => {
@@ -119,7 +119,7 @@ test("a whole mission is the same mission every run: the same plans give the sam
   assert.equal(first.length, 3)
 })
 
-test("a Pulse with nothing arriving after tick 0 is exactly the kernel's own resolve of its opening state", () => {
+test("a Pulse with nothing arriving after tick 0 is exactly the battle engine's own resolve of its opening state", () => {
   const [round] = playMission(PERIMETER, NOTHING)
   assert.ok(round !== undefined)
   const opening = round.states[0] as MatchState
@@ -128,7 +128,7 @@ test("a Pulse with nothing arriving after tick 0 is exactly the kernel's own res
   assert.deepEqual(direct.events, round.events)
 })
 
-test("a later arrival comes at its tick, with the kernel's own spawn event, and acts from the next tick", () => {
+test("a later arrival comes at its tick, with the battle engine's own spawn event, and acts from the next tick", () => {
   const pulses = playMission(PERIMETER, STRONG)
   const round3 = pulses[2]
   assert.ok(round3 !== undefined)
@@ -148,7 +148,7 @@ test("a later arrival comes at its tick, with the kernel's own spawn event, and 
 
 test("an arrival counts for victory: a side that only arrives later can still be wiped out", () => {
   // Nobody of the raid's at tick 0; a single runner arrives at tick 12 beside the player's squads, who
-  // kill it — and the kernel ends the Pulse on the raid's annihilation, as if it had stood from the start.
+  // kill it — and the battle engine ends the Pulse on the raid's annihilation, as if it had stood from the start.
   const mission: MissionDefinition = {
     ...PERIMETER,
     pulses: 1,
@@ -183,7 +183,7 @@ test("PERIMETER sends the player's troops to the line ahead of the base in every
   assert.deepEqual(targetsAt(PERIMETER, 1, 0), { A: line })
   for (const [index, round] of playMission(PERIMETER, STRONG).entries()) {
     assert.deepEqual((round.states[0] as MatchState).targets, { A: line }, `round ${index + 1} opened without the line`)
-    // The kernel reads it and never changes it: the last state of the round still has it.
+    // The battle engine reads it and never changes it: the last state of the round still has it.
     assert.deepEqual(round.final.targets, { A: line })
   }
   assert.equal(targetRegionsAt(PERIMETER, 3, 0).A?.name, "the line")

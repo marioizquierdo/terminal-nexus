@@ -1,6 +1,6 @@
 # Terminal Nexus — runtime and tools
 
-_The terminal library and runtime choices, the terminal lifecycle, the delivery ladder, logs, the engine tool and modding seams, and scaling; every unmarked statement is GUIDANCE._
+_The terminal library and runtime choices, the terminal lifecycle, the delivery ladder, logs, the `skirmish` command and modding seams, and scaling; every unmarked statement is GUIDANCE._
 
 ## 1. Runtime and terminal direction
 
@@ -38,7 +38,7 @@ One alternate screen, **one idempotent disposer**. It restores cursor, input mod
 after normal exit, `q`, `SIGINT`, `SIGTERM`, setup failure and caught render failure. It also switches
 terminal mouse reporting off on the same paths, and the kitty keyboard protocol too when the Build
 Phase switched it on (see [`input.md`](input.md)). It cannot promise anything after `SIGKILL`. Calling
-it twice is harmless. Every screen loop (the engine tool's watch view, the menu, the Build Phase)
+it twice is harmless. Every screen loop (the menu, the Build Phase)
 builds on the one implementation in `src/cli/lifecycle.ts`; there must not be a second.
 
 Non-TTY launch prints one readable line and no escape sequences. Diagnostics are buffered and emitted

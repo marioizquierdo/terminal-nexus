@@ -6,8 +6,8 @@
  * upgrades and the mode it is in are that building's alone, so a building that carries any is given a content id of
  * its own — its base's, then each thing it carries, by the id its army's card gives it, in the order the card declares
  * them: `structure.citizen.barracks+production-line`. Its side's registry resolves that id into the base definition
- * with each one's changes applied (`ContentRegistry.fitter`), so the kernel, the state's hash, the regroup and the opening
- * carry it as they carry any content id, and nothing in the kernel knows a building can be upgraded. A building that
+ * with each one's changes applied (`ContentRegistry.fitter`), so the battle engine, the state's hash, the regroup and the opening
+ * carry it as they carry any content id, and nothing in the battle engine knows a building can be upgraded. A building that
  * carries nothing keeps its base id, so a state with no upgrade or mode in it is exactly the state it always was.
  */
 export const FITTED_MARK = "+"

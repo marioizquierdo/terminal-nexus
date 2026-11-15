@@ -65,7 +65,7 @@ test("identical arguments produce identical frames, and skipping frames changes 
   assert.deepEqual(backwards, [...once].reverse())
 })
 
-test("at a tick boundary every entity stands on the tile the kernel put it on", async () => {
+test("at a tick boundary every entity stands on the tile the battle engine put it on", async () => {
   // The check that catches a compositor with a transposed axis or an off-by-one band: it would pass
   // every other test in this file while drawing a deterministic, correctly sized picture of the
   // wrong fight. Asserted against the event stream, not against the compositor's own inputs.
@@ -230,7 +230,7 @@ test("interpolation is presentation only: a mid-tick frame never changes the tim
 test("a ranged kill's target stays on screen until its own tracer lands", async () => {
   // Owner playtest, 2026-08-22: "I still see projectiles set from 'm' (marksman) but the enemy dies
   // instantly while the projectile arrives later." `state.entities` drops a dead entity the instant
-  // it dies, but `fx.ranged.tracer` keeps travelling for the rest of the flight window the kernel
+  // it dies, but `fx.ranged.tracer` keeps travelling for the rest of the flight window the battle engine
   // recorded on the attack - so without a held corpse, the target's glyph vanished before the shot
   // that killed it visibly arrived. Walks every same-tick ranged kill in citizens-versus-ravels
   // (there is always at least one - the fixture is built to be a real, populated fight) and checks

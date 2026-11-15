@@ -1,26 +1,26 @@
 // The trigger runner's simulation band — story.md: a mission's triggers decide
 // what each Pulse brings and when the mission is over.
 //
-// **It drives the kernel and never changes it.** A Pulse of a mission is resolved here the way
+// **It drives the battle engine and never changes it.** A Pulse of a mission is resolved here the way
 // `resolvePulse` resolves any Pulse — the unmodified `stepTick`, one tick at a time, from an opening
 // state, to an outcome or the tick limit — with the mission's actions applied at the only two places a
-// rules layer outside the kernel can reach:
+// rules layer outside the battle engine can reach:
 //
 // - **at tick 0**, into the opening state: what arrives when the Pulse starts (`spawn`), the scripted
 //   side's own Build Phase plan (`commitPlan`), beside the player's plan and whatever survived the last
 //   Pulse (`opening.ts`), and where each side's troops head (`target`, as the state's `targets`: the last
 //   one set for a side, this round or an earlier one);
 // - **between two ticks**, for a `spawn` or a `target` at a later tick: new entities go into the state the
-//   kernel just settled, with the kernel's own conventions (the next ordinal, a fresh entity's fields, the id
-//   format) and the kernel's own `entity.spawned` event, so a report or a renderer reading only events learns
+//   engine just settled, with the battle engine's own conventions (the next ordinal, a fresh entity's fields, the id
+//   format) and the battle engine's own `entity.spawned` event, so a report or a renderer reading only events learns
 //   of them exactly as it learns of a spawner's children; a side's new target goes into it the same way. Both
 //   act from the next tick.
 //
-// story.md imagines scripted actions running "inside the kernel, as scripted intents"; the kernel has
+// story.md imagines scripted actions running "inside the battle engine, as scripted intents"; the battle engine has
 // no door for intents yet (the narrow hook content.md describes is unbuilt), so between ticks is the nearest
-// place that needs no kernel change — a finding recorded in docs/history/reports/2026-09-30-round-loop-and-missions.md.
+// place that needs no engine change — a finding recorded in docs/history/reports/2026-09-30-round-loop-and-missions.md.
 //
-// One consequence is deliberate and visible: **the kernel's victory rule ends a Pulse the moment a side with
+// One consequence is deliberate and visible: **the battle engine's victory rule ends a Pulse the moment a side with
 // no Grid Nexus standing is wiped out** — a raid — so a reinforcement of its scheduled after that tick never
 // comes. A side whose Nexus stands is never wiped out and plays on (Mario, 2026-10-01). The victory check
 // reads what each side has fielded (its roster) from the opening state; an arrival between ticks widens that
@@ -31,9 +31,9 @@
 // what its Pulses resolve: the same plans give the same states with or without them.
 //
 // After the Pulse, the triggers waiting for its end are read in list order and the first `win` or `lose`
-// decides the mission — the kernel's own outcome is never overridden, only read (a mission's goal is
+// decides the mission — the battle engine's own outcome is never overridden, only read (a mission's goal is
 // resolved here, one level above the victory check, which stays the fallback for a battle with no
-// mission). Deterministic like the kernel: no clock, no unseeded randomness, nothing drawn.
+// mission). Deterministic like the battle engine: no clock, no unseeded randomness, nothing drawn.
 
 import type { ContentRegistry } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
@@ -269,7 +269,7 @@ export function missionOpening(input: MissionPulseInput): Readonly<{ state: Matc
  * Arrivals between two ticks: each unit set down on the free tile nearest its region's centre, under its
  * own collision mask, avoiding a tile still cooling from a death — one after another, in list order, so
  * two never contest a tile. A unit with no room within reach does not arrive (said by its absence from
- * the arrivals). Emits the kernel's own `entity.spawned` for each, at the tick they arrive.
+ * the arrivals). Emits the battle engine's own `entity.spawned` for each, at the tick they arrive.
  */
 function arriveBetweenTicks(
   mission: MissionDefinition,
@@ -329,7 +329,7 @@ function arriveBetweenTicks(
   return { state: { ...state, entities: [...state.entities, ...born], nextOrdinal }, arrivals, events }
 }
 
-/** The kernel's roster, widened by what arrived: a side counts as having fielded units or a Nexus once it
+/** The battle engine's roster, widened by what arrived: a side counts as having fielded units or a Nexus once it
  *  has. */
 function widened(context: PulseContext, state: MatchState, registry: ContentRegistry): PulseContext {
   const fresh = contextFor(state, registry, context.pulseTicks).roster
@@ -385,7 +385,7 @@ function verdictAt(
   return { verdict, fired }
 }
 
-/** One Pulse of a mission, resolved on the unmodified kernel, and how the mission stands after it. */
+/** One Pulse of a mission, resolved on the unmodified engine, and how the mission stands after it. */
 export function resolveMissionPulse(input: MissionPulseInput): MissionPulse {
   const { mission, registry, pulse } = input
   const start = missionOpening(input)

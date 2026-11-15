@@ -35,7 +35,7 @@ function patch(centre: Coord, radius: number, untilTick = 60, startedTick = 0): 
 
 /**
  * A Pulse that does nothing for `ticks` ticks on the two-trooper melee map, the state of tick `t` holding whatever
- * `burningAt(t)` says burns — built by hand, with no kernel rule behind it. Effects off: nothing but the ground.
+ * `burningAt(t)` says burns — built by hand, with no engine rule behind it. Effects off: nothing but the ground.
  */
 async function timelineWith(burningAt: (tick: number) => readonly BurningGround[], ticks = 120): Promise<PulseTimeline> {
   const opening = await loadSandbox("melee-kill.save.json")

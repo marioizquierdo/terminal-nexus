@@ -483,7 +483,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   assert.equal(frame(byDriver), frame(byKeyboard))
 
   // The commit starts a Battle Round, and whichever adapter started it, it is the same Pulse —
-  // the kernel's own two hashes, the ending's regroup, and what each of them shows at the same instant.
+  // the battle engine's own two hashes, the ending's regroup, and what each of them shows at the same instant.
   const pulseOf = (side: BuildSide) => {
     assert.ok(side.build.pulse !== null, "the commit did not start a Pulse")
     return side.build.pulse.resolved

@@ -54,8 +54,7 @@ A preset is a convenience, not a constraint. A sandbox may declare explicit dime
 closes the Grid's top) and a 2-row footer (the rule that closes the Grid's bottom, then one line of contextual
 help). **The floor measures against 8 rows** (RULE — `tests/build-camera.test.ts`): the resize gate keeps the old
 8-row budget, so 16 + 8 = **24 rows** and 80 × 24 stays a literal floor, and the two rows the one-line footer saves
-go to the Grid: 18 rows of Grid at 80 × 24 (whether 80 × 24 is a hard minimum was Q12, answered). `grid watch`'s own
-view, not built on the Build Phase's frame, uses 8 rows, split 3 and 3.
+go to the Grid: 18 rows of Grid at 80 × 24 (whether 80 × 24 is a hard minimum was Q12, answered).
 
 ## 3. Orientation is a rendering choice — RULE
 

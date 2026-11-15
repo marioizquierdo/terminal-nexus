@@ -12,7 +12,7 @@
 //   as one column across. Melee reaches what touches it, a unit stands beside what it touches, and every reach of
 //   1 or more covers what touches (`footprintWithin`), so a reach of 1 means touching.
 //
-// Every distance in the game is worked out here and in `reach.ts`, never by hand: the kernel, the rules between
+// Every distance in the game is worked out here and in `reach.ts`, never by hand: the battle engine, the rules between
 // rounds, the Build Phase and the screen all ask these functions.
 
 import type { Coord, Direction, Footprint, GridTerrain } from "./types.ts"

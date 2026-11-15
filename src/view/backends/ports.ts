@@ -1,6 +1,6 @@
 // The terminal as the screen loops actually use it — written down, not invented (`docs/system-design/runtime.md`).
 //
-// `terminal-nexus`'s menu, its Build Phase, and `grid watch` each need a handful of things from a
+// `terminal-nexus`'s menu and its Build Phase each need a handful of things from a
 // terminal: its size, a way to write bytes, word when it resizes, and the bytes a player types. Node's
 // own `process.stdout` and `process.stdin` already have exactly this shape, so the terminal path is
 // unchanged. The browser playtest page (`src/web/`) is the second implementation: a stand-in that

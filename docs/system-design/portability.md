@@ -14,7 +14,7 @@ engine (src/engine/pulse, src/engine/state)          the rules; no terminal, no 
 reducer (src/build/state.ts)           state + commands -> state; no clock       portable
 adapters (keyboard.ts, mouse.ts,       raw bytes -> named commands               terminal-shaped input
   session.ts, src/title-menu/*)
-view (src/view/build.ts, compose.ts)   state + time -> a grid of styled cells    portable
+view (src/view/build.ts, ...)          state + time -> a grid of styled cells    portable
 backend (ansi / opentui / canvas)      a grid of cells -> a surface              one per surface
 screen loop (src/cli/build-phase.ts, ...)    the only clock; input -> command -> draw  terminal-shaped ports
 host (src/cli/terminal-nexus.ts,        stdin/stdout, settings file, clipboard    per host

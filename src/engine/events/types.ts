@@ -112,7 +112,7 @@ export type DomainEvent =
         blocker: string | null
         /**
          * Credit is reported on the events that carry a movement decision, so that the log can show
-         * credit state at DEBUG without the report ever reaching into the kernel.
+         * credit state at DEBUG without the report ever reaching into the battle engine.
          */
         credit: number
         cost: number

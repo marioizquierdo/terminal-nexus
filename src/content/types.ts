@@ -83,7 +83,7 @@ export type AttackDef = Readonly<{
    * consecutive successful hits only — reset the instant perception reassigns a new target (including
    * losing one). The focus-turret rule shape: `effectiveDamage = round(damage * min(maxPercent, 100 +
    * focusStreak * perHitPercent) / 100)`. Punishes a target for standing and eating it, not for merely
-   * existing. Integer percentages, not a fraction — every canonical value the kernel hashes is an
+   * existing. Integer percentages, not a fraction — every canonical value the battle engine hashes is an
    * integer (`state/canonical.ts`), content definitions included, so `0.5` here is not a legal value
    * even though it would be a legal *runtime* multiplier; the division happens only at attack time,
    * never in the stored definition.
@@ -152,7 +152,7 @@ export type ContentDef = Readonly<{
    * This unit is its side's Commander (pulse.md): a persistent frontline unit that, when it falls, is
    * absent for the rest of that round's Pulse and the `roundsOut` whole rounds after it, and is then restored
    * beside its side's Grid Nexus. Only the rules between rounds read it (`src/match/commander.ts`); the
-   * kernel sees a unit like any other, so a Commander's death is never the victory condition.
+   * engine sees a unit like any other, so a Commander's death is never the victory condition.
    */
   commander?: true
   /**
@@ -170,7 +170,7 @@ export type ContentDef = Readonly<{
   vision?: number
   /**
    * What it does on its own besides fighting, each run by the code its `kind` names (`src/engine/abilities/`): an aura, a
-   * bounty on what dies near it, a lucky hit. The kernel calls each kind's hooks at the moments it declares
+   * bounty on what dies near it, a lucky hit. The battle engine calls each kind's hooks at the moments it declares
    * (docs/system-design/army-authoring.md, "Abilities"); a kind it does not know stops the registry from loading.
    * Absent: none.
    */
@@ -244,7 +244,7 @@ export type ContentDef = Readonly<{
    * Construction territory (pulse.md): a structure with this projects a build range — its player may build
    * within this many tiles of it, measured as range is (`footprintWithin`), to the nearest tile of its footprint, a
    * row counting two columns — while it is linked to its side's Grid Nexus. Absent: it projects none. Only the Build Phase reads it
-   * (`src/build/territory.ts`); the kernel never does. While the "Build range" Experiment is being felt, its
+   * (`src/build/territory.ts`); the battle engine never does. While the "Build range" Experiment is being felt, its
    * value replaces this number on every structure that has one.
    */
   constructionRadius?: number
@@ -252,7 +252,7 @@ export type ContentDef = Readonly<{
    * Supply (the owner, 2026-10-16: "Supply should be controlled by another building"): a structure with this lets its
    * side field this many more units at once. A side's supply is the sum of what its standing structures give; a side
    * whose structures give none has no cap, so every map and sandbox from before supply resolves exactly as it did.
-   * The kernel reads it, in production only (`src/content/supply.ts`).
+   * The battle engine reads it, in production only (`src/content/supply.ts`).
    */
   supplyProvided?: number
   /**
@@ -299,7 +299,7 @@ export type ProductionRecipe = Readonly<{
 
 /**
  * The default per-entity fields every fresh instance of this content starts with — shared by the
- * opening of a sandbox (its own initial placements, `skirmish/opening/open.ts`) and the kernel's own
+ * opening of a sandbox (its own initial placements, `skirmish/opening/open.ts`) and the battle engine's own
  * spawn point (a unit created mid-Pulse, `pulse/spawn.ts`), so a fresh entity's defaults are declared
  * once rather than kept in sync by hand in two files that create entities for two different reasons.
  * Lives here rather than in `state/types.ts` because it reads `ContentDef` fields; `state` stays

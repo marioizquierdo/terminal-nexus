@@ -2,7 +2,7 @@
 //
 // Keys are emitted in sorted order at every depth, so two structurally equal values always produce
 // the same bytes regardless of the order their properties happened to be assigned in. Every number
-// the kernel stores is an integer, so `JSON.stringify`'s number formatting is exact and identical
+// the battle engine stores is an integer, so `JSON.stringify`'s number formatting is exact and identical
 // on any conforming runtime — which is what makes the Bun/Node hash comparison meaningful rather
 // than lucky.
 

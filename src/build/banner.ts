@@ -7,9 +7,9 @@
 // the order the Battle Round is handed (`bannerOrder`, which the shell turns into the match layer's `BannerOrder`).
 //
 // **The lines are the march route, walked on the Build Phase's own map**: a distance field toward the banner's area
-// over the terrain and every structure standing or planned (`src/engine/routing/`, the kernel's own routing), walked downhill
+// over the terrain and every structure standing or planned (`src/engine/routing/`, the battle engine's own routing), walked downhill
 // from the side of the player's Nexus nearest the banner and from the Commander, a tile a step — the way a lone trooper
-// with the road clear would walk it. Not the kernel's march itself: that is walked by every unit at once, round each
+// with the road clear would walk it. Not the battle engine's march itself: that is walked by every unit at once, round each
 // other, fighting what comes in reach; this is the line it keeps to with nobody in the way.
 
 import { footprintBox, footprintCentre, gridDistance, inBounds, tilesOf } from "../engine/geometry/coords.ts"

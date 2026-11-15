@@ -1,6 +1,6 @@
 // Resolving a whole Pulse (pulse.md).
 //
-// The kernel has no real-time loop: it may resolve 240 ticks in a microsecond or over an hour, and
+// The battle engine has no real-time loop: it may resolve 240 ticks in a microsecond or over an hour, and
 // nothing downstream may care which. Verification re-runs these inputs and compares the two hashes.
 
 import type { ContentRegistry } from "../../content/index.ts"
@@ -36,7 +36,7 @@ export function contentLockOf(registry: ContentRegistry): string {
 }
 
 /**
- * Spawn events are emitted by the kernel rather than the loader, so that a report or a renderer
+ * Spawn events are emitted by the battle engine rather than the loader, so that a report or a renderer
  * reading only the event stream still learns the whole cast.
  */
 function spawnEvents(initialState: MatchState, registry: ContentRegistry): DomainEvent[] {

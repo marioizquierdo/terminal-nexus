@@ -56,8 +56,8 @@ export interface TerminalBackend {
    * Changes which colour depth and background future `present()` calls resolve roles against,
    * without re-entering the alternate screen or touching raw mode — the Settings screen needs
    * a colour change to redraw instantly, not flash the terminal by stopping and restarting the whole
-   * backend. Optional: a backend whose session never changes these (`grid watch`'s fixed-for-the-
-   * session use) may simply not implement it.
+   * backend. Optional: a backend whose session never changes these (one whose look is fixed for the
+   * session) may simply not implement it.
    */
   setPresentation?(colors: ColorDepth, theme: Theme): void
 }

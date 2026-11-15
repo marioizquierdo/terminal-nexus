@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // The pictures in the grid design's account of distance, reach and movement (docs/system-design/grid.md), drawn by
 // the game's own code: distances, reaches and the rings a group is set down on by `src/engine/geometry`, and walks by the
-// kernel itself, tick by tick, on open ground. In the document each picture sits in the code block under a
+// engine itself, tick by tick, on open ground. In the document each picture sits in the code block under a
 // `<!-- grid-picture: name -->` line, and tests/grid-pictures.test.ts fails when one is not what this draws.
 //
 //   node scripts/grid-pictures.ts           print every picture
@@ -141,7 +141,7 @@ function openGround(from: Coord, to: Coord): MatchState {
   ).state
 }
 
-/** The kernel's own walk from `from` to `to`: the Pulse resolved tick by tick until the walker stands on `to`. */
+/** The battle engine's own walk from `from` to `to`: the Pulse resolved tick by tick until the walker stands on `to`. */
 function walk(from: Coord, to: Coord): Walk {
   let state = openGround(from, to)
   const context = contextFor(state, FIXTURE_REGISTRY, 600)
@@ -186,7 +186,7 @@ function drawWalk(lines: string[], way: Walk, offset: Coord): void {
 const seconds = (tick: number): string => `${(tick / TICKS_PER_SECOND).toFixed(1)} s`
 
 /** Two troopers set off on the same tick, one eight columns across and one four rows down: the same length on
- *  screen, and by the kernel's own walk they get there together. */
+ *  screen, and by the battle engine's own walk they get there together. */
 function walking(): string {
   const start: Coord = { x: 2, y: 2 }
   const across = walk(start, { x: start.x + 8, y: start.y })
@@ -203,7 +203,7 @@ function walking(): string {
   return picture(lines)
 }
 
-/** A trooper walking to a tile eight columns across and four rows down: the kernel's own way there. */
+/** A trooper walking to a tile eight columns across and four rows down: the battle engine's own way there. */
 function stairs(): string {
   const start: Coord = { x: 2, y: 2 }
   const way = walk(start, { x: start.x + 8, y: start.y + 4 })

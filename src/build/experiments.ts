@@ -19,9 +19,9 @@
 // - the popup pulse (`popupPulseMs`) is presentation alone: the view breathes a popup's border;
 // - the mission's: `nextRound` — whether a round's result waits for the player or the next Build Phase
 //   begins on its own (read by the Pulse's presenter, `src/view/pulse-live.ts`) — changes nothing the
-//   kernel is handed.
+//   engine is handed.
 //
-// None of them reaches the simulation kernel (`src/engine/pulse`, `src/engine/state`) as a setting: a number the kernel
+// None of them reaches the simulation engine (`src/engine/pulse`, `src/engine/state`) as a setting: a number the battle engine
 // reads arrives as content when a Pulse starts (`src/cli/pulse-run.ts`), like any other.
 
 import type { Applies, Experiments, NamesOn, SettingValue, ShownSetting } from "./all-settings.ts"

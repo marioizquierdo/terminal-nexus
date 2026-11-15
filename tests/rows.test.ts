@@ -151,7 +151,7 @@ test("a reach covers its length in columns on its own row and two columns less e
     { x: 11, y: 10 },
     { x: 10, y: 11 },
   ])
-  // For any footprint and any reach, exactly the tiles the kernel's own test puts within it, in reading order.
+  // For any footprint and any reach, exactly the tiles the battle engine's own test puts within it, in reading order.
   for (const footprint of [ONE, FIXTURE_REGISTRY.get(BARRACKS).footprint]) {
     for (const radius of [0, 1, 2, 3, 4, 6, 8]) {
       const everyTile = around(ORIGIN, radius + 4).filter((tile) => footprintWithin(ORIGIN, footprint, tile, ONE, radius))

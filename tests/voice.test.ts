@@ -261,7 +261,7 @@ test("which line she says is a hash of the moment's identity: the same every tim
     // Two rounds running never say the same line at the same moment.
     for (let index = 1; index < picks.length; index += 1) assert.notEqual(picks[index], picks[index - 1], moment)
   }
-  // The cosmetic seed moves where each moment starts in its list — the view's own seed, never the kernel's.
+  // The cosmetic seed moves where each moment starts in its list — the view's own seed, never the battle engine's.
   const seeded = (seed: number): string[] => BARK_MOMENTS.map((moment) => pickLine(lines, moment, 1, seed))
   assert.notDeepEqual(seeded(7), seeded(8))
 })

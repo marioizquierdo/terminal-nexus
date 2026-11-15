@@ -1,7 +1,7 @@
 // The levelled log.
 //
 // Everything below is derived from the ordered event stream and the final state. Nothing here
-// imports the kernel, and a test asserts that: a report that can reach into kernel internals can
+// imports the battle engine, and a test asserts that: a report that can reach into engine internals can
 // narrate a story the events do not contain, and because the log is only ever compared with itself,
 // every other determinism check would still pass.
 

@@ -1,8 +1,8 @@
 // Starting a Battle Round from a committed Build Phase, the shell's half: the plan becomes the
-// kernel's opening state, the *unmodified* kernel resolves it, and the regroup is worked out from where it
-// ended. What these check is the connection — that every ending the kernel has is reachable from the
+// engine's opening state, the *unmodified* engine resolves it, and the regroup is worked out from where it
+// ended. What these check is the connection — that every ending the battle engine has is reachable from the
 // starter map's own data, that the same plan is the same Pulse on every run, and that nothing about how it is
-// watched can change it — because the kernel's own rules have their own suite (rules.test.ts and
+// watched can change it — because the battle engine's own rules have their own suite (rules.test.ts and
 // determinism.test.ts), not this one.
 
 import { test } from "node:test"
@@ -56,7 +56,7 @@ test("every ending the player can meet is reachable from the starter map's own d
   // of four raiders (tests/mission.test.ts, "PERIMETER is won by holding").
 })
 
-test("the same plan is the same Pulse: hashes stable across runs, and identical to the kernel run directly", () => {
+test("the same plan is the same Pulse: hashes stable across runs, and identical to the battle engine run directly", () => {
   const first = play({ plan: DEFENCE }).pulse
   for (let run = 0; run < 5; run += 1) {
     const again = play({ plan: DEFENCE }).pulse
@@ -64,7 +64,7 @@ test("the same plan is the same Pulse: hashes stable across runs, and identical 
     assert.equal(again.timeline.eventsHash, first.timeline.eventsHash, "event hash drifted")
     assert.equal(hashState(again.regroup.state), hashState(first.regroup.state), "the regroup drifted")
   }
-  // The shell adds nothing to the kernel's own answer: resolving the same opening state with
+  // The shell adds nothing to the battle engine's own answer: resolving the same opening state with
   // `resolvePulse` gives the same two hashes.
   const opening = first.timeline.states[0]
   assert.ok(opening !== undefined)
@@ -165,13 +165,13 @@ test("how it is watched cannot change what happened: effects, the cosmetic seed 
     assert.equal(hashState(a.state), hashState(b.state), `the state at ${ms} ms depends on how it is drawn`)
     assert.deepEqual([...a.positions], [...b.positions], `entity positions at ${ms} ms depend on how it is drawn`)
   }
-  // And the kernel's two hashes are the timeline's, not the view's: the same either way.
+  // And the battle engine's two hashes are the timeline's, not the view's: the same either way.
   assert.equal(timeline.stateHash, hashState(timeline.states[timeline.states.length - 1] as never))
 })
 
 test("the first placeholder Pulse, written as a mission, resolves its winning plan the same on every run and runtime", () => {
   // The test mission is the first placeholder Pulse's forces, muster points, seed and length as data
-  // (tests/pulse-helpers.ts), resolved by the trigger runner rather than handed to the kernel directly; its winning
+  // (tests/pulse-helpers.ts), resolved by the trigger runner rather than handed to the battle engine directly; its winning
   // plan's hashes are pinned under Node and Bun, as the rules play it. That plan predates the build range, which
   // it reaches past, so it is handed to the Pulse as a plan rather than placed through the Build Phase, which
   // would refuse it now: this is about the Pulse, not about where a building may go.

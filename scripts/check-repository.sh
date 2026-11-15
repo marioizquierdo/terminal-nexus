@@ -207,6 +207,9 @@ retired_terms=(
   'sandboxes/trials'
   'src/(pulse|state|grid|events|rng|routing|abilities)\b'
   'grid-screenshots'
+  'grid watch'
+  'the engine tool'
+  'compose\.ts'
 )
 
 # Scan for one pattern; extra arguments go to grep (e.g. -i). Prints the surviving hits.

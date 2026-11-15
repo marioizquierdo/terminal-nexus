@@ -1,6 +1,6 @@
 // The ability kinds the game ships, and what the rest of the game asks of an ability without knowing its kind: its
 // problems when content is loaded, the line its card says, how far it reaches. What each kind is and when its hooks
-// run is `types.ts`; the kernel's half — calling the hooks inside a tick — is `src/engine/pulse/abilities.ts`.
+// run is `types.ts`; the battle engine's half — calling the hooks inside a tick — is `src/engine/pulse/abilities.ts`.
 //
 // A new kind is a module beside these and one line in `ABILITIES` (docs/system-design/army-authoring.md,
 // "Abilities"). Nothing else branches on a kind.

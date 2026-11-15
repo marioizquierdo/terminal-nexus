@@ -116,7 +116,7 @@ test("a block's `at` origin offsets its rows, so the grid need not cover the Gri
 })
 
 test("ordinals follow Grid reading order, not the order the blocks are written in", () => {
-  // Ordinal is identity and the kernel's one iteration order, so it must not depend on which player
+  // Ordinal is identity and the battle engine's one iteration order, so it must not depend on which player
   // block the author happened to type first. Same two entities, blocks in both orders, same result.
   const north = block({ x: 0, y: 0 }, ["t"], { t: { content: "unit.citizen.trooper" } })
   const south = block({ x: 3, y: 2 }, ["t"], { t: { content: "unit.citizen.trooper" } })

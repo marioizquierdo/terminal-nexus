@@ -395,7 +395,7 @@ export const ALL_SETTINGS = {
   // a round), which are gone.
 
   /** How far into a Battle Round every building's first wave comes; the owner's (2026-10-05). Read when a
-   *  battle starts (`src/cli/pulse-run.ts`), in the kernel's ticks. */
+   *  battle starts (`src/cli/pulse-run.ts`), in the battle engine's ticks. */
   firstWave: { tier: "tuned", unit: "seconds", default: 5 },
 
   // --- The Nexus Pulse (the Commander step 8B) -------------------------------------------------------

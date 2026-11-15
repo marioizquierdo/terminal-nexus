@@ -12,7 +12,7 @@
 //    `levels.ts`);
 // 5. **resolve** each story's levels into what each offers: everything the story has unlocked by then.
 //
-// Pure, like the rest of the rules around the kernel: no clock, no randomness, nothing read from disk. The files,
+// Pure, like the rest of the rules around the battle engine: no clock, no randomness, nothing read from disk. The files,
 // the content registry and the map table are arguments (`src/armies/index.ts` passes the game's).
 
 import type { ContentRegistry } from "../content/index.ts"

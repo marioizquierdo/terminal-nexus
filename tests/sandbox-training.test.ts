@@ -1,5 +1,5 @@
 // A building placed in a sandbox's Battle Round does what its army's card says it does: it trains its wave, the same
-// recipe and first-wave time a battle gives it (docs/system-design/sandboxes.md, "A building's wave"). The decision is the owner's: "if you are testing a building, you are placing it in there in
+// recipe and first-wave time a battle gives it (docs/system-design/skirmish-saves.md, "A building's wave"). The decision is the owner's: "if you are testing a building, you are placing it in there in
 // battle mode, and the sandbox has enough resources, then the buildings will start doing its thing."
 
 import { test } from "node:test"

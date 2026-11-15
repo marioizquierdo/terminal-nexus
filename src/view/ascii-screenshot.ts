@@ -1,6 +1,6 @@
 // PRESENTATION — an ASCII screenshot: the Grid exactly as the game's screen draws it, cell for cell, written out as text
 // for a reader that reads text (an agent, a test, a log). Not an image: a screenshot is a picture of the screen
-// (PNG, `scripts/playtest.mjs`, the grid-screenshots skill); an ASCII screenshot is the Grid's own cells.
+// (PNG, `scripts/playtest.mjs`); an ASCII screenshot is the Grid's own cells.
 //
 // The picture is the screen's and nothing else: the same layers in the same bands (`drawGridLayers`), the same glyphs,
 // featureless ground drawn as the screen's sparse lattice, a unit on a roof drawn over its building, effects only when

@@ -1,7 +1,7 @@
-// The raid's intent (`src/match/intent.ts`): what each group a round brings goes for first is the kernel's
+// The raid's intent (`src/match/intent.ts`): what each group a round brings goes for first is the battle engine's
 // own choice on the round's first tick, worked out on the plan as it stands — held here against the real
 // Pulse in every round of PERIMETER, with and without a plan, at the match layer and through the shell's
-// `foresee` — and the way it would go walks the kernel's own steps, round the ridge rather than through it.
+// `foresee` — and the way it would go walks the battle engine's own steps, round the ridge rather than through it.
 // What a player sees of it is tests/raid-view.test.ts.
 
 import { test } from "node:test"
@@ -43,7 +43,7 @@ const PLANS: readonly (readonly (readonly StructurePlacement[])[])[] = [
 ]
 
 /** The target most of `units` chose in `state` — on a tie, the first unit's among the tied, units in
- *  ordinal order — read straight off the kernel's state. */
+ *  ordinal order — read straight off the battle engine's state. */
 function majority(state: MatchState, units: readonly number[]): number | null {
   const votes = new Map<number, number>()
   const order: number[] = []
@@ -91,7 +91,7 @@ function lostOnItsFirstTick(input: MissionPulseInput): boolean {
 
 // It plays PERIMETER three times over, with and without a plan, each round twice: longer than Bun's five seconds a
 // test, so it says how long it may take.
-test("what each group goes for first is the kernel's own choice on the real Pulse's first tick, in every round, with and without a plan", { timeout: 60_000 }, () => {
+test("what each group goes for first is the battle engine's own choice on the real Pulse's first tick, in every round, with and without a plan", { timeout: 60_000 }, () => {
   let compared = 0
   for (const plan of PLANS) {
     for (const input of rounds(plan)) {
@@ -208,7 +208,7 @@ test("a building on the raid's way moves the way it would go round it, not what 
 /** Whether a tile is rock on the starter map. */
 const rock = (tile: Coord): boolean => grid.tiles[tile.y * grid.width + tile.x] === "terrain.rock"
 
-test("the way each group would go is the kernel's own route: one tile at a time, never through rock, round the ridge, ending next to what it goes for", () => {
+test("the way each group would go is the battle engine's own route: one tile at a time, never through rock, round the ridge, ending next to what it goes for", () => {
   let checked = 0
   for (const plan of PLANS) {
     for (const input of rounds(plan)) {

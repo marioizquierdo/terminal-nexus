@@ -9,7 +9,7 @@
 // What an upgrade or a mode changes is written as a Nexus power's effect naming the building (`EFFECTS`, the kinds
 // that can `refit` one building), and it is that building's alone: a building carrying any is given a content id of its
 // own, its base's and what it carries (`fittedId`, `src/content/fitted.ts`), which its side's registry resolves here
-// (`fitterOf`). So the kernel resolves a battle with an upgraded Barracks as it resolves any other, and a Barracks
+// (`fitterOf`). So the battle engine resolves a battle with an upgraded Barracks as it resolves any other, and a Barracks
 // beside it is untouched. An order changes nothing of the building's content: what it does is the opening's, for one
 // round (`ORDERS`).
 //

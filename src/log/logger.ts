@@ -16,7 +16,7 @@
 //
 // **The clock is injected** (`now`, `Date.now` unless a test passes its own), so this module names no
 // clock of its own choosing and a test reads exact times. **Nothing the rules decide may depend on a
-// log**: the kernel and the match layer never import this folder (`tests/architecture.test.ts`), and a
+// log**: the battle engine and the match layer never import this folder (`tests/architecture.test.ts`), and a
 // log is only ever read to be shown or exported.
 
 import type { LogLevel } from "./levels.ts"

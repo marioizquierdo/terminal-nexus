@@ -5,19 +5,19 @@
 // never reverted out of citizen.ts or ravel.ts, both of which carry tuned relationships other tests depend on.
 //
 // This roster exists for a different reason than the other two: not to characterise a faction, but to
-// stress-test whether `ContentDef` plus the existing kernel rules can absorb a batch of genuinely
+// stress-test whether `ContentDef` plus the existing engine rules can absorb a batch of genuinely
 // different unit *mechanics* — the unit-architecture spike, which Mario asked for directly. Every
 // content id below is namespaced `*.bench.*` rather than `*.citizen.*`/`*.ravel.*` for exactly that
 // reason: no faction owns any of this.
 //
-// Per-design provenance (what each one needed from the kernel, if anything) is in
+// Per-design provenance (what each one needed from the battle engine, if anything) is in
 // `docs/history/reports/2026-09-10-unit-architecture-spike.md`. The short version: most of this
-// roster is `ContentDef` data and nothing else. Five designs needed one new, small, reusable kernel capability each — a hard
+// roster is `ContentDef` data and nothing else. Five designs needed one new, small, reusable engine capability each — a hard
 // targeting restriction (`targetLayers`), a soft targeting bias (`targetPreference`), a one-time
 // windup before a first shot, an AOE attack (`splash`, the same `{radius,damage}` shape `detonation`
 // already used), an ally-seeking heal behavior, and a combat-only spawn primitive (periodic and
 // on-death) — and once built, several *other* designs below needed nothing further at all, composing
-// those five capabilities with zero additional kernel code. That reuse is the actual finding.
+// those five capabilities with zero additional engine code. That reuse is the actual finding.
 
 import type { EntityLayer } from "../engine/geometry/types.ts"
 import type { ContentDef } from "./types.ts"
@@ -110,7 +110,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     // "Goes to the nearest enemy and starts shooting and following" is already exactly what `behavior:
     // "advance"` plus an `attack` does for *any* content - the air layer and its own mask
     // (`collidesWith: ["air"]`, ignoring terrain) were already proven by the Ravel battles. Nothing about being
-    // a flyer needed new kernel work; only the *ground's* inability to reach it did.
+    // a flyer needed new engine work; only the *ground's* inability to reach it did.
     id: "unit.bench.skyraider",
     short: "skyraider",
     layer: "air",
@@ -144,7 +144,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     detonation: { radius: 2, damage: 16, triggerRange: 1 },
   },
 
-  // --- Pure composition: zero new kernel code, reusing the two capabilities above ----------------
+  // --- Pure composition: zero new engine code, reusing the two capabilities above ----------------
   {
     // Hog Rider: `targetLayers: ["obstacles"]` alone - the exact mechanism the grunt uses to lose a
     // layer, pointed at a different one - makes a unit ignore every enemy soldier entirely and beeline
@@ -297,7 +297,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
   // --- Bulwark: a push, the rule for a unit that did not walk (`bench-bulwark-shove.save.json`) ----------
   {
     // Milestone 16's test effect for a Grid that changes under a unit: every two seconds it shoves each enemy
-    // touching it two tiles straight away (`shove`, src/engine/abilities/shove.ts, through the kernel's `displace`). A pushed
+    // touching it two tiles straight away (`shove`, src/engine/abilities/shove.ts, through the battle engine's `displace`). A pushed
     // unit stops where its body would not fit and walks back from where it lands, by its route — so the first power
     // that pushes or pulls has the rule ready, proven here.
     id: "unit.bench.bulwark",
@@ -316,7 +316,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
 
   // --- Spawner: a combat-only summon primitive (`hatchery-spawn.save.json`) -----------------------
   {
-    // "Large unit that creates smaller units" needed real, new machinery: nothing in the kernel could
+    // "Large unit that creates smaller units" needed real, new machinery: nothing in the battle engine could
     // create an entity after tick 0 before this spike. `ContentDef.spawn` plus `pulse/spawn.ts`'s
     // `spawning()` phase is scoped deliberately narrow - no cost, no resource, nothing the empty
     // `economyAndProduction` phase would recognise as its own - specifically so it reads as a combat
@@ -416,7 +416,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     constructionRadius: 6,
   },
   {
-    // The Grid Nexus as it was before it fought back: a target and nothing more. The kernel's own sandboxes that send
+    // The Grid Nexus as it was before it fought back: a target and nothing more. The battle engine's own sandboxes that send
     // a lone trooper round a wall, or ask what ends a Pulse, are about routes and rules, not about a Nexus that shoots
     // the trooper dead on arrival, so they stand this one where the Citizen Nexus stood.
     id: "structure.bench.nexus",

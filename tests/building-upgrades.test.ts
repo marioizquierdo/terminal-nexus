@@ -3,7 +3,7 @@
 // "Buildings can also have a state change ... you can select the building to change the mode"). Selected in Explore
 // Map, a building of the player's lists its card's actions under their keys; an upgrade is bought at once, kept by that
 // building alone for the rest of the match, and carried by the regroup into every round after; a mode is switched between
-// rounds and stays switched. The kernel sees a building that carries any as a content id of its own
+// rounds and stays switched. The battle engine sees a building that carries any as a content id of its own
 // (`structure.citizen.barracks+production-line`), which its side's registry resolves.
 
 import { test } from "node:test"

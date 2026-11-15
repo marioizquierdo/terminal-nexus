@@ -7,7 +7,7 @@
 // log never is (the owner, 2026-11-12: "Logging is a separate concern").
 //
 // A save may instead open on a Battle Round written by hand: a **sandbox** (`sandboxes/`), whose `start`
-// says what each slot has on the Grid before round 1 (`./start.ts`). It is opened by the kernel from that `start`
+// says what each slot has on the Grid before round 1 (`./start.ts`). It is opened by the battle engine from that `start`
 // (`src/skirmish/opening/`), not by the battle, and both its slots plan nothing.
 
 import { inBounds, tileIndex, tilesOf } from "../engine/geometry/coords.ts"

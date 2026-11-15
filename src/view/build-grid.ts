@@ -203,7 +203,7 @@ const INCOMING_WASH = 0.2
  * group comes and what it will hit, and sees both move when a building changes the answer. In the Build
  * Phase only: a Pulse shows what happens, not what was foreseen.
  *
- * - The trail follows the way the group's front unit would walk (`RaidGroup.path`, the kernel's own step
+ * - The trail follows the way the group's front unit would walk (`RaidGroup.path`, the battle engine's own step
  *   rule): an arrow every few columns of the Grid's own distance along it (`trailSpacing`, the owner's "1 arrow
  *   every 3 tiles" made whole rows: four columns, or two rows), each pointing a whole
  *   stair on along the way (`LOOK_AHEAD`) — the glyph pack's own arrowheads where the way runs straight, its

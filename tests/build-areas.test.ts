@@ -52,7 +52,7 @@ function open(side: Side, tile: Coord): boolean {
 
 // --- A building's reach ------------------------------------------------------------------------------
 
-/** Whether `tile` is within a reach of `radius` of a footprint at `anchor` (the kernel's own test) and has a four-way
+/** Whether `tile` is within a reach of `radius` of a footprint at `anchor` (the battle engine's own test) and has a four-way
  *  neighbour that is not: one of the last tiles the reach covers. */
 function onEdge(anchor: Coord, footprint: readonly Coord[], radius: number, tile: Coord): boolean {
   const within = (x: number, y: number): boolean => footprintWithin(anchor, footprint, { x, y }, ONE, radius)

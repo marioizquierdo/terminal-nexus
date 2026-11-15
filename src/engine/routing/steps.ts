@@ -1,5 +1,5 @@
 // The choice of a step (milestone 16, "the parts"): from where a unit stands, its four steps ranked by a field, best
-// first. The kernel decides which of them a unit may take this tick (who is in the way, what it can pay for); this only
+// first. The battle engine decides which of them a unit may take this tick (who is in the way, what it can pay for); this only
 // says how good each is.
 //
 // A step is as good as the walk it leaves: its own cost plus the field's distance from where it lands, so a step along

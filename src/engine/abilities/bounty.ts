@@ -1,7 +1,7 @@
 // A bounty (Dob Hunter's, commander-armies.md: "his powers pay him for aggression and for wreckage, so his economy
 // runs on the fight rather than beside it"): every enemy that dies within its radius of the bearer, while the bearer
 // stands, earns the bearer's side `credits` to spend from its next Build Phase — `structureCredits` for a building.
-// The kernel only notes it (`ability.triggered`, with the credits); the rules between rounds add the credits up
+// The battle engine only notes it (`ability.triggered`, with the credits); the rules between rounds add the credits up
 // (`src/match/earnings.ts`), so a bounty is an economy that runs on the Battle Round itself.
 
 import type { Shape } from "../../content/shape.ts"
