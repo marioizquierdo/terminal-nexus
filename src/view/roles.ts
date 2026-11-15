@@ -126,7 +126,7 @@ const INK_ROLE: StyleRole = "chrome.value"
  * Playtest findings folded into the values:
  *
  *   - `chrome.muted`, `chrome.label` and `chrome.frame` are bright enough to read after the `dim`
- *     attribute softens them: every `chrome.muted` cell in compose.ts is also drawn dim, so the role's
+ *     attribute softens them: every `chrome.muted` cell is also drawn dim, so the role's
  *     own colour compounds with a second darkening ("can't barely see the help text"). The frame and the
  *     map's edge carry the same `dim` on their soft segments and took the muted role's colour for it
  *     ("during day time I was not able to tell where the UI is").

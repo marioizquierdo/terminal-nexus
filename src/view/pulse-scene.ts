@@ -1,6 +1,6 @@
 // The Battle Round on the Build Phase's own screen — the fight drawn through the same
-// cursor-driven camera, in the same frame, under the same popups. The map is 96 x 40; the old Pulse view
-// (`compose.ts`) draws a fixed 48 x 16 pane with its own chrome, and so could not have shown it.
+// cursor-driven camera, in the same frame, under the same popups, so a map larger than the screen is
+// scrolled as it is while building.
 //
 // Everything here is drawing: it takes a `PulseFrame` — what the presenter (`pulse-live.ts`) has already
 // worked out for one presentation instant — and paints cells. It reads no clock and asks nothing of the
@@ -27,7 +27,7 @@ import type { StatusMessage } from "../build/status.ts"
 import { status } from "../build/status.ts"
 import type { EndingPhase, EndingTimes, PulseResult } from "./ending.ts"
 import { BEAM_BOLD, beamFrame, beamLight, formatTimer, timerLit, timerSeconds } from "./ending.ts"
-import { drawnBold, forceBar } from "./compose.ts"
+import { drawnBold } from "./grid-layer.ts"
 import { inView } from "./build-grid.ts"
 import { drawFire } from "./burning.ts"
 import { paintEffectCells } from "./effects/composite.ts"
@@ -599,4 +599,11 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
       limit: limit - control.hotkey.length - 3,
     })
   }
+}
+
+/** Ten characters of `#` and `-`: how much of `max` is left in `current`, never empty while anything is. */
+function forceBar(current: number, max: number): string {
+  const width = 10
+  const filled = max <= 0 ? 0 : Math.max(current > 0 ? 1 : 0, Math.round((current / max) * width))
+  return `${"#".repeat(Math.min(width, filled))}${"-".repeat(Math.max(0, width - filled))}`
 }

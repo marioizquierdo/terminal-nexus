@@ -47,9 +47,9 @@ test("light theme text is dark and dark theme text is light, in truecolor RGB", 
   assert.ok(lightText < 100, `light theme's primary text averaged ${lightText}, too light to read`)
 })
 
-test("chrome.muted survives compose.ts's extra dim attribute in either theme", () => {
-  // compose.ts draws every chrome.muted cell with `dim: true` on top of the role's own colour
-  // (the border, the footer controls line, the panel labels) - the owner's actual finding was this
+test("chrome.muted survives the extra dim attribute in either theme", () => {
+  // Every chrome.muted cell is drawn with `dim: true` on top of the role's own colour
+  // (the border, the bottom line's hints, the panel labels) - the owner's actual finding was this
   // combination reading as invisible. The role's own colour has to start bright enough that a
   // renderer's ~50% dim reduction still lands somewhere legible against that theme's background.
   const halved = (rgb: readonly [number, number, number]): number =>
@@ -62,7 +62,7 @@ test("chrome.muted survives compose.ts's extra dim attribute in either theme", (
   assert.ok(lightBg - lightMuted > 40, `light chrome.muted, dimmed, is only ${lightMuted} from ~${lightBg}`)
 })
 
-test("chrome.frame survives compose.ts's extra dim attribute in either theme (2026-09-26 playtest)", () => {
+test("chrome.frame survives the extra dim attribute in either theme (2026-09-26 playtest)", () => {
   // The border's own soft (scrolling) segments carry `dim: true` the same way chrome.muted's cells
   // do, and an owner playtest found the border unreadable in bright ambient light - "during day time
   // I was not able to tell where the UI is" - which is exactly the compounding the chrome.muted test

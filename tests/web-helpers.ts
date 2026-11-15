@@ -1,5 +1,5 @@
 // What "the browser page runs the terminal's code" has to mean, as one function: resolve a real
-// Pulse, draw its frames, play a Build Phase and a menu by their real key bytes, and fingerprint all
+// Pulse, draw its frames as the Battle Round draws them, play a Build Phase and a menu by their real key bytes, and fingerprint all
 // of it. `tests/web.test.ts` runs this once under Node and once bundled for a browser inside a sandbox
 // with no Node features at all, and the two answers must be identical.
 
@@ -19,7 +19,8 @@ import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToAnsi } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import { MENU_LAYOUT, composeMenuFrame } from "../src/view/menu.ts"
-import { DEFAULT_PRESENTATION, createView } from "../src/view/snapshot.ts"
+import { DEFAULT_PRESENTATION } from "../src/view/snapshot.ts"
+import { battleRoundScreen } from "./battle-round-frame.ts"
 
 export type Sameness = Readonly<{
   stateHash: string
@@ -38,10 +39,11 @@ const print = (frame: ReadonlyCellFrame): string => sha256Hex(frameToAnsi(frame,
 export function sameness(opening: BattleOpening): Sameness {
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(opening, loaded.state, loaded.registry, opening.pulseTicks, opening.seed)
-  const view = createView(timeline, DEFAULT_PRESENTATION)
+  const screen = battleRoundScreen(timeline, { presentation: DEFAULT_PRESENTATION })
+  const durationMs = timeline.states.length * (1000 / timeline.ticksPerSecond)
   const pulseFrames: string[] = []
-  for (let time = 0; time <= view.durationMs; time += Math.max(1, Math.floor(view.durationMs / 40))) {
-    pulseFrames.push(print(view.composeAt(time, "truecolor", { paused: false, speed: 1 })))
+  for (let time = 0; time <= durationMs; time += Math.max(1, Math.floor(durationMs / 40))) {
+    pulseFrames.push(print(screen.frameAt(time, "truecolor")))
   }
 
   const context = starterContext()

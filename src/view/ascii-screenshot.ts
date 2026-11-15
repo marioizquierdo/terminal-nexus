@@ -12,8 +12,8 @@
 
 import type { Coord } from "../engine/geometry/types.ts"
 import type { PlayerId } from "../engine/state/types.ts"
-import type { GridLayersInput } from "./compose.ts"
-import { drawGridLayers } from "./compose.ts"
+import type { GridLayersInput } from "./grid-layer.ts"
+import { drawGridLayers } from "./grid-layer.ts"
 import type { BandCell } from "./frame.ts"
 import { composeBands, frameToText } from "./frame.ts"
 import { entityGlyph } from "./theme.ts"

@@ -12,8 +12,9 @@
 //     of constant color"). Under a unit, a building or a corpse the scorch alone, so it keeps its glyph and every
 //     colour of its own and only the ground round it changes (the corruption law).
 //
-// Both Pulse views draw it from the same `PulseSample.fire`: the engine tool's (`compose.ts`) and the Build Phase
-// screen's, the live Battle Round and the replay of the last round (`pulse-scene.ts`), and with them the browser page.
+// Every picture of a Pulse draws it from the same `PulseSample.fire`: the Build Phase screen's live Battle Round and
+// the replay of the last round (`pulse-scene.ts`), with them the browser page, and the board alone
+// (`drawGridLayers`, the ASCII screenshot).
 
 import type { Coord, GridTerrain, TerrainId } from "../engine/geometry/types.ts"
 import type { Footprint } from "../engine/geometry/types.ts"

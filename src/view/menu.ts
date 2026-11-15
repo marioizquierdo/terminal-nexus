@@ -1,5 +1,5 @@
 // The top-level menu screen — "a menu is a frame like any other." Reuses
-// the same band compositor, style roles, and glyph packs `compose.ts` draws a Pulse with, so
+// the same band compositor, style roles, and glyph packs the Build Phase draws a Pulse with, so
 // colour depths, themes, and monochrome come free rather than needing a second accessibility pass.
 //
 // Unlike a Pulse, a menu has no ticks and nothing animates, so there is no `Playback` clock here —
@@ -19,8 +19,8 @@ import type { ColorDepth, StyleRole } from "./roles.ts"
 import { chromeGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 
-/** The 80x24 RULE floor (`docs/system-design/grid.md`) — the same footprint as `compose.ts`'s Pulse view
- *  (`COMPOSITION_SIZE`), so the terminal never resizes when the game moves from the menu into a match. */
+/** The 80x24 RULE floor (`docs/system-design/grid.md`) — the same floor as the Build Phase's, so the terminal
+ *  never needs resizing when the game moves from the menu into a match. */
 export const MENU_SIZE = { width: 80, height: 24 } as const
 
 /** Where every menu screen's rows are drawn — the one layout the composer and the mouse adapter both

@@ -15,7 +15,7 @@ import { resolvePulse } from "../src/engine/pulse/index.ts"
 import { VISION } from "../src/engine/pulse/target.ts"
 import { loadSandbox, playSandbox, sandboxFiles } from "./helpers.ts"
 import { creditsEarned } from "../src/match/index.ts"
-import { VIEWPORT_TILES } from "../src/view/compose.ts"
+import { MIN_VIEWPORT } from "../src/build/camera.ts"
 
 function baseOpening(): BattleOpening {
   return {
@@ -296,16 +296,16 @@ test("every checked-in map gives each side that fights somewhere to go: its own 
   assert.deepEqual(missing, [], `no target and no enemy Nexus: ${missing.join("; ")}`)
 })
 
-test("every sandbox fits the engine tool's Grid pane, so no map is cut or drawn over the side panel", async () => {
-  // The engine tool draws one fixed composition: a smaller Grid is centred in the pane, a bigger one is cut and its
-  // columns past the pane drawn over the panel.
+test("every sandbox fits the minimum viewport, so its Battle Round shows the whole map at the 80 x 24 floor", async () => {
+  // At the floor the Battle Round's Grid pane is at least the minimum viewport: a sandbox no bigger is watched whole,
+  // with nothing off screen to scroll to.
   const misfits: string[] = []
   for (const name of sandboxFiles()) {
     const { grid } = await loadSandbox(name)
     const { width, height } = "preset" in grid ? presetDimensions(grid.preset) : grid
-    if (width > VIEWPORT_TILES.width || height > VIEWPORT_TILES.height) misfits.push(`${name} is ${width} x ${height}`)
+    if (width > MIN_VIEWPORT.width || height > MIN_VIEWPORT.height) misfits.push(`${name} is ${width} x ${height}`)
   }
-  assert.deepEqual(misfits, [], `over the ${VIEWPORT_TILES.width} x ${VIEWPORT_TILES.height} pane: ${misfits.join("; ")}`)
+  assert.deepEqual(misfits, [], `over the ${MIN_VIEWPORT.width} x ${MIN_VIEWPORT.height} minimum viewport: ${misfits.join("; ")}`)
 })
 
 test("melee-kill: a defender dies to melee and the attackers survive", async () => {

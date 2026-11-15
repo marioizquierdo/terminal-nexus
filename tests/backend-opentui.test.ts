@@ -9,7 +9,8 @@ import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
-import { createView, frameToText } from "../src/view/index.ts"
+import { frameToText } from "../src/view/index.ts"
+import { battleRoundScreen } from "./battle-round-frame.ts"
 import { RUNTIME_IS_BUN, loadSandbox } from "./helpers.ts"
 
 async function mirrorFrame() {
@@ -22,8 +23,8 @@ async function mirrorFrame() {
     opening.pulseTicks,
     opening.seed,
   )
-  const view = createView(timeline)
-  return view.snapshotAt(view.durationMs * 0.66, "monochrome")
+  // The Battle Round as the game draws it, two thirds of the way through the fight.
+  return battleRoundScreen(timeline).frameAt(timeline.states.length * (1000 / timeline.ticksPerSecond) * 0.66, "monochrome")
 }
 
 if (RUNTIME_IS_BUN) {
@@ -37,12 +38,16 @@ if (RUNTIME_IS_BUN) {
     try {
       drawFrameInto(core, rendered.renderer.nextRenderBuffer, frame, "monochrome")
       await rendered.renderOnce()
-      const captured = (await rendered.captureCharFrame())
-        .split("\n")
-        .map((line) => line.replace(/[ ]+$/u, ""))
-        .join("\n")
-        .replace(/\n+$/u, "")
-      assert.equal(captured, frameToText(frame))
+      // Both sides read the same way: trailing spaces and the blank rows under the last drawn one dropped (a Battle Round
+      // on a small Grid is centred in the terminal, with a blank row below it).
+      const asText = (text: string): string =>
+        text
+          .split("\n")
+          .map((line) => line.replace(/[ ]+$/u, ""))
+          .join("\n")
+          .replace(/\n+$/u, "")
+      const captured = asText(await rendered.captureCharFrame())
+      assert.equal(captured, asText(frameToText(frame)))
     } finally {
       await rendered.renderer.destroy()
     }

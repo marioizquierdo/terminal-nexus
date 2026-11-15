@@ -9,7 +9,8 @@ import { EventEmitter } from "node:events"
 import { AnsiBackend } from "../src/view/backends/ansi.ts"
 import { selectBackend } from "../src/view/backends/index.ts"
 import { createTerminalSession } from "../src/cli/lifecycle.ts"
-import { COMPOSITION_SIZE, composeBands } from "../src/view/index.ts"
+import { composeBands } from "../src/view/index.ts"
+import { MENU_SIZE } from "../src/view/menu.ts"
 import { RUNTIME_IS_BUN } from "./helpers.ts"
 
 const ESC = String.fromCharCode(27)
@@ -162,7 +163,7 @@ function backendOptions() {
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
     colors: "monochrome" as const,
-    ...COMPOSITION_SIZE,
+    ...MENU_SIZE,
   }
 }
 

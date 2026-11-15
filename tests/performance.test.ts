@@ -1,4 +1,6 @@
-// Frame budget — the first milestone's requirement: "30 fps sustained over 60 seconds, p95 recorded".
+// Frame budget — the first milestone's requirement: "30 fps sustained over 60 seconds, p95 recorded". The frame
+// measured is the one the game draws during a Battle Round: the presenter's `PulseFrame` on the Build Phase screen
+// (`tests/battle-round-frame.ts`), then the ANSI text a terminal gets.
 //
 // The measurement is the point, not the threshold: the numbers land in docs/history/reports/2026-08-21-pulse-playground.md, and the
 // assertion is only that the budget is not blown.
@@ -9,6 +11,7 @@ import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import { createView, frameToAnsi } from "../src/view/index.ts"
+import { battleRoundScreen } from "./battle-round-frame.ts"
 import { loadSandbox } from "./helpers.ts"
 
 const FRAMES_PER_SECOND = 30
@@ -60,14 +63,14 @@ test("thirty frames a second for sixty seconds stays inside the budget", async (
     opening.pulseTicks,
     opening.seed,
   )
-  const view = createView(timeline)
+  const screen = battleRoundScreen(timeline)
 
   const samples: number[] = []
   let bytes = 0
   for (let frame = 0; frame < FRAMES_PER_SECOND * SECONDS; frame += 1) {
     const timeMs = (frame * 1000) / FRAMES_PER_SECOND
     const started = performance.now()
-    const composed = view.composeAt(timeMs, "color256", { paused: false, speed: 1 })
+    const composed = screen.frameAt(timeMs, "color256")
     const text = frameToAnsi(composed, "color256")
     samples.push(performance.now() - started)
     bytes += text.length
@@ -105,13 +108,13 @@ test("the worst case stays inside the budget too: two armies, 48x16, every effec
     opening.pulseTicks,
     opening.seed,
   )
-  const view = createView(timeline)
+  const screen = battleRoundScreen(timeline)
   const samples: number[] = []
   let bytes = 0
   for (let frame = 0; frame < FRAMES_PER_SECOND * SECONDS; frame += 1) {
     const timeMs = (frame * 1000) / FRAMES_PER_SECOND
     const started = performance.now()
-    const composed = view.composeAt(timeMs, "truecolor", { paused: false, speed: 1 })
+    const composed = screen.frameAt(timeMs, "truecolor")
     bytes += frameToAnsi(composed, "truecolor").length
     samples.push(performance.now() - started)
   }
@@ -121,7 +124,7 @@ test("the worst case stays inside the budget too: two armies, 48x16, every effec
   const worst = samples[samples.length - 1] ?? 0
   const over = samples.filter((sample) => sample > BUDGET_MS).length
   console.log(
-    `worst case: ${view.effectCount} effect instances  p95 ${p95.toFixed(2)} ms  ` +
+    `worst case: ${createView(timeline).effectCount} effect instances  p95 ${p95.toFixed(2)} ms  ` +
       `max ${worst.toFixed(2)} ms  over budget ${over}  bytes/frame ${Math.round(bytes / samples.length)}`,
   )
   assert.ok(p95 < BUDGET_MS, `p95 of ${p95.toFixed(2)} ms exceeds the budget`)
@@ -149,12 +152,12 @@ test("the worst case with ground burning stays inside the budget: four patches a
     sourceOrdinal: 1000 + index,
   }))
   const timeline = { ...resolved, states: resolved.states.map((state) => ({ ...state, burning })) }
-  const view = createView(timeline)
+  const screen = battleRoundScreen(timeline)
   const samples: number[] = []
   for (let frame = 0; frame < FRAMES_PER_SECOND * SECONDS; frame += 1) {
     const timeMs = (frame * 1000) / FRAMES_PER_SECOND
     const started = performance.now()
-    const composed = view.composeAt(timeMs, "truecolor", { paused: false, speed: 1 })
+    const composed = screen.frameAt(timeMs, "truecolor")
     frameToAnsi(composed, "truecolor")
     samples.push(performance.now() - started)
   }

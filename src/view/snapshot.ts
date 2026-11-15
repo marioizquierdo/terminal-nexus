@@ -2,7 +2,7 @@
 // presentation time, and composes cells. It may interpolate, skip, pause, accelerate and lie about
 // timing freely, because none of it can change an outcome (`docs/system-design/grid-engine.md`).
 //
-// `snapshotAt` is pure: same arguments, same frame. It never reads a clock, so a frame at time t is
+// `sampleAt` is pure: same arguments, same sample. It never reads a clock, so a sample at time t is
 // identical whether every earlier frame rendered or most were skipped.
 
 import type { ContentRegistry } from "../content/index.ts"
@@ -12,10 +12,8 @@ import type { MatchState, PlayerId } from "../engine/state/types.ts"
 import type { ActiveEffect } from "./effects/index.ts"
 import { EffectTimeline, buildFlightHoldTicks, deriveEffects, flightHoldTicks } from "./effects/index.ts"
 import type { GlyphPack } from "./theme.ts"
-import type { ReadonlyCellFrame } from "./frame.ts"
 import type { ColorDepth } from "./roles.ts"
-import type { HeldCorpse } from "./compose.ts"
-import { FEED_KINDS, composeFrame } from "./compose.ts"
+import type { HeldCorpse } from "./grid-layer.ts"
 import type { FireTile } from "./burning.ts"
 import { fireAt } from "./burning.ts"
 
@@ -33,8 +31,6 @@ export type PulseTimeline = Readonly<{
   stateHash: string
   eventsHash: string
 }>
-
-export type ViewControls = Readonly<{ paused: boolean; speed: number }>
 
 /**
  * How the view is dressed. None of it can reach the kernel: the cosmetic seed feeds effects only,
@@ -64,8 +60,8 @@ const STEP_LANDS_AT = 0.5
 /**
  * Everything the view draws at one presentation instant, before it is laid onto a screen: which tick's
  * state, where each entity is drawn between ticks, the ranged kills still waiting for their tracers, what
- * every effect is painting, and the feed up to that tick. `composeAt` puts it in the old Pulse frame; the
- * Build Phase's own frame puts it on the Grid through the camera. Pure, like the rest of the view.
+ * every effect is painting, and the feed up to that tick. The Battle Round's frame puts it on the Grid through
+ * the camera (`pulse-scene.ts`); the ASCII screenshot draws the board from it. Pure, like the rest of the view.
  */
 export type PulseSample = Readonly<{
   tick: number
@@ -97,10 +93,10 @@ export type PulseView = Readonly<{
   /** The drawable data at a presentation time. `reducedMotion` overrides the view's own — a player who
    *  turns it on mid-Pulse — without rebuilding the view. */
   sampleAt(timeMs: number, colors: ColorDepth, reducedMotion?: boolean): PulseSample
-  snapshotAt(timeMs: number, colors: ColorDepth): ReadonlyCellFrame
-  /** The same composition with live playback controls filled in — what `watch` presents. */
-  composeAt(timeMs: number, colors: ColorDepth, controls: ViewControls): ReadonlyCellFrame
 }>
+
+/** What the feed tells, besides a unit a building trained. */
+const FEED_KINDS: readonly DomainEvent["kind"][] = ["attack.launched", "entity.died", "structure.destroyed", "pulse.ended"]
 
 export function createView(
   timeline: PulseTimeline,
@@ -166,7 +162,6 @@ export function createView(
     })
     .filter((record) => record.holdTicks > 0)
 
-  const roster = (timeline.states[0]?.entities ?? []).map((entity) => entity.contentId)
   const openingHealth = new Map<PlayerId, number>()
   for (const entity of timeline.states[0]?.entities ?? []) {
     if (timeline.registry.get(entity.contentId).layer === "obstacles") continue
@@ -234,34 +229,6 @@ export function createView(
     }
   }
 
-  const composeAt = (timeMs: number, colors: ColorDepth, controls: ViewControls): ReadonlyCellFrame => {
-    const sample = sampleAt(timeMs, colors)
-    return composeFrame(
-      {
-        battleId: timeline.battleId,
-        battleName: timeline.battleName,
-        seed: timeline.seed,
-        pulseTicks: timeline.pulseTicks,
-        grid: timeline.grid,
-        registry: timeline.registry,
-        state: sample.state,
-        roster,
-        openingHealth,
-        positions: sample.positions,
-        heldCorpses: sample.heldCorpses,
-        tick: sample.tick,
-        recent: sample.recent,
-        paused: controls.paused,
-        speed: controls.speed,
-        status: statusOf(sample.state, sample.tick, lastTick),
-        glyphPack: presentation.glyphPack,
-        effects: sample.effects,
-        fire: sample.fire,
-      },
-      colors,
-    )
-  }
-
   return {
     timeline,
     presentation,
@@ -272,18 +239,5 @@ export function createView(
     openingHealth,
     effectsEndMs,
     sampleAt,
-    // `snapshotAt` deliberately takes no controls, so a snapshot test never depends on what the
-    // player happened to be doing when it was taken.
-    snapshotAt: (timeMs, colors) => composeAt(timeMs, colors, { paused: false, speed: 1 }),
-    composeAt,
   }
-}
-
-function statusOf(state: MatchState, tick: number, lastTick: number): string {
-  if (state.outcome !== null) {
-    return state.outcome.winner === null
-      ? `pulse over - draw by ${state.outcome.reason}`
-      : `pulse over - ${state.outcome.winner} wins by ${state.outcome.reason}`
-  }
-  return tick >= lastTick ? "pulse complete" : "pulse running"
 }

@@ -2,7 +2,7 @@
 //
 // The kernel resolved the whole Pulse before the first frame (`src/cli/pulse-run.ts`); what is left is
 // **when to show what**, and that is presentation: a playback clock the player can pause, slow, step and
-// restart (`Playback`, `grid watch`'s own), and from it the ending's moments (`ending.ts`), every one a
+// restart (`Playback`), and from it the ending's moments (`ending.ts`), every one a
 // pure function of the Pulse's presentation time. The clock is read in one place — the caller hands in
 // `now` as a number, as `BuildAnimation` is handed it — so a test drives a whole Pulse, its last seconds
 // and its walk home included, without waiting a second.
@@ -91,7 +91,7 @@ export type MissionEnding = Readonly<{
   setup?: string
 }>
 
-/** Frames a second the playback's own single-frame step is worth (`grid watch`'s 30). */
+/** Frames a second the playback's own single-frame step is worth. */
 const STEP_FRAMES_PER_SECOND = 30
 
 /** How a frame is drawn: the player's display settings, and — for her voice — the part of the map in view (her

@@ -21,8 +21,9 @@ import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { MatchState, PlayerId } from "../src/engine/state/types.ts"
 import { placementRun } from "../src/view/placement.ts"
-import { COLOR_DEPTHS, DEFAULT_PRESENTATION, EFFECT_RECIPES, MEND_GLYPH, STYLE_ROLES, cellAt, createView, gridOrigin, mendTile } from "../src/view/index.ts"
+import { COLOR_DEPTHS, DEFAULT_PRESENTATION, EFFECT_RECIPES, MEND_GLYPH, STYLE_ROLES, cellAt, mendTile } from "../src/view/index.ts"
 import type { EffectContext, EffectInstance, EffectRecipe } from "../src/view/index.ts"
+import { battleRoundScreen } from "./battle-round-frame.ts"
 import { MAXIMUM, MINIMUM, buildSide, compose, keys, panelLines } from "./build-helpers.ts"
 import { loadSandbox, playSandbox } from "./helpers.ts"
 
@@ -288,29 +289,28 @@ test("a heal shows on screen: a cross of light beside the mended unit, then rise
   assert.ok(patch !== undefined && patch.kind === "heal.applied")
   const mended = timeline.states[patch.tick]?.entities.find((entity) => entity.ordinal === patch.ordinal)
   assert.ok(mended !== undefined)
-  const origin = gridOrigin(timeline.grid)
-  const cellOf = (x: number, y: number) => ({ x: origin.column + x, y: origin.row + y })
-  const above = cellOf(mended.anchor.x, mended.anchor.y - 1)
-  const higher = cellOf(mended.anchor.x, mended.anchor.y - 2)
-  const own = cellOf(mended.anchor.x, mended.anchor.y)
+  const tickMs = 1000 / timeline.ticksPerSecond
+  const screen = battleRoundScreen(timeline)
+  const above = screen.cellOf({ x: mended.anchor.x, y: mended.anchor.y - 1 })
+  const higher = screen.cellOf({ x: mended.anchor.x, y: mended.anchor.y - 2 })
+  const own = screen.cellOf(mended.anchor)
   for (const colors of ["monochrome", "truecolor"] as const) {
-    const view = createView(timeline)
-    const landing = view.snapshotAt((patch.tick + 1) * view.tickDurationMs, colors)
+    const landing = screen.frameAt((patch.tick + 1) * tickMs, colors)
     assert.equal(cellAt(landing, above.x, above.y).glyph, MEND_GLYPH, `${colors}: no cross above the mended unit`)
     assert.deepEqual(cellAt(landing, above.x, above.y).style, { fgRole: "fx.flash" })
     assert.equal(cellAt(landing, own.x, own.y).glyph, "t", "the mended unit's own glyph was replaced")
-    const rising = view.snapshotAt((patch.tick + 3) * view.tickDurationMs, colors)
+    const rising = screen.frameAt((patch.tick + 3) * tickMs, colors)
     assert.equal(cellAt(rising, higher.x, higher.y).glyph, MEND_GLYPH, `${colors}: the cross did not rise`)
     assert.deepEqual(cellAt(rising, higher.x, higher.y).style, { fgRole: "fx.flash", dim: true })
     // Reduced motion: the cross held where it landed, no rise.
-    const still = createView(timeline, { ...DEFAULT_PRESENTATION, reducedMotion: true })
-    const held = still.snapshotAt((patch.tick + 3) * still.tickDurationMs, colors)
+    const still = battleRoundScreen(timeline, { presentation: { ...DEFAULT_PRESENTATION, reducedMotion: true } })
+    const held = still.frameAt((patch.tick + 3) * tickMs, colors)
     assert.equal(cellAt(held, above.x, above.y).glyph, MEND_GLYPH, `${colors}: reduced motion dropped the cross`)
     assert.notEqual(cellAt(held, higher.x, higher.y).glyph, MEND_GLYPH, `${colors}: reduced motion still rose`)
   }
   // With effects off, the same moment shows nothing there: the cross is the heal's, and only presentation's.
-  const off = createView(timeline, { ...DEFAULT_PRESENTATION, effects: false })
-  assert.notEqual(cellAt(off.snapshotAt((patch.tick + 1) * off.tickDurationMs, "monochrome"), above.x, above.y).glyph, MEND_GLYPH)
+  const off = battleRoundScreen(timeline, { presentation: { ...DEFAULT_PRESENTATION, effects: false } })
+  assert.notEqual(cellAt(off.frameAt((patch.tick + 1) * tickMs, "monochrome"), above.x, above.y).glyph, MEND_GLYPH)
 })
 
 test("a heal's mark keeps the effect contract: a pure function of time, one ASCII cell in a declared role, all three forms at the impact beat", () => {
