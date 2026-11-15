@@ -6,7 +6,7 @@
 //
 // Pure: the same battle gives the same brief. Presentation of the battle, so it may read the art and card tables.
 
-import { abilityLines } from "../abilities/index.ts"
+import { abilityLines } from "../engine/abilities/index.ts"
 import type { ActionKind, PowerCard } from "../armies/index.ts"
 import { modeIn, modeSet } from "../armies/index.ts"
 import { CARD_TEXT } from "../content/cards.ts"

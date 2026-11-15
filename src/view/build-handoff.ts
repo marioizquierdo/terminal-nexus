@@ -2,8 +2,8 @@
 // place to the cursor — the focus arrow from a building's row, the see-through cursor from Explore
 // Map's. One flight, two travellers.
 
-import { inColumns } from "../grid/coords.ts"
-import type { Coord } from "../grid/types.ts"
+import { inColumns } from "../engine/geometry/coords.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile, menuEntryRow, tileAtCell } from "../build/layout.ts"
 import type { ArmedPreview } from "../build/state.ts"

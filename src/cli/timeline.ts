@@ -6,11 +6,11 @@
 // (states, events) to the view — which is why `watch` and `run` can be asserted to agree.
 
 import type { ContentRegistry } from "../content/index.ts"
-import type { DomainEvent } from "../events/types.ts"
-import { hashEvents } from "../events/serialize.ts"
-import { resolvePulse } from "../pulse/index.ts"
-import { hashState } from "../state/serialize.ts"
-import type { MatchState } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import { hashEvents } from "../engine/events/serialize.ts"
+import { resolvePulse } from "../engine/pulse/index.ts"
+import { hashState } from "../engine/state/serialize.ts"
+import type { MatchState } from "../engine/state/types.ts"
 import type { PulseTimeline } from "../view/index.ts"
 import type { BattleOpening } from "../skirmish/opening/index.ts"
 

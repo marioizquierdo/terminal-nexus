@@ -36,7 +36,7 @@
 // followed by another key in one read is one Option+key sequence to `keysFromChunk`, which is a real
 // terminal's behaviour and exactly the trap a script must not fall into by accident.
 
-import type { Coord } from "../grid/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import { encodeKeyEvent } from "../terminal/key-events.ts"
 import type { KeyPhase } from "../terminal/key-events.ts"
 import { keysFromChunk } from "../terminal/playback.ts"

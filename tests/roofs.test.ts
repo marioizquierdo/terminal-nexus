@@ -8,13 +8,13 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY, withProduction } from "../src/content/index.ts"
 import type { ContentRegistry, ProductionRecipe } from "../src/content/index.ts"
-import type { DomainEvent } from "../src/events/types.ts"
-import { tilesOf } from "../src/grid/coords.ts"
-import type { Coord } from "../src/grid/types.ts"
-import { contextFor, stepTick } from "../src/pulse/index.ts"
+import type { DomainEvent } from "../src/engine/events/types.ts"
+import { tilesOf } from "../src/engine/geometry/coords.ts"
+import type { Coord } from "../src/engine/geometry/types.ts"
+import { contextFor, stepTick } from "../src/engine/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
-import type { EntityState, MatchState, PlayerId } from "../src/state/types.ts"
+import type { EntityState, MatchState, PlayerId } from "../src/engine/state/types.ts"
 
 type Placed = readonly [x: number, y: number, content: string]
 

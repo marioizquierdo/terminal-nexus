@@ -6,10 +6,10 @@
 // Pure: nothing here reads a clock. The time a tick takes is the command's to measure (`bin/measure.ts`).
 
 import type { ContentRegistry } from "../content/index.ts"
-import type { DomainEvent } from "../events/types.ts"
-import { ROW_DISTANCE } from "../grid/coords.ts"
-import type { MatchState, PlayerId } from "../state/types.ts"
-import { PLAYERS } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import { ROW_DISTANCE } from "../engine/geometry/coords.ts"
+import type { MatchState, PlayerId } from "../engine/state/types.ts"
+import { PLAYERS } from "../engine/state/types.ts"
 
 /** A run of blocked ticks this long or longer is a unit that stood still for good, in all but name: five seconds. */
 export const STALL_TICKS = 60

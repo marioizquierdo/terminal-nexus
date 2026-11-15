@@ -3,9 +3,9 @@
 // text for `buildLog`'s trailing WARN `report` line, so a headless run's single output stream still
 // closes with the outcome, the losses, and the hashes without needing a second stream to carry them.
 
-import { shortHash } from "../state/canonical.ts"
-import type { PlayerId, VictoryReason } from "../state/types.ts"
-import { PLAYERS } from "../state/types.ts"
+import { shortHash } from "../engine/state/canonical.ts"
+import type { PlayerId, VictoryReason } from "../engine/state/types.ts"
+import { PLAYERS } from "../engine/state/types.ts"
 import type { ReportInput } from "./log.ts"
 
 /** Hash digits shown in the human summary. `--json` carries the full digest. */

@@ -16,10 +16,10 @@ import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { createRegistry } from "../content/index.ts"
 import type { Say, Shape } from "../content/shape.ts"
 import { dictionary, isObject, list, literal, number, positiveWholeNumber, record, shown, text, wholeNumber } from "../content/shape.ts"
-import type { EntityLayer } from "../grid/types.ts"
-import { ENTITY_LAYERS } from "../grid/types.ts"
+import type { EntityLayer } from "../engine/geometry/types.ts"
+import { ENTITY_LAYERS } from "../engine/geometry/types.ts"
 import type { AbilityUse } from "../content/types.ts"
-import { abilityProblems } from "../abilities/index.ts"
+import { abilityProblems } from "../engine/abilities/index.ts"
 import type { BuildingCard, BuildingSpawns, PowerEffect } from "./types.ts"
 
 /** A row of a side's build menu, as far as an effect reads it: the structure it builds and what it spawns. */

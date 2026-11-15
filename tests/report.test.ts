@@ -15,7 +15,7 @@ import {
   replayEvents,
   summarize,
 } from "../src/report/index.ts"
-import { TERRAIN } from "../src/grid/types.ts"
+import { TERRAIN } from "../src/engine/geometry/types.ts"
 import { reportInputOf, playSandbox, sandboxFiles } from "./helpers.ts"
 
 /** The exact lines printed in docs/history/milestones/milestone-01-grid-battles.md. */

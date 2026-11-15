@@ -19,7 +19,7 @@
 
 import type { ContentEntry } from "../content/data.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import type { GridTerrain } from "../grid/types.ts"
+import type { GridTerrain } from "../engine/geometry/types.ts"
 import type { MissionDefinition } from "../mission/types.ts"
 import type { Barks } from "./barks.ts"
 import type { Lean } from "./curve.ts"

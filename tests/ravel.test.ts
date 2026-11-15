@@ -3,7 +3,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { CITIZEN_CONTENT, FIXTURE_REGISTRY, RAVEL_CONTENT } from "../src/content/index.ts"
-import { stepCost } from "../src/pulse/index.ts"
+import { stepCost } from "../src/engine/pulse/index.ts"
 import { playSandbox } from "./helpers.ts"
 
 /** Ticks between steps at a given rate — the cadence a viewer actually sees. */

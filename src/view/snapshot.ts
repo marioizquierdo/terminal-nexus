@@ -6,9 +6,9 @@
 // identical whether every earlier frame rendered or most were skipped.
 
 import type { ContentRegistry } from "../content/index.ts"
-import type { DomainEvent } from "../events/types.ts"
-import type { Coord, GridTerrain } from "../grid/types.ts"
-import type { MatchState, PlayerId } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import type { MatchState, PlayerId } from "../engine/state/types.ts"
 import type { ActiveEffect } from "./effects/index.ts"
 import { EffectTimeline, buildFlightHoldTicks, deriveEffects, flightHoldTicks } from "./effects/index.ts"
 import type { GlyphPack } from "./theme.ts"

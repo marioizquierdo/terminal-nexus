@@ -5,8 +5,8 @@
 // Ravel's, `src/battle/sides.ts`) and where each side's troops stand when they hold rather than attack. Symmetric by
 // design, west against east, so neither side's ground is the better one.
 
-import type { Coord, GridTerrain, TerrainId } from "../grid/types.ts"
-import type { TargetArea } from "../state/types.ts"
+import type { Coord, GridTerrain, TerrainId } from "../engine/geometry/types.ts"
+import type { TargetArea } from "../engine/state/types.ts"
 import type { Side } from "./types.ts"
 import crossing from "../../maps/crossing.map.json" with { type: "json" }
 import pocket from "../../maps/pocket.map.json" with { type: "json" }

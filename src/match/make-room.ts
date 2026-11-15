@@ -25,10 +25,10 @@
 // the regroup's, so the view plays both the same way.
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
-import { footprintBox, tilesOf } from "../grid/coords.ts"
-import type { Coord } from "../grid/types.ts"
-import { TERRAIN } from "../grid/types.ts"
-import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
+import { footprintBox, tilesOf } from "../engine/geometry/coords.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import { TERRAIN } from "../engine/geometry/types.ts"
+import type { EntityState, MatchState, PlayerId } from "../engine/state/types.ts"
 import type { RegroupPath, RegroupStep, StructurePlacement } from "./types.ts"
 
 /** How long a displaced unit takes over each step of its way out, in ticks at 12 a second: four steps a second. */

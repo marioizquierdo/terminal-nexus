@@ -2,12 +2,12 @@
 //
 // `src/match/` is the rules layer *around* the tick kernel (the "rules runtime" of grid-engine.md):
 // it builds the state a Pulse starts from out of what the Build Phase committed, and it does what
-// pulse.md says happens when a Pulse ends. It sits beside `src/pulse` and never inside its
+// pulse.md says happens when a Pulse ends. It sits beside `src/engine/pulse` and never inside its
 // tick — nothing here is called by `stepTick`, so no existing hash can move — and it is deterministic
 // the way the kernel is: no clock, no unseeded randomness, no terminal, nothing from the view.
 
-import type { Coord } from "../grid/types.ts"
-import type { MatchState, PlayerId } from "../state/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import type { MatchState, PlayerId } from "../engine/state/types.ts"
 
 /** A structure standing on the Grid when the Pulse starts: the player's own standing buildings and the
  *  ones the Build Phase committed, which "reveal together and become operational" at Pulse start

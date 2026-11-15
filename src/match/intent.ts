@@ -11,11 +11,11 @@
 // the two together); for a group that arrives later it is a forecast against the opening positions, since
 // by its tick everything has moved. Place a building nearer the raid and the answer changes, because the
 // kernel's answer does: every unit of a side with no target — the raid's — engages the nearest enemy
-// (`src/pulse/perception.ts`). The player's troops head out on that same first tick, so the raid soon meets
+// (`src/engine/pulse/perception.ts`). The player's troops head out on that same first tick, so the raid soon meets
 // them on the way; what it goes for *first* is still this, and the panel says no more than that.
 //
 // **Along which way**: the path one of the group's units would take toward that target by the kernel's own
-// routes (`src/routing/`: a distance field to the tiles beside the target, walked downhill), over the terrain and the
+// routes (`src/engine/routing/`: a distance field to the tiles beside the target, walked downhill), over the terrain and the
 // buildings as they stand when the round starts — the nearest unit whose walk gets there. Units are left out of what
 // blocks it, since they move. A forecast of the approach that never walks through a ridge, so a trail drawn on it
 // cannot lie about the way round; a group none of whose units can get there is shown as far as it can go. The
@@ -32,15 +32,15 @@
 
 import type { ContentDef, ContentRegistry, ProductionRecipe } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
-import { directionOf, footprintDistance, footprintSteps, nearestFootprintTile, nearestTile, tilesOf } from "../grid/coords.ts"
-import { OccupancyIndex } from "../grid/occupancy.ts"
-import type { Coord, Direction } from "../grid/types.ts"
-import { DistanceField, goalsNear, groundFor, rankSteps, wallsOf } from "../routing/index.ts"
+import { directionOf, footprintDistance, footprintSteps, nearestFootprintTile, nearestTile, tilesOf } from "../engine/geometry/coords.ts"
+import { OccupancyIndex } from "../engine/geometry/occupancy.ts"
+import type { Coord, Direction } from "../engine/geometry/types.ts"
+import { DistanceField, goalsNear, groundFor, rankSteps, wallsOf } from "../engine/routing/index.ts"
 import type { MissionDefinition } from "../mission/types.ts"
-import { contextFor, stepTick } from "../pulse/index.ts"
-import { followsTarget } from "../pulse/target.ts"
+import { contextFor, stepTick } from "../engine/pulse/index.ts"
+import { followsTarget } from "../engine/pulse/target.ts"
 import { regionTiles } from "../mission/validate.ts"
-import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
+import type { EntityState, MatchState, PlayerId } from "../engine/state/types.ts"
 import type { Arrival, MissionPulseInput } from "./mission.ts"
 import { laterArrivals, missionOpening, targetRegionsAt } from "./mission.ts"
 
@@ -159,7 +159,7 @@ function chosenTarget(arrivals: readonly Arrival[], after: ReadonlyMap<number, E
 }
 
 /**
- * The way `walker`, standing at `from`, would walk toward `target` by the kernel's routes (`src/routing/`), over the
+ * The way `walker`, standing at `from`, would walk toward `target` by the kernel's routes (`src/engine/routing/`), over the
  * terrain and `structures` (an index of the structures alone): every step's anchor, downhill on the distance field to
  * the tiles beside the target — touching it along a side — until it stands there, or no route reaches it. Next to it
  * rather than in range: a group's ranged units stop short and its others close in, and the way is drawn to what it
@@ -205,7 +205,7 @@ export function foreseeIntents(input: MissionPulseInput, side: PlayerId = "B"): 
  * the mission names), and who goes — every unit of the side that follows a target, standing on the Grid as the
  * round opens, and every one its buildings will spawn in the round's waves, which head there the moment they
  * are set down. Not a forecast of the way: the kernel walks them there and has them fight what comes within
- * reach on it (`src/pulse/target.ts`), and that is not foreseen; nor is a round that ends before a wave comes.
+ * reach on it (`src/engine/pulse/target.ts`), and that is not foreseen; nor is a round that ends before a wave comes.
  */
 export type TroopsIntent = Readonly<{
   player: PlayerId

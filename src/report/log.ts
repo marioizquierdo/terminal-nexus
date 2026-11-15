@@ -6,9 +6,9 @@
 // every other determinism check would still pass.
 
 import type { ContentRegistry } from "../content/index.ts"
-import type { DomainEvent } from "../events/types.ts"
-import type { Coord } from "../grid/types.ts"
-import type { MatchState } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import type { MatchState } from "../engine/state/types.ts"
 import { formatCoordinate, formatLine, formatScore } from "./format.ts"
 import type { LogLine } from "./format.ts"
 import { includesLevel } from "./levels.ts"
@@ -348,7 +348,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
           })
           break
 
-        // Burning ground (`src/pulse/burning.ts`): lit by a shell, burning what stands on it each beat, going out.
+        // Burning ground (`src/engine/pulse/burning.ts`): lit by a shell, burning what stands on it each beat, going out.
         // `grep fire` finds a patch's whole life.
         case "ground.lit":
           emit({

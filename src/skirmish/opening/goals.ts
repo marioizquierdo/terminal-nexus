@@ -4,8 +4,8 @@
 // refused one (`tests/sandboxes.test.ts`), and the engine tool warns of a map written by hand without one.
 
 import type { ContentRegistry } from "../../content/index.ts"
-import type { MatchState, PlayerId, TargetArea } from "../../state/types.ts"
-import { followsTarget } from "../../pulse/target.ts"
+import type { MatchState, PlayerId, TargetArea } from "../../engine/state/types.ts"
+import { followsTarget } from "../../engine/pulse/target.ts"
 
 /** The sides of `state` that field a unit that follows a target, yet have no target and no enemy Nexus. */
 export function sidesWithoutGoal(state: MatchState, registry: ContentRegistry): PlayerId[] {

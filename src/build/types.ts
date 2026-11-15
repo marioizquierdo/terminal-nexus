@@ -6,7 +6,7 @@
 // plan" assertable.
 
 import type { BuildingActionCard, BuildingSpawns, PowerCard } from "../armies/types.ts"
-import type { Coord } from "../grid/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import type { PlaybackControl } from "../terminal/playback.ts"
 import type { ShownName } from "./all-settings.ts"
 

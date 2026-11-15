@@ -10,11 +10,11 @@
 // selection.
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
-import type { DomainEvent } from "../events/types.ts"
-import { footprintExtent, tilesOf } from "../grid/coords.ts"
-import type { Coord, GridTerrain } from "../grid/types.ts"
-import type { MatchState, PlayerId } from "../state/types.ts"
-import { PLAYERS } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import { footprintExtent, tilesOf } from "../engine/geometry/coords.ts"
+import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import type { MatchState, PlayerId } from "../engine/state/types.ts"
+import { PLAYERS } from "../engine/state/types.ts"
 import type { ActiveEffect, EffectCellSource } from "./effects/index.ts"
 import { paintEffectCells } from "./effects/index.ts"
 import type { BandCell, Cell, ReadonlyCellFrame } from "./frame.ts"

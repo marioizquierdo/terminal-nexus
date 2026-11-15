@@ -1,7 +1,7 @@
 // The three movement states, read back from a resolved Pulse: when each unit went from marching to battle, from
 // battle to retreat, and back (docs/system-design/movement.md, "Three states").
 //
-// The kernel decides a unit's state every tick (`moveStateOf`, src/pulse/march.ts) and keeps no record of it: a state
+// The kernel decides a unit's state every tick (`moveStateOf`, src/engine/pulse/march.ts) and keeps no record of it: a state
 // is worked out from the unit's purpose and its target, and storing it, or emitting an event each time it changes,
 // would change every pinned state or event hash for something nothing the rules decide ever reads. So the record is
 // made here, after the fact, from what the Pulse did keep — every tick's settled state and its events — by the same
@@ -21,11 +21,11 @@
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { ContentDef } from "../content/types.ts"
-import type { DomainEvent } from "../events/types.ts"
-import { footprintWithin } from "../grid/coords.ts"
-import { wholeRows } from "../grid/reach.ts"
-import type { Coord } from "../grid/types.ts"
-import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import { footprintWithin } from "../engine/geometry/coords.ts"
+import { wholeRows } from "../engine/geometry/reach.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import type { EntityState, MatchState, PlayerId } from "../engine/state/types.ts"
 
 /** What a unit is doing, in a word: the kernel's `MoveState`. */
 export type MoveStateName = "march" | "battle" | "retreat"
@@ -42,7 +42,7 @@ export type MoveStateChange = Readonly<{
   to: MoveStateName
 }>
 
-/** The vision a unit turns to fight within: the kernel's `VISION` (src/pulse/target.ts), held equal by a test. */
+/** The vision a unit turns to fight within: the kernel's `VISION` (src/engine/pulse/target.ts), held equal by a test. */
 export const DEFAULT_VISION = 6
 
 /** The kernel's `visionOf`, restated here because a report may not reach the kernel (tests/architecture.test.ts). */

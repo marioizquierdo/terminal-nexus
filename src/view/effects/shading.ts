@@ -8,7 +8,7 @@
 // Nexus power landing on a unit or a projectile's impact later. `fx.damage.flash` (`recipes.ts`) is
 // shading too, older than this file and kept where the Pulse vocabulary lives.
 
-import { ROW_DISTANCE } from "../../grid/coords.ts"
+import { ROW_DISTANCE } from "../../engine/geometry/coords.ts"
 import type { PositionedCell, EffectRecipe } from "./types.ts"
 import { paramNumber, paramString, progressOf } from "./types.ts"
 import { RAINBOW_ROLES } from "../roles.ts"
@@ -86,7 +86,7 @@ export const FOCUS_BREATH_MS = 2000
  * region — keeps its own look, glyphs at full strength; the ring of tiles around it is lit, a see-through
  * style of the theme's strongest ink laid over the ground (`CellStyle.seeThrough`), so whatever stands on
  * the ring stays readable. The ring is a row deep above and below and as many columns deep at the sides as a
- * row counts (`ROW_DISTANCE`, src/grid/coords.ts): a tile is half as wide as it is tall, so the ring is as deep
+ * row counts (`ROW_DISTANCE`, src/engine/geometry/coords.ts): a tile is half as wide as it is tall, so the ring is as deep
  * on screen every way round and reads as a ring rather than a slot. It is a picture of attention, not a reach:
  * it claims no ground. It breathes, one breath every `periodMs`: lit to `FOCUS_LIGHT.peak` the moment the
  * line appears, easing down to `rest` at half a breath and back up — a cosine, so it never jolts.

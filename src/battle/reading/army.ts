@@ -3,8 +3,8 @@
 // Commander fell, and what its abilities did, counted by name ("Bounty": 4). Public: the Battle Round is seen by both
 // sides.
 
-import type { DomainEvent } from "../../events/types.ts"
-import type { MatchState } from "../../state/types.ts"
+import type { DomainEvent } from "../../engine/events/types.ts"
+import type { MatchState } from "../../engine/state/types.ts"
 import type { Side } from "../types.ts"
 import type { Composition, RoundContext } from "./context.ts"
 import type { Tracker } from "./index.ts"

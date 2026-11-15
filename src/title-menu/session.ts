@@ -5,7 +5,7 @@
 // real adapter dispatch, not a parallel copy of it built for tests.
 //
 // No stdin, no ANSI, no backend, and no `src/view` import here on purpose — a `MenuSession` is
-// exactly as terminal-agnostic as `src/pulse` is renderer-agnostic. Composing what it looks like is
+// exactly as terminal-agnostic as `src/engine/pulse` is renderer-agnostic. Composing what it looks like is
 // `src/view/menu.ts`'s job; wiring it to a real terminal is `src/cli/menu.ts`'s.
 
 import { keysFromChunk } from "../terminal/playback.ts"

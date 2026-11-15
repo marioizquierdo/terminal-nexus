@@ -5,7 +5,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { auraOf } from "../src/abilities/index.ts"
+import { auraOf } from "../src/engine/abilities/index.ts"
 import type { PowerCard, Rarity, Role, ScheduleSlot } from "../src/armies/index.ts"
 import { DEFAULT_SCHEDULE, dealable, dealHand, PERIMETER, PERIMETER_LEVEL, rarityOrder, slotsFor, weightOf } from "../src/armies/index.ts"
 import { nexusDraftOf, STARTER_START_CURSOR } from "../src/build/catalog.ts"
@@ -17,7 +17,7 @@ import type { BuildContext } from "../src/build/state.ts"
 import { createBuildState, nexusPowers, nexusTile } from "../src/build/state.ts"
 import { missionPlay } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
-import { gridDistance } from "../src/grid/coords.ts"
+import { gridDistance } from "../src/engine/geometry/coords.ts"
 import { buildSide, compose, ENTER, keys, panelLines, screenText, TAB } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
 

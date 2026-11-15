@@ -3,7 +3,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { tilesOf } from "../src/grid/index.ts"
+import { tilesOf } from "../src/engine/geometry/index.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import {
@@ -22,7 +22,7 @@ import {
   offendingGlyph,
 } from "../src/view/index.ts"
 import type { PulseTimeline } from "../src/view/index.ts"
-import type { PlayerId } from "../src/state/types.ts"
+import type { PlayerId } from "../src/engine/state/types.ts"
 import { isColourCode, loadSandbox, sandboxFiles, sgrCodes } from "./helpers.ts"
 
 async function timelineFor(name: string): Promise<PulseTimeline> {

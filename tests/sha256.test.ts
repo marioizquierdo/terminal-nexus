@@ -1,4 +1,4 @@
-// The plain-JavaScript SHA-256 every fingerprint now goes through (`src/state/sha256.ts`), checked
+// The plain-JavaScript SHA-256 every fingerprint now goes through (`src/engine/state/sha256.ts`), checked
 // against the runtime's own `node:crypto` — which this test may use, being a test and not the game.
 //
 // Why the switch was allowed (measured 2026-09-27, this container, Node 22.22.2):
@@ -10,8 +10,8 @@ import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
 import test from "node:test"
 
-import { sha256Hex } from "../src/state/sha256.ts"
-import { canonicalJson, hashOf } from "../src/state/canonical.ts"
+import { sha256Hex } from "../src/engine/state/sha256.ts"
+import { canonicalJson, hashOf } from "../src/engine/state/canonical.ts"
 import { openBattle } from "../src/skirmish/opening/open.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { loadSandbox } from "./helpers.ts"

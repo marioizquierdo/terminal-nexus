@@ -19,7 +19,7 @@
 // on-death) — and once built, several *other* designs below needed nothing further at all, composing
 // those five capabilities with zero additional kernel code. That reuse is the actual finding.
 
-import type { EntityLayer } from "../grid/types.ts"
+import type { EntityLayer } from "../engine/geometry/types.ts"
 import type { ContentDef } from "./types.ts"
 import { rectFootprint } from "./types.ts"
 
@@ -297,7 +297,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
   // --- Bulwark: a push, the rule for a unit that did not walk (`bench-bulwark-shove.save.json`) ----------
   {
     // Milestone 16's test effect for a Grid that changes under a unit: every two seconds it shoves each enemy
-    // touching it two tiles straight away (`shove`, src/abilities/shove.ts, through the kernel's `displace`). A pushed
+    // touching it two tiles straight away (`shove`, src/engine/abilities/shove.ts, through the kernel's `displace`). A pushed
     // unit stops where its body would not fit and walks back from where it lands, by its route — so the first power
     // that pushes or pulls has the rule ready, proven here.
     id: "unit.bench.bulwark",

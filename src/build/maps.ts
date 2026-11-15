@@ -6,7 +6,7 @@
 // shown with (`./catalog.ts`, which re-exports it) because the armies name it and that menu is built from the
 // armies: one file holding both would be a circular import.
 
-import type { Coord, GridTerrain, TerrainId } from "../grid/types.ts"
+import type { Coord, GridTerrain, TerrainId } from "../engine/geometry/types.ts"
 import type { MapEdgeStyle, StandingStructure } from "./types.ts"
 
 /**

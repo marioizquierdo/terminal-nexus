@@ -12,7 +12,7 @@ import { STARTER_STANDING, starterGrid } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY, createRegistry } from "../src/content/index.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
 import { artFor } from "../src/content/art.ts"
-import { footprintSteps } from "../src/grid/coords.ts"
+import { footprintSteps } from "../src/engine/geometry/coords.ts"
 import {
   fallen,
   openingState,
@@ -25,8 +25,8 @@ import type { Absence, MissionPulse, Restoration } from "../src/match/index.ts"
 import { PERIMETER } from "../src/armies/index.ts"
 import { MissionError, validateMission } from "../src/mission/index.ts"
 import type { MissionDefinition } from "../src/mission/index.ts"
-import { hashState } from "../src/state/serialize.ts"
-import type { MatchState } from "../src/state/types.ts"
+import { hashState } from "../src/engine/state/serialize.ts"
+import type { MatchState } from "../src/engine/state/types.ts"
 import { entityGlyph } from "../src/view/theme.ts"
 import { COMMANDER_FALLS, VASSE, sittingOut } from "./commander-fixture.ts"
 

@@ -1,7 +1,7 @@
-import type { Coord, EntityLayer, Footprint } from "../grid/types.ts"
+import type { Coord, EntityLayer, Footprint } from "../engine/geometry/types.ts"
 
 /** A rational rate: steps across a column per second, a step up or down taking `ROW_DISTANCE` times as long
- *  (`stepCost`, src/pulse/movement.ts). Never a float (pulse.md). */
+ *  (`stepCost`, src/engine/pulse/movement.ts). Never a float (pulse.md). */
 export type MovementRate = Readonly<{ numerator: number; denominator: number }>
 
 export type AttackKind = "melee" | "ranged" | "heal"
@@ -20,7 +20,7 @@ export type UnitClass = "tank" | "fighter" | "support" | "siege"
  * at two different trigger moments, not two mechanisms that happen to share a shape.
  */
 export type AreaDamage = Readonly<{
-  /** How far it reaches, measured as range is (`footprintWithin`, src/grid/coords.ts): from the impact point to the
+  /** How far it reaches, measured as range is (`footprintWithin`, src/engine/geometry/coords.ts): from the impact point to the
    *  nearest occupied tile of each victim, a row counting two columns. 1 is what touches it along a side; 2 is two
    *  columns either side and one row up and down. */
   radius: number
@@ -42,9 +42,9 @@ export type Burn = Readonly<{
 
 export type AttackDef = Readonly<{
   kind: AttackKind
-  /** How far it reaches, measured as range is (`footprintWithin`, src/grid/coords.ts): to the nearest occupied tile
+  /** How far it reaches, measured as range is (`footprintWithin`, src/engine/geometry/coords.ts): to the nearest occupied tile
    *  of the target, a row counting two columns, so a range of 6 reaches 6 columns either side and 3 rows up and
-   *  down. A melee range is 1: melee reaches what touches it along a side (`inAttackRange`, src/pulse/shared.ts). */
+   *  down. A melee range is 1: melee reaches what touches it along a side (`inAttackRange`, src/engine/pulse/shared.ts). */
   range: number
   /** For `kind: "heal"`, this is the amount restored, not damage dealt. */
   damage: number
@@ -72,7 +72,7 @@ export type AttackDef = Readonly<{
    */
   splash?: AreaDamage
   /**
-   * If present, a landing hit also sets the ground round the impact burning (`BurningGround`, src/state/types.ts):
+   * If present, a landing hit also sets the ground round the impact burning (`BurningGround`, src/engine/state/types.ts):
    * every unit and worker standing within `radius` of the impact tile, of either side, takes `damage` every
    * `everyTicks` ticks for `ticks` ticks, and routes weigh the ground as dear while it burns. The Citizen mortar's
    * shell (the owner, 2026-10-21: "set the ground on fire ... when the units walk through it, they all take damage").
@@ -98,7 +98,7 @@ export type AbilityValue = number | string | readonly AbilityValue[]
 
 /**
  * An ability a unit has, as its content names it (`ContentDef.abilities`): its `kind`, which names the code that runs
- * it (`src/abilities/`), and that kind's own numbers. `{ "kind": "aura", "radius": 4, "damageTakenPercent": 75 }`.
+ * it (`src/engine/abilities/`), and that kind's own numbers. `{ "kind": "aura", "radius": 4, "damageTakenPercent": 75 }`.
  */
 export type AbilityUse = Readonly<{ kind: string } & Record<string, AbilityValue>>
 
@@ -164,12 +164,12 @@ export type ContentDef = Readonly<{
   roundsOut?: number
   /**
    * How near an enemy must come before this unit turns from its side's target to fight it (`vision`,
-   * `src/pulse/target.ts`), when it is not the shared one: Averno's charge, a Commander who leaves the line for
+   * `src/engine/pulse/target.ts`), when it is not the shared one: Averno's charge, a Commander who leaves the line for
    * what comes at it. Measured as range is; undefined for every other unit, which keeps the shared reach.
    */
   vision?: number
   /**
-   * What it does on its own besides fighting, each run by the code its `kind` names (`src/abilities/`): an aura, a
+   * What it does on its own besides fighting, each run by the code its `kind` names (`src/engine/abilities/`): an aura, a
    * bounty on what dies near it, a lucky hit. The kernel calls each kind's hooks at the moments it declares
    * (docs/system-design/army-authoring.md, "Abilities"); a kind it does not know stops the registry from loading.
    * Absent: none.
@@ -274,7 +274,7 @@ export type ContentDef = Readonly<{
  * decide. Cost and supply arrive with the worker economy.
  *
  * It spawns in **waves** (the owner's word for the units a building sets down at once, and only that): every
- * unit of a wave on the same tick, so they stand together beside the building (`src/pulse/production.ts`).
+ * unit of a wave on the same tick, so they stand together beside the building (`src/engine/pulse/production.ts`).
  * Every number is a positive whole number (`withProduction` refuses any other). A later Nexus power that
  * gives a building a second or third wave raises `waves` and nothing else.
  */

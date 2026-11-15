@@ -55,7 +55,7 @@ const SETTLED_CHOICES = [
   // Vasse's voice in battle: beside her, the first guess and the owner's choice (round 5).
   "commanderVoice",
   // The ground: rows x2, the owner's choice after playing all four (round 7) — a row counts two columns in every
-  // distance and every step (`ROW_DISTANCE`, src/grid/coords.ts), and a tile is one column wide at every size.
+  // distance and every step (`ROW_DISTANCE`, src/engine/geometry/coords.ts), and a tile is one column wide at every size.
   "ground",
 ] as const
 

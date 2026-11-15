@@ -9,10 +9,10 @@
 // instances; deleting this file would leave the fight identical and the screen bare.
 
 import type { ContentRegistry } from "../../content/index.ts"
-import type { DomainEvent } from "../../events/types.ts"
-import { footprintExtent, inBounds, tilesOf } from "../../grid/coords.ts"
-import type { Coord, Footprint } from "../../grid/types.ts"
-import type { MatchState } from "../../state/types.ts"
+import type { DomainEvent } from "../../engine/events/types.ts"
+import { footprintExtent, inBounds, tilesOf } from "../../engine/geometry/coords.ts"
+import type { Coord, Footprint } from "../../engine/geometry/types.ts"
+import type { MatchState } from "../../engine/state/types.ts"
 import { deathExtraTicks } from "./recipes.ts"
 import type { EffectFamily, EffectInstance } from "./types.ts"
 
@@ -330,7 +330,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
           origin: event.at,
           family: familyFor(event.contentId),
           // The whole body that blew up, not only its anchor: a blast reaches from every tile of it, as the rule
-          // measures (`detonate`, src/pulse/death.ts), and the ring is drawn round all of it.
+          // measures (`detonate`, src/engine/pulse/death.ts), and the ring is drawn round all of it.
           params: { radius: event.radius, damage: event.damage, ...footprintExtent(source.registry.get(event.contentId).footprint) },
         })
         break

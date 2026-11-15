@@ -3,19 +3,19 @@
 // different moments of a round: where is the nearest room for this footprint?
 //
 // Nearest by the Grid's own distance (`gridDistance`: a row counts two columns), searched outward one ring of it at
-// a time (`ringOffsets`, src/grid/reach.ts). A group set down round a point fills a diamond twice as wide as it is
+// a time (`ringOffsets`, src/engine/geometry/reach.ts). A group set down round a point fills a diamond twice as wide as it is
 // tall in tiles, so it comes out round on screen, as every reach does.
 //
 // Deterministic by construction: a fixed search order, no randomness, no clock. Nothing here decides an
 // outcome — it decides *where* something that has already been decided goes. The opening, the forecast of it and
 // the regroup all search these same rings, so they agree.
 
-import { footprintCentre, gridDistance } from "../grid/coords.ts"
-import { ringOffsets } from "../grid/reach.ts"
-import type { CollisionMask } from "../grid/occupancy.ts"
+import { footprintCentre, gridDistance } from "../engine/geometry/coords.ts"
+import { ringOffsets } from "../engine/geometry/reach.ts"
+import type { CollisionMask } from "../engine/geometry/occupancy.ts"
 import type { ContentDef } from "../content/types.ts"
-import type { Coord, Footprint } from "../grid/types.ts"
-import type { PlayerId } from "../state/types.ts"
+import type { Coord, Footprint } from "../engine/geometry/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
 
 /** The tile at the centre of a footprint whose anchor is `anchor` — where a thing is, for "nearest". */
 export function centreTile(anchor: Coord, footprint: Footprint): Coord {

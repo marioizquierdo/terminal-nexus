@@ -7,9 +7,9 @@ import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { rectFootprint } from "../src/content/types.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
-import { footprintCentre, tilesOf } from "../src/grid/coords.ts"
-import { tilesWithin } from "../src/grid/reach.ts"
-import type { Coord } from "../src/grid/types.ts"
+import { footprintCentre, tilesOf } from "../src/engine/geometry/coords.ts"
+import { tilesWithin } from "../src/engine/geometry/reach.ts"
+import type { Coord } from "../src/engine/geometry/types.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import { outlineWithin } from "../src/view/reach-outline.ts"
 import {
@@ -1096,7 +1096,7 @@ test("a blast spreads along the ease-out curve, fast and then slowing, from what
 })
 
 test("what flashes is what was hit: a blast draws only the ground its rule reaches, round the whole body, in every form", () => {
-  // The blast's rule (`detonate`, src/pulse/death.ts): everything within its radius of any tile of the body, a row
+  // The blast's rule (`detonate`, src/engine/pulse/death.ts): everything within its radius of any tile of the body, a row
   // counting two columns. A blast of 2 from one tile reaches two columns either side and one row up and down - so it
   // never flashes two rows up or down, which a square ring of 2 would.
   const blast = EFFECT_RECIPES["fx.blast.detonation"]

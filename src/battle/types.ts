@@ -6,7 +6,7 @@
 // script, a file or a language model, and the same setup and plans resolve the same battle on every machine.
 
 import type { Absence } from "../match/commander.ts"
-import type { MatchState, PlayerId } from "../state/types.ts"
+import type { MatchState, PlayerId } from "../engine/state/types.ts"
 import type { BattleMap } from "./maps.ts"
 import type { RoundReading } from "./reading/index.ts"
 

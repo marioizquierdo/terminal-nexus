@@ -1,5 +1,5 @@
-import type { Coord, TerrainId } from "../../grid/types.ts"
-import type { PlayerId, TargetArea } from "../../state/types.ts"
+import type { Coord, TerrainId } from "../../engine/geometry/types.ts"
+import type { PlayerId, TargetArea } from "../../engine/state/types.ts"
 import type { GridPreset } from "./presets.ts"
 
 export type GridSpec = Readonly<{ preset: GridPreset }> | Readonly<{ width: number; height: number }>

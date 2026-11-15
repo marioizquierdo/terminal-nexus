@@ -8,11 +8,11 @@
 
 import type { ContentRegistry } from "../content/index.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
-import type { DomainEvent } from "../events/types.ts"
-import { resolvePulse } from "../pulse/index.ts"
-import type { PulseRun } from "../pulse/index.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import { resolvePulse } from "../engine/pulse/index.ts"
+import type { PulseRun } from "../engine/pulse/index.ts"
 import type { ReportInput } from "../report/index.ts"
-import type { MatchState } from "../state/types.ts"
+import type { MatchState } from "../engine/state/types.ts"
 import { openBattle } from "./opening/open.ts"
 import type { BattleOpening } from "./opening/types.ts"
 

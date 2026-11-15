@@ -4,7 +4,7 @@
 // presentation.md has a RULE: "The simulation knows semantic ids such as `unit.worker` and
 // `structure.nexus`. **It never knows a glyph.**" So the art is not a field on `ContentDef` — the
 // kernel reads those — it is a separate table keyed by the same ids, imported only by the view.
-// `tests/architecture.test.ts` asserts `src/pulse` can never reach this file, which is a stronger
+// `tests/architecture.test.ts` asserts `src/engine/pulse` can never reach this file, which is a stronger
 // guarantee than the old arrangement had: the glyph table used to live in `src/view/theme.ts`, which
 // nothing enforced either way.
 //

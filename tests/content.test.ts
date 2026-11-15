@@ -5,7 +5,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { CONTENT_ART, DEATH_ART, artExtent, artFor, deathFramesFor } from "../src/content/art.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { footprintCentre, footprintExtent } from "../src/grid/index.ts"
+import { footprintCentre, footprintExtent } from "../src/engine/geometry/index.ts"
 import { entityGlyph } from "../src/view/index.ts"
 
 test("every drawn piece of content is exactly as big as its footprint", () => {

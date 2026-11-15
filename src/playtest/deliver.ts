@@ -9,7 +9,7 @@ import { cellForTile, tileAtCell } from "../build/layout.ts"
 import { formatMouseEvent } from "../build/mouse.ts"
 import type { BuildSession } from "../view/build-session.ts"
 import type { BuildState } from "../build/state.ts"
-import type { Coord } from "../grid/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import type { PlaytestStep } from "./keys.ts"
 
 /** How far apart a script's untimed steps arrive: far enough that every one is a tap that starts over,

@@ -17,12 +17,12 @@ import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { CARD_TEXT, commanderName } from "../content/cards.ts"
 import { hasRoom, supplyOf } from "../content/supply.ts"
-import type { DomainEvent } from "../events/types.ts"
-import { inBounds, tileIndex } from "../grid/coords.ts"
-import { tilesWithin } from "../grid/reach.ts"
-import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
-import type { PlayerId } from "../state/types.ts"
-import { PLAYERS } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import { inBounds, tileIndex } from "../engine/geometry/coords.ts"
+import { tilesWithin } from "../engine/geometry/reach.ts"
+import type { Coord, Footprint, GridTerrain } from "../engine/geometry/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
+import { PLAYERS } from "../engine/state/types.ts"
 import type { StatusMessage } from "../build/status.ts"
 import { status } from "../build/status.ts"
 import type { EndingPhase, EndingTimes, PulseResult } from "./ending.ts"
@@ -204,7 +204,7 @@ const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
  * moving with her while the fight is on. A glyphless write on the ground's own band, under everything that stands:
  * a unit or a building in her reach keeps its glyph and every colour of its own, standing in the glow rather than
  * tinted by it (at 256 colours a washed glyph would change hue), and an effect draws over it. Read from the
- * content's aura (an `aura` ability, `src/abilities/aura.ts`), so a Commander with a wider one is drawn wider.
+ * content's aura (an `aura` ability, `src/engine/abilities/aura.ts`), so a Commander with a wider one is drawn wider.
  */
 export function drawAura(cells: BandCell[], view: SceneView, pulse: PulseFrame): void {
   const aura = pulse.aura
@@ -349,7 +349,7 @@ function forceLine(pulse: PulseFrame, player: PlayerId): string {
   return `${side.toUpperCase().padEnd(5)} ${String(units).padStart(2)} [${bar}] ${String(hp).padStart(4)}`
 }
 
-/** How many units `player`'s buildings owe of the waves that have come (`EntityState.owed`, `src/pulse/production.ts`):
+/** How many units `player`'s buildings owe of the waves that have come (`EntityState.owed`, `src/engine/pulse/production.ts`):
  *  those its army has a place for, waiting for room on the roof, and those waiting for a place in the army. */
 export function waitingToComeOut(
   entities: readonly Readonly<{ player: PlayerId; contentId: string; owed?: number }>[],

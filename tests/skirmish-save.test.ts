@@ -15,7 +15,7 @@ import { briefOf, playRound, SCRIPTED } from "../src/battle/index.ts"
 import { battleOf, newSetup, readSave, saveOf, saveText } from "../src/skirmish/save.ts"
 import { openBattle } from "../src/skirmish/opening/open.ts"
 import { loadSandbox, sandboxCatalog } from "../src/skirmish/sandboxes.ts"
-import { hashOf } from "../src/state/canonical.ts"
+import { hashOf } from "../src/engine/state/canonical.ts"
 import { REPO_ROOT } from "./helpers.ts"
 
 const SAVES = join(REPO_ROOT, "saves")

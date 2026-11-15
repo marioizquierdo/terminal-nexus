@@ -11,7 +11,7 @@
 
 import type { ContentRegistry } from "../content/index.ts"
 import { wrapWords } from "../terminal/wrap-words.ts"
-import type { PlayerId } from "../state/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
 import type {
   MissionDefinition,
   PresentationAction,

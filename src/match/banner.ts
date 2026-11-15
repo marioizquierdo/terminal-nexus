@@ -1,6 +1,6 @@
 // **The battle banner** (the challenge runs, step 11G): where the player planted the army's banner in the Build Phase,
 // and its stance — the rules layer's half of it. The kernel already sends a side's fighting units to a target area and
-// has them stand there (`src/pulse/target.ts`); a side with none marches on the enemy's Grid Nexus. So the banner needs
+// has them stand there (`src/engine/pulse/target.ts`); a side with none marches on the enemy's Grid Nexus. So the banner needs
 // no kernel change:
 //
 // - **defensive**: the banner's area is the side's target for the whole round: they go there, fight what comes within
@@ -15,9 +15,9 @@
 // absent) resolves byte for byte as before.
 
 import type { ContentRegistry } from "../content/index.ts"
-import { tilesOf } from "../grid/coords.ts"
-import { followsTarget } from "../pulse/target.ts"
-import type { MatchState, PlayerId, TargetArea } from "../state/types.ts"
+import { tilesOf } from "../engine/geometry/coords.ts"
+import { followsTarget } from "../engine/pulse/target.ts"
+import type { MatchState, PlayerId, TargetArea } from "../engine/state/types.ts"
 
 /** Aggressive: there, then on to the enemy's Nexus. Defensive: hold it. */
 export type BannerStance = "aggressive" | "defensive"

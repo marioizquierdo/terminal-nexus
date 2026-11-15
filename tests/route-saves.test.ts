@@ -6,7 +6,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { measureSave } from "../src/measure/index.ts"
-import { contextFor, resolvePulse, stepTick } from "../src/pulse/index.ts"
+import { contextFor, resolvePulse, stepTick } from "../src/engine/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import { loadSandbox, playSandbox, sandboxFiles } from "./helpers.ts"
 

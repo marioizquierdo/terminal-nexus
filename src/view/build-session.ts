@@ -46,7 +46,7 @@ import { SHOWN_SETTINGS, setting } from "../build/all-settings.ts"
 import { activityExportText, loggedTile, shownEntries } from "../build/activity.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { BuildCommand, ExportKind, RaidForecast } from "../build/types.ts"
-import type { Coord } from "../grid/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import type { Settings } from "../settings/types.ts"
 
 /** A command pressed on a Build Phase, and when, in milliseconds since the round opened: what a note replays. */

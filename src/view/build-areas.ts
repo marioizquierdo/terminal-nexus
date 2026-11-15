@@ -31,9 +31,9 @@
 // All are presentation alone: nothing here decides a placement (`src/build/territory.ts` does), and none is
 // drawn while a popup holds the keyboard, once the plan is committed, or while a Pulse plays.
 
-import { footprintBox, tilesOf } from "../grid/coords.ts"
-import { tilesWithin } from "../grid/reach.ts"
-import type { Coord, Footprint } from "../grid/types.ts"
+import { footprintBox, tilesOf } from "../engine/geometry/coords.ts"
+import { tilesWithin } from "../engine/geometry/reach.ts"
+import type { Coord, Footprint } from "../engine/geometry/types.ts"
 import { outlineWithin } from "./reach-outline.ts"
 import { setting } from "../build/all-settings.ts"
 import { visibleRange } from "../build/camera.ts"

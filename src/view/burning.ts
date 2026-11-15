@@ -15,11 +15,11 @@
 // Both Pulse views draw it from the same `PulseSample.fire`: the engine tool's (`compose.ts`) and the Build Phase
 // screen's, the live Battle Round and the replay of the last round (`pulse-scene.ts`), and with them the browser page.
 
-import type { Coord, GridTerrain, TerrainId } from "../grid/types.ts"
-import type { Footprint } from "../grid/types.ts"
-import { inBounds } from "../grid/coords.ts"
-import { tilesWithin } from "../grid/reach.ts"
-import type { BurningGround } from "../state/types.ts"
+import type { Coord, GridTerrain, TerrainId } from "../engine/geometry/types.ts"
+import type { Footprint } from "../engine/geometry/types.ts"
+import { inBounds } from "../engine/geometry/coords.ts"
+import { tilesWithin } from "../engine/geometry/reach.ts"
+import type { BurningGround } from "../engine/state/types.ts"
 import { cosmeticHash, cosmeticUnit } from "./effects/random.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"

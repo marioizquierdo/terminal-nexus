@@ -7,8 +7,8 @@
 // `src/skirmish/opening/`), and names what is wrong with a `start`. It imports the save's types only, so the browser
 // page can open a sandbox without the battle.
 
-import type { Coord, TerrainId } from "../grid/types.ts"
-import type { PlayerId, TargetArea } from "../state/types.ts"
+import type { Coord, TerrainId } from "../engine/geometry/types.ts"
+import type { PlayerId, TargetArea } from "../engine/state/types.ts"
 import { BATTLE_MAPS } from "../battle/maps.ts"
 import { isObject, isWhole } from "../content/shape.ts"
 import type { BattleOpening, PlacementBlock, PlacementEntry } from "./opening/types.ts"

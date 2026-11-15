@@ -9,7 +9,7 @@ import assert from "node:assert/strict"
 import { EXPERIMENT_FIELDS } from "../src/build/experiments.ts"
 import type { Experiments } from "../src/build/experiments.ts"
 import { TUNING } from "../src/build/tuning.ts"
-import type { Outcome } from "../src/state/types.ts"
+import type { Outcome } from "../src/engine/state/types.ts"
 import {
   BEAM_FADE_MS,
   BEAM_GLOW,

@@ -4,13 +4,13 @@
 // it, since the file is the battle.
 
 import { writeFileSync } from "node:fs"
-import type { DomainEvent } from "../events/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
 import { buildLog } from "../report/index.ts"
 import type { SaveFile } from "../skirmish/save.ts"
 import { SLOTS } from "../skirmish/save.ts"
 import { openingOf } from "../skirmish/start.ts"
 import { playSandboxRound } from "../skirmish/sandbox-round.ts"
-import type { MatchState } from "../state/types.ts"
+import type { MatchState } from "../engine/state/types.ts"
 import { roundScreenshots } from "./skirmish-battle.ts"
 import type { SkirmishRequest } from "./skirmish.ts"
 

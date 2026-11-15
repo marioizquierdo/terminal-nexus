@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The pictures in the grid design's account of distance, reach and movement (docs/system-design/grid.md), drawn by
-// the game's own code: distances, reaches and the rings a group is set down on by `src/grid`, and walks by the
+// the game's own code: distances, reaches and the rings a group is set down on by `src/engine/geometry`, and walks by the
 // kernel itself, tick by tick, on open ground. In the document each picture sits in the code block under a
 // `<!-- grid-picture: name -->` line, and tests/grid-pictures.test.ts fails when one is not what this draws.
 //
@@ -10,13 +10,13 @@
 import { readFileSync, writeFileSync } from "node:fs"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { ENTITY_LAYERS, OccupancyIndex, gridDistance, maskFrom, rowsWithin, tilesWithin } from "../src/grid/index.ts"
-import type { Coord, Footprint, GridTerrain } from "../src/grid/index.ts"
+import { ENTITY_LAYERS, OccupancyIndex, gridDistance, maskFrom, rowsWithin, tilesWithin } from "../src/engine/geometry/index.ts"
+import type { Coord, Footprint, GridTerrain } from "../src/engine/geometry/index.ts"
 import { nearestFit } from "../src/match/index.ts"
-import { contextFor, stepTick } from "../src/pulse/index.ts"
+import { contextFor, stepTick } from "../src/engine/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
-import { TICKS_PER_SECOND } from "../src/state/types.ts"
-import type { MatchState } from "../src/state/types.ts"
+import { TICKS_PER_SECOND } from "../src/engine/state/types.ts"
+import type { MatchState } from "../src/engine/state/types.ts"
 
 /** The design document the pictures are in, from the repository's root. */
 export const GRID_DESIGN = fileURLToPath(new URL("../docs/system-design/grid.md", import.meta.url))

@@ -6,7 +6,7 @@
 // she is back.
 
 import { test } from "node:test"
-import { auraOf } from "../src/abilities/index.ts"
+import { auraOf } from "../src/engine/abilities/index.ts"
 import assert from "node:assert/strict"
 import {
   STARTER_ALLOTMENT,

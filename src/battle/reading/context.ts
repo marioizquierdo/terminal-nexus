@@ -5,9 +5,9 @@
 import type { ContentDef, ContentRegistry } from "../../content/index.ts"
 import { baseContentId } from "../../content/index.ts"
 import type { ConstructItem } from "../../build/types.ts"
-import type { DomainEvent } from "../../events/types.ts"
-import type { Coord } from "../../grid/types.ts"
-import type { MatchState } from "../../state/types.ts"
+import type { DomainEvent } from "../../engine/events/types.ts"
+import type { Coord } from "../../engine/geometry/types.ts"
+import type { MatchState } from "../../engine/state/types.ts"
 import type { Side } from "../types.ts"
 
 /** A count of things by content id, how many in all, and what they cost in credits. */

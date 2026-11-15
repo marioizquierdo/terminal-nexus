@@ -10,9 +10,9 @@
 // kinetic, orthogonal and tight; a Ravel charge is explosive, diagonal and entitled to more of the
 // screen. Craft rule 2 — different weapons need different physical languages — with one code path.
 
-import type { Coord, Footprint } from "../../grid/types.ts"
-import { footprintCentre, footprintRing, inColumns, tilesOf } from "../../grid/coords.ts"
-import { tilesWithin } from "../../grid/reach.ts"
+import type { Coord, Footprint } from "../../engine/geometry/types.ts"
+import { footprintCentre, footprintRing, inColumns, tilesOf } from "../../engine/geometry/coords.ts"
+import { tilesWithin } from "../../engine/geometry/reach.ts"
 import { deathFramesFor } from "../../content/art.ts"
 import type { UnitArt } from "../../content/art.ts"
 import { rectFootprint } from "../../content/types.ts"
@@ -695,7 +695,7 @@ const keyOf = (tile: Coord): string => `${tile.x},${tile.y}`
 
 /**
  * The ground a blast reaches: every tile within its radius of the body that blew up, by the rules' own test — the
- * tiles whose occupants the blast catches (`tilesWithin`, `footprintWithin`; `detonate`, src/pulse/death.ts) —
+ * tiles whose occupants the blast catches (`tilesWithin`, `footprintWithin`; `detonate`, src/engine/pulse/death.ts) —
  * as a set, and listed in reading order without the body's own tiles. Every cell the blast draws is on it.
  */
 type BlastGround = Readonly<{ reached: ReadonlySet<string>; around: readonly Coord[]; own: ReadonlySet<string> }>

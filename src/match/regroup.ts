@@ -13,7 +13,7 @@
 // The rule, in the terms the state can express:
 //
 // - **Everything stays on the Grid.** Structures stand where they stand; a survivor walks, a step at a time at its own
-//   pace (movement credit, `src/pulse/movement.ts`), downhill on a distance field (`src/routing/`), never onto rock, an
+//   pace (movement credit, `src/engine/pulse/movement.ts`), downhill on a distance field (`src/engine/routing/`), never onto rock, an
 //   enemy's building or another body. Nothing attacks, trains or shoots: the kernel does not run.
 // - **The step back, 2 seconds** (`STEP_BACK_TICKS`): a survivor in a fight — an enemy unit or building within
 //   `FIGHT_REACH` of it — walks toward its own Grid Nexus. One not in a fight stands.
@@ -38,14 +38,14 @@
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { formationRank, freshEntityFields } from "../content/index.ts"
-import { DIRECTIONS, footprintBox, footprintDistance, step, tilesOf } from "../grid/coords.ts"
-import { tilesWithin } from "../grid/reach.ts"
-import type { Coord, Direction, Footprint } from "../grid/types.ts"
-import { TERRAIN } from "../grid/types.ts"
-import { accrueCredit, stepCost } from "../pulse/movement.ts"
-import type { DistanceField } from "../routing/index.ts"
-import { DistanceField as Field, UNREACHABLE, addWall, bodyKey, goalsNear, groundFor, wallsOf } from "../routing/index.ts"
-import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
+import { DIRECTIONS, footprintBox, footprintDistance, step, tilesOf } from "../engine/geometry/coords.ts"
+import { tilesWithin } from "../engine/geometry/reach.ts"
+import type { Coord, Direction, Footprint } from "../engine/geometry/types.ts"
+import { TERRAIN } from "../engine/geometry/types.ts"
+import { accrueCredit, stepCost } from "../engine/pulse/movement.ts"
+import type { DistanceField } from "../engine/routing/index.ts"
+import { DistanceField as Field, UNREACHABLE, addWall, bodyKey, goalsNear, groundFor, wallsOf } from "../engine/routing/index.ts"
+import type { EntityState, MatchState, PlayerId } from "../engine/state/types.ts"
 import { centreTile, nearestFit } from "./placement.ts"
 import type { RegroupPath, RegroupResult, RegroupStep } from "./types.ts"
 import { REGROUP_TICKS, STEP_BACK_TICKS } from "./types.ts"

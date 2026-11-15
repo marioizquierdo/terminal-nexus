@@ -5,12 +5,12 @@
 
 import type { ContentDef, ContentRegistry } from "../../content/index.ts"
 import { FIXTURE_REGISTRY, freshEntityFields } from "../../content/index.ts"
-import { footprintCentre, tilesOf } from "../../grid/coords.ts"
-import type { Coord, GridTerrain, TerrainId } from "../../grid/types.ts"
-import { TERRAIN } from "../../grid/types.ts"
-import { gameplayRng } from "../../rng/pcg32.ts"
-import type { EntityState, MatchState, PlayerId, TargetArea } from "../../state/types.ts"
-import { PLAYERS, SCHEMA_VERSION, TICKS_PER_SECOND } from "../../state/types.ts"
+import { footprintCentre, tilesOf } from "../../engine/geometry/coords.ts"
+import type { Coord, GridTerrain, TerrainId } from "../../engine/geometry/types.ts"
+import { TERRAIN } from "../../engine/geometry/types.ts"
+import { gameplayRng } from "../../engine/rng/pcg32.ts"
+import type { EntityState, MatchState, PlayerId, TargetArea } from "../../engine/state/types.ts"
+import { PLAYERS, SCHEMA_VERSION, TICKS_PER_SECOND } from "../../engine/state/types.ts"
 import { presetDimensions } from "./presets.ts"
 import { trainingRegistry } from "./training.ts"
 import type { PlacementEntry, BattleOpening } from "./types.ts"
@@ -192,7 +192,7 @@ export function openBattle(
         )
       }
       // A ground entity may not start inside terrain it could never walk into. The kernel builds
-      // that entity's mask with `terrain: "impassable"` (src/pulse/shared.ts), so a unit placed on
+      // that entity's mask with `terrain: "impassable"` (src/engine/pulse/shared.ts), so a unit placed on
       // rock is entombed from tick zero: it cannot leave the tile, and every tick after that it
       // reports itself blocked. Nothing downstream errors, which is why four units in
       // `citizen-mirror-skirmish` sat inside the eastern rock for the whole of the first battles without

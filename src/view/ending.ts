@@ -27,7 +27,7 @@
 import type { Tuning } from "../build/tuning.ts"
 import { TUNING } from "../build/tuning.ts"
 
-import type { Outcome, PlayerId } from "../state/types.ts"
+import type { Outcome, PlayerId } from "../engine/state/types.ts"
 import type { StatusTone } from "../build/status.ts"
 import type { CommanderAbsence } from "../build/types.ts"
 import { commanderName } from "../content/cards.ts"

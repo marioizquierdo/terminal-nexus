@@ -23,11 +23,11 @@
 
 import type { ContentRegistry } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
-import type { DomainEvent } from "../events/types.ts"
-import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
-import type { Coord } from "../grid/types.ts"
-import { ENTITY_LAYERS } from "../grid/types.ts"
-import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import { OccupancyIndex, maskFrom } from "../engine/geometry/occupancy.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import { ENTITY_LAYERS } from "../engine/geometry/types.ts"
+import type { EntityState, MatchState, PlayerId } from "../engine/state/types.ts"
 import { centreTile, enemyNexusMiddle, nearestFit } from "./placement.ts"
 
 /** How many whole rounds the Commander `contentId` sits out after the Battle Round she falls in: her

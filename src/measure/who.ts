@@ -4,9 +4,9 @@
 // it happens in before it is written (the `remeasure` skill). Pure, like the rest of `src/measure/`.
 
 import type { PlayableLevel } from "../cli/levels.ts"
-import type { DomainEvent } from "../events/types.ts"
-import type { MatchState, PlayerId } from "../state/types.ts"
-import { PLAYERS } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import type { MatchState, PlayerId } from "../engine/state/types.ts"
+import { PLAYERS } from "../engine/state/types.ts"
 import type { LevelMeasure, LevelPlan } from "./suites.ts"
 import { playLevel } from "./suites.ts"
 

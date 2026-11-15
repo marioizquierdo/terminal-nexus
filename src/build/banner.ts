@@ -7,15 +7,15 @@
 // the order the Battle Round is handed (`bannerOrder`, which the shell turns into the match layer's `BannerOrder`).
 //
 // **The lines are the march route, walked on the Build Phase's own map**: a distance field toward the banner's area
-// over the terrain and every structure standing or planned (`src/routing/`, the kernel's own routing), walked downhill
+// over the terrain and every structure standing or planned (`src/engine/routing/`, the kernel's own routing), walked downhill
 // from the side of the player's Nexus nearest the banner and from the Commander, a tile a step — the way a lone trooper
 // with the road clear would walk it. Not the kernel's march itself: that is walked by every unit at once, round each
 // other, fighting what comes in reach; this is the line it keeps to with nobody in the way.
 
-import { footprintBox, footprintCentre, gridDistance, inBounds, tilesOf } from "../grid/coords.ts"
-import type { Coord, Direction } from "../grid/types.ts"
-import { DistanceField, UNREACHABLE, goalsInside, goalsNear, groundFor, rankSteps, wallsOf, weightsFor } from "../routing/index.ts"
-import type { Ground, RankedStep } from "../routing/index.ts"
+import { footprintBox, footprintCentre, gridDistance, inBounds, tilesOf } from "../engine/geometry/coords.ts"
+import type { Coord, Direction } from "../engine/geometry/types.ts"
+import { DistanceField, UNREACHABLE, goalsInside, goalsNear, groundFor, rankSteps, wallsOf, weightsFor } from "../engine/routing/index.ts"
+import type { Ground, RankedStep } from "../engine/routing/index.ts"
 import { cardTextFor } from "../content/cards.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import type { BannerStance } from "./types.ts"

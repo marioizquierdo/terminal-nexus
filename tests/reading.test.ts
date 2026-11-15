@@ -7,7 +7,7 @@ import assert from "node:assert/strict"
 import { main } from "../src/cli/skirmish.ts"
 import type { BattleSetup, RoundReport } from "../src/battle/index.ts"
 import { briefOf, beginBattle, playToEnd, playRound, SCRIPTED } from "../src/battle/index.ts"
-import { hashOf } from "../src/state/canonical.ts"
+import { hashOf } from "../src/engine/state/canonical.ts"
 import { dealtOf, lostCount, lostOf, nameOf, readingLines, scoreOf } from "../src/battle/reading/index.ts"
 import { readProfiles } from "../src/skirmish/profile-files.ts"
 

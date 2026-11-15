@@ -10,8 +10,8 @@
 //
 // Pure: the same sample gives the same screenshot.
 
-import type { Coord } from "../grid/types.ts"
-import type { PlayerId } from "../state/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
 import type { GridLayersInput } from "./compose.ts"
 import { drawGridLayers } from "./compose.ts"
 import type { BandCell } from "./frame.ts"

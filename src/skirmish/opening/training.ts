@@ -15,7 +15,7 @@ import type { BuildingSpawns } from "../../armies/index.ts"
 import { defaultValue } from "../../build/all-settings.ts"
 import type { ContentRegistry } from "../../content/index.ts"
 import { spawningRegistry } from "../../match/index.ts"
-import { TICKS_PER_SECOND } from "../../state/types.ts"
+import { TICKS_PER_SECOND } from "../../engine/state/types.ts"
 import type { BattleOpening } from "./types.ts"
 
 /** Each structure's spawns by the first card of the armies that gives it any. */

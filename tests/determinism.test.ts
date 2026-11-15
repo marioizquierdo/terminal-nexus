@@ -3,13 +3,13 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { hashEvents, parseEvents, serializeEvents } from "../src/events/serialize.ts"
-import { DOMAIN_EVENT_KINDS } from "../src/events/types.ts"
-import { contextFor, resolvePulse, spawnEvents, stepTick } from "../src/pulse/index.ts"
+import { hashEvents, parseEvents, serializeEvents } from "../src/engine/events/serialize.ts"
+import { DOMAIN_EVENT_KINDS } from "../src/engine/events/types.ts"
+import { contextFor, resolvePulse, spawnEvents, stepTick } from "../src/engine/pulse/index.ts"
 import { buildLog } from "../src/report/index.ts"
-import { cosmeticRng } from "../src/rng/pcg32.ts"
+import { cosmeticRng } from "../src/engine/rng/pcg32.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
-import { hashState, parseState, serializeState } from "../src/state/serialize.ts"
+import { hashState, parseState, serializeState } from "../src/engine/state/serialize.ts"
 import {
   loadSandbox,
   reportInputOf,

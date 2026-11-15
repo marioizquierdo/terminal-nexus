@@ -19,7 +19,7 @@
 // way two real flashlights pointed at the same wall add up without either one needing to remember
 // the other was there.
 
-import type { Coord } from "../../grid/types.ts"
+import type { Coord } from "../../engine/geometry/types.ts"
 import type { EffectBand, PositionedCell } from "./types.ts"
 import type { BandCell, CellStyle } from "../frame.ts"
 import { BANDS } from "../frame.ts"

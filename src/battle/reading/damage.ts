@@ -2,8 +2,8 @@
 // splashes among them, since a death's blast hurts friend and foe unless its content says enemies alone — and how much
 // of that its own side dealt — and what it dealt to the enemy: to units, to buildings and to the Nexus. Public.
 
-import type { DomainEvent } from "../../events/types.ts"
-import type { MatchState } from "../../state/types.ts"
+import type { DomainEvent } from "../../engine/events/types.ts"
+import type { MatchState } from "../../engine/state/types.ts"
 import type { Side } from "../types.ts"
 import type { RoundContext } from "./context.ts"
 import type { Tracker } from "./index.ts"

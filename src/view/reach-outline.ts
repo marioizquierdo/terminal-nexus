@@ -1,4 +1,4 @@
-// The outline of a reach: the last tiles it covers, as the rules count them (`tilesWithin`, src/grid/reach.ts).
+// The outline of a reach: the last tiles it covers, as the rules count them (`tilesWithin`, src/engine/geometry/reach.ts).
 // Every outline of a reach draws this one shape — a building's or a unit's reach in the Build
 // Phase (`build-areas.ts`), a blast as it spreads (`effects/recipes.ts`) — so what the screen shows is the rule's
 // own area, never a square of tiles or a shape of the picture's own.
@@ -16,9 +16,9 @@
 //
 // Pure, and in tiles: a picture lays it on cells.
 
-import { tilesOf } from "../grid/coords.ts"
-import { tilesWithin } from "../grid/reach.ts"
-import type { Coord, Footprint } from "../grid/types.ts"
+import { tilesOf } from "../engine/geometry/coords.ts"
+import { tilesWithin } from "../engine/geometry/reach.ts"
+import type { Coord, Footprint } from "../engine/geometry/types.ts"
 
 /** A tile as a key for a set of tiles. */
 const keyOf = (tile: Coord): string => `${tile.x},${tile.y}`

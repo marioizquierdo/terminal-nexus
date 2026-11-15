@@ -5,8 +5,8 @@
 // That is what lets monochrome keep every fact.
 
 import { artFor } from "../content/art.ts"
-import type { Coord, TerrainId } from "../grid/types.ts"
-import type { PlayerId } from "../state/types.ts"
+import type { Coord, TerrainId } from "../engine/geometry/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
 import type { GlyphPack } from "../terminal/display.ts"
 import type { StyleRole } from "./roles.ts"
 

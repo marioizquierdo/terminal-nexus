@@ -6,8 +6,8 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { GRID_DESIGN, gridPictures, redraw } from "../scripts/grid-pictures.ts"
-import { gridDistance, ringOffsets, rowsWithin, tilesWithin } from "../src/grid/index.ts"
-import type { Footprint } from "../src/grid/index.ts"
+import { gridDistance, ringOffsets, rowsWithin, tilesWithin } from "../src/engine/geometry/index.ts"
+import type { Footprint } from "../src/engine/geometry/index.ts"
 
 const ONE: Footprint = [{ x: 0, y: 0 }]
 const ORIGIN = { x: 0, y: 0 }

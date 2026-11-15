@@ -27,9 +27,9 @@ import { baseContentId, createRegistry } from "../content/index.ts"
 import { CARD_TEXT, commanderName } from "../content/cards.ts"
 import { roundIncome } from "../armies/curve.ts"
 export { roundIncome } from "../armies/curve.ts"
-import { tilesOf } from "../grid/coords.ts"
-import type { Coord } from "../grid/types.ts"
-import type { PlayerId } from "../state/types.ts"
+import { tilesOf } from "../engine/geometry/coords.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
 import {
   creditsEarned,
   fallen,
@@ -56,8 +56,8 @@ import { regionCentre, regionOf, regionTiles, sceneOf, validateMission } from ".
 import { targetRegionsAt } from "../match/index.ts"
 import type { BannerOrder } from "../match/index.ts"
 import { bannerOrder } from "../build/banner.ts"
-import type { MatchState } from "../state/types.ts"
-import { TICKS_PER_SECOND } from "../state/types.ts"
+import type { MatchState } from "../engine/state/types.ts"
+import { TICKS_PER_SECOND } from "../engine/state/types.ts"
 import { setting } from "../build/all-settings.ts"
 import { status } from "../build/status.ts"
 import { resultOf } from "../view/ending.ts"

@@ -21,7 +21,7 @@ import type { PlacementBlock, PlacementEntry, BattleOpening } from "../src/skirm
 import { buildLog } from "../src/report/index.ts"
 import { playSandboxRound } from "../src/skirmish/sandbox-round.ts"
 import { ARMY_FILES } from "../src/shipped.ts"
-import type { PlayerId, TargetArea } from "../src/state/types.ts"
+import type { PlayerId, TargetArea } from "../src/engine/state/types.ts"
 
 const WIDTH = 48
 const HEIGHT = 24

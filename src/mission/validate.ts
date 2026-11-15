@@ -6,9 +6,9 @@
 // nothing drawn.
 
 import type { ContentRegistry } from "../content/index.ts"
-import { inBounds, tileIndex, tilesOf } from "../grid/coords.ts"
-import type { Coord, GridTerrain } from "../grid/types.ts"
-import { TERRAIN } from "../grid/types.ts"
+import { inBounds, tileIndex, tilesOf } from "../engine/geometry/coords.ts"
+import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import { TERRAIN } from "../engine/geometry/types.ts"
 import type {
   MissionDefinition,
   Region,

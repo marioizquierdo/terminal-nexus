@@ -4,10 +4,10 @@
 // and how wide, and for each side the damage it dealt there, the units and buildings that took part (a composition with
 // its value) and what it lost there. Public.
 
-import type { DomainEvent } from "../../events/types.ts"
-import { gridDistance } from "../../grid/coords.ts"
-import type { Coord } from "../../grid/types.ts"
-import type { MatchState } from "../../state/types.ts"
+import type { DomainEvent } from "../../engine/events/types.ts"
+import { gridDistance } from "../../engine/geometry/coords.ts"
+import type { Coord } from "../../engine/geometry/types.ts"
+import type { MatchState } from "../../engine/state/types.ts"
 import type { Side } from "../types.ts"
 import type { Composition, RoundContext } from "./context.ts"
 import type { Tracker } from "./index.ts"

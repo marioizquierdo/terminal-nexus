@@ -10,9 +10,9 @@
 // `facing`, which is a rendering hint no rule reads, and `moveCredit`, which appears on the events
 // that carry a movement decision and nowhere else. Neither is invented here.
 
-import type { DomainEvent } from "../events/types.ts"
-import type { Coord } from "../grid/types.ts"
-import type { PlayerId } from "../state/types.ts"
+import type { DomainEvent } from "../engine/events/types.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import type { PlayerId } from "../engine/state/types.ts"
 
 export type ReplayEntity = {
   ordinal: number

@@ -12,8 +12,8 @@
 // (`build-handoff.ts`) and popups (`build-popup.ts`).
 
 import { commanderHidden, drawAppearance, drawExploredCommander, drawOutInBattle, drawOutInBuild, drawVignette } from "./commander-moments.ts"
-import { footprintCentre } from "../grid/coords.ts"
-import type { Coord } from "../grid/types.ts"
+import { footprintCentre } from "../engine/geometry/coords.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import type { Camera } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"

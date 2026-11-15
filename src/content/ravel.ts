@@ -34,7 +34,7 @@ const GROUND_UNIT_COLLISIONS = ["obstacles", "units"] as const
 const SCAVENGER_COLLISIONS = ["obstacles", "workers"] as const
 const STRUCTURE_COLLISIONS = ["obstacles", "workers", "units"] as const
 // An air unit collides only with other air - never obstacles, workers, or units - and its mask
-// ignores terrain entirely (src/pulse/shared.ts, maskForActor). "Arrives from a direction nobody
+// ignores terrain entirely (src/engine/pulse/shared.ts, maskForActor). "Arrives from a direction nobody
 // planned for" is the runner's doctrine already; the buzzard below is that doctrine taken literally.
 const AIR_UNIT_COLLISIONS = ["air"] as const
 

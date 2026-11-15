@@ -1,15 +1,15 @@
 // Where a side heads when its level names nowhere (docs/system-design/pulse.md, a side's target): its fighting units
 // head for the enemy's Grid Nexus and fight what comes within their reach on the way (`headsForNexus`,
-// `src/pulse/perception.ts`). The owner, 2026-10-20: "It's just going to be going to the enemy nexus." Before, they
+// `src/engine/pulse/perception.ts`). The owner, 2026-10-20: "It's just going to be going to the enemy nexus." Before, they
 // went for the nearest enemy wherever it was; with no enemy Nexus to strike they still do.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { contextFor, stepTick } from "../src/pulse/index.ts"
+import { contextFor, stepTick } from "../src/engine/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
-import type { EntityState, MatchState, PlayerId } from "../src/state/types.ts"
+import type { EntityState, MatchState, PlayerId } from "../src/engine/state/types.ts"
 
 type Placed = readonly [x: number, y: number, content: string]
 

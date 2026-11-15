@@ -15,7 +15,7 @@
 // its own (`STREAM_DRAFT`), never the kernel's, so dealing a hand never moves a single draw of a battle. Pure: no
 // clock, no state.
 
-import { Pcg32, STREAM_DRAFT } from "../rng/pcg32.ts"
+import { Pcg32, STREAM_DRAFT } from "../engine/rng/pcg32.ts"
 import type { PowerCard, Rarity, Schedule, ScheduleSlot } from "./types.ts"
 import { RARITIES } from "./types.ts"
 import { dealtBy } from "./curve.ts"
