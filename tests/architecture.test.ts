@@ -81,8 +81,8 @@ test("src/engine/abilities is the battle engine's world, handed in: it never rea
   assertNoDependencyOn("engine/abilities", ["engine/pulse", "match", "armies", "view", "report", "cli", "build"])
 })
 
-test("src/engine/routing is routing's parts alone: it knows the Grid and nothing of a tick, a unit, a side or a screen", () => {
-  // Each part is tested alone on small Grids (tests/routing.test.ts); the battle engine builds its routes from them.
+test("src/engine/routing is routing's parts alone: it knows the battlefield and nothing of a tick, a unit, a side or a screen", () => {
+  // Each part is tested alone on small battlefields (tests/routing.test.ts); the battle engine builds its routes from them.
   assertNoDependencyOn("engine/routing", ["engine/pulse", "engine/state", "match", "content", "armies", "view", "report", "cli", "build"])
 })
 

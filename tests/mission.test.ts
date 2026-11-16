@@ -4,7 +4,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { STARTER_STANDING, starterGrid } from "../src/build/catalog.ts"
+import { STARTER_STANDING, starterTerrain } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/engine/events/types.ts"
 import { tilesOf } from "../src/engine/geometry/coords.ts"
@@ -17,7 +17,7 @@ import { resolvePulse } from "../src/engine/pulse/index.ts"
 import { hashState } from "../src/engine/state/serialize.ts"
 import type { MatchState } from "../src/engine/state/types.ts"
 
-const grid = starterGrid()
+const terrain = starterTerrain()
 const registry = FIXTURE_REGISTRY
 const TURRET = "structure.bench.beamturret"
 const HATCHERY = "structure.bench.hatchery"
@@ -43,7 +43,7 @@ function playMission(mission: MissionDefinition, plans: readonly (readonly Place
   let carried: MatchState | null = null
   for (let pulse = 1; pulse <= mission.pulses; pulse += 1) {
     const structures = [...(pulse === 1 ? STARTER_STANDING : []), ...(plans[pulse - 1] ?? [])]
-    const run = resolveMissionPulse({ mission, grid, registry, pulse, carried, structures })
+    const run = resolveMissionPulse({ mission, terrain, registry, pulse, carried, structures })
     pulses.push(run)
     if (run.verdict.kind !== "continue") break
     carried = regroup(run.final, registry).state
@@ -53,7 +53,7 @@ function playMission(mission: MissionDefinition, plans: readonly (readonly Place
 
 const problemsOf = (mission: MissionDefinition): readonly string[] => {
   try {
-    validateMission(mission, grid, registry)
+    validateMission(mission, terrain, registry)
     return []
   } catch (error) {
     assert.ok(error instanceof MissionError, `not a MissionError: ${String(error)}`)
@@ -70,7 +70,7 @@ const withTriggers = (triggers: readonly TriggerDefinition[], extra: Partial<Mis
 // --- Load-time validation ---------------------------------------------------------------------------
 
 test("PERIMETER validates against the map it is played on", () => {
-  assert.equal(validateMission(PERIMETER, grid, registry), PERIMETER)
+  assert.equal(validateMission(PERIMETER, terrain, registry), PERIMETER)
   assert.equal(PERIMETER.pulses, 3, "three Battle Rounds, the raid in each")
 })
 
@@ -160,7 +160,7 @@ test("an arrival counts for victory: a side that only arrives later can still be
       { id: "end", when: { event: "pulse.end" }, do: [{ win: true }] },
     ],
   }
-  validateMission(mission, grid, registry)
+  validateMission(mission, terrain, registry)
   const [round] = playMission(mission, NOTHING)
   assert.ok(round !== undefined)
   assert.equal(round.final.outcome?.reason, "annihilation")
@@ -197,7 +197,7 @@ test("a target holds round after round until another moves it, and one set betwe
     regions,
     triggers: [...PERIMETER.triggers, { id: "forward", when: { pulse: 2, tick: 60 }, do: [{ target: { side: "A", region: "front" } }] }],
   }
-  validateMission(mission, grid, registry)
+  validateMission(mission, terrain, registry)
   const line = { x: 22, y: 7, width: 5, height: 2 }
   const front = { x: 30, y: 8, width: 2, height: 2 }
   assert.deepEqual(targetsAt(mission, 2, 59), { A: line })
@@ -214,7 +214,7 @@ test("a target holds round after round until another moves it, and one set betwe
   // A mission that names no target leaves the state without one: it hashes as a battle before targets did.
   const none: MissionDefinition = { ...PERIMETER, triggers: PERIMETER.triggers.filter((trigger) => trigger.id !== "post") }
   assert.equal(targetsAt(none, 3, 0), undefined)
-  assert.ok(!("targets" in missionOpening({ mission: none, grid, registry, pulse: 1, carried: null, structures: STARTER_STANDING }).state))
+  assert.ok(!("targets" in missionOpening({ mission: none, terrain, registry, pulse: 1, carried: null, structures: STARTER_STANDING }).state))
 })
 
 // --- What carries from one Pulse to the next ------------------------------------------------------
@@ -251,7 +251,7 @@ test("a building planned where a survivor stands moves the survivor aside, and n
   const carried = regroup(round1.final, registry).state
   const survivor = carried.entities.find((entity) => entity.player === "A" && registry.get(entity.contentId).layer === "units")
   assert.ok(survivor !== undefined, "no survivor to build on")
-  const opening = missionOpening({ mission: PERIMETER, grid, registry, pulse: 2, carried, structures: [{ contentId: TURRET, anchor: survivor.anchor }] }).state
+  const opening = missionOpening({ mission: PERIMETER, terrain, registry, pulse: 2, carried, structures: [{ contentId: TURRET, anchor: survivor.anchor }] }).state
   const moved = opening.entities.find((entity) => entity.ordinal === survivor.ordinal)
   assert.ok(moved !== undefined)
   assert.notDeepEqual(moved.anchor, survivor.anchor, "the survivor stayed under the Turret")
@@ -309,7 +309,7 @@ test("PERIMETER is won by holding and lost when the Nexus falls; a round the pla
             : trigger,
       ),
   }
-  validateMission(thin, grid, registry)
+  validateMission(thin, terrain, registry)
   const [round1] = playMission(thin, NOTHING)
   assert.ok(round1 !== undefined)
   assert.ok(round1.events.some((event) => event.kind === "entity.died" && event.player === "A"), "the trooper never fell")

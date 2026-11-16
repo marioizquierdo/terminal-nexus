@@ -181,5 +181,5 @@ test("holding Down on the Build Phase menu reaches its last row in well under a 
 test("the keyboard adapter sends a list key as a highlight on the menu, and as a cursor move on the map", () => {
   assert.deepEqual(buildKeyboardCommand(SHIFT_DOWN, { itemCount: 3, armed: false, focus: "menu" }), { kind: "highlight", delta: 1, jump: true })
   assert.deepEqual(buildKeyboardCommand(HOME, { itemCount: 3, armed: false, focus: "menu" }), { kind: "highlight", delta: -1, jump: true })
-  assert.equal(buildKeyboardCommand(HOME, { itemCount: 3, armed: false, focus: "grid" })?.kind, "move-cursor")
+  assert.equal(buildKeyboardCommand(HOME, { itemCount: 3, armed: false, focus: "map" })?.kind, "move-cursor")
 })

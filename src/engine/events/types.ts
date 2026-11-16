@@ -9,7 +9,7 @@ import type { Coord, Direction } from "../geometry/types.ts"
 import type { AttackKind } from "../../content/types.ts"
 import type { PlayerId, VictoryReason } from "../state/types.ts"
 
-/** Why a unit could not take the step it wanted: the Grid's edge, rock, another entity, a tile still settling after a
+/** Why a unit could not take the step it wanted: the battlefield's edge, rock, another entity, a tile still settling after a
  *  death, or no route at all — it stands as near its goal as it can get (`intents.ts`). */
 export type BlockReason = "edge" | "terrain" | "entity" | "settling" | "no-route"
 

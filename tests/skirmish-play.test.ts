@@ -43,7 +43,7 @@ const first = (seed = 1): BuildContext => withoutScene(level(seed).firstRound())
 
 /** A Build Phase state on `context` with `planned` placed and the hand's card `pick` picked. */
 function planOn(context: BuildContext, planned: BuildState["planned"], pick: number | null = null): BuildState {
-  const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
+  const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
   const opened = createBuildState(context, nexusTile(context) ?? { x: 0, y: 0 }, viewport)
   return { ...opened, planned, nextOrdinal: planned.length + 1, nexusPick: pick, bonusAllotment: pick === null ? 0 : (context.nexusDraft[pick]?.bonusAllotment ?? 0) }
 }
@@ -77,8 +77,8 @@ test("a Skirmish opens on round 1: p1's Build Phase on the Crossing, the Command
   assert.equal(battle.round, 1)
   assert.deepEqual(opened.round, { number: 1, of: 8 })
   const map = mapOf(battle)
-  assert.equal(opened.grid.width, map.rows[0]?.length)
-  assert.equal(opened.grid.height, map.rows.length)
+  assert.equal(opened.terrain.width, map.rows[0]?.length)
+  assert.equal(opened.terrain.height, map.rows.length)
   // Its own Nexus stands; the enemy's is the field, whole.
   assert.deepEqual(opened.standing, [{ contentId: battleArmy("vasse").nexus, anchor: map.nexus.A }])
   assert.deepEqual(
@@ -269,7 +269,7 @@ test("a round saves as its setup, its battle and the plan so far; loading it ret
   // Loaded: the same round, the same hand and credits, the power kept, the Turret placed and the Barracks held.
   const loaded = skirmishLevel(save, { file: "tmp/half.save.json" })
   const opened = loaded.firstRound()
-  const viewport = buildLayout({ columns: 80, rows: 24 }, opened.grid).viewport
+  const viewport = buildLayout({ columns: 80, rows: 24 }, opened.terrain).viewport
   const session = new BuildSession({ context: opened, cursor: nexusTile(opened) ?? { x: 0, y: 0 }, viewport, resume: loaded.play.resume as NonNullable<typeof loaded.play.resume>, keep: loaded.play.keep as NonNullable<typeof loaded.play.keep> })
   assert.deepEqual(session.state.planned, state.planned)
   assert.equal(session.state.nexusPick, 0)

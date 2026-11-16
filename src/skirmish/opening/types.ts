@@ -1,8 +1,8 @@
 import type { Coord, TerrainId } from "../../engine/geometry/types.ts"
 import type { PlayerId, TargetArea } from "../../engine/state/types.ts"
-import type { GridPreset } from "./presets.ts"
+import type { MapPreset } from "./presets.ts"
 
-export type GridSpec = Readonly<{ preset: GridPreset }> | Readonly<{ width: number; height: number }>
+export type MapSpec = Readonly<{ preset: MapPreset }> | Readonly<{ width: number; height: number }>
 
 /**
  * What one placement symbol means, for one player.
@@ -20,7 +20,7 @@ export type PlacementEntry = Readonly<{
    * already hurt, and the alternative is a fixture that has to spend ticks damaging them first.
    *
    * The symbol is what carries the difference: `t` and `T` can both be troopers and differ only in
-   * how much health they start with, so the placement grid still reads as one character per entity.
+   * how much health they start with, so the placement block still reads as one character per entity.
    */
   hp?: number
 }>
@@ -28,17 +28,17 @@ export type PlacementEntry = Readonly<{
 /**
  * One player's opening deployment.
  *
- * Separate blocks rather than one interleaved grid, because a symbol then means the same thing for
+ * Separate blocks rather than one interleaved block, because a symbol then means the same thing for
  * whoever placed it — `t` is a trooper on both sides, and ownership comes from which block it is in
  * rather than from letter case. (Case still carries ownership *on screen*; that is a rendering
  * rule, and this is where it stops leaking into authoring.)
  */
 export type PlacementBlock = Readonly<{
   /**
-   * Where this block's north-west corner sits on the Grid. Defaults to `(0,0)`.
+   * Where this block's north-west corner sits on the battlefield. Defaults to `(0,0)`.
    *
-   * The block does not have to cover the Grid — only the rectangle its own units occupy — so a
-   * deployment stays legible at any map size, and a much larger Grid than today's presets would not
+   * The block does not have to cover the battlefield — only the rectangle its own units occupy — so a
+   * deployment stays legible at any map size, and a much larger battlefield than today's presets would not
    * force a wall of blank rows per player. Nothing needs that yet; it is here because it costs one
    * offset to keep the door open.
    */
@@ -49,9 +49,9 @@ export type PlacementBlock = Readonly<{
    * character is exactly as blank as if it had been written out in full. That is deliberate, not a
    * gap in validation to eventually close: most blocks are irregular (an uneven squad, a scattered
    * escort), and requiring every row to be padded to the same length would fight the format's own
-   * readability for no real safety, since `terrain`'s stricter "every row is the Grid's width"
+   * readability for no real safety, since `terrain`'s stricter "every row is the battlefield's width"
    * check was never really about catching a truncated row either — it happened to, as a side effect
-   * of terrain covering the whole Grid, which a block does not. A truncated or column-shifted edit
+   * of terrain covering the whole battlefield, which a block does not. A truncated or column-shifted edit
    * inside a block is consequently **not** caught by the loader the way an out-of-bounds or
    * overlapping footprint is; a screenshot or a watched run is still the check for that.
    */
@@ -63,7 +63,7 @@ export type BattleOpening = Readonly<{
   id: string
   name: string
   notes?: string
-  grid: GridSpec
+  size: MapSpec
   seed: number
   /** Fixed number of logical ticks (pulse.md), 12 ticks per simulation second. */
   pulseTicks: number
@@ -72,7 +72,7 @@ export type BattleOpening = Readonly<{
   terrainLegend: Readonly<Record<string, TerrainId>>
   /**
    * One block per player. Partial on purpose: a fixture that only needs one side says so by leaving
-   * the other out, rather than by writing an empty grid.
+   * the other out, rather than by writing an empty block.
    */
   placements: Readonly<Partial<Record<PlayerId, PlacementBlock>>>
   /**

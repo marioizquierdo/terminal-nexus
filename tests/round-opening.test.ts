@@ -70,7 +70,7 @@ test("the screen's arrivals are the battle's opening", { timeout: 60_000 }, () =
 test("round 2's arrivals are the battle's opening less who was already standing", { timeout: 120_000 }, () => {
   const level = newSkirmishLevel(1)
   const one = withoutScene(level.firstRound())
-  const viewport = buildLayout({ columns: 80, rows: 24 }, one.grid).viewport
+  const viewport = buildLayout({ columns: 80, rows: 24 }, one.terrain).viewport
   const state = createBuildState(one, nexusTile(one) ?? STARTER_START_CURSOR, viewport)
   const resolved = level.play.startPulse(one, state)
   assert.ok(resolved !== null, "round 1 did not start")

@@ -91,5 +91,5 @@ test("what a unit did in a story level is told round by round, every round the l
   const played = measureLevel(level, plan)
   assert.deepEqual(unit.ended, played.ended)
   assert.equal(unit.rounds.length, played.rounds.length)
-  assert.ok(unit.rounds.every((round) => round.sides.A?.stood === 1), "the player's Grid Nexus stands every round")
+  assert.ok(unit.rounds.every((round) => round.sides.A?.stood === 1), "the player's Nexus stands every round")
 })

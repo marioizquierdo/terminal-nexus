@@ -21,7 +21,7 @@ function baseOpening(): BattleOpening {
   return {
     id: "loader-fixture",
     name: "Loader fixture",
-    grid: { width: 4, height: 3 },
+    size: { width: 4, height: 3 },
     seed: 1,
     pulseTicks: 12,
     terrain: ["....", "....", "...."],
@@ -48,7 +48,7 @@ test("the default preset is 48 x 16, which the 80-column composition is derived 
   assert.deepEqual(presetDimensions(DEFAULT_PRESET), { width: 48, height: 16 })
 })
 
-test("the preset matrix matches the Grid page's table", () => {
+test("the preset matrix matches the battlefield page's table", () => {
   assert.deepEqual(presetDimensions("small-wide"), { width: 24, height: 12 })
   assert.deepEqual(presetDimensions("medium-extra-wide"), { width: 48, height: 16 })
   assert.deepEqual(presetDimensions("extra-large-extra-wide"), { width: 72, height: 24 })
@@ -68,7 +68,7 @@ test("opening rows read north to south and (0,0) is the north-west tile", () => 
     },
   }
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY })
-  assert.equal(loaded.state.grid.tiles[0], "terrain.rock", "the first row is not the north row")
+  assert.equal(loaded.state.terrain.tiles[0], "terrain.rock", "the first row is not the north row")
   const [first, second] = loaded.state.entities
   assert.ok(first !== undefined && second !== undefined)
   assert.deepEqual(first.anchor, { x: 1, y: 0 })
@@ -76,12 +76,12 @@ test("opening rows read north to south and (0,0) is the north-west tile", () => 
 })
 
 test("a placement symbol marks the centre tile, whatever size the unit is", () => {
-  // The whole point of centring: a placement grid stays one character per unit even when units stop
+  // The whole point of centring: a placement block stays one character per unit even when units stop
   // being one tile. A 3x1 hauler written at (2,1) covers (1,1)..(3,1) and is *stored* at (1,1).
   const loaded = openBattle(
     {
       ...baseOpening(),
-      grid: { width: 6, height: 3 },
+      size: { width: 6, height: 3 },
       terrain: ["......", "......", "......"],
       placements: {
         A: block({ x: 2, y: 1 }, ["h"], { h: { content: "unit.citizen.hauler" } }),
@@ -102,7 +102,7 @@ test("a placement symbol marks the centre tile, whatever size the unit is", () =
   )
 })
 
-test("a block's `at` origin offsets its rows, so the grid need not cover the Grid", () => {
+test("a block's `at` origin offsets its rows, so the rows need not cover the battlefield", () => {
   const loaded = openBattle(
     {
       ...baseOpening(),
@@ -115,7 +115,7 @@ test("a block's `at` origin offsets its rows, so the grid need not cover the Gri
   assert.deepEqual(loaded.state.entities[0]?.anchor, { x: 2, y: 1 })
 })
 
-test("ordinals follow Grid reading order, not the order the blocks are written in", () => {
+test("ordinals follow battlefield reading order, not the order the blocks are written in", () => {
   // Ordinal is identity and the battle engine's one iteration order, so it must not depend on which player
   // block the author happened to type first. Same two entities, blocks in both orders, same result.
   const north = block({ x: 0, y: 0 }, ["t"], { t: { content: "unit.citizen.trooper" } })
@@ -154,7 +154,7 @@ test("a placement may start damaged, and defaults to the definition's full healt
 
 test("the loader fails loudly, naming the offending line and column", () => {
   const cases: ReadonlyArray<readonly [string, Partial<BattleOpening>, RegExp]> = [
-    ["terrain row count", { terrain: ["....", "...."] }, /terrain has 2 rows; the grid is 3 tall/],
+    ["terrain row count", { terrain: ["....", "...."] }, /terrain has 2 rows; the map is 3 tall/],
     ["terrain row width", { terrain: ["...", "....", "...."] }, /terrain row 1 \(y=0\) is 3 characters/],
     [
       "unknown terrain key",
@@ -180,20 +180,20 @@ test("the loader fails loudly, naming the offending line and column", () => {
       /unknown content id "unit.citizen.nonesuch"/,
     ],
     [
-      "footprint off the Grid, east edge",
+      "footprint off the battlefield, east edge",
       {
         placements: {
           // A 3x1 hauler centred on the last column reaches one tile past the east edge.
           A: block({ x: 3, y: 0 }, ["h"], { h: { content: "unit.citizen.hauler" } }),
         },
       },
-      /reaches \(4,0\), which is outside the 4x3 Grid/,
+      /reaches \(4,0\), which is outside the 4x3 battlefield/,
     ],
     [
-      "footprint off the Grid, west edge via a negative anchor",
+      "footprint off the battlefield, west edge via a negative anchor",
       {
         placements: {
-          // Centre-anchoring (footprintCentre, grid/coords.ts) is what can push an anchor negative
+          // Centre-anchoring (footprintCentre, engine/geometry/coords.ts) is what can push an anchor negative
           // in the first place - a symbol written right at a block's own (0,0) is exactly where a
           // multi-tile unit's *anchor* lands one or more tiles west of it. A 3x1 hauler's centre
           // offset is (1,0), so a symbol at x=0 anchors at x=-1: untested before, since the only
@@ -202,7 +202,7 @@ test("the loader fails loudly, naming the offending line and column", () => {
           A: block({ x: 0, y: 0 }, ["h"], { h: { content: "unit.citizen.hauler" } }),
         },
       },
-      /reaches \(-1,0\), which is outside the 4x3 Grid/,
+      /reaches \(-1,0\), which is outside the 4x3 battlefield/,
     ],
     [
       "overlapping footprint",
@@ -238,12 +238,12 @@ test("the loader fails loudly, naming the offending line and column", () => {
       },
       /starts "unit\.citizen\.trooper" at 99 health, outside 1\.\.40/,
     ],
-    ["a Grid with nobody on it", { placements: {} }, /places no entities/],
+    ["a battlefield with nobody on it", { placements: {} }, /places no entities/],
     ["a non-positive tick count", { pulseTicks: 0 }, /pulseTicks must be a positive integer/],
     [
-      "a custom grid over the declared-mode tile cap",
-      { grid: { width: 200, height: 200 } },
-      /grid is 200x200 \(40000 tiles\), over the 10000-tile declared-mode cap/,
+      "a custom map over the declared-mode tile cap",
+      { size: { width: 200, height: 200 } },
+      /the map is 200x200 \(40000 tiles\), over the 10000-tile declared-mode cap/,
     ],
   ]
 
@@ -297,12 +297,12 @@ test("every checked-in map gives each side that fights somewhere to go: its own 
 })
 
 test("every sandbox fits the minimum viewport, so its Battle Round shows the whole map at the 80 x 24 floor", async () => {
-  // At the floor the Battle Round's Grid pane is at least the minimum viewport: a sandbox no bigger is watched whole,
+  // At the floor the Battle Round's map is at least the minimum viewport: a sandbox no bigger is watched whole,
   // with nothing off screen to scroll to.
   const misfits: string[] = []
   for (const name of sandboxFiles()) {
-    const { grid } = await loadSandbox(name)
-    const { width, height } = "preset" in grid ? presetDimensions(grid.preset) : grid
+    const { size } = await loadSandbox(name)
+    const { width, height } = "preset" in size ? presetDimensions(size.preset) : size
     if (width > MIN_VIEWPORT.width || height > MIN_VIEWPORT.height) misfits.push(`${name} is ${width} x ${height}`)
   }
   assert.deepEqual(misfits, [], `over the ${MIN_VIEWPORT.width} x ${MIN_VIEWPORT.height} minimum viewport: ${misfits.join("; ")}`)
@@ -370,7 +370,7 @@ test("worker-flight: the worker runs, and workers count for annihilation", async
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
 })
 
-test("structure-destruction: destroying a Grid Nexus ends the Pulse", async () => {
+test("structure-destruction: destroying a Nexus ends the Pulse", async () => {
   const resolved = await playSandbox("structure-destruction.save.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "nexus-destroyed")
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
@@ -389,7 +389,7 @@ test("salvage-drop: death leaves a ground item on the tile it died on", async ()
   assert.equal(item.amount, FIXTURE_REGISTRY.get(death.contentId).salvage)
 })
 
-test("nexus-stands: a side whose Grid Nexus stands is never wiped out; its Pulse goes on until the Nexus falls", async () => {
+test("nexus-stands: a side whose Nexus stands is never wiped out; its Pulse goes on until the Nexus falls", async () => {
   // Mario, 2026-10-01: "the player should only lose when the nexus is destroyed".
   const resolved = await playSandbox("nexus-stands.save.json")
   const fell = resolved.run.events.find((event) => event.kind === "entity.died" && event.player === "A")

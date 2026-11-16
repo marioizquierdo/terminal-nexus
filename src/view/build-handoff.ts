@@ -15,7 +15,7 @@ import { chromeGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import { EASINGS } from "./tween.ts"
 import type { BuildCompositionInput } from "./build.ts"
-import { CURSOR_ROLE, glideShift, inView, structureAt } from "./build-grid.ts"
+import { CURSOR_ROLE, glideShift, inView, structureAt } from "./build-map.ts"
 import { cardHeaderRow } from "./build-card.ts"
 
 /** How many cells of trail follow the focus arrow's head, and how many of them, nearest the head, are
@@ -74,7 +74,7 @@ function handoffFlight(input: BuildCompositionInput): Flight | null {
   const { state, layout } = input
   const flight = input.handoffFlight
   if (flight === undefined || state.committed) return null
-  if (state.focus !== "grid" || state.popup !== null) return null
+  if (state.focus !== "map" || state.popup !== null) return null
   const range = visibleRange(state.camera, state.viewport)
   const cursor = input.cursor ?? state.cursor
   if (!inView(range, cursor)) return null

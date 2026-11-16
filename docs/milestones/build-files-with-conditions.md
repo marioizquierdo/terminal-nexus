@@ -237,7 +237,7 @@ Every one is computed from what `briefOf` already puts in `BriefData`. None read
 | `nexus.health`, `nexus.share` | | own Nexus's health; its share, a whole percent | `brief.nexus` |
 | `enemy.nexus.health`, `enemy.nexus.share` | | the same for theirs | `brief.enemy.nexus` |
 | `buildings`, `enemy.buildings` | building | how many stand (all, or of one card) | `brief.yours.buildings`, `brief.enemy.buildings` |
-| `units`, `enemy.units` | unit | how many on the Grid (all, or of one kind) | `brief.yours.units`, `brief.enemy.units` |
+| `units`, `enemy.units` | unit | how many on the battlefield (all, or of one kind) | `brief.yours.units`, `brief.enemy.units` |
 | `open` | building | 1 when what it needs stands | `BriefBuilding.open` |
 | `afford` | building | 1 when open and its cost is within credits | `open`, `cost`, `credits` |
 | `kept`, `enemy.kept` | power | how many powers kept (all, or that one) | `brief.kept`, `brief.enemy.kept` |
@@ -346,7 +346,7 @@ Two uses, both reading the same table:
   of the `BattleState` between rounds, and both slots' briefs come from the same state before either plan exists.
   `holds(when, brief)` takes nothing else. It cannot see the other slot's plan this round, because that plan is not
   in the brief (`briefOf` says so: "The enemy's plan for this round is never in it").
-- **What a slot sees of the other side is what is public**: its standing buildings, units on the Grid, kept powers,
+- **What a slot sees of the other side is what is public**: its standing buildings, units on the battlefield, kept powers,
   Nexus health, last round's report. The same facts a person on the Build Phase screen can see.
 - **No clock, no random, no log.** Facts are whole-number arithmetic on the brief. They never read the Activity
   Logs or the round's printed lines; `brief.last` is the `RoundReport` kept in the battle's state, not a log, so the

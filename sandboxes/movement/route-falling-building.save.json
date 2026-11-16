@@ -1,7 +1,7 @@
 {
   "format": "terminal-nexus.save/1",
   "name": "Route: a building that falls mid-round opens a way",
-  "notes": "A ridge the whole height of the map with one gap, and the enemy's Barracks standing in front of it on the far side, closing it. Four troopers west of the ridge, the enemy's Grid Nexus east. They reach the Barracks through the gap's mouth and break it, and the way through opens for the rest of the round. Done when the troopers go through once it falls and the Nexus falls too.",
+  "notes": "A ridge the whole height of the map with one gap, and the enemy's Barracks standing in front of it on the far side, closing it. Four troopers west of the ridge, the enemy's Nexus east. They reach the Barracks through the gap's mouth and break it, and the way through opens for the rest of the round. Done when the troopers go through once it falls and the Nexus falls too.",
   "setup": {
     "map": {
       "id": "route-falling-building",

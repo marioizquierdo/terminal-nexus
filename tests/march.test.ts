@@ -174,7 +174,7 @@ function pair(rows: readonly string[], width = 70): BattleOpening {
   return {
     id: "pair",
     name: "pair",
-    grid: { width, height },
+    size: { width, height },
     seed: 1,
     pulseTicks: 240,
     terrain: Array.from({ length: height }, () => ".".repeat(width)),
@@ -312,7 +312,7 @@ function rows(state: MatchState, width: number, mirrored: boolean): string[] {
 test("march-mirror: two mirrored armies sort themselves and march at each other, a mirror tick for tick", async () => {
   const opening = await loadSandbox("march-mirror.save.json")
   const { states, events } = await play("march-mirror")
-  const width = "width" in opening.grid ? opening.grid.width : 0
+  const width = "width" in opening.size ? opening.size.width : 0
   states.forEach((state, tick) => assert.deepEqual(rows(state, width, false), rows(state, width, true), `parted at tick ${tick}`))
   // Both sides' marksmen stepped back for their troopers, as many times each.
   const swaps = (player: "A" | "B"): number => events.filter((event) => event.kind === "march.made-way" && event.entity.startsWith(`${player}:`)).length
@@ -351,7 +351,7 @@ test("a flanker goes for the shooter behind the enemy's front, where any other u
   const opening: BattleOpening = {
     id: "flanker",
     name: "flanker",
-    grid: { width: 30, height: 9 },
+    size: { width: 30, height: 9 },
     seed: 1,
     pulseTicks: 60,
     terrain: Array.from({ length: 9 }, () => ".".repeat(30)),

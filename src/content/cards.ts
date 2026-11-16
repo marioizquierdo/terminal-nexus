@@ -1,4 +1,4 @@
-// What each thing on the Grid says about itself on a card (Mario, 2026-09-30: "the cards
+// What each thing on the battlefield says about itself on a card (Mario, 2026-09-30: "the cards
 // have title, subtitle, description, stats"): its name, one short line on what it is for, and two or
 // three plain sentences with a little more detail. Keyed by the same ids as the content definitions and
 // the terrain — like the art table beside it (`art.ts`), a table the battle engine never reads, so the words a
@@ -11,7 +11,7 @@
 // `tests/build-card.test.ts` draws every card at 80 x 24 and fails if either does not fit.
 //
 // Plain and short, in the game's voice, and honest: a card says what the thing does in the game as it
-// stands — never a mechanic the game does not have yet. Lore is a platform, not a plot; the Grid wins.
+// stands — never a mechanic the game does not have yet. Lore is a platform, not a plot; the battlefield wins.
 
 import { ARMY_CONTENT } from "./army-content.ts"
 import { baseContentId } from "./fitted.ts"
@@ -40,7 +40,7 @@ const BUILT_IN_CARD_TEXT: Readonly<Record<string, CardText>> = {
   "structure.bench.nexus": {
     title: "Practice Nexus",
     subtitle: "A target that never shoots",
-    description: "A Grid Nexus for the engine's own test maps. If it falls, the battle is lost, but it never fights back.",
+    description: "A Nexus for the engine's own test maps. If it falls, the battle is lost, but it never fights back.",
   },
   "structure.bench.hatchery": {
     title: "Hatchery",

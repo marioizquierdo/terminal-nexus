@@ -134,7 +134,7 @@ export type ContentDef = Readonly<{
    */
   speedTier: number
   attack?: AttackDef
-  /** The layers this entity collides with (grid.md). Terrain impassability is separate. */
+  /** The layers this entity collides with (battlefield.md). Terrain impassability is separate. */
   collidesWith: readonly EntityLayer[]
   behavior: Behavior
   /** Dropped as a ground item on death. Nothing consumes it yet; there is no economy. */
@@ -143,7 +143,7 @@ export type ContentDef = Readonly<{
    *  `hits: "enemies"`). */
   detonation?: Detonation
   /**
-   * This entity is the player's Grid Nexus, and losing it loses the Pulse. A flag rather than a
+   * This entity is the player's Nexus, and losing it loses the Pulse. A flag rather than a
    * content id: the first battles hardcoded `structure.citizen.nexus`, which stopped being true the moment a
    * second faction existed.
    */
@@ -151,7 +151,7 @@ export type ContentDef = Readonly<{
   /**
    * This unit is its side's Commander (pulse.md): a persistent frontline unit that, when it falls, is
    * absent for the rest of that round's Pulse and the `roundsOut` whole rounds after it, and is then restored
-   * beside its side's Grid Nexus. Only the rules between rounds read it (`src/match/commander.ts`); the
+   * beside its side's Nexus. Only the rules between rounds read it (`src/match/commander.ts`); the
    * engine sees a unit like any other, so a Commander's death is never the victory condition.
    */
   commander?: true
@@ -182,7 +182,7 @@ export type ContentDef = Readonly<{
    * on these layers: the Aid Station names the units' layers, so it never mends a building. Undefined means
    * every layer, which preserves every existing
    * definition's behaviour and every hash exactly. This is a *targeting* mask, never a *collision*
-   * one — grid.md's point that collision and targeting are separate questions applies here
+   * one — battlefield.md's point that collision and targeting are separate questions applies here
    * too: touching this never touches `collidesWith`, and vice versa. The ground-air asymmetry rule
    * shape (from the unit-architecture spike): a ground melee unit that should never be able to touch a
    * flyer sets this to exclude `"air"`; nothing else about it changes.
@@ -243,7 +243,7 @@ export type ContentDef = Readonly<{
   /**
    * Construction territory (pulse.md): a structure with this projects a build range — its player may build
    * within this many tiles of it, measured as range is (`footprintWithin`), to the nearest tile of its footprint, a
-   * row counting two columns — while it is linked to its side's Grid Nexus. Absent: it projects none. Only the Build Phase reads it
+   * row counting two columns — while it is linked to its side's Nexus. Absent: it projects none. Only the Build Phase reads it
    * (`src/build/territory.ts`); the battle engine never does. While the "Build range" Experiment is being felt, its
    * value replaces this number on every structure that has one.
    */
@@ -257,7 +257,7 @@ export type ContentDef = Readonly<{
   supplyProvided?: number
   /**
    * How much health a structure regains between two rounds, as the survivors regroup, never past its `maxHp` (the owner, 2026-10-21:
-   * "perhaps we add like a little bit of self-healing"). The Grid Nexus's, so an early raid that hurt it is not a
+   * "perhaps we add like a little bit of self-healing"). The Nexus's, so an early raid that hurt it is not a
    * wound it carries for the whole match. Absent: none.
    */
   mends?: number

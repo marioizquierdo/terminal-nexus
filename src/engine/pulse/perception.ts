@@ -48,7 +48,7 @@ function eligibleTargets(actor: Actor, candidates: readonly Actor[]): readonly A
 }
 
 /**
- * The whole scoring function is "nearest enemy across every hostile layer", nearest by the Grid's own distance
+ * The whole scoring function is "nearest enemy across every hostile layer", nearest by the battlefield's own distance
  * (`distanceBetween`: a row counts two columns), the shortest walk on screen. Among equally near ones it keeps the
  * one it already holds; otherwise it takes the one closest to falling (least health), so a squad that meets a line
  * fires into the same enemy; and what is still tied is a draw (`drawAmong`). Never the lower ordinal, which the
@@ -212,7 +212,7 @@ function freshChoice(context: TickContext, actor: Actor, released: number | null
     const reach = visionOf(actor.definition)
     candidates = eligibleTargets(actor, hostilesOf(context, actor).filter((other) => within(actor, other, reach)))
   } else {
-    // With no target of its side's, a fighting unit heads for the enemy's Grid Nexus (`headsForNexus`), fighting
+    // With no target of its side's, a fighting unit heads for the enemy's Nexus (`headsForNexus`), fighting
     // what comes within its reach on the way; one that cannot strike a Nexus, or on a map with none, still engages
     // the nearest enemy wherever it is.
     const hostiles = hostilesOf(context, actor)
@@ -247,7 +247,7 @@ export function perception(context: TickContext): void {
     const previous = actor.targetOrdinal
     if (previous !== null && context.byOrdinal.get(previous) === undefined) {
       // Resolution clears the target of everything aiming at an entity as it dies, so reaching
-      // here means a target left the Grid without a death event. That is suspicious rather than
+      // here means a target left the battlefield without a death event. That is suspicious rather than
       // normal, and the report says so at WARN.
       context.events.push({
         kind: "target.lost",
@@ -508,7 +508,7 @@ function breach(routes: TickRoutes, actor: Actor, target: Actor): Choice["select
 }
 
 /**
- * Whether `actor`, among `hostiles`, heads for the enemy's Grid Nexus: a fighting unit (`followsTarget`) whose side
+ * Whether `actor`, among `hostiles`, heads for the enemy's Nexus: a fighting unit (`followsTarget`) whose side
  * has no target, with an enemy Nexus it can strike. The owner, 2026-10-20, on where a side goes when its level names
  * nowhere: "It's just going to be going to the enemy nexus."
  */

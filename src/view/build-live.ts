@@ -3,7 +3,7 @@
 // number the caller passes in, so every animation here is a pure function of the state and the time
 // and a test can drive it without waiting:
 //
-//   - **the view slides** (`docs/system-design/grid.md` asks for
+//   - **the view slides** (`docs/system-design/battlefield.md` asks for
 //     "camera moves eased over a few frames"): whenever the
 //     state's camera changes — a click, an arrow at the margin, a Shift jump, arming that moved the
 //     cursor, anything — the drawn camera eases from wherever it was drawn toward it over `easeMs`
@@ -51,7 +51,7 @@
 //     motion, monochrome and the Experiment at 0 hold it still;
 //   - **the raid's trail moves**: while the raid's intent is in view and nothing holds it still, its
 //     arrows step a tile on toward what the raid goes for every `trailStepMs`, each leaving a copy behind
-//     that fades (`trailMarks`, `src/view/build-grid.ts`), timed from the first frame that drew it moving
+//     that fades (`trailMarks`, `src/view/build-map.ts`), timed from the first frame that drew it moving
 //     (`TrailClock`). It never settles, like the border's breath, so while it is the only thing moving the
 //     frame timer asks for a frame only when the trail next looks different (`nextTrailChange`) — three
 //     times a step where colours blend, twice in monochrome — never every frame. A popup
@@ -94,7 +94,7 @@ import { placementRequest, removalSchedule } from "./placement.ts"
 import { scheduleTrack, trackBusyAt } from "./animation.ts"
 import type { Point, Tween } from "./tween.ts"
 import { retarget, samePoint, still, tileAt, tweenActive, tweenEnd } from "./tween.ts"
-import { nextTrailChange } from "./build-grid.ts"
+import { nextTrailChange } from "./build-map.ts"
 import { DROP_MS } from "./banner-marks.ts"
 import { setting } from "../build/all-settings.ts"
 
@@ -550,7 +550,7 @@ export class BuildAnimation {
     const handoff = state.handoff
     if (handoff !== null) {
       if (this.seenHandoff?.seq !== handoff.seq) this.seenHandoff = { seq: handoff.seq, at: now, stopped: false }
-      const onMap = state.focus === "grid" && state.popup === null && !state.committed
+      const onMap = state.focus === "map" && state.popup === null && !state.committed
       if (!onMap) this.seenHandoff = { ...this.seenHandoff, stopped: true }
       if (!this.seenHandoff.stopped) {
         const { focusArrowMs, pressedFlashMs, cursorBlinks } = this.tuning

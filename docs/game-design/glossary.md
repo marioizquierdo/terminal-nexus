@@ -36,7 +36,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **banner** — where the player sets the army's target in the Build Phase, aggressive or defensive (by default the
   enemy Nexus, aggressive); **the battle banner** is the panel that starts a Battle Round with it. Behind the Battle
   banner Experiment ([`ui-patterns.md`](../system-design/ui-patterns.md)).
-- **battle** — one Grid, two sides, rounds until a result: the unit of play. The code is `src/battle/` (`BattleState`,
+- **battle** — one battlefield, two sides, rounds until a result: the unit of play. The code is `src/battle/` (`BattleState`,
   `BattleSetup`, `BattleResult`); the battle engine says *match* ([`battles.md`](../system-design/battles.md)).
 - **battle reading** — what a battle says, read in one place (`src/battle/reading/`) for the brief, the round's report
   and the scripts: the score; each side's army (composition and army value at the round's start and end, its losses);
@@ -49,7 +49,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   actions, its formation and its stance; both sides answer blind. The code and a few screen lines still say *plan*.
 - **Build Phase** — the hidden, simultaneous, untimed phase where each player makes their build actions; saving and
   loading happen only here. There are no turns ([`concept.md`](concept.md)).
-- **build range** — the ground a new building needs a tile in: within the construction radius of the Grid Nexus and of
+- **build range** — the ground a new building needs a tile in: within the construction radius of the Nexus and of
   every standing building linked to it.
 - **building**, **unit** — what a player places in the Build Phase, and what a building makes to fight; a Commander is
   a unit too. A building that makes units is a **producer**. Content ids and the battle engine say *structure*
@@ -61,7 +61,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **catch-up** — what keeps an early lead small without rubber-banding: the curve, commons first, public kept powers,
   the defender's ground ([`commander-armies.md`](commander-armies.md)).
 - **Commander** — the leader a player plays, with her own unit, powers and army: Vasse, Averno and Dob so far. On the
-  Grid a persistent `@` (Averno's is `&`); she falls in most battles and the Nexus Pulse restores her
+  battlefield a persistent `@` (Averno's is `&`); she falls in most battles and the Nexus Pulse restores her
   ([`commander-armies.md`](commander-armies.md)).
 - **Commander Army** — everything one player brings: faction, Commander, starting units and buildings, blueprints,
   upgrades, Nexus powers and Specials. The owner calls it her *deck*, a name for the package, never deck behaviour.
@@ -70,7 +70,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **deposit**, **salvage** — the two sources of the one resource: a finite tile workers harvest, and what a destroyed
   building drops ([`pulse.md`](../system-design/pulse.md)).
 - **distance** — columns across plus two for each row up or down, between the nearest tiles of two footprints; every
-  **reach**, **range** and radius counts in it, and a reach of 1 is touching ([`grid.md`](../system-design/grid.md)).
+  **reach**, **range** and radius counts in it, and a reach of 1 is touching ([`battlefield.md`](../system-design/battlefield.md)).
 - **engagement** — units of both sides fighting in one place: it starts at a first hit, takes in every hit within 5
   tiles of one already in it, and ends after 5 seconds with no hit there. Each has where and when, damage and losses by
   side, and the units engaged by side ([`battles.md`](../system-design/battles.md)).
@@ -83,8 +83,8 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   standing; never one unit at a time.
 - **goal** — what wins. **Elimination**: destroy the enemy Nexus, or have the healthier one after the last round; the
   only goal built ([`skirmish-saves.md`](../system-design/skirmish-saves.md)).
-- **Grid** — the rectangular integer playfield a battle is fought on ([`grid.md`](../system-design/grid.md)).
-- **group** — units a mission trigger brings onto the Grid together, at a chosen tick, with a name and an intention;
+- **battlefield** — the rectangle of tiles a battle is fought on; the map draws it on screen ([`battlefield.md`](../system-design/battlefield.md)).
+- **group** — units a mission trigger brings onto the battlefield together, at a chosen tick, with a name and an intention;
   never a wave.
 - **map** — the ground and its slots: where each Nexus stands and where its troops hold. The built-in maps are the
   Crossing and the Pocket, each with a note on what it is good and bad for testing
@@ -96,7 +96,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **Nexus power** — a named effect with one plain line of description, dealt in a **hand** at each Nexus Pulse from
   its **Nexus power pool** (never "pool" alone); the player may **keep** one, listed as **ACTIVE**. **draft** is
   choosing from the hand ([`commander-armies.md`](commander-armies.md)).
-- **Nexus Pulse** — the moment each round opens, when the Grid Nexus deals its Commander a hand of Nexus powers.
+- **Nexus Pulse** — the moment each round opens, when the Nexus deals its Commander a hand of Nexus powers.
 - **PERIMETER**, **RIGHT OF SALVAGE** — Vasse's first mission, the tutorial, and her first technology mission.
 - **raid** — a group a mission's opponent sends, with its **intention**: one line saying what it means to do, shown in
   the panel ([`scripted-opponent.md`](scripted-opponent.md)).
@@ -105,7 +105,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **result** — how a battle ends: `BATTLE WON`, `BATTLE LOST`, `BATTLE DRAWN` (`<COMMANDER> WINS` when two scripts
   play); a Battle Round's own end reads `VICTORY`, `DEFEAT`, `DRAW` or `TIME'S UP`.
 - **rock**, **scrub**, **burning ground** — ground nothing walks through (air flies over it); ground that weighs two
-  steps; a patch a shell set alight, weighing four, which is state, not an effect ([`grid.md`](../system-design/grid.md)).
+  steps; a patch a shell set alight, weighing four, which is state, not an effect ([`battlefield.md`](../system-design/battlefield.md)).
 - **roof** — the tiles of a producer: its wave comes out on the roof and walks off it toward the fight; **room** is the
   ground it keeps free round it.
 - **round** — one Nexus Pulse, one Build Phase and one Battle Round, in that order: "round 2 of 3". The Build Phase
@@ -125,7 +125,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **tech tree**, **blueprint**, **Special**, **research**, **upgrade** — what grows an army between rounds and
   missions ([`commander-armies.md`](commander-armies.md)): a blueprint is what a player may build, a building what they
   did build; only the tech tree **unlocks**, a Nexus power **adds** ("Adds building: Aid Station.").
-- **tile** — one place on the Grid, drawn one column wide ([`presentation.md`](../system-design/presentation.md)).
+- **tile** — one place on the battlefield, drawn one column wide ([`presentation.md`](../system-design/presentation.md)).
 - **troop movement** — the owner's word for pathfinding: where an army goes, how it forms up and how it fights its way
   there; its words are in [`movement.md`](../system-design/movement.md).
 - **vision** — how far a unit sees an enemy to turn to it: 6 columns, 3 rows, unless content says.
@@ -149,7 +149,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   the cursor; the panel describing what is under the cursor (`[e]`); the bare cursor.
 - **popup** — one overlay shape: a title and rows, closed by Esc or a click outside; a **message** has nothing to
   choose.
-- **resize gate** — the TERMINAL TOO SMALL screen shown below the minimum size instead of a cropped Grid.
+- **resize gate** — the TERMINAL TOO SMALL screen shown below the minimum size instead of a cropped battlefield.
 - **row**, **hotkey** — one line of a list, and its key shown as `[x]`; a hotkey that is not shown does not exist.
 - **Skirmish screen**, **setup screen** — the title menu's `[1] Skirmish` (`New game`, `Load game`), and the screen that
   picks the map and each slot's Commander and controller.
@@ -172,8 +172,8 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
 - **the Eternals** — what awakens in a story's final battle ([`story.md`](story.md)).
 - **Nexus Symbol**, **Symbol** — the culture's word for a Commander: a person a Nexus chose and restores after death.
 - **Operator** — how the interface addresses the player; each faction reads the title differently.
-- **Prime Nexus**, **Grid Nexus** — the pyramid that stays home and never moves, and the replica it sends onto the Grid,
-  which must not fall. A Nexus is named for its faction (the Citizen Nexus), never a proper name.
+- **Nexus**, **Prime Nexus** — the pyramid each side defends on the battlefield, which must not fall, and, in the
+  lore, the one at home that sends it. A Nexus is named for its faction (the Citizen Nexus), never a proper name.
 - **restored** — what the Nexus Pulse does to a fallen Commander, the next round for most.
 - **Terminal Nexus** — the unknown end the replicas' wars may be choosing; also the game's name.
 
@@ -184,7 +184,7 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
 - **agent profile** — a language model's playing style, a Markdown file in `players/agents/`. Later.
 - **army file** — `armies/<id>/army.json`, an army as data, stacked: `armies/all`, the faction armies, one army per
   Commander ([`army-authoring.md`](../system-design/army-authoring.md)).
-- **ASCII screenshot** — the Grid as the game's screen draws it, written out as text (`skirmish --show`), with an
+- **ASCII screenshot** — the battlefield as the game's screen draws it, written out as text (`skirmish --show`), with an
   **overlaps** list under it naming what stands beneath each cell (a unit on a roof); the brief's map is drawn the same
   way. Never a screenshot ([`battles.md`](../system-design/battles.md)).
 - **ask** — a Skirmish asked for in words (`map`, `seed`, `p1` …), read alike from the `skirmish` command's flags, the
@@ -194,7 +194,7 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
   waiting their turn.
 - **the bench**, **bench roster** — `sandboxes/engage/`, twelve units a side on open ground and through a gap; and the
   Citizen, Ravel and Proving Grounds units the sandboxes and tests use.
-- **brief** — what a player reads before a round: the board, the hand, the credits, what each building costs and does,
+- **brief** — what a player reads before a round: the battlefield, the hand, the credits, what each building costs and does,
   the score and the last round's battle reading. A person, a script and a model read the same one
   ([`battles.md`](../system-design/battles.md)).
 - **build file** — build actions as JSON, for one round or many (`"round": 3`, `"2-4"`, `"*"`).
@@ -225,10 +225,10 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
   title menu and the browser page read it ([`routing.md`](../system-design/routing.md)).
 - **RULE**, **GUIDANCE**, **IDEA** — a statement built and held by a test, the default, a sketch
   ([`architecture.md`](../system-design/architecture.md)).
-- **sandbox** — a save whose `start` draws the board by hand: one Battle Round of the battle engine from that board, to
-  test one rule, effect, movement or ability, like a unit test's context. It measures what happens on the board
+- **sandbox** — a save whose `start` sets the battlefield up by hand: one Battle Round of the battle engine from that battlefield, to
+  test one rule, effect, movement or ability, like a unit test's context. It measures what happens on the battlefield
   (damage, deaths, paths, timings), not who wins; the whole game is the `skirmish` command's. In `sandboxes/`, or a
-  session's scratchpad ([`skirmish-saves.md`](../system-design/skirmish-saves.md), a board written by hand).
+  session's scratchpad ([`skirmish-saves.md`](../system-design/skirmish-saves.md), a battlefield set up by hand).
 - **save file** — a setup and the battle as it stands at the opening of a Build Phase (`*.save.json`); every way into
   a Skirmish opens one ([`skirmish-saves.md`](../system-design/skirmish-saves.md)).
 - **screenshot** — an image (PNG) of the screen, made by the scripted playtest and the capture scripts. Never an ASCII
@@ -274,7 +274,7 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
 - **event** — what the battle engine emits as a tick resolves (`entity.died`); an Activity Logs event is a different,
   declared thing.
 - **footprint** — the tiles a body covers; with its **anchor** and **facing**, where it stands
-  ([`grid.md`](../system-design/grid.md)).
+  ([`battlefield.md`](../system-design/battlefield.md)).
 - **gameplay stream**, **cosmetic seed** — the seeded PCG32 randomness the rules draw from, and the hash effects draw
   theirs from; they never touch.
 - **logical time**, **presentation time** — ticks, as the battle engine counts them; and the clock the screen and effects read.
@@ -307,13 +307,13 @@ Say which job, every time.
 | hold | the ground a slot's troops stand on in a map | the `hold` stance; *Hold production* |
 | draft | choosing a power from a hand | the save's field for build actions handed in so far |
 | card | a building or power an army offers | the side panel's description of what has the map's attention |
-| map | the ground (the Crossing, a map file) | the screen's region that draws the Grid |
+| map | the ground (the Crossing, a map file) | the screen's region that draws the battlefield |
 | band | where an effect paints (`effects`, `highlights`) | a trigger's action kind: simulation or presentation |
 | bench | the bench roster (units for tests) | the engage sandboxes (`sandboxes/engage/`) |
 | ask | a Skirmish asked for in words | something waiting on Mario |
 | slot | a side of a Skirmish (`p1`, `p2`) | a Story save slot |
 | round | a Nexus Pulse, a Build Phase and a Battle Round | a feedback round |
-| step | a milestone step | a unit's step on the Grid |
+| step | a milestone step | a unit's step on the battlefield |
 | level | a mission's entry in a story file | a log level (`--log-level`) |
 | formation | the order troops march in | how build actions set the buildings that make units |
 | skill | a Commander's own ability | an agent skill in `.claude/skills/` |
@@ -340,15 +340,16 @@ the words it was written with. A line that quotes one on purpose ends with `<!--
 | campaign, run, Challenge, Challenge runs | Story, Skirmish | One Commander's missions in order; a battle is too long for a run of many |
 | unlock (for what a Nexus power does) | adds | *Unlock* is the tech tree's word alone |
 | construct menu | build menu | One name for the list of buildings |
-| Nexus Proxy | Grid Nexus | One name for the replica on the Grid |
+| Nexus Proxy | Nexus | One name for the replica on the battlefield |
 | Veil, planning phase | Build Phase | The original specification's words | <!-- stale-ok -->
-| battlefield | the Grid | The original specification's word | <!-- stale-ok -->
+| Grid, Grid Nexus, Grid pane | battlefield (or map), Nexus, the map | Plain strategy-game words; the ground needs no name of its own | <!-- stale-ok -->
+| board (what a sandbox sets up) | battlefield | One word for the ground, whoever set it up |
 | canon | the design documents | The design is the current shelf, edited in place | <!-- stale-ok -->
 | gate, gate report, `GATED` | milestone step, the pull request, `PLANNED` | Milestones and steps replaced gates | <!-- stale-ok -->
 | `specs/`, `evidence/` | `docs/game-design/`, `docs/system-design/`; screenshots on the pull request | The folders were dissolved | <!-- stale-ok -->
-| `grid` (the command), `bin/grid.ts`, the engine tool, `grid-engine.md` | the `skirmish` command, `architecture.md` | A sandbox is a save the `skirmish` command plays and draws; one command for one game. The Grid stays the playfield's name | <!-- stale-ok -->
+| `grid` (the command), `bin/grid.ts`, the engine tool, `grid-engine.md` | the `skirmish` command, `architecture.md` | A sandbox is a save the `skirmish` command plays and draws; one command for one game | <!-- stale-ok -->
 | engine, `src/engine/pulse/`, `src/engine/state/`, `src/engine/geometry/` | battle engine, `src/engine/` | Named for what it does: plays a Battle Round from a state | <!-- stale-ok -->
-| trial, trial file, variant | `skirmish --seeds`, or a copy of the sandbox changed for the question | One way to play a board, not a second tool | <!-- stale-ok -->
-| `sandboxes.md` | `skirmish-saves.md` (a board written by hand), `testing.md` | A sandbox is a save; testing is one page | <!-- stale-ok -->
+| trial, trial file, variant | `skirmish --seeds`, or a copy of the sandbox changed for the question | One way to play a battlefield, not a second tool | <!-- stale-ok -->
+| `sandboxes.md` | `skirmish-saves.md` (a battlefield set up by hand), `testing.md` | A sandbox is a save; testing is one page | <!-- stale-ok -->
 | `--capability`, `CapabilityMode` | `--colors`, `ColorDepth` | One name for the colour depth everywhere |
 | `--tile-width` | nothing | A tile is one column at every size |

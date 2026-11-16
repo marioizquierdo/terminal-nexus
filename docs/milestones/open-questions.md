@@ -24,7 +24,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | --- | --- | --- | --- |
 | [Q5](#q5--what-is-the-default-construction-radius) | What is the default construction radius? | OBSERVABLE | Mario's playtest of the Build range Experiment |
 | [Q7](#q7--do-workers-carry-or-produce-in-place) | Do workers carry, or produce in place? | OPEN | Milestone 7 (worker economy), for the storage half |
-| [Q13](#q13--where-do-workers-flee-and-what-counts-as-annihilation-on-a-grid-with-no-nexus) | Where do workers flee, and what counts as annihilation, with no Nexus? | OPEN | Milestone 16 (pathfinding) and the worker economy |
+| [Q13](#q13--where-do-workers-flee-and-what-counts-as-annihilation-on-a-battlefield-with-no-nexus) | Where do workers flee, and what counts as annihilation, with no Nexus? | OPEN | Milestone 16 (pathfinding) and the worker economy |
 | [Q19](#q19--where-should-a-sandbox-placement-mode-rewind-and-fast-forward-and-a-feedback-replay-engine-live) | Where do a sandbox, rewind and a feedback replay live? | OPEN | Backlog: replay format |
 | [Q22](#q22--should-movement-carry-deterministic-terrain-based-jitter) | Should movement carry deterministic jitter? | OPEN | Backlog: movement feel |
 | [Q23](#q23--how-does-an-army-reach-its-first-engagement-faster-beyond-raw-movement-speed) | How does an army reach its first engagement faster? | OPEN | Backlog: multi-round regrouping via outposts |
@@ -39,7 +39,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q93](#q93--how-is-an-endless-stand-scored) | How is an endless stand scored? | OPEN | The endless stand's milestone |
 | [Q51](#q51--when-should-the-game-get-a-real-accent-colour-palette-with-variations-per-faction) | When does the game get a real accent-colour palette per faction? | OPEN | Milestone 8 (second faction on screen) |
 | [Q53](#q53--does-the-game-want-a-jump-to-my-next-structure-key-and-which-one) | Does the game want a "jump to my next structure" key? | OPEN | Backlog: keyboard play |
-| [Q59](#q59--should-an-m-map-popup-show-the-whole-grid-at-once) | Should an `[m] Map` popup show the whole Grid? | OPEN | Backlog: map popup spike |
+| [Q59](#q59--should-an-m-map-popup-show-the-whole-battlefield-at-once) | Should an `[m] Map` popup show the whole battlefield? | OPEN | Backlog: map popup spike |
 | [Q63](#q63--should-the-mouse-wheel-move-the-jump-distance-rather-than-5) | Should the wheel move the jump distance rather than 5? | OPEN | Mario's trackpad |
 | [Q67](#q67--do-buildings-get-letter-hotkeys-or-stay-on-digits) | Do buildings get letter hotkeys, or stay on digits? | OPEN | Mario, now |
 | [Q69](#q69--should-units-be-able-to-hold-withdraw-or-head-for-a-place-so-a-scripted-group-can-follow-an-order) | Should units be able to hold, withdraw or head for a place? | OPEN (heading for a place built) | Posts, in the backlog |
@@ -81,7 +81,7 @@ job rather than send it home. Stalled workers are readable (they stop moving), t
 under-built storage without a walk-home animation nobody asked for, and they remove the travel-time
 contradiction. Decide it with the first level that adds a storage cap.
 
-### Q13 — Where do workers flee, and what counts as annihilation, on a Grid with no Nexus?
+### Q13 — Where do workers flee, and what counts as annihilation, on a battlefield with no Nexus?
 
 **Status:** OPEN — option A is what is built; parked under the backlog's routing and economy work.
 
@@ -92,7 +92,7 @@ structures at all, and "one side annihilated" ends a Battle Round only if worker
 | --- | --- |
 | A. No friendly Nexus → flee directly away from the nearest threat. Annihilation = every entity on `workers`, `units`, and `air` is dead | Literal and simple. Risks a worker-hunt anticlimax after the fighting is decided |
 | B. Annihilation = no entity that can attack remains; a side reduced to workers loses | Ends the run at the interesting moment. Makes "annihilation" slightly a lie, and changes the outcome of every fixture containing workers |
-| C. Require every sandbox to place a Grid Nexus | Removes the ambiguity. Taxes the single-rule fixtures that are meant to stay cheap and obvious |
+| C. Require every sandbox to place a Nexus | Removes the ambiguity. Taxes the single-rule fixtures that are meant to stay cheap and obvious |
 
 **Recommendation: A** — simplest, honest, and consistent with the documented rule. B is the better
 *game* answer and a cheap change later; take it if watching a mirror ending shows it visibly dragging.
@@ -291,8 +291,8 @@ before any contact"). Do not build C's authoring surface before a mission uses i
 **Status:** OPEN — parked 2026-11-11 until Milestone 10 polishes PERIMETER as Vasse's tutorial (the owner: "Don't worry about perimeter for now"). Scrolling is built and proved on the Skirmish maps; only PERIMETER's own map is open.
 
 The belief ramp in [`story.md`](../game-design/story.md) describes PERIMETER's teaching goal as the
-"Build Phase / Battle Round loop on **a small Grid that never scrolls**", written as GUIDANCE before the
-pivot to building the first mission first (2026-09). Milestone 5's charter says real scrolling is built "against a Grid sized to actually
+"Build Phase / Battle Round loop on **a small battlefield that never scrolls**", written as GUIDANCE before the
+pivot to building the first mission first (2026-09). Milestone 5's charter says real scrolling is built "against a battlefield sized to actually
 need it". If PERIMETER's real map stays small by design, scrolling has no mission of its own to be proved
 against.
 
@@ -395,7 +395,7 @@ would be tried first.
 
 **Status:** OPEN — parked under the backlog's keyboard play; a real trade, not a blocker.
 
-Tab already toggles keyboard focus between the side menu and the Grid, as the owner asked on 2026-09-26
+Tab already toggles keyboard focus between the side menu and the battlefield, as the owner asked on 2026-09-26
 ([`input.md`](../system-design/input.md), bindings; it is built). That retired the older GUIDANCE that gave Tab
 and Shift+Tab the job of jumping the cursor to the player's next or previous own structure. What remains is
 whether that jump should exist at all, on some other key.
@@ -408,7 +408,7 @@ whether that jump should exist at all, on some other key.
 **Recommendation: B.** Revisit structure-jump as a small addition when a mission has enough structures that
 finding your own is slow, rather than solve for a key nothing currently claims.
 
-### Q59 — Should an `[m] Map` popup show the whole Grid at once?
+### Q59 — Should an `[m] Map` popup show the whole battlefield at once?
 
 **Status:** OPEN — keep in mind, not needed yet; registered at the owner's request, the same shape Q19 was.
 
@@ -416,16 +416,16 @@ The owner, reviewing the retired scrollbar experiment (2026-09-26): "Perhaps we 
 that opens a popup in the middle with the whole map. Take note of this, we may develop it later on another
 session spike, because everything needs a special representation for the minimap, but it seems it would be
 really useful for checking large maps, navigation, and checking for status during large pulses."
-[`grid.md`](../system-design/grid.md) still says there is no minimap; a popup the player opens is a different
-thing from one always on screen, but it shares the hard part — drawing a Grid larger than the maximum viewport
+[`battlefield.md`](../system-design/battlefield.md) still says there is no minimap; a popup the player opens is a different
+thing from one always on screen, but it shares the hard part — drawing a battlefield larger than the maximum viewport
 in a fraction of the cells.
 
 | Option | Cost |
 | --- | --- |
 | A. **A spike of its own**, once some map is bigger than the maximum viewport (72 × 24) | Waits for a real need; the spike's question is the downsampled representation, which nothing else answers |
-| B. Build it inside the Build Phase work | No mission map needs it yet; the representation would be answered against a test Grid, not a real one |
+| B. Build it inside the Build Phase work | No mission map needs it yet; the representation would be answered against a test battlefield, not a real one |
 
-**Recommendation: A.** `m` is reserved for it ([`grid.md`](../system-design/grid.md)) so nothing else takes the
+**Recommendation: A.** `m` is reserved for it ([`battlefield.md`](../system-design/battlefield.md)) so nothing else takes the
 key. The natural moment is the first mission map that does not fit the maximum viewport, or the first Battle Round
 large enough that watching it needs an overview.
 

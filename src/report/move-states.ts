@@ -9,7 +9,7 @@
 //
 // - **retreat**: the unit fled this tick (a `behavior.flee` event).
 // - **battle**: it has a target (`targetOrdinal`, set by this tick's perception) and is not a worker that flees, and
-//   that target is not the enemy's Grid Nexus while it is still beyond the unit's vision — a unit walking on the
+//   that target is not the enemy's Nexus while it is still beyond the unit's vision — a unit walking on the
 //   Nexus it cannot see yet is marching for its side's goal (`marchesOn`).
 // - **march**: anything else: walking for its side's goal, standing with nothing to fight, or making way for an ally
 //   of higher priority (a `march.made-way` event).

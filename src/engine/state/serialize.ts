@@ -1,4 +1,4 @@
-import type { GridTerrain, TerrainId } from "../geometry/types.ts"
+import type { MapTerrain, TerrainId } from "../geometry/types.ts"
 import { isTerrainId } from "../geometry/types.ts"
 import { canonicalJson, hashOf } from "./canonical.ts"
 import type { MatchState } from "./types.ts"
@@ -23,35 +23,35 @@ export function parseState(text: string): MatchState {
   if (record["schemaVersion"] !== SCHEMA_VERSION) {
     throw new Error(`unsupported state schema version ${String(record["schemaVersion"])}`)
   }
-  const grid = record["grid"]
-  if (typeof grid !== "object" || grid === null) throw new Error("state has no grid")
-  const gridRecord = grid as Record<string, unknown>
-  const tiles = gridRecord["tiles"]
-  if (!Array.isArray(tiles)) throw new Error("grid has no tiles")
+  const saved = record["terrain"]
+  if (typeof saved !== "object" || saved === null) throw new Error("state has no terrain")
+  const terrainRecord = saved as Record<string, unknown>
+  const tiles = terrainRecord["tiles"]
+  if (!Array.isArray(tiles)) throw new Error("terrain has no tiles")
   for (const tile of tiles) {
     if (typeof tile !== "string" || !isTerrainId(tile)) {
       throw new Error(`unknown terrain id in serialized state: ${String(tile)}`)
     }
   }
-  const terrain: GridTerrain = {
-    width: Number(gridRecord["width"]),
-    height: Number(gridRecord["height"]),
+  const terrain: MapTerrain = {
+    width: Number(terrainRecord["width"]),
+    height: Number(terrainRecord["height"]),
     tiles: tiles as readonly TerrainId[],
   }
   if (terrain.tiles.length !== terrain.width * terrain.height) {
-    throw new Error("serialized grid tile count does not match its dimensions")
+    throw new Error("serialized terrain tile count does not match its dimensions")
   }
   if (record["targets"] !== undefined) checkTargets(record["targets"], terrain)
-  // A state from a build that measured the Grid another way names its measure: refused, never played by this rule.
+  // A state from a build that measured the battlefield another way names its measure: refused, never played by this rule.
   if (record["measure"] !== undefined) {
-    throw new Error("state carries a measure, but every state measures the Grid by the one rule, a row counting two columns, and carries none")
+    throw new Error("state carries a measure, but every state measures the battlefield by the one rule, a row counting two columns, and carries none")
   }
-  return { ...(parsed as MatchState), grid: terrain }
+  return { ...(parsed as MatchState), terrain }
 }
 
-/** A side's target as a state holds it: a rectangle of whole tiles on the Grid, for side A or B — and the
+/** A side's target as a state holds it: a rectangle of whole tiles on the battlefield, for side A or B — and the
  *  record absent rather than empty when no side has one (`MatchState.targets`). */
-function checkTargets(targets: unknown, grid: GridTerrain): void {
+function checkTargets(targets: unknown, terrain: MapTerrain): void {
   if (typeof targets !== "object" || targets === null || Array.isArray(targets)) throw new Error("state targets is not an object")
   const sides = Object.keys(targets)
   if (sides.length === 0) throw new Error("state targets is empty: a state with no target has none")
@@ -62,7 +62,7 @@ function checkTargets(targets: unknown, grid: GridTerrain): void {
     const { x, y, width, height } = area as Record<string, unknown>
     const whole = [x, y, width, height].every((value) => typeof value === "number" && Number.isInteger(value))
     if (!whole || (width as number) < 1 || (height as number) < 1) throw new Error(`state target for ${side} is not a rectangle of whole tiles`)
-    const inside = (x as number) >= 0 && (y as number) >= 0 && (x as number) + (width as number) <= grid.width && (y as number) + (height as number) <= grid.height
-    if (!inside) throw new Error(`state target for ${side} reaches off the ${grid.width}x${grid.height} Grid`)
+    const inside = (x as number) >= 0 && (y as number) >= 0 && (x as number) + (width as number) <= terrain.width && (y as number) + (height as number) <= terrain.height
+    if (!inside) throw new Error(`state target for ${side} reaches off the ${terrain.width}x${terrain.height} battlefield`)
   }
 }

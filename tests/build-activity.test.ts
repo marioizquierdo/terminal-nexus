@@ -451,7 +451,7 @@ test("placing a building records a schema-valid build.placed with its building, 
 test("a refusal records why, and its tile; every command records the bottom line's answer when it gave one", () => {
   const side = session()
   keys(side, TAB, "1")
-  side.build.dispatch({ kind: "look-at", x: STARTER_START_CURSOR.x, y: STARTER_START_CURSOR.y }) // onto the Grid Nexus
+  side.build.dispatch({ kind: "look-at", x: STARTER_START_CURSOR.x, y: STARTER_START_CURSOR.y }) // onto the Nexus
   keys(side, ENTER)
   const refused = side.activity.entries().filter((entry) => entry.event === "build.refused")
   assert.equal(refused.length, 1)
@@ -580,7 +580,7 @@ test("a session given no log of its own records into the game's global one", asy
   const { BuildSession } = await import("../src/view/build-session.ts")
   const bare = new BuildSession({ context: starterContext(), cursor: STARTER_START_CURSOR, viewport: side.layout.viewport })
   const before = activity.lastSeq
-  bare.dispatch({ kind: "focus", target: "grid" } satisfies BuildCommand)
+  bare.dispatch({ kind: "focus", target: "map" } satisfies BuildCommand)
   assert.equal(activity.lastSeq, before + 1)
   assert.equal(activity.entries().at(-1)?.event, "build.command")
 })

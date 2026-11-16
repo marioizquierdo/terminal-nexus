@@ -1,7 +1,7 @@
 {
   "format": "terminal-nexus.save/1",
   "name": "Tick-limit draw - a wall neither can cross",
-  "notes": "An unbroken rock wall divides the Grid. Neither trooper can reach the other, both are reported stuck, and the Pulse ends on its tick count as a draw.",
+  "notes": "An unbroken rock wall divides the battlefield. Neither trooper can reach the other, both are reported stuck, and the Pulse ends on its tick count as a draw.",
   "setup": {
     "map": {
       "id": "tick-limit-draw",

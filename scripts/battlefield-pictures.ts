@@ -1,17 +1,17 @@
 #!/usr/bin/env node
-// The pictures in the grid design's account of distance, reach and movement (docs/system-design/grid.md), drawn by
+// The pictures in the battlefield design's account of distance, reach and movement (docs/system-design/battlefield.md), drawn by
 // the game's own code: distances, reaches and the rings a group is set down on by `src/engine/geometry`, and walks by the
 // engine itself, tick by tick, on open ground. In the document each picture sits in the code block under a
-// `<!-- grid-picture: name -->` line, and tests/grid-pictures.test.ts fails when one is not what this draws.
+// `<!-- battlefield-picture: name -->` line, and tests/battlefield-pictures.test.ts fails when one is not what this draws.
 //
-//   node scripts/grid-pictures.ts           print every picture
-//   node scripts/grid-pictures.ts --write   redraw the pictures in the grid design
+//   node scripts/battlefield-pictures.ts           print every picture
+//   node scripts/battlefield-pictures.ts --write   redraw the pictures in the battlefield design
 
 import { readFileSync, writeFileSync } from "node:fs"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { ENTITY_LAYERS, OccupancyIndex, gridDistance, maskFrom, rowsWithin, tilesWithin } from "../src/engine/geometry/index.ts"
-import type { Coord, Footprint, GridTerrain } from "../src/engine/geometry/index.ts"
+import { ENTITY_LAYERS, OccupancyIndex, tileDistance, maskFrom, rowsWithin, tilesWithin } from "../src/engine/geometry/index.ts"
+import type { Coord, Footprint, MapTerrain } from "../src/engine/geometry/index.ts"
 import { nearestFit } from "../src/match/index.ts"
 import { contextFor, stepTick } from "../src/engine/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
@@ -19,7 +19,7 @@ import { TICKS_PER_SECOND } from "../src/engine/state/types.ts"
 import type { MatchState } from "../src/engine/state/types.ts"
 
 /** The design document the pictures are in, from the repository's root. */
-export const GRID_DESIGN = fileURLToPath(new URL("../docs/system-design/grid.md", import.meta.url))
+export const BATTLEFIELD_DESIGN = fileURLToPath(new URL("../docs/system-design/battlefield.md", import.meta.url))
 
 const ONE: Footprint = [{ x: 0, y: 0 }]
 const ORIGIN: Coord = { x: 0, y: 0 }
@@ -34,7 +34,7 @@ function distances(): string {
   const lines: string[] = []
   for (let dy = -2; dy <= 2; dy += 1) {
     let line = ""
-    for (let dx = -4; dx <= 4; dx += 1) line += dx === 0 && dy === 0 ? "T" : String(gridDistance(ORIGIN, { x: dx, y: dy }))
+    for (let dx = -4; dx <= 4; dx += 1) line += dx === 0 && dy === 0 ? "T" : String(tileDistance(ORIGIN, { x: dx, y: dy }))
     lines.push(line)
   }
   return picture(lines)
@@ -90,7 +90,7 @@ function wholeRows(): string {
 }
 
 /** Plain ground, `width` by `height`. */
-function plainGround(width: number, height: number): GridTerrain {
+function plainGround(width: number, height: number): MapTerrain {
   return { width, height, tiles: Array.from({ length: width * height }, () => "terrain.plain" as const) }
 }
 
@@ -127,9 +127,9 @@ function openGround(from: Coord, to: Coord): MatchState {
   const rows = Array.from({ length: from.y + 1 }, (_, y) => (y === from.y ? `${" ".repeat(from.x)}w` : ""))
   return openBattle(
     {
-      id: "grid-pictures",
+      id: "battlefield-pictures",
       name: "a walk on open ground",
-      grid: { width: 30, height: 20 },
+      size: { width: 30, height: 20 },
       seed: 1,
       pulseTicks: 600,
       terrain: Array.from({ length: 20 }, () => ".".repeat(30)),
@@ -212,8 +212,8 @@ function stairs(): string {
   return picture(lines)
 }
 
-/** Every picture the grid design shows, by the name its marker gives. */
-export function gridPictures(): Readonly<Record<string, string>> {
+/** Every picture the battlefield design shows, by the name its marker gives. */
+export function battlefieldPictures(): Readonly<Record<string, string>> {
   return {
     distance: distances(),
     reaches: reaches(),
@@ -226,7 +226,7 @@ export function gridPictures(): Readonly<Record<string, string>> {
 
 /** A marker line, then the code block under it, whose lines are the picture: read line by line up to the fence that
  *  closes it, so an empty block never reaches into the text after it. */
-const MARKED = /<!-- grid-picture: ([a-z-]+) -->\n```text\n((?:(?!```)[^\n]*\n)*)```/g
+const MARKED = /<!-- battlefield-picture: ([a-z-]+) -->\n```text\n((?:(?!```)[^\n]*\n)*)```/g
 
 /** What a document's pictures say against what the code draws: the document with every picture redrawn, the names
  *  whose picture differs, any picture the document lacks, and any marker that names no picture. */
@@ -247,19 +247,19 @@ export function redraw(markdown: string, pictures: Readonly<Record<string, strin
     }
     seen.add(name)
     if (lines.replace(/\n$/u, "") !== drawn) drifted.push(name)
-    return `<!-- grid-picture: ${name} -->\n\`\`\`text\n${drawn}\n\`\`\``
+    return `<!-- battlefield-picture: ${name} -->\n\`\`\`text\n${drawn}\n\`\`\``
   })
   const missing = Object.keys(pictures).filter((name) => !seen.has(name))
   return { text, drifted, missing, unknown }
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const pictures = gridPictures()
+  const pictures = battlefieldPictures()
   if (process.argv.includes("--write")) {
-    const result = redraw(readFileSync(GRID_DESIGN, "utf8"), pictures)
-    writeFileSync(GRID_DESIGN, result.text)
+    const result = redraw(readFileSync(BATTLEFIELD_DESIGN, "utf8"), pictures)
+    writeFileSync(BATTLEFIELD_DESIGN, result.text)
     console.log(`redrawn: ${result.drifted.join(", ") || "none"}; missing: ${result.missing.join(", ") || "none"}; unknown markers: ${result.unknown.join(", ") || "none"}`)
   } else {
-    for (const [name, drawn] of Object.entries(pictures)) console.log(`<!-- grid-picture: ${name} -->\n${drawn}\n`)
+    for (const [name, drawn] of Object.entries(pictures)) console.log(`<!-- battlefield-picture: ${name} -->\n${drawn}\n`)
   }
 }

@@ -52,11 +52,11 @@ export type BuildCommand =
    */
   | Readonly<{ kind: "go-nexus" }>
   /**
-   * A click on a Grid tile. What it does is the reducer's to decide, from what is on screen — so the
+   * A click on a tile. What it does is the reducer's to decide, from what is on screen — so the
    * driver reproduces a click exactly (docs/system-design/input.md):
    *
    * - with a popup open, it closes the popup and moves focus and the cursor there — nothing more;
-   * - otherwise it moves focus to the Grid and the cursor to the tile; with a structure armed and the
+   * - otherwise it moves focus to the battlefield and the cursor to the tile; with a structure armed and the
    *   cursor *already* on that tile, it places (a second click on the same tile, compared by
    *   tile, never by screen position). With nothing armed it only moves the cursor: in Explore Map
    *   the panel follows it; from the menu it arrives in plain navigation, the menu still drawn, so a
@@ -65,7 +65,7 @@ export type BuildCommand =
   | Readonly<{ kind: "click-tile"; x: number; y: number }>
   /**
    * A click on menu entry *n* (an index into `menuEntries`). **A click activates what it lands on**
-   * (a first click does not merely highlight): a building row arms at once and hands the mouse to the Grid with the ghost at the
+   * (a first click does not merely highlight): a building row arms at once and hands the mouse to the battlefield with the ghost at the
    * cursor, or the nearest spot that takes it; the Nexus Pulse row opens its popup; Explore Map opens the
    * map; Start Battle Round opens its confirmation. All four are the menu's, so finishing them comes back to
    * the menu. Only the keyboard has a "highlighted, not yet chosen" state. Two exceptions, both about
@@ -75,16 +75,16 @@ export type BuildCommand =
    * landed on was not drawn, so it chooses nothing.
    */
   | Readonly<{ kind: "click-menu"; entry: number }>
-  /** Arm item *n* of the build menu — its digit, from anywhere. Moves focus to the Grid; the cursor
+  /** Arm item *n* of the build menu — its digit, from anywhere. Moves focus to the battlefield; the cursor
    *  stays where it is when the building can go there, and otherwise moves to the nearest spot that
    *  can take it. A placement or Esc goes back to whichever half had the keyboard.
    *  **While a building is armed the menu stays on it**: its own
    *  digit cancels it, exactly as Esc does, and another building's digit is refused until it is placed
    *  or cancelled. */
   | Readonly<{ kind: "arm"; index: number }>
-  /** Place the armed structure at the cursor — Enter or Space on the Grid while something is armed. */
+  /** Place the armed structure at the cursor — Enter or Space on the battlefield while something is armed. */
   | Readonly<{ kind: "place" }>
-  /** Enter or Space on the Grid in plain navigation: Explore Map, the side panel showing what is under
+  /** Enter or Space on the battlefield in plain navigation: Explore Map, the side panel showing what is under
    *  the cursor, begun on the map — so Esc comes back to the map. Nothing, when Explore
    *  Map is already open. */
   | Readonly<{ kind: "open-explore" }>
@@ -157,8 +157,8 @@ export type BuildCommand =
   /** The stance for the banner just planted — `[a] Aggressive` or `[d] Defensive`, Enter on its row or a click: the
    *  banner stands, and the Battle Round panel shows it again. */
   | Readonly<{ kind: "banner-stance"; stance: BannerStance }>
-  /** Tab: move keyboard focus. To the Grid it arrives in plain navigation; to the menu
-   *  it disarms (a building is armed only while the Grid has focus). */
+  /** Tab: move keyboard focus. To the battlefield it arrives in plain navigation; to the menu
+   *  it disarms (a building is armed only while the battlefield has focus). */
   | Readonly<{ kind: "focus"; target: Focus }>
   /**
    * Up/Down on the menu or inside a popup's list: move its highlight `delta` rows (negative is up),
@@ -177,7 +177,7 @@ export type BuildCommand =
   | Readonly<{ kind: "refuse-row" }>
   /** `n`, or activating the Nexus Pulse row: open its popup. */
   | Readonly<{ kind: "open-nexus-powers" }>
-  /** `e`: Explore Map, a toggle — focus to the Grid with nothing armed, the side panel showing what is
+  /** `e`: Explore Map, a toggle — focus to the battlefield with nothing armed, the side panel showing what is
    *  under the cursor as it moves; with it open, back one level exactly as Esc.
    *  Opening it puts the cursor on clear ground by the arming rule for one tile; refused while a
    *  building is armed. */
@@ -269,7 +269,7 @@ export type BuildCommand =
   | Readonly<{ kind: "dialog-next" }>
 
 /**
- * How the sides of the Grid rectangle that have reached the map's own edge are drawn — **the map's
+ * How the sides of the map rectangle that have reached the map's own edge are drawn — **the map's
  * own style**, named in its definition (`BuildContext.edgeStyle`; the solid bar when it names none).
  * The owner chose this over one style for every map after trying both (the owner:
  * "using map-specific borders looks a lot better... allowing the map to define different styles will
@@ -289,7 +289,7 @@ export type MapEdgeStyle = "solid" | "half" | "heavy" | "double" | "shade" | "fe
 export const MAP_EDGE_STYLES: readonly MapEdgeStyle[] = ["solid", "half", "heavy", "double", "shade", "fence"]
 
 /** Which half of the screen the arrow keys and Enter/Space belong to. The digit hotkeys ignore it. */
-export type Focus = "menu" | "grid"
+export type Focus = "menu" | "map"
 
 /** A battle banner's stance: aggressive — go to the banner, then on to the enemy's Nexus — or defensive, hold it. */
 export type BannerStance = "aggressive" | "defensive"
@@ -380,7 +380,7 @@ export type PlannedPlacement = Readonly<{
   anchor: Coord
 }>
 
-/** Something already standing on the Grid when the screen opens. The starter map has two, so there is
+/** Something already standing on the battlefield when the screen opens. The starter map has two, so there is
  *  something to build next to and something a placement can illegally overlap. */
 export type StandingStructure = Readonly<{
   contentId: string

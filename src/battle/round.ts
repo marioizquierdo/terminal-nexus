@@ -19,7 +19,7 @@ import type { ContentRegistry } from "../content/index.ts"
 import { baseContentId, fittedId, fittingsOf } from "../content/index.ts"
 import type { DomainEvent } from "../engine/events/types.ts"
 import { footprintDistance, footprintExtent, footprintSteps, tilesOf } from "../engine/geometry/coords.ts"
-import type { Coord, Footprint, GridTerrain } from "../engine/geometry/types.ts"
+import type { Coord, Footprint, MapTerrain } from "../engine/geometry/types.ts"
 import { centreTile, creditsEarned, fallen, regroup, spawningRegistry, standDown } from "../match/index.ts"
 import type { RegroupResult, StructurePlacement } from "../match/index.ts"
 import { roundOpening } from "./round-opening.ts"
@@ -27,7 +27,7 @@ import { resolvePulse } from "../engine/pulse/index.ts"
 import { TICKS_PER_SECOND } from "../engine/state/types.ts"
 import type { MatchState, TargetArea } from "../engine/state/types.ts"
 import type { BattleMap } from "./maps.ts"
-import { BATTLE_MAPS, battleGrid } from "./maps.ts"
+import { BATTLE_MAPS, battleTerrain } from "./maps.ts"
 import type { BattleArmy } from "./sides.ts"
 import { armyOf, battleArmy, loadoutOf, powerOf } from "./sides.ts"
 import { nameOf, roundReader, scoreOf } from "./reading/index.ts"
@@ -45,10 +45,10 @@ export function incomeOf(setup: BattleSetup, side: Side, round: number): number 
   return Math.round(roundIncome(round) * (setup.income?.[side] ?? 1))
 }
 
-/** A battle's first state: round 1 to play, nothing on the Grid yet, each side with round 1's credits. */
+/** A battle's first state: round 1 to play, nothing on the battlefield yet, each side with round 1's credits. */
 export function beginBattle(setup: BattleSetup): BattleState {
   if (typeof setup.map === "string" && BATTLE_MAPS[setup.map] === undefined) throw new Error(`no battle map "${setup.map}" (${Object.keys(BATTLE_MAPS).join(", ")})`)
-  if (typeof setup.map !== "string") battleGrid(setup.map)
+  if (typeof setup.map !== "string") battleTerrain(setup.map)
   for (const side of SIDES) battleArmy(setup.commanders[side])
   const side = (which: Side): SideState => {
     const roster = setup.rosters?.[which]
@@ -94,7 +94,7 @@ function contentFor(state: BattleState, side: Side): ContentRegistry {
 
 /** A Build Phase's context for one side: its own structures as what it builds from, everything else as the field —
  *  what the Build Phase's legality needs to hold a battle's placement to a player's rules. */
-function sideBuild(state: BattleState, side: Side, grid: GridTerrain, catalog: readonly ConstructItem[], registry: ContentRegistry, credits: number): BuildContext {
+function sideBuild(state: BattleState, side: Side, terrain: MapTerrain, catalog: readonly ConstructItem[], registry: ContentRegistry, credits: number): BuildContext {
   const field: FieldEntity[] = []
   if (state.carried === null) {
     const enemy = other(side)
@@ -106,7 +106,7 @@ function sideBuild(state: BattleState, side: Side, grid: GridTerrain, catalog: r
     }
   }
   return {
-    grid,
+    terrain,
     registry,
     catalog,
     standing: standingOf(state, side).map(({ contentId, anchor }) => ({ contentId, anchor })),
@@ -127,8 +127,8 @@ export function zonePoint(state: BattleState, side: Side, zone: Zone, registry: 
   const nexusFootprint = registry.get(armyOf(state, side).nexus).footprint
   const centre = centreTile(nexusAt, nexusFootprint)
   const way = facing(map, side)
-  const grid = battleGrid(map)
-  const clamp = (tile: Coord): Coord => ({ x: Math.max(0, Math.min(grid.width - 1, tile.x)), y: Math.max(0, Math.min(grid.height - 1, tile.y)) })
+  const terrain = battleTerrain(map)
+  const clamp = (tile: Coord): Coord => ({ x: Math.max(0, Math.min(terrain.width - 1, tile.x)), y: Math.max(0, Math.min(terrain.height - 1, tile.y)) })
   switch (zone) {
     case "nexus":
       return centre
@@ -151,7 +151,7 @@ export function zonePoint(state: BattleState, side: Side, zone: Zone, registry: 
  *  does; on a tie the one further toward the enemy, then the northern. Measured from the footprint's middle, in
  *  half tiles, not from its anchor (its north-west tile): the same choice for either side, mirrored, so neither
  *  side's buildings land a tile further forward by the corner they are measured from. */
-function nearest(grid: GridTerrain, point: Coord, way: number, footprint: Footprint): Coord[] {
+function nearest(terrain: MapTerrain, point: Coord, way: number, footprint: Footprint): Coord[] {
   const { width, height } = footprintExtent(footprint)
   const middle = (anchor: Coord): Coord => ({ x: 2 * anchor.x + width - 1, y: 2 * anchor.y + height - 1 })
   const distance = (anchor: Coord): number => {
@@ -159,7 +159,7 @@ function nearest(grid: GridTerrain, point: Coord, way: number, footprint: Footpr
     return Math.abs(at.x - 2 * point.x) + 2 * Math.abs(at.y - 2 * point.y)
   }
   const anchors: Coord[] = []
-  for (let y = 0; y < grid.height; y += 1) for (let x = 0; x < grid.width; x += 1) anchors.push({ x, y })
+  for (let y = 0; y < terrain.height; y += 1) for (let x = 0; x < terrain.width; x += 1) anchors.push({ x, y })
   return anchors.sort((a, b) => distance(a) - distance(b) || (middle(b).x - middle(a).x) * way || a.y - b.y)
 }
 
@@ -222,13 +222,13 @@ function placeAll(
   credits: number,
 ): Readonly<{ planned: PlannedPlacement[]; spent: number; built: string[]; refused: string[] }> {
   const map = mapOf(state)
-  const grid = battleGrid(map)
+  const terrain = battleTerrain(map)
   const army = armyOf(state, side)
   const planned: PlannedPlacement[] = []
   const built: string[] = []
   const refused: string[] = []
   let spent = 0
-  const context = sideBuild(state, side, grid, catalog, registry, credits)
+  const context = sideBuild(state, side, terrain, catalog, registry, credits)
   const formation = plan.formation ?? "zones"
   const trains = (contentId: string): boolean => catalog.find((item) => item.contentId === baseContentId(contentId))?.spawns !== undefined
   const producers: Producer[] =
@@ -252,10 +252,10 @@ function placeAll(
     const formed = formation !== "zones" && row.spawns !== undefined
     if (formed) centre ??= asked()
     const tiles = formed
-      ? formationOrder(formation, nearest(grid, centre as Coord, facing(map, side), footprint), centre as Coord, facing(map, side), footprint, producers)
+      ? formationOrder(formation, nearest(terrain, centre as Coord, facing(map, side), footprint), centre as Coord, facing(map, side), footprint, producers)
       : placement.x !== undefined && placement.y !== undefined
         ? [{ x: placement.x, y: placement.y }]
-        : nearest(grid, asked(), facing(map, side), footprint).slice(0, 600)
+        : nearest(terrain, asked(), facing(map, side), footprint).slice(0, 600)
     let reason = "no legal spot near there"
     for (const anchor of tiles) {
       const legality = legalityAt(context, planned, row.contentId, anchor, left, defaultValue("buildRange"))
@@ -451,7 +451,7 @@ export function checkBuildActions(state: BattleState, side: Side, plan: BuildAct
 /**
  * **One round of the battle.** Each side keeps the card its plan names from its hand, builds what its plan asks for that
  * the rules allow, and its troops take its stance; the Battle Round runs until a Nexus falls or time runs out; the
- * survivors stay on the Grid and regroup (`regroup`, `src/match/regroup.ts`): a step back, then a formation across each
+ * survivors stay on the battlefield and regroup (`regroup`, `src/match/regroup.ts`): a step back, then a formation across each
  * side's march line, which the next round opens from; a Commander who fell is out by her own rule; credits carry over,
  * the next round adds the curve's and each side's battle earnings. Returns the battle after the round, what happened in
  * it, and the regroup's walks (`null` once the battle is over: nothing regroups after the last round). `watch`, when
@@ -465,7 +465,7 @@ export function playRound(
 ): Readonly<{ state: BattleState; report: RoundReport; regroup: RegroupResult | null }> {
   if (state.result !== null) throw new Error("the battle is over")
   const map = mapOf(state)
-  const grid = battleGrid(map)
+  const terrain = battleTerrain(map)
   const round = state.round
 
   // Each side's Build Phase, blind to the other's.

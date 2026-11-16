@@ -1,6 +1,6 @@
 // Formations (the pathfinding milestone, step 16H): the owner's test of units walking out over the roofs — "the real
 // test is playing a simulated game and checking if it is possible to make good unit formations that can foster
-// interesting strategies". Each side builds four Barracks one of three ways in front of its Grid Nexus, on an open
+// interesting strategies". Each side builds four Barracks one of three ways in front of its Nexus, on an open
 // field, and its troopers come off the roofs and march on the other's Nexus; how tight each army stands when it first
 // meets the enemy, and who wins, over many seeds. And each shape against area damage (the owner, 2026-10-21: "let's
 // start testing area of damage versus clamping"): the same shape across with a support whose attacks hit an area —
@@ -34,7 +34,7 @@ export const SHAPE_WORDS: Readonly<Record<Shape, string>> = {
 const WIDTH = 72
 const HEIGHT = 28
 const BARRACKS = "structure.citizen.barracks"
-// The bench's passive Grid Nexus: the formations ask how armies meet each other. Against a Nexus that shoots back (the
+// The bench's passive Nexus: the formations ask how armies meet each other. Against a Nexus that shoots back (the
 // game's own since 2026-10-21) twelve troopers seldom bring it down, and nearly every one of these battles is a draw.
 const NEXUS = "structure.bench.nexus"
 const CRAWLER = "unit.bench.siegecrawler"
@@ -79,7 +79,7 @@ const WEST: Readonly<Record<Shape, readonly Coord[]>> = {
   ],
 }
 
-/** Every Barracks makes three troopers a wave, two waves a battle: twelve fit what a Grid Nexus gives. */
+/** Every Barracks makes three troopers a wave, two waves a battle: twelve fit what a Nexus gives. */
 const RECIPE = { output: TROOPER, perWave: 3, waves: 2, firstTicks: 60, intervalTicks: 120 }
 
 /** The registry the formations are played on: the fixtures, the Barracks making its waves, its units leaving its roof
@@ -137,7 +137,7 @@ export function formationOpening(west: Shape, east: Shape | Opponent, blast = fa
   return {
     id: `formation-${id}`,
     name: id.replaceAll("-", " "),
-    grid: { width: WIDTH, height: HEIGHT },
+    size: { width: WIDTH, height: HEIGHT },
     seed: 1,
     pulseTicks: 1800,
     terrain: Array.from({ length: HEIGHT }, () => ".".repeat(WIDTH)),

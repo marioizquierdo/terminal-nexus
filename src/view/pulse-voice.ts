@@ -123,7 +123,7 @@ export function shippedBarks(contentId: string): Barks {
 }
 
 /** A side's Commander in a round, as the first state she stands in has her — or `null` when she is not on the
- *  Grid in it (out for the round, or a mission with none). */
+ *  battlefield in it (out for the round, or a mission with none). */
 export function commanderOf(timeline: Pick<VoiceTimeline, "states" | "registry">, player: PlayerId = "A"): EntityState | null {
   for (const state of timeline.states) {
     const found = state.entities.find((entity) => entity.player === player && timeline.registry.get(entity.contentId).commander === true)
@@ -133,7 +133,7 @@ export function commanderOf(timeline: Pick<VoiceTimeline, "states" | "registry">
 }
 
 /**
- * The player's Commander in a round, with her lines — or `null` when she is not on the Grid this round or has
+ * The player's Commander in a round, with her lines — or `null` when she is not on the battlefield this round or has
  * nothing to say.
  */
 export function speakerOf(timeline: VoiceTimeline, barksOf: (contentId: string) => Barks = shippedBarks, player: PlayerId = "A"): Speaker | null {
@@ -168,14 +168,14 @@ const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
  * The moments of a round she may answer, the first of each, in the order they show on screen. A blow that lands
  * after a shot's flight counts from when it lands, as its flash and its death do (`effects/derive.ts`).
  *
- * - **round-start**: a beat in, when she stands on the Grid as the round begins;
+ * - **round-start**: a beat in, when she stands on the battlefield as the round begins;
  * - **first-contact**: the first shot either side fires at the other;
  * - **raid-arrives**: the other side's units arriving after the round began (a building's training excluded);
  * - **unit-lost**: one of her side's units falls within `near` tiles of her (structures and Commanders aside),
  *   measured as her aura reaches (`footprintWithin`);
- * - **building-lost**: one of her side's buildings falls, the Grid Nexus aside (its fall ends the round);
+ * - **building-lost**: one of her side's buildings falls, the Nexus aside (its fall ends the round);
  * - **badly-hurt**: a hit leaves her standing on `VOICE.hurtFraction` of her health or less;
- * - **nexus-hit**: her side's Grid Nexus is first hit;
+ * - **nexus-hit**: her side's Nexus is first hit;
  * - **falls**: she falls;
  * - **round-won**: a beat after the result stands, when her side won the round — her remark on the result,
  *   said where she stands once she is home, not where the walk home would leave it behind.
@@ -407,7 +407,7 @@ const LABEL_SLIDE = { most: 16, step: 2 } as const
  * map. A letter that would still cover a unit or a building is left out when it is drawn (the corruption law,
  * `pulse-scene.ts`).
  *
- * `over` is the states the line is shown over, every one weighed alike; `grid` the map, for its terrain; `within`
+ * `over` is the states the line is shown over, every one weighed alike; `terrain` the map; `within`
  * the tiles it must stay inside — the part of the map in view as the line begins, or the whole map.
  */
 export function labelPlace(
@@ -415,12 +415,12 @@ export function labelPlace(
   her: Coord,
   over: readonly MatchState[],
   registry: ContentRegistry,
-  grid: Readonly<{ width: number; height: number; tiles: readonly string[] }>,
+  terrain: Readonly<{ width: number; height: number; tiles: readonly string[] }>,
   within: Readonly<{ firstX: number; lastX: number; firstY: number; lastY: number }> = {
     firstX: 0,
-    lastX: grid.width - 1,
+    lastX: terrain.width - 1,
     firstY: 0,
-    lastY: grid.height - 1,
+    lastY: terrain.height - 1,
   },
 ): Coord {
   const width = barkMapWidth(text)
@@ -431,12 +431,12 @@ export function labelPlace(
     if (slide > 0) centres.push({ x: her.x - slide, aside: slide })
   }
   // How many of the moments the line is shown at something stands on each tile, counted once for every span.
-  const covered = new Int32Array(grid.width * grid.height)
+  const covered = new Int32Array(terrain.width * terrain.height)
   for (const state of over) {
     for (const entity of state.entities) {
       for (const tile of tilesOf(entity.anchor, registry.get(entity.contentId).footprint)) {
-        if (tile.x < 0 || tile.x >= grid.width || tile.y < 0 || tile.y >= grid.height) continue
-        const index = tile.y * grid.width + tile.x
+        if (tile.x < 0 || tile.x >= terrain.width || tile.y < 0 || tile.y >= terrain.height) continue
+        const index = tile.y * terrain.width + tile.x
         covered[index] = (covered[index] ?? 0) + 1
       }
     }
@@ -451,12 +451,12 @@ export function labelPlace(
       const left = Math.max(within.firstX, Math.min(centre.x - half, within.lastX - width + 1))
       let cost = Math.abs(row) * LABEL_COST.row + (row > 0 ? LABEL_COST.below : 0) + centre.aside * LABEL_COST.aside
       for (let x = left; x < left + width; x += 1) {
-        if (x < 0 || x >= grid.width) {
+        if (x < 0 || x >= terrain.width) {
           cost += LABEL_COST.terrain
           continue
         }
-        if (grid.tiles[y * grid.width + x] !== "terrain.plain") cost += LABEL_COST.terrain
-        cost += (covered[y * grid.width + x] ?? 0) * LABEL_COST.standing
+        if (terrain.tiles[y * terrain.width + x] !== "terrain.plain") cost += LABEL_COST.terrain
+        cost += (covered[y * terrain.width + x] ?? 0) * LABEL_COST.standing
       }
       if (cost < cheapest) {
         cheapest = cost

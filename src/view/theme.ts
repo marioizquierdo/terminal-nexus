@@ -51,7 +51,7 @@ export const CHROME_GLYPHS = {
     edgeHorizontal: "-",
     edgeVertical: "|",
     edgeCorner: "+",
-    // A side of the Build Phase's Grid pane with more Grid beyond it: the frame's own line, drawn dim
+    // A side of the Build Phase's map with more map beyond it: the frame's own line, drawn dim
     // by the caller — one unbroken rectangle, never the ground lattice's `.`, whose dotted edge read as
     // "arbitrary". A side where the map ends is the map's own edge style (`edge.ts`).
     softHorizontal: "-",

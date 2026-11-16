@@ -232,7 +232,7 @@ export function attacks(context: TickContext): void {
  * `attack.launched` event (see pulse.md), read by no rule; `tests/rules.test.ts` proves changing
  * it moves no state.
  *
- * The distance is counted as range is, a row two columns (`gridDistance`), and a shot's speed in the same columns,
+ * The distance is counted as range is, a row two columns (`tileDistance`), and a shot's speed in the same columns,
  * so a shot two rows up flies as long as one four columns across: as far on screen.
  */
 export function flightWindowTicks(distance: number, tilesPerTick: number | undefined): number {

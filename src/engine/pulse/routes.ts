@@ -123,7 +123,7 @@ export class TickRoutes {
     const kept = alsoStanding === undefined ? this.grounds.get(key) : undefined
     if (kept !== undefined) return kept
     const { layers, sideLayers } = ownSideLayers(this.context, actor.definition, actor.player, onRoof(this.context, actor))
-    const walls = wallsOf(this.context.index.grid, actor.definition.layer === "air" ? "ignore" : "impassable")
+    const walls = wallsOf(this.context.index.terrain, actor.definition.layer === "air" ? "ignore" : "impassable")
     for (const other of this.context.actors) {
       if (other.pendingDead || other === actor) continue
       if (this.walking.has(other.ordinal) && alsoStanding?.has(other.ordinal) !== true) continue
@@ -137,22 +137,22 @@ export class TickRoutes {
     return ground
   }
 
-  /** What stepping onto each anchor costs `actor`'s body: slow ground weighed in (`weightsFor`), or `null` on a Grid
+  /** What stepping onto each anchor costs `actor`'s body: slow ground weighed in (`weightsFor`), or `null` on a battlefield
    *  with none; and, while anything burns, an anchor whose body covers a burning tile weighs `BURNING_WEIGHT` times its
    *  ground, for what fire hurts (a flyer flies over it). Kept for the tick by the body's shape and how it moves. */
   weightsOf(actor: Actor): Uint8Array | null {
     const key = this.groundKeyOf(actor)
     if (!this.weights.has(key)) {
-      const ground = weightsFor(this.context.index.grid, actor.definition.footprint, actor.definition.layer === "air" ? "ignore" : "impassable")
+      const ground = weightsFor(this.context.index.terrain, actor.definition.footprint, actor.definition.layer === "air" ? "ignore" : "impassable")
       this.weights.set(key, this.burning.length > 0 && burnsOn(actor.definition.layer) ? this.withFire(ground, actor.definition.footprint) : ground)
     }
     return this.weights.get(key) ?? null
   }
 
   /** `ground`'s weights (one everywhere when `null`), each anchor whose `body` covers a burning tile `BURNING_WEIGHT`
-   *  times as dear, never past what a weight holds. A new array: `weightsFor`'s are the Grid's, kept for every tick. */
+   *  times as dear, never past what a weight holds. A new array: `weightsFor`'s are the battlefield's, kept for every tick. */
   private withFire(ground: Uint8Array | null, body: Footprint): Uint8Array {
-    const { width, height } = this.context.index.grid
+    const { width, height } = this.context.index.terrain
     const fire = this.fireTiles()
     const weights = new Uint8Array(width * height)
     for (let index = 0; index < weights.length; index += 1) {
@@ -172,7 +172,7 @@ export class TickRoutes {
   /** Which tiles burn as the tick began, 1 for a burning one: every tile on a patch, measured as range is. */
   private fireTiles(): Uint8Array {
     if (this.burningTiles === undefined) {
-      const { width, height } = this.context.index.grid
+      const { width, height } = this.context.index.terrain
       const tiles = new Uint8Array(width * height)
       for (const patch of this.burning) {
         // A reach of R covers R columns across and R / 2 rows up and down, touching always: a box of R each way holds it.
@@ -265,7 +265,7 @@ export class TickRoutes {
 
   /**
    * When `actor` cannot reach its goal from where it stands: a field toward the anchors it can reach that are nearest
-   * `toward` (the goal's own tile), nearest by the Grid's distance — what it heads for instead, walking downhill to
+   * `toward` (the goal's own tile), nearest by the battlefield's distance — what it heads for instead, walking downhill to
    * the nearest of them to walk to. `here` when it already stands on one: it stays. `null` when it can reach nowhere
    * at all. The anchors it can reach are the patch of ground it stands on (`patchesOf`), so the field is one for every
    * unit on that patch heading toward that tile, worked out once a tick.
@@ -282,8 +282,8 @@ export class TickRoutes {
     let entry = this.nearest.get(key)
     if (entry === undefined) {
       // The anchors of the patch measured row by row, the rows that could come nearest first: once a row could come
-      // no nearer than the nearest found, no row after it can either, and the rest of the Grid is left unmeasured.
-      // A patch can be most of the Grid, and this is asked for every unit that cannot reach its goal.
+      // no nearer than the nearest found, no row after it can either, and the rest of the battlefield is left unmeasured.
+      // A patch can be most of the battlefield, and this is asked for every unit that cannot reach its goal.
       const rowBound = (y: number): number => {
         let bound = UNREACHABLE
         for (const offset of body) bound = Math.min(bound, ROW_DISTANCE * Math.abs(y + offset.y - toward.y))
@@ -328,7 +328,7 @@ export class TickRoutes {
     let entry = this.breaches.get(key)
     if (entry === undefined) {
       const { layers, sideLayers } = ownSideLayers(this.context, actor.definition, actor.player, onRoof(this.context, actor))
-      const walls = wallsOf(this.context.index.grid, actor.definition.layer === "air" ? "ignore" : "impassable")
+      const walls = wallsOf(this.context.index.terrain, actor.definition.layer === "air" ? "ignore" : "impassable")
       const buildings = new Map<number, Actor>()
       for (const other of this.context.actors) {
         if (other.pendingDead || other === actor || this.walking.has(other.ordinal)) continue
@@ -419,8 +419,8 @@ function roofExitOf(context: TickContext, actor: Actor): "route" | "ground" {
   return "route"
 }
 
-/** How near a body anchored at `x`, `y` comes to `tile`: from its nearest tile, by the Grid's distance. Written out
- *  (`gridDistance`) and given the anchor as two numbers, as it runs for every anchor of a patch. */
+/** How near a body anchored at `x`, `y` comes to `tile`: from its nearest tile, by the battlefield's distance. Written out
+ *  (`tileDistance`) and given the anchor as two numbers, as it runs for every anchor of a patch. */
 function nearestOf(x: number, y: number, body: Footprint, tile: Coord): number {
   let best = UNREACHABLE
   for (const offset of body) best = Math.min(best, Math.abs(x + offset.x - tile.x) + ROW_DISTANCE * Math.abs(y + offset.y - tile.y))

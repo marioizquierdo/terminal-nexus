@@ -9,7 +9,7 @@
 import type { Coord } from "../engine/geometry/types.ts"
 import type { MatchState, PlayerId } from "../engine/state/types.ts"
 
-/** A structure standing on the Grid when the Pulse starts: the player's own standing buildings and the
+/** A structure standing on the battlefield when the Pulse starts: the player's own standing buildings and the
  *  ones the Build Phase committed, which "reveal together and become operational" at Pulse start
  *  (pulse.md), and a scripted side's own plan (a mission's `commitPlan`). */
 export type StructurePlacement = Readonly<{
@@ -34,7 +34,7 @@ export type Force = Readonly<{
 }>
 
 /**
- * What a Pulse needs besides the plan: who is on the Grid and how long it may last. **Placeholder
+ * What a Pulse needs besides the plan: who is on the battlefield and how long it may last. **Placeholder
  * content** — the Build Phase's starting force and raid, in the same standing as its placeholder
  * Nexus powers. In a mission the trigger runner (`mission.ts`) supplies PERIMETER's raid instead of
  * the static raid.

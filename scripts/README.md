@@ -7,7 +7,7 @@ Tools for checking the repository and for seeing a change. Anything they write l
 - `check-repository.sh` - validates the repository, prints the current milestone and step; `./scripts/check-repository.sh`.
 - `check-markdown-links.mjs` - fails on a broken local Markdown link; the validator runs it.
 - `run-tests.sh` - the test suite on one runtime; `./scripts/run-tests.sh` (Node) or `./scripts/run-tests.sh bun`.
-- `grid-pictures.ts` - the grid design's pictures of distance, reach and walking, drawn by the rules' own code; `node scripts/grid-pictures.ts` prints them, `--write` redraws them in `docs/system-design/grid.md`, and `tests/grid-pictures.test.ts` fails when one drifts.
+- `battlefield-pictures.ts` - the battlefield design's pictures of distance, reach and walking, drawn by the rules' own code; `node scripts/battlefield-pictures.ts` prints them, `--write` redraws them in `docs/system-design/battlefield.md`, and `tests/battlefield-pictures.test.ts` fails when one drifts.
 - `make-example-saves.ts` - writes the example Skirmish saves in `saves/` from their setups and the rounds scripts played to reach them; `node scripts/make-example-saves.ts` after a rule or content change, and `tests/skirmish-save.test.ts` fails when one is not as the game writes it.
 
 **Measuring a tick**

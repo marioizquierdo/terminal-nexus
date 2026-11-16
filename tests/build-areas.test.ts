@@ -16,7 +16,7 @@ import { starterContext } from "../src/cli/starter.ts"
 import { footprintDistance, footprintSteps, footprintWithin } from "../src/engine/geometry/coords.ts"
 import type { Coord } from "../src/engine/geometry/types.ts"
 import { reachOf, reachOutline, unitReachOf } from "../src/view/build-areas.ts"
-import { trailMarks, trailTiles } from "../src/view/build-grid.ts"
+import { trailMarks, trailTiles } from "../src/view/build-map.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { cellAt, frameToAnsi, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
@@ -28,7 +28,7 @@ import { isColourCode, sgrCodes } from "./helpers.ts"
 const TURRET = "structure.bench.beamturret"
 const ONE: readonly Coord[] = [{ x: 0, y: 0 }]
 
-/** The cell a Grid tile is drawn on, in `frame`. */
+/** The cell a tile is drawn on, in `frame`. */
 const at = (side: Side, frame: ReadonlyCellFrame, tile: Coord): Cell => {
   const cell = cellForTile(side.layout, side.build.state.camera, tile)
   return cellAt(frame, cell.x, cell.y)
@@ -42,8 +42,8 @@ function moveTo(side: Side, tile: Coord): void {
 
 /** The open ground of the starter map (plain, nothing on it) — where an outline or a dot may be drawn. */
 function open(side: Side, tile: Coord): boolean {
-  const { grid } = side.context
-  if (grid.tiles[tile.y * grid.width + tile.x] !== "terrain.plain") return false
+  const { terrain } = side.context
+  if (terrain.tiles[tile.y * terrain.width + tile.x] !== "terrain.plain") return false
   const taken = [...side.context.standing, ...side.build.state.planned, ...(side.context.field ?? []), ...(side.context.incoming ?? [])]
   return !taken.some((thing) =>
     FIXTURE_REGISTRY.get(thing.contentId).footprint.some((offset) => thing.anchor.x + offset.x === tile.x && thing.anchor.y + offset.y === tile.y),

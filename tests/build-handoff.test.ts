@@ -24,7 +24,7 @@ import type { TerrainId } from "../src/engine/geometry/types.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { BuildCompositionInput } from "../src/view/build.ts"
 import { SEE_THROUGH_TRAIL } from "../src/view/build.ts"
-import { CURSOR_ROLE } from "../src/view/build-grid.ts"
+import { CURSOR_ROLE } from "../src/view/build-map.ts"
 import { BuildAnimation, handoffAt, handoffSchedule } from "../src/view/build-live.ts"
 import type { HandoffTiming } from "../src/view/build-live.ts"
 import { cellAt } from "../src/view/frame.ts"
@@ -208,7 +208,7 @@ test("under reduced motion, or with the flight off, the blink plays at once; Tab
 
 // --- Where the cursor lands ---------------------------------------------------------------------------
 
-test("Explore Map opened from the menu moves the cursor off the Grid Nexus onto clear ground, by the arming rule for one tile, and keeps it in view", () => {
+test("Explore Map opened from the menu moves the cursor off the Nexus onto clear ground, by the arming rule for one tile, and keeps it in view", () => {
   const context = starterContext()
   const expected = armingSpot(context, [], ONE_TILE, STARTER_START_CURSOR)
   assert.equal(expected.found, true)
@@ -250,7 +250,7 @@ test("Explore Map opened from the map leaves the cursor where it is — Enter re
     const side = buildSide({ cursor: STARTER_START_CURSOR })
     keys(side, ...open)
     assert.equal(side.build.state.exploreMap, true)
-    assert.equal(side.build.state.returnTo, "grid")
+    assert.equal(side.build.state.returnTo, "map")
     assert.deepEqual(side.build.state.cursor, STARTER_START_CURSOR, `${JSON.stringify(open)} moved the cursor off the Nexus`)
     assert.match(screenText(side), /Nexus/)
   }
@@ -262,7 +262,7 @@ function corridor(width: number, turrets: readonly number[]): BuildContext {
   const tiles = new Array<TerrainId>(width * height).fill("terrain.rock")
   for (let x = 0; x < width; x += 1) tiles[width + x] = "terrain.plain"
   const standing = turrets.map((x) => ({ contentId: "structure.bench.beamturret", anchor: { x, y: 1 } }))
-  return { ...starterContext(), grid: { width, height, tiles }, standing }
+  return { ...starterContext(), terrain: { width, height, tiles }, standing }
 }
 
 test("where no free tile in reach has clear ground around it, Explore Map from the menu takes the nearest free tile", () => {
@@ -282,7 +282,7 @@ test("with no free tile in reach, Explore Map leaves the cursor where it is", ()
   const height = 30
   const rock: BuildContext = {
     ...starterContext(),
-    grid: { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.rock") },
+    terrain: { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.rock") },
     standing: [],
   }
   const side = buildSide({ context: rock, cursor: { x: 10, y: 10 } })
@@ -308,7 +308,7 @@ test("the hand-off is recorded when a menu row gives the keyboard to the map, an
   for (const [name, drive, entry] of handedOff) {
     const side = buildSide()
     drive(side)
-    assert.equal(side.build.state.focus, "grid", `${name}: the map does not have the keyboard`)
+    assert.equal(side.build.state.focus, "map", `${name}: the map does not have the keyboard`)
     assert.deepEqual(side.build.state.handoff, { seq: 1, entry }, `${name}: no hand-off`)
   }
   const notHandedOff: readonly [string, (side: Side) => void][] = [
@@ -422,7 +422,7 @@ test("the focus arrow's glyphs follow the glyph pack and the way it flies", () =
 
 test("over a building or the ghost being placed the focus arrow changes only the style, never the glyph", () => {
   let restyled = 0
-  // Cursors below and right of the Grid Nexus, so the flight crosses it for some of them.
+  // Cursors below and right of the Nexus, so the flight crosses it for some of them.
   for (const y of [12, 13, 14, 15]) {
     for (let x = 19; x <= 40; x += 3) {
       const side = buildSide({ cursor: { x, y } })
@@ -570,7 +570,7 @@ test("the live screen draws the arrow on its own clock, then the plain divider o
     now: () => t,
   })
   await wait(40)
-  const layout = buildLayout(MINIMUM, starterContext().grid)
+  const layout = buildLayout(MINIMUM, starterContext().terrain)
   const start = { x: layout.dividerColumn, y: turretRow(layout) }
   const divider = rowsOf(stdout.lastWrite)[start.y]?.[start.x]
   stdin.emit("data", Buffer.from(TURRET))

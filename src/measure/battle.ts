@@ -19,7 +19,7 @@ export const STALL_TICKS = 60
 export const IDLE_TICKS = 60
 
 export type SideRecord = Readonly<{
-  /** Mobile units that stood on the Grid at any moment of the battle. */
+  /** Mobile units that stood on the battlefield at any moment of the battle. */
   fielded: number
   /** Of them, how many fell. */
   lost: number

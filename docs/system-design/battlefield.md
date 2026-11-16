@@ -1,21 +1,21 @@
-# Terminal Nexus — the Grid
+# Terminal Nexus — the battlefield
 
 _The play surface: its size and shape, orientation, the viewport and scrolling, layers and collision masks, placement and footprints, distance and movement._
 
-## 1. What the Grid is
+## 1. What the battlefield is
 
-The **Grid** is the rectangular integer playfield a match is fought on. The replica of a Nexus that
-sits on it is a **Grid Nexus**; the one that stays home is a **Prime Nexus**. A Grid Nexus is a flag
+The **battlefield** is the rectangle of tiles a battle is fought on; on screen, the **map** draws it. Each side's
+**Nexus** stands on it. A Nexus is a flag
 on a content definition, the `nexus` field (RULE — `src/content/types.ts`; [`architecture.md`](architecture.md)).
 
 ## 2. Size and shape
 
-A Grid may be any integer size. Content and tools standardise on a small matrix of presets so that
+A battlefield may be any integer size. Content and tools standardise on a small matrix of presets so that
 maps, sandboxes and compositions can be reasoned about without measuring each one. The matrix is
 GUIDANCE: add, drop or rename a preset when content shows a better set.
 
 **Shape** is the ratio of width to height in tiles. A tile is twice as tall as it is wide (section 7), so on screen,
-and by the rules' own distance, a `wide` Grid is as wide as it is tall and a `squared` one twice as tall as it is
+and by the rules' own distance, a `wide` battlefield is as wide as it is tall and a `squared` one twice as tall as it is
 wide:
 
 | Shape | Width : height |
@@ -45,55 +45,55 @@ Which gives twelve presets:
 **RULE — `src/skirmish/opening/presets.ts`, `tests/sandboxes.test.ts`: the default preset is `medium-extra-wide`
 (48 × 16)** and the one every early sandbox uses. It is locked because the floor is derived from it: a
 tile is one column ([`presentation.md`](presentation.md)), so 48 tiles + 2 border + a 30-column side panel =
-**exactly 80 columns**, and 16 rows of Grid within the 8-row chrome budget below = **exactly 24 rows**. Change
+**exactly 80 columns**, and 16 rows of battlefield within the 8-row chrome budget below = **exactly 24 rows**. Change
 48 × 16 and the 80 × 24 floor stops falling out of one number.
 
 A preset is a convenience, not a constraint. A sandbox may declare explicit dimensions.
 
 **The Build Phase's vertical chrome is 6 rows**: 2 border, a 2-row header (the top bar's line and the rule that
-closes the Grid's top) and a 2-row footer (the rule that closes the Grid's bottom, then one line of contextual
+closes the battlefield's top) and a 2-row footer (the rule that closes the battlefield's bottom, then one line of contextual
 help). **The floor measures against 8 rows** (RULE — `tests/build-camera.test.ts`): the resize gate keeps the old
 8-row budget, so 16 + 8 = **24 rows** and 80 × 24 stays a literal floor, and the two rows the one-line footer saves
-go to the Grid: 18 rows of Grid at 80 × 24 (whether 80 × 24 is a hard minimum was Q12, answered).
+go to the battlefield: 18 rows of battlefield at 80 × 24 (whether 80 × 24 is a hard minimum was Q12, answered).
 
 ## 3. Orientation is a rendering choice — RULE
 
-A Grid has no orientation. **Portrait and landscape are presentation transforms**, chosen by the
-renderer to fit the display, and they change nothing about the Grid, the Pulse or any coordinate in
-an event log. A tall narrow display may transpose a `wide` Grid and lose nothing.
+A battlefield has no orientation. **Portrait and landscape are presentation transforms**, chosen by the
+renderer to fit the display, and they change nothing about the battlefield, the Pulse or any coordinate in
+an event log. A tall narrow display may transpose a `wide` battlefield and lose nothing.
 
-Map authors never think about orientation. They design a Grid; the renderer decides how to show it.
+Map authors never think about orientation. They design a battlefield; the renderer decides how to show it.
 
 ## 4. Viewport, screen size and scrolling
 
-A Grid may be larger than the screen. The **viewport** is the window onto it, measured in **tiles**.
+A battlefield may be larger than the screen. The **viewport** is the window onto it, measured in **tiles**.
 **RULE — `tests/build-camera.test.ts`, `src/build/camera.ts`: it is clamped at both ends.**
 
 | | Tiles | Why |
 | --- | --- | --- |
 | **Minimum viewport** | 48 × 16 | The default preset. Below this the game is not playable, and the renderer shows a resize gate |
-| **Maximum viewport** | 72 × 24 | The largest Grid preset. Nobody sees more of the Grid than this, however large their monitor |
+| **Maximum viewport** | 72 × 24 | The largest battlefield preset. Nobody sees more of the battlefield than this, however large their monitor |
 
 The clamp is a range, not a size: a terminal shows however many tiles fit between the two ends. An
 80 × 24 terminal shows 49 × 18 tiles, one point inside the range (the floor guarantees at least
 48 × 16, and the shared divider column and the one-line footer give it a little more).
 
 The maximum exists for **fairness and for bounded arithmetic**. A player on a huge display must not
-be able to see meaningfully more of the Grid than a player on a laptop, and every layout, cursor and
+be able to see meaningfully more of the battlefield than a player on a laptop, and every layout, cursor and
 scroll calculation gets a fixed upper bound to reason about. Terminal space beyond the maximum is
-spent on centring and on a larger inspection panel, **never on more Grid**. Cropping the Grid to fit
+spent on centring and on a larger inspection panel, **never on more map**. Cropping the battlefield to fit
 without scrolling is not allowed: below the minimum the renderer gates, and it never silently hides
-part of the Grid.
+part of the battlefield.
 
 **Fitting, in order** (RULE — `tests/build-camera.test.ts`):
 
 1. Subtract chrome from the terminal: a border, a header, a footer, and a 29-column side panel whose
-   divider is the Grid's west side (below). What is left is the tiles the terminal has room for, a tile
+   divider is the battlefield's west side (below). What is left is the tiles the terminal has room for, a tile
    to a column ([`presentation.md`](presentation.md)).
-2. `viewport = min(availableTiles, maximumViewport, gridSize)`.
-3. Gate when `availableTiles < min(minimumViewport, gridSize)`, measured against the floor's own 30-column
-   panel and 8-row budget, so 80 × 24 stays the floor. **A Grid smaller than the minimum viewport needs only
-   its own size**, so a small tutorial Grid is never gated on a terminal that can show all of it. Below that,
+2. `viewport = min(availableTiles, maximumViewport, mapSize)`.
+3. Gate when `availableTiles < min(minimumViewport, mapSize)`, measured against the floor's own 30-column
+   panel and 8-row budget, so 80 × 24 stays the floor. **A battlefield smaller than the minimum viewport needs only
+   its own size**, so a small tutorial battlefield is never gated on a terminal that can show all of it. Below that,
    show the resize gate and freeze presentation time.
 
 Which gives these terminal sizes:
@@ -106,17 +106,17 @@ Which gives these terminal sizes:
 The minimum row is the resize gate's, which measures against the floor's 30-column panel and 8-row
 budget. The maximum row is where the Build Phase's actual 29-column panel and 6-row chrome first show
 72 × 24 tiles: 72 + 2 + 29 = 103 columns and 24 + 6 = 30 rows. The shots and the camera test use 104 × 30,
-one column past it. Any terminal larger than that buys margin, never more Grid: at 200 columns the view is 72
+one column past it. Any terminal larger than that buys margin, never more map: at 200 columns the view is 72
 tiles, centred.
 
 **80 × 24 is the floor and the acceptance target.** Everything must work there.
 
 ### Scrolling
 
-**RULE — `tests/build-camera.test.ts`: when the Grid is larger than the viewport, the camera scrolls.
+**RULE — `tests/build-camera.test.ts`: when the battlefield is larger than the viewport, the camera scrolls.
 There is no minimap.**
 
-- The camera position is in tiles and is clamped so the viewport never leaves the Grid.
+- The camera position is in tiles and is clamped so the viewport never leaves the battlefield.
 - **The cursor drives it.** Move the cursor within the **scroll margin** of a viewport edge and the
   camera follows. That is the whole interaction: no separate pan mode, no modifier keys, no second
   cursor. It works identically in the Build Phase and during a Battle Round. The margin is a share of the
@@ -125,36 +125,36 @@ There is no minimap.**
   margins never meet (`tests/build-motion.test.ts`). That a margin exists, and that the cursor drives
   it, is the rule; the number is not.
 - **The margin is a follow rule, not an invariant** (RULE — `tests/build-camera.test.ts`). It says
-  where the camera must be relative to the cursor *when it can be*. At the Grid's own edge the camera
+  where the camera must be relative to the cursor *when it can be*. At the battlefield's own edge the camera
   has nowhere left to go, so the cursor legitimately reaches the edge of the screen, which is correct
-  because there is no more Grid to reveal by scrolling further. "The margin holds wherever the camera
+  because there is no more map to reveal by scrolling further. "The margin holds wherever the camera
   can still scroll" is a checkable sentence where "the margin holds" is not.
-- **The UI must show that there is more Grid.** Without a minimap the burden falls on **the weight of
-  the Grid pane's own sides**: every side with more Grid beyond it reads differently from a side where
+- **The UI must show that there is more map.** Without a minimap the burden falls on **the weight of
+  the map's own sides**: every side with more map beyond it reads differently from a side where
   the map ends (below). The footer carries no position readout; the sides carry the signal alone.
-- Small Grids that fit entirely inside the viewport never scroll, and every side of their rectangle
+- Small battlefields that fit entirely inside the viewport never scroll, and every side of their rectangle
   reads as the map's edge. Tutorials and opening missions should use them deliberately: `small` and
   `medium` presets fit the minimum viewport, so a new player meets the game without ever learning to
   scroll.
-- **The Grid pane is a closed rectangle of its own** (RULE — `tests/build-edge.test.ts`). A line runs directly above
-  the Grid's first visible row and directly below its last, and down both sides, with no header or footer between it
-  and the Grid, so the sides say whether there is more Grid at the edge they are about.
+- **The map is a closed rectangle of its own** (RULE — `tests/build-edge.test.ts`). A line runs directly above
+  the battlefield's first visible row and directly below its last, and down both sides, with no header or footer between it
+  and the battlefield, so the sides say whether there is more map at the edge they are about.
 - **The edge marker is the weight of that rectangle's sides** (RULE — `tests/build-edge.test.ts`, `src/view/edge.ts`).
-  A side with **more Grid to scroll to** is the frame's own line drawn dim (`-`, `|`); a side that has **reached the
-  Grid's own edge** is drawn in **the map's own edge style** (solid, half, heavy, double, shade or fence; a solid bar
+  A side with **more map to scroll to** is the frame's own line drawn dim (`-`, `|`); a side that has **reached the
+  battlefield's own edge** is drawn in **the map's own edge style** (solid, half, heavy, double, shade or fence; a solid bar
   for a map that names none, a fence for the starter map) in the quieter edge colour (`chrome.edge`), the same weight
   on every side, in every glyph pack and in monochrome. A corner takes the edge wherever an edge side runs into it; a
-  patterned edge is fixed to the map and scrolls with it. When the whole Grid fits, every side and all four corners
+  patterned edge is fixed to the map and scrolls with it. When the whole battlefield fits, every side and all four corners
   are the edge: "this is the whole map". The outer border and the rules where they cross the side panel stay plain.
-  How each style draws is in [`ui-patterns.md`](ui-patterns.md), the map. A `[m] Map` popup showing the whole Grid is
+  How each style draws is in [`ui-patterns.md`](ui-patterns.md), the map. A `[m] Map` popup showing the whole battlefield is
   an **IDEA**, not built (Q59).
-- **The side panel's divider is the Grid's west side** (RULE — `tests/build-edge.test.ts`, `src/build/layout.ts`): one
-  column, a plain line beside the menu's rows and a light or map-edge side beside the Grid's rows. The column goes to
-  the Grid, 49 tiles at 80 × 24, while `FLOOR_PANEL_COLUMNS` in `src/build/camera.ts` keeps the floor measured against
+- **The side panel's divider is the battlefield's west side** (RULE — `tests/build-edge.test.ts`, `src/build/layout.ts`): one
+  column, a plain line beside the menu's rows and a light or map-edge side beside the battlefield's rows. The column goes to
+  the battlefield, 49 tiles at 80 × 24, while `FLOOR_PANEL_COLUMNS` in `src/build/camera.ts` keeps the floor measured against
   30 columns.
-- **A Grid shorter than the pane closes directly under its own last row** (RULE — `tests/build-edge.test.ts`). The pane
+- **A battlefield shorter than the pane closes directly under its own last row** (RULE — `tests/build-edge.test.ts`). The pane
   keeps the minimum viewport's 16 rows while the terminal has them, because the side panel is designed at that height
-  ([`presentation.md`](presentation.md)); a shorter Grid sits at the top with its own bottom edge drawn across the Grid
+  ([`presentation.md`](presentation.md)); a shorter battlefield sits at the top with its own bottom edge drawn across the battlefield
   pane alone.
   (GUIDANCE; held by `tests/build-motion.test.ts`; the numbers, the hold window and the key-release tiers are in
   [`input.md`](input.md), the Experiments in Settings' Keyboard navigation section, `src/build/all-settings.ts`).
@@ -184,7 +184,7 @@ There is no minimap.**
 
 ### 5.1 Layers — RULE
 
-**RULE — `src/engine/geometry/types.ts`, `tests/grid.test.ts`.** The Grid is not one plane of tiles. It is five,
+**RULE — `src/engine/geometry/types.ts`, `tests/layers.test.ts`.** The battlefield is not one plane of tiles. It is five,
 stacked:
 
 | # | Layer | Holds |
@@ -202,7 +202,7 @@ something is. **Layers do not define collision.** That is a separate question, a
 
 ### 5.2 Collision masks — RULE
 
-**RULE — `src/engine/geometry/occupancy.ts`, `tests/grid.test.ts`.** Occupancy and blocking are computed by
+**RULE — `src/engine/geometry/occupancy.ts`, `tests/layers.test.ts`.** Occupancy and blocking are computed by
 composing layers into a **collision mask**, a per-tile boolean grid built from a chosen set of layers
 and a predicate:
 
@@ -210,8 +210,8 @@ and a predicate:
 type CollisionMask = { blocked(tile: Coord): boolean }
 
 function maskFrom(
-  grid: Grid,
-  layers: readonly GridLayer[],
+  terrain: MapTerrain,
+  layers: readonly Layer[],
   predicate?: (entity: Entity) => boolean,
 ): CollisionMask
 ```
@@ -261,13 +261,13 @@ or thousands of units is in [`runtime.md`](runtime.md).
 
 ## 6. Placement, footprint, anchor and facing
 
-**Coordinates** (RULE — `tests/sandboxes.test.ts`, `src/engine/geometry/coords.ts`). `(0,0)` is the Grid's
+**Coordinates** (RULE — `tests/sandboxes.test.ts`, `src/engine/geometry/coords.ts`). `(0,0)` is the battlefield's
 north-west tile; `x` grows **east**, `y` grows **south**. The direction `n` points toward `y - 1`. A
 sandbox's terrain and placement rows are listed north to south, so the file reads the way the
-Grid draws. Every module (engine, loader, compositor) uses this one convention; it is the cheapest
+battlefield draws. Every module (engine, loader, compositor) uses this one convention; it is the cheapest
 possible source of mirror-image bugs.
 
-Every entity on the Grid has a placement (RULE — `src/engine/geometry/types.ts`):
+Every entity on the battlefield has a placement (RULE — `src/engine/geometry/types.ts`):
 
 ```ts
 type Coord = Readonly<{ x: number; y: number }>
@@ -275,19 +275,19 @@ type Footprint = readonly Coord[]          // offsets relative to the anchor
 type Direction = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw"
 
 interface Placement {
-  readonly layer: GridLayer
+  readonly layer: Layer
   readonly anchor: Coord                   // the entity's coordinate
   readonly footprint: Footprint            // [{x:0,y:0}] for a one-tile actor
   readonly facing: Direction
 }
 ```
 
-- **Entities occupy one tile or many, and both are normal** (RULE — `tests/grid.test.ts`). Many units
-  are one tile. Structures usually are not: a Grid Nexus or a barracks covers several. **Large units
+- **Entities occupy one tile or many, and both are normal** (RULE — `tests/layers.test.ts`). Many units
+  are one tile. Structures usually are not: a Nexus or a barracks covers several. **Large units
   exist and matter strategically**: a Ravel raider drawn `>x<` is one unit spanning three tiles, and
   the collision system handles it as such. Multi-tile is a first-class case, never a later extension.
   Write the footprint loop once, at the start, and every entity is the same code path.
-- **A multi-tile mover tests its whole footprint** (RULE — `tests/grid.test.ts`). A step is legal only
+- **A multi-tile mover tests its whole footprint** (RULE — `tests/layers.test.ts`). A step is legal only
   if every destination tile is clear in that entity's collision mask. Damage, targeting and
   destruction apply to the entity, not to a tile: a three-tile raider hit anywhere is one raider
   taking one hit.
@@ -295,7 +295,7 @@ interface Placement {
   ties break on it, presentation hangs badges and portraits off it, and it is what "where is that
   thing" means.
 - **Range is measured to the nearest occupied tile** of the target's footprint, not to its anchor
-  (RULE — `tests/grid.test.ts`), in the distance section 7 describes. A large structure is easier to reach
+  (RULE — `tests/layers.test.ts`), in the distance section 7 describes. A large structure is easier to reach
   because it is large, which is the intuitive answer.
 - **Facing is presentation-only for now** (RULE for now; whether it should ever affect rules is an open
   question, Q9, answered as no). It is derived from the last movement step, or from the current target when
@@ -305,17 +305,17 @@ interface Placement {
 
 ## 7. Distance, reach and movement
 
-The Grid's geometry fits in one sentence: **a unit stands two squares tall.** A terminal cell is about twice as tall
+The battlefield's geometry fits in one sentence: **a unit stands two squares tall.** A terminal cell is about twice as tall
 as it is wide, and a tile is one cell. Cut every tile across its middle and the ground is a grid of squares, each a
 column wide and half a row tall, so every tile is two squares, one above the other. How far is far, what a reach
 covers, how long a walk takes, what touching means and why a squad fights wider than it fights deep all follow
 from that. Six pictures below — the distances, the reaches, whole rows, the two walks and the rings — are drawn by
-the game's own code (`scripts/grid-pictures.ts`), and `tests/grid-pictures.test.ts` fails if one stops being what
+the game's own code (`scripts/battlefield-pictures.ts`), and `tests/battlefield-pictures.test.ts` fails if one stops being what
 the game does; the rest are drawn by hand.
 
 ### 7.1 A row counts two columns
 
-**Distance is counted on the squares, the four ways a unit walks** (RULE — `gridDistance` and `ROW_DISTANCE`,
+**Distance is counted on the squares, the four ways a unit walks** (RULE — `tileDistance` and `ROW_DISTANCE`,
 `src/engine/geometry/coords.ts`; `tests/rows.test.ts`). A tile across is one square away, and a tile up or down is two:
 
 ```text
@@ -324,7 +324,7 @@ distance = columns across + 2 × rows up or down
 
 Every tile's distance from a unit at `T`:
 
-<!-- grid-picture: distance -->
+<!-- battlefield-picture: distance -->
 ```text
 876545678
 654323456
@@ -342,7 +342,7 @@ any walk there. Every range, reach and radius in the game is this distance — m
 touching — measured between the nearest tiles of two footprints (section 6), and every distance is worked out by
 the functions in `src/engine/geometry/coords.ts` and `src/engine/geometry/reach.ts`, never by hand.
 
-**Touching is a side shared** (RULE — `gridSteps`, `footprintSteps`): beside, or straight above or below. It asks
+**Touching is a side shared** (RULE — `tileSteps`, `footprintSteps`): beside, or straight above or below. It asks
 whether two bodies meet, not how far apart their middles are, so it is the one count in which a row is one step,
 the same as a column. Each letter on the right is one square:
 
@@ -368,7 +368,7 @@ gathered beside another touches it, and two units meeting at a corner do not tou
 tiles straight above and below, and every longer reach covers what touches too (RULE — `footprintWithin`,
 `tilesWithin` in `src/engine/geometry/reach.ts`):
 
-<!-- grid-picture: reaches -->
+<!-- battlefield-picture: reaches -->
 ```text
                                             .
                             .             .....
@@ -391,7 +391,7 @@ as strategy games say a range, one number, the reach across: `RANGE 6`, or `mele
 the one reach that is not every tile within its distance: it takes the tiles straight above and below, two away,
 and not the tiles two columns across, also two away.
 
-**The arithmetic is tidy** (RULE — `tests/grid-pictures.test.ts`). The tiles exactly r away form a ring of exactly
+**The arithmetic is tidy** (RULE — `tests/battlefield-pictures.test.ts`). The tiles exactly r away form a ring of exactly
 2r tiles, for every r from 1 up: an odd ring crosses r rows with a tile at each end of every one, and an even ring
 crosses r + 1 rows, with a single tile at its top and its bottom. So a reach of R, from 2 up, holds
 1 + 2 + 4 + 6 + … + 2R = **R² + R + 1** tiles: 7 for a reach of 2, 21 for 4, 43 for 6. A reach of 1 holds five: its
@@ -401,7 +401,7 @@ own tile and the four that touch it, two beside and two straight above and below
 down, rounded down (`rowsWithin`): a reach of 4 and a reach of 5 cover the same two rows, and the fifth point buys
 only a column at each end of each row.
 
-<!-- grid-picture: whole-rows -->
+<!-- battlefield-picture: whole-rows -->
 ```text
         .                        ...
       .....                    .......
@@ -441,7 +441,7 @@ screen per second whichever way it walks. Two troopers set off on the same tick,
 four rows down; a trooper's beat is four ticks, a third of a second (`t` where a walk starts, each arrow the step
 that reached its tile, `X` where it ends):
 
-<!-- grid-picture: walking -->
+<!-- battlefield-picture: walking -->
 ```text
 t>>>>>>>X    8 columns across: there at 2.7 s
 
@@ -459,7 +459,7 @@ whichever way has more columns left, a row counting two, and across on a tie. To
 walks two columns across for every row down, and two columns by one row is that 45°; toward any other it walks
 straight until the goal lies on that diagonal, then stairs down it:
 
-<!-- grid-picture: stairs -->
+<!-- battlefield-picture: stairs -->
 ```text
 t>
  v>>
@@ -499,7 +499,7 @@ crosses as much ground on screen per second either way. The Controls page says i
 tall, so more fit side by side than one behind another.
 
 **IDEA — a sparse formation** (the owner's): units prefer a free column beside them, and not to stand straight
-above or below another, so a group spreads into a staggered grid whose fronts are nearer equal both ways. A
+above or below another, so a group spreads into a staggered pattern whose fronts are nearer equal both ways. A
 preference, never a block: a unit behind waits a beat for the one ahead to move on, and the space between can still
 be taken (`t` a unit, `.` a place in the stagger left free, which a unit may still take):
 
@@ -513,13 +513,13 @@ fronts match both ways, at the cost of two-character art for every unit and half
 
 ### 7.5 Setting a group down
 
-**A group set down round a point fills the rings of the Grid's own distance**, nearest first and, within a ring,
+**A group set down round a point fills the rings of the battlefield's own distance**, nearest first and, within a ring,
 nearest the side a unit comes from, then in reading order (RULE — `nearestFit` in
 `src/match/placement.ts`, `ringOffsets`; `tests/match.test.ts`), so it comes out round on screen. The opening's
 musters, the forecast of them, a mission's arrivals and a Commander's return all search the
 same rings. The first thirteen places on open ground, `a` first, each unit claiming its tile before the next looks:
 
-<!-- grid-picture: rings -->
+<!-- battlefield-picture: rings -->
 ```text
   hdi
 jebacfk

@@ -2,28 +2,28 @@
 // valid construction becomes operational." The Build Phase's plan is a list of placements on a screen;
 // this is where it becomes entities the battle engine can resolve.
 //
-// It follows the conventions of a sandbox's opening (`openBattle`) exactly — ids, ordinals in Grid reading order, a
+// It follows the conventions of a sandbox's opening (`openBattle`) exactly — ids, ordinals in battlefield reading order, a
 // fresh entity's fields from `freshEntityFields`, sides facing each other — so a Pulse that starts here
 // is indistinguishable, to the battle engine, from one a `.save.json` file started. What it adds is the two
 // things a Build Phase has and a file does not: structures given by an anchor (the way the Build Phase
-// stores a placement) rather than by a centre tile in a character grid, and units mustered around a
+// stores a placement) rather than by a centre tile in a character block, and units mustered around a
 // point on whatever free tiles the plan left them.
 //
 // **A later Pulse of a mission starts from what the last one left**: the state after the regroup is
 // `carried` in, and everything in it keeps its ordinal, id, health and place — a survivor is the same
 // unit it was — while the new plan's structures and whatever arrives at tick 0 are added after it, with
-// ordinals from where the last Pulse stopped (in Grid reading order among themselves). A carried unit may stand on
+// ordinals from where the last Pulse stopped (in battlefield reading order among themselves). A carried unit may stand on
 // the roof of one of its side's standing buildings, as a wave that never walked off leaves it. **A building planned
 // where units stand makes room first** (`makeRoom`, `src/match/make-room.ts`): every unit it covers, the player's or
 // the enemy's, walks out to the nearest free ground by the way, pushing those in its way on in turn, the walk the Build
-// Phase drew; the plan is the player's, and a unit steps aside for it. Anyone still without room after that (a Grid
+// Phase drew; the plan is the player's, and a unit steps aside for it. Anyone still without room after that (a battlefield
 // packed full) steps aside to the nearest free tile, after everyone who keeps their place, in a fixed order.
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { freshEntityFields, productionFields } from "../content/index.ts"
-import { gridDistance, inBounds, tileIndex, tilesOf } from "../engine/geometry/coords.ts"
+import { tileDistance, inBounds, tileIndex, tilesOf } from "../engine/geometry/coords.ts"
 import { OccupancyIndex, maskFrom } from "../engine/geometry/occupancy.ts"
-import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import type { Coord, MapTerrain } from "../engine/geometry/types.ts"
 import { ENTITY_LAYERS, TERRAIN } from "../engine/geometry/types.ts"
 import { gameplayRng } from "../engine/rng/pcg32.ts"
 import { TICKS_PER_SECOND } from "../engine/state/types.ts"
@@ -34,14 +34,14 @@ import { centreTile, enemyNexusMiddle, nearestFit } from "./placement.ts"
 import type { PulseSetup, StructurePlacement } from "./types.ts"
 import { PulseSetupError } from "./types.ts"
 
-/** How far from its muster point a unit is first looked for room, by the Grid's own distance (`nearestFit`): 12 rows up
+/** How far from its muster point a unit is first looked for room, by the battlefield's own distance (`nearestFit`): 12 rows up
  *  and down, 24 columns across. With none there — a base built solid, its ground held by the army standing in front of
- *  it, as a kept front can leave one — the search goes on over the whole Grid; only a Grid with no room anywhere refuses
+ *  it, as a kept front can leave one — the search goes on over the whole battlefield; only a battlefield with no room anywhere refuses
  *  the Pulse. */
 const MUSTER_RADIUS = 24
 
 export type OpeningInput = Readonly<{
-  grid: GridTerrain
+  terrain: MapTerrain
   registry: ContentRegistry
   /** Each side's own content, when the sides' differ (a battle's: `PulseContext.sides`). Absent: `registry` for both. */
   sides?: Readonly<Partial<Record<PlayerId, ContentRegistry>>>
@@ -90,7 +90,7 @@ function refitted(input: OpeningInput): MatchState | undefined {
 
 /**
  * The opening `MatchState` for a Pulse. Throws `PulseSetupError`, naming what is wrong, for anything
- * a sandbox's opening would refuse too: an unknown content id, a footprint off the Grid, a ground
+ * a sandbox's opening would refuse too: an unknown content id, a footprint off the battlefield, a ground
  * entity on rock, two things on one layer overlapping — or a force with no room to stand.
  */
 export function openingState(input: OpeningInput): MatchState {
@@ -99,7 +99,7 @@ export function openingState(input: OpeningInput): MatchState {
 
 /** `openingState`, with which force each new unit came from. */
 export function opening(input: OpeningInput): Opening {
-  const { grid, structures, setup } = input
+  const { terrain, structures, setup } = input
   // Room made for the new buildings first: every unit they stand on walks out, the same way the Build Phase drew it.
   const before = refitted(input)
   const carried = before === undefined || structures.length === 0 ? before : makeRoom(before, structures, input.registry, input.sides).state
@@ -112,8 +112,8 @@ export function opening(input: OpeningInput): Opening {
 
   const placed: Placed[] = []
   // Temporary ordinals, only to tell one occupant from another while placing. The real ones are
-  // assigned in Grid reading order once everything has a place (below), as the loader does.
-  const index = new OccupancyIndex(grid)
+  // assigned in battlefield reading order once everything has a place (below), as the loader does.
+  const index = new OccupancyIndex(terrain)
   const claim = (
     player: PlayerId,
     definition: ContentDef,
@@ -122,10 +122,10 @@ export function opening(input: OpeningInput): Opening {
     from: Readonly<{ carried?: EntityState; force?: number }> = {},
   ): void => {
     for (const tile of tilesOf(anchor, definition.footprint)) {
-      if (!inBounds(grid, tile)) {
-        throw new PulseSetupError(`${where}: "${definition.id}" reaches (${tile.x},${tile.y}), outside the ${grid.width}x${grid.height} Grid`)
+      if (!inBounds(terrain, tile)) {
+        throw new PulseSetupError(`${where}: "${definition.id}" reaches (${tile.x},${tile.y}), outside the ${terrain.width}x${terrain.height} battlefield`)
       }
-      const terrainId = grid.tiles[tileIndex(grid, tile)]
+      const terrainId = terrain.tiles[tileIndex(terrain, tile)]
       if (definition.layer !== "air" && terrainId !== undefined && TERRAIN[terrainId].impassable) {
         throw new PulseSetupError(`${where}: "${definition.id}" covers (${tile.x},${tile.y}), which is impassable ${terrainId}`)
       }
@@ -145,9 +145,9 @@ export function opening(input: OpeningInput): Opening {
   }
   const definitionOf = (entity: EntityState): ContentDef => contentFor(entity.player).get(entity.contentId)
 
-  /** The nearest room for `footprint` round `around`: within `MUSTER_RADIUS`, else anywhere on the Grid. */
+  /** The nearest room for `footprint` round `around`: within `MUSTER_RADIUS`, else anywhere on the battlefield. */
   const roomNear = (mask: ReturnType<typeof maskFrom>, footprint: ContentDef["footprint"], around: Coord, toward: Coord | undefined): Coord | null =>
-    nearestFit(mask, footprint, around, MUSTER_RADIUS, around, toward) ?? nearestFit(mask, footprint, around, grid.width + 2 * grid.height, around, toward)
+    nearestFit(mask, footprint, around, MUSTER_RADIUS, around, toward) ?? nearestFit(mask, footprint, around, terrain.width + 2 * terrain.height, around, toward)
 
   const unitMask = (definition: ContentDef) =>
     maskFrom(index, { layers: ENTITY_LAYERS, terrain: definition.layer === "air" ? "ignore" : "impassable" })
@@ -189,7 +189,7 @@ export function opening(input: OpeningInput): Opening {
   const facingKey = (entity: EntityState): number => {
     const stood = centreTile(entity.anchor, definitionOf(entity).footprint)
     const enemy = enemyNexusMiddle(placed, entity.player, stood)
-    return enemy === undefined ? 0 : gridDistance(stood, enemy)
+    return enemy === undefined ? 0 : tileDistance(stood, enemy)
   }
   displaced.sort((a, b) => facingKey(a) - facingKey(b) || a.anchor.y - b.anchor.y || a.ordinal - b.ordinal)
   for (const entity of displaced) {
@@ -229,9 +229,9 @@ export function opening(input: OpeningInput): Opening {
     }
   })
 
-  if (placed.length === 0) throw new PulseSetupError("the battle would start with nothing on the Grid")
+  if (placed.length === 0) throw new PulseSetupError("the battle would start with nothing on the battlefield")
 
-  // Grid reading order: north to south, then west to east, ties by side and then content id — the
+  // battlefield reading order: north to south, then west to east, ties by side and then content id — the
   // loader's own order, so an editorial change (which list came first) can never move an id. Only what
   // is new is ordered: a carried entity keeps the ordinal it has always had.
   const fresh = placed.filter((entry) => entry.carried === undefined)
@@ -282,7 +282,7 @@ export function opening(input: OpeningInput): Opening {
     schemaVersion: SCHEMA_VERSION,
     tick: 0,
     ticksPerSecond: TICKS_PER_SECOND,
-    grid,
+    terrain,
     entities,
     groundItems: carried?.groundItems ?? [],
     vacatedTiles: [],

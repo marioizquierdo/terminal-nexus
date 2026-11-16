@@ -72,19 +72,19 @@ test("nothing opens the Nexus Pulse popup but the player", () => {
 
 test("the popup holds the keyboard until a pick or Esc: arrows work its list, and nothing reaches the plan", () => {
   const { build, layout } = session()
-  build.handleData("1", layout) // arm a barracks, focus on the Grid
+  build.handleData("1", layout) // arm a barracks, focus on the battlefield
   build.handleData("n", layout)
   const cursor = build.state.cursor
   build.handleData(`${ESC}[B`, layout)
   assert.equal(build.state.popupHighlight, 1, "Down did not move the popup's own highlight")
-  assert.deepEqual(build.state.cursor, cursor, "Down moved the Grid cursor behind the popup")
+  assert.deepEqual(build.state.cursor, cursor, "Down moved the battlefield cursor behind the popup")
   for (const key of ["u", "\u007f", "\t", "2"]) build.handleData(key, layout)
   // "2" is the popup's own second option — digits address the popup's list while it is open.
   assert.equal(build.state.nexusPick, 1)
   assert.equal(build.state.planned.length, 0)
   // The pick closes the popup (owner, 2026-09-27), and leaves what was behind it as it was.
   assert.equal(build.state.popup, null, "picking left the popup open")
-  assert.equal(build.state.focus, "grid", "Tab moved focus from behind the popup")
+  assert.equal(build.state.focus, "map", "Tab moved focus from behind the popup")
   assert.equal(build.state.armed, 0, "the pick disarmed what was armed behind the popup")
   // Esc closes it without a pick, and x closes it as Esc does.
   build.handleData("n", layout)
@@ -309,7 +309,7 @@ test("keyboard: n opens the Nexus Pulse popup, and means nothing on the Battle R
   // Only [s] Start is a row there: `n` is not "keep building", Esc is the way back.
   assert.equal(buildKeyboardCommand("n", confirming), null)
   assert.deepEqual(buildKeyboardCommand("\u001b", confirming), { kind: "cancel" })
-  // The question is modal: the arrows do not reach the Grid behind it.
+  // The question is modal: the arrows do not reach the battlefield behind it.
   assert.equal(buildKeyboardCommand(`${ESC}[C`, confirming), null)
 })
 
@@ -343,14 +343,14 @@ test("mouse: inside a popup a click picks or closes; outside it, a click closes 
   side.build.handleData(clickPopupCloseBytes(side), side.layout)
   assert.equal(side.build.state.popup, null)
 
-  // A click outside it — here, on the Grid — closes it and moves focus and the cursor there, and does
+  // A click outside it — here, on the battlefield — closes it and moves focus and the cursor there, and does
   // nothing more (owner, 2026-09-27).
   side.build.handleData("n", side.layout)
   side.build.dispatch({ kind: "focus", target: "menu" })
   const cell = cellForTile(side.layout, side.build.state.camera, { x: 20, y: 15 })
   side.build.handleData(formatMouseEvent(MOUSE_LEFT, cell.x + 1, cell.y + 1), side.layout)
   assert.equal(side.build.state.popup, null)
-  assert.equal(side.build.state.focus, "grid")
+  assert.equal(side.build.state.focus, "map")
   assert.deepEqual(side.build.state.cursor, { x: 20, y: 15 })
   assert.equal(side.build.state.planned.length, 0)
 
@@ -405,7 +405,7 @@ test("mouse: the Battle Round confirmation starts by click on [s] Start, and a c
   assert.equal(outside.build.state.committed, false)
 })
 
-/** The raw bytes a left click on this Grid tile sends, from the composer's own `cellForTile`. */
+/** The raw bytes a left click on this tile sends, from the composer's own `cellForTile`. */
 function clickTileBytes(
   layout: ReturnType<typeof buildLayout>,
   build: BuildSession,

@@ -44,7 +44,7 @@ test("a battle saved after every round and loaded plays on as the battle played 
     assert.equal(hashOf(saved), hashOf(straight), `round ${index + 1}: the loaded battle differs from the one played straight through`)
   }
   // The ground is the map's, never the save's.
-  assert.ok(!saveText(saveOf(setup, saved)).includes('"tiles"'), "a save carried the Grid's ground")
+  assert.ok(!saveText(saveOf(setup, saved)).includes('"tiles"'), "a save carried the battlefield's ground")
 })
 
 test("a save the loader refuses names every problem at once", () => {
@@ -186,7 +186,7 @@ test("a sandbox the loader refuses names every problem at once, its units' fit i
   for (const part of ["setup.rounds", "setup.slots.p1.controller", "start.p1.legend", "start.p3", "start.p2.target", "draft"]) {
     assert.ok(shape.problems.some((problem) => problem.startsWith(part)), `nothing said about ${part}: ${shape.problems.join(" | ")}`)
   }
-  // The shape right, a unit off the Grid is the opening's refusal, named by its place in the start.
+  // The shape right, a unit off the battlefield is the opening's refusal, named by its place in the start.
   const fit = readSave(
     JSON.stringify({
       format: "terminal-nexus.save/1",
@@ -195,14 +195,14 @@ test("a sandbox the loader refuses names every problem at once, its units' fit i
     }),
   )
   assert.equal(fit.save, null)
-  assert.match(fit.problems.join("\n"), /^start: broken: .*outside the 4x2 Grid/m)
+  assert.match(fit.problems.join("\n"), /^start: broken: .*outside the 4x2 battlefield/m)
 })
 
 test("skirmish: a sandbox's --play-to plays its Battle Round, and --show draws it", () => {
   const path = join(REPO_ROOT, "sandboxes/rules/melee-kill.save.json")
   const brief = run(["--load", path])
   assert.equal(brief.code, 0)
-  assert.match(brief.out, /a sandbox, its board written by hand/)
+  assert.match(brief.out, /a sandbox, its battlefield set up by hand/)
   assert.match(brief.out, /add --play-to next to play it/)
   const played = run(["--load", path, "--play-to", "next"])
   assert.equal(played.code, 0)

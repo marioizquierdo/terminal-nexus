@@ -59,9 +59,9 @@ function silence(side: Side): void {
 
 // --- One row ---------------------------------------------------------------------------------------
 
-test("the bottom bar is one row, and 80 x 24 shows 49 x 18 tiles of Grid; the floor stays 80 x 24", () => {
+test("the bottom bar is one row, and 80 x 24 shows 49 x 18 tiles of battlefield; the floor stays 80 x 24", () => {
   // The owner (2026-09-30): "The bottom of the UI currently uses 3 rows. We have to reduce
-  // that to 1 row." The rule under the Grid and one line; the two rows saved go to the Grid.
+  // that to 1 row." The rule under the battlefield and one line; the two rows saved go to the battlefield.
   const side = buildSide()
   const { layout } = side
   assert.deepEqual(layout.viewport, { width: 49, height: 18 })
@@ -70,8 +70,8 @@ test("the bottom bar is one row, and 80 x 24 shows 49 x 18 tiles of Grid; the fl
   assert.equal(layout.footerRow, lines.length - 2, "the one line is not directly above the frame's bottom border")
   assert.match(lines[23] as string, /^\+-+\+$/, "the frame's border closes directly under the one line")
   // The floor does not move with it: 80 x 23 is still below it.
-  assert.equal(isGated({ columns: 80, rows: 24 }, side.context.grid), false)
-  assert.equal(isGated({ columns: 80, rows: 23 }, side.context.grid), true)
+  assert.equal(isGated({ columns: 80, rows: 24 }, side.context.terrain), false)
+  assert.equal(isGated({ columns: 80, rows: 23 }, side.context.terrain), true)
 })
 
 test("the bottom line shows a command's answer, and after a command that says nothing, the hint", () => {
@@ -115,7 +115,7 @@ test("the answers players rely on still show right after their command, and laps
 test("a refused placement is said in red with its tile, then — lapsed — quietly, while the ghost still sits there", () => {
   const side = buildSide()
   keys(side, TAB, "1") // on the map: the Barracks armed where the cursor is
-  side.build.dispatch({ kind: "look-at", x: STARTER_START_CURSOR.x, y: STARTER_START_CURSOR.y }) // onto the Grid Nexus
+  side.build.dispatch({ kind: "look-at", x: STARTER_START_CURSOR.x, y: STARTER_START_CURSOR.y }) // onto the Nexus
   keys(side, ENTER)
   const tried = line(side)
   assert.match(tried.text, /^Cannot build here: the Citizen Nexus is here at \d+,\d+\.$/)
@@ -345,7 +345,7 @@ test("it scrolls the export's way: Up/Down, the wheel and the scroll bar, stoppi
   assert.equal(wheel.build.state.popupHighlight, last)
 })
 
-test("the page is one table: every situation, every line fits at the floor, and the popup fits the Grid pane at every size", () => {
+test("the page is one table: every situation, every line fits at the floor, and the popup fits the map at every size", () => {
   const sections = controlsPage()
   assert.deepEqual(
     sections.map((section) => section.heading),
@@ -355,9 +355,9 @@ test("the page is one table: every situation, every line fits at the floor, and 
     const side = buildSide({ terminal: size })
     keys(side, "?")
     const popup = placed(side)
-    assert.ok(popup.box.top > side.layout.gridBox.top, `the popup covers the top rule at ${size.columns}x${size.rows}`)
+    assert.ok(popup.box.top > side.layout.mapBox.top, `the popup covers the top rule at ${size.columns}x${size.rows}`)
     assert.ok(popup.box.bottom + 1 < side.layout.paneBottom, `the popup covers the bottom rule at ${size.columns}x${size.rows}`)
-    assert.ok(popup.box.left > side.layout.gridBox.left && popup.box.right + 1 < side.layout.gridBox.right)
+    assert.ok(popup.box.left > side.layout.mapBox.left && popup.box.right + 1 < side.layout.mapBox.right)
     assert.ok((popup.window?.visible ?? 0) >= 12, `only ${popup.window?.visible} lines show at ${size.columns}x${size.rows}`)
     for (const section of sections) {
       for (const entry of section.lines) {
@@ -408,14 +408,14 @@ test("the page names only keys the adapters bind, and every command key they bin
   const keysOf = (heading: string): string[] => page.find((section) => section.heading === heading)?.lines.map((entry) => entry.keys) ?? []
   const text = page.flatMap((section) => section.lines.map((entry) => `${entry.keys} ${entry.text}`)).join("\n")
   // The letters the menu and "anywhere" name are commands from the menu, and from the map.
-  for (const focus of ["menu", "grid"] as const) {
+  for (const focus of ["menu", "map"] as const) {
     for (const key of [...keysOf("THE MENU"), ...keysOf("ANYWHERE")].filter((entry) => entry.length === 1)) {
       assert.notEqual(buildKeyboardCommand(key, { itemCount: 3, armed: false, focus }), null, `${key} is on the page but not bound (${focus})`)
     }
   }
   // The Pulse's keys, while a Pulse is on screen.
   for (const key of [" ", "[", "]", ".", ",", "r"]) {
-    assert.equal(buildKeyboardCommand(key, { itemCount: 3, armed: false, focus: "grid", pulse: true })?.kind, "pulse", JSON.stringify(key))
+    assert.equal(buildKeyboardCommand(key, { itemCount: 3, armed: false, focus: "map", pulse: true })?.kind, "pulse", JSON.stringify(key))
   }
   assert.match(text, /space pause or resume/)
   assert.match(text, /\[ and \] slower, faster/)

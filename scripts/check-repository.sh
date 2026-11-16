@@ -167,7 +167,6 @@ grep -Fq '@AGENTS.md' CLAUDE.md || fail "CLAUDE.md must import AGENTS.md"
 retired_terms=(
   '\bveils?\b'
   '\bplanning phase\b'
-  '\bbattlefields?\b'
   'terminal-nexus-spec\.md'
   'terminal-nexus-spike1\.md'
   '\bcanon\b'
@@ -197,6 +196,10 @@ retired_terms=(
   'battle/reading\.ts'
   'battle/picture\.ts'
   'grid-engine\.md'
+  '(^|[^-])\bgrid\.md'
+  'grid design'
+  'grid engine'
+  'board written by hand'
   'system-design/sandboxes\.md'
   '(^|[^-])\bsandboxes\.md'
   'bin/grid\.ts'
@@ -235,6 +238,14 @@ done
 hits="$(scan_term '\bGATED\b')"
 if [[ -n "$hits" ]]; then
   fail "retired terminology matching 'GATED': $(wc -l <<< "$hits") line(s)"
+  printf '%s\n' "$hits" >&2
+fi
+
+# Grid is matched case-sensitively too: the ground is the battlefield (or the map), its pyramid the Nexus; a grid of
+# cells is still ordinary English.
+hits="$(scan_term '\bGrid')"
+if [[ -n "$hits" ]]; then
+  fail "retired terminology matching 'Grid' (say battlefield, map or Nexus): $(wc -l <<< "$hits") line(s)"
   printf '%s\n' "$hits" >&2
 fi
 

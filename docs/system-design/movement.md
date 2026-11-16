@@ -2,7 +2,7 @@
 
 _How troops move, and why: first what a player should be able to predict from the Build Phase, then each part of it,
 then the machinery underneath, what still needs smoothing, and the strategies it opens. The rules themselves, each with
-its test, are in [`pulse.md`](pulse.md) (routes, a side's target, the march, the regroup) and [`grid.md`](grid.md)
+its test, are in [`pulse.md`](pulse.md) (routes, a side's target, the march, the regroup) and [`battlefield.md`](battlefield.md)
 (distance, walking, setting a group down); this page explains how they fit together. Every unmarked statement is
 GUIDANCE; what is not built is marked IDEA._
 
@@ -22,7 +22,7 @@ Everything below adds up to seven rules:
 
 1. **Troops fight only in a Battle Round.** Between rounds they stop, step back and form up where they fought, and the
    front stays on the map.
-2. **The army marches on the enemy's Grid Nexus** (or a level's target), by the shortest walk round rock and buildings.
+2. **The army marches on the enemy's Nexus** (or a level's target), by the shortest walk round rock and buildings.
 3. **A troop marches, fights or retreats.** It marches while no enemy is in its vision, fights once one is, and
    retreats only when the rules pull it back (a worker in danger, the step back between rounds).
 4. **Vision is 6 columns** (3 rows) for most troops, and it sees buildings as well as units: whatever of the enemy's
@@ -55,19 +55,19 @@ The regroup is worked out from how the round ended alone, never from what the pl
 the same on every machine. **A building placed on troops pushes them out**, anyone's, to the nearest free ground, and
 they push the troops round them on in a ripple (`src/match/make-room.ts`). So the front a player reads in the Build
 Phase is where the next round starts, and nothing about a unit's movement is remembered beyond what the state holds:
-what it does is worked out fresh every tick from what stands on the Grid.
+what it does is worked out fresh every tick from what stands on the battlefield.
 
 ## Where an army goes — the enemy Nexus
 
 RULE (`headsForNexus`, `src/engine/pulse/perception.ts`; a side's target, `src/engine/pulse/target.ts`). **An army's goal is the
-enemy's Grid Nexus.** A mission may name a target instead, a region the side heads for and holds; a battle's side
+enemy's Nexus.** A mission may name a target instead, a region the side heads for and holds; a battle's side
 may hold in front of its own Nexus (the battle's stance). The stance and banners in the Build Phase come next (below).
 
 **How the way is found: a distance field, not a path.** The game does not search a path for each unit. It works out a
 number on every tile saying how far it is, walking, to the goal, shared by every unit going there; a unit takes the step
 that leaves the shortest walk. So it goes round rock, buildings and standing fights by construction, and one pushed off
 its way, trained mid-battle or stepping round a friend never has to ask again. The field is worked out again every tick
-from that tick's Grid, so a building destroyed or a fight forming is in the next tick's way at once.
+from that tick's battlefield, so a building destroyed or a fight forming is in the next tick's way at once.
 
 **The central path.** Where several ways are equally short, a marcher keeps near the line from its own Nexus to the
 goal: one more than 6 columns off it takes, among equally good steps, the one nearest the line. It never takes a longer
@@ -95,7 +95,7 @@ placement before the stance; the stance row is the fallback). How it is placed i
 [`ui-patterns.md`](ui-patterns.md), "The battle banner". A side's banner is its target for the round. Defensive, the
 side heads there and holds it. Aggressive, it heads there, and from the tick at least half its fighting units stand in
 or beside the banner's area (3 × 3 round a spot, or a structure's footprint and a ring of one) it has no target, so it
-marches on the enemy's Grid Nexus as by default. The rules layer sets this between ticks (`src/match/banner.ts`); the
+marches on the enemy's Nexus as by default. The rules layer sets this between ticks (`src/match/banner.ts`); the
 engine is unchanged. With no banner, a level's own target and the march on the enemy Nexus are as before.
 
 | Order | What the troops do | In the machinery |
@@ -267,7 +267,7 @@ broken; a unit that cannot strike a building walks as near as it can get.
 The worker economy is Milestone 7 ([`milestone-07-worker-economy.md`](../milestones/milestone-07-worker-economy.md));
 today a worker only runs.
 
-**Built** (RULE — `src/engine/pulse/routes.ts`, `tests/route-saves.test.ts`, [`grid.md`](grid.md), collision masks):
+**Built** (RULE — `src/engine/pulse/routes.ts`, `tests/route-saves.test.ts`, [`battlefield.md`](battlefield.md), collision masks):
 
 - **A worker never fights** and follows no target or banner. It keeps no place in the formation.
 - **It retreats from any threat that comes within that threat's range and two more** (a trooper's touch: 4 columns, 2
@@ -305,7 +305,7 @@ a hundred.
 The owner, 2026-10-27: "no A*, i agree, using each tile's distance is much better."
 
 - **Many units, few goals**: one field toward the enemy Nexus serves every unit going there.
-- **The Grid changes under the battle**: buildings fall, fights stand and break; a field rebuilt each tick needs no
+- **The battlefield changes under the battle**: buildings fall, fights stand and break; a field rebuilt each tick needs no
   repair.
 - **Pushed off the line costs nothing**: a unit reads the field where it stands.
 - **Fairness is easy to prove**: whole numbers, no reading order, ties broken by facing and then the seeded stream.

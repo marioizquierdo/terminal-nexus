@@ -1,4 +1,4 @@
-// The regroup between a battle's (and a run's) Battle Rounds (`src/match/regroup.ts`): the survivors stay on the Grid,
+// The regroup between a battle's (and a run's) Battle Rounds (`src/match/regroup.ts`): the survivors stay on the battlefield,
 // step back from a fight and form up across their march line, worked out from the round's end alone. Rules-layer code
 // beside the battle engine, so these are the battle engine's kind of tests: exact states, exact hashes, no screen.
 
@@ -6,8 +6,8 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
-import { gridDistance, tilesOf } from "../src/engine/geometry/coords.ts"
-import type { Coord, GridTerrain, TerrainId } from "../src/engine/geometry/types.ts"
+import { tileDistance, tilesOf } from "../src/engine/geometry/coords.ts"
+import type { Coord, MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { BEHIND, FRONT_GAP, REGROUP_TICKS, centreTile, openingState, regroup, regroupAt, standDown } from "../src/match/index.ts"
 import type { Force, RegroupResult, StructurePlacement } from "../src/match/index.ts"
 import { hashState } from "../src/engine/state/serialize.ts"
@@ -21,20 +21,20 @@ const TROOPER = "unit.citizen.trooper"
 const MARKSMAN = "unit.citizen.marksman"
 const VASSE = "unit.citizen.vasse"
 
-function gridOf(rows: readonly string[]): GridTerrain {
+function terrainOf(rows: readonly string[]): MapTerrain {
   const ids: Record<string, TerrainId> = { ".": "terrain.plain", "#": "terrain.rock" }
   return { width: rows[0]?.length ?? 0, height: rows.length, tiles: rows.flatMap((row) => [...row].map((character) => ids[character] as TerrainId)) }
 }
 
 /** A field 60 wide and 21 tall, open, a Nexus at each end of the middle row. */
-const FIELD = gridOf(Array.from({ length: 21 }, () => ".".repeat(60)))
+const FIELD = terrainOf(Array.from({ length: 21 }, () => ".".repeat(60)))
 const NEXUSES: readonly StructurePlacement[] = [
   { contentId: NEXUS, player: "A", anchor: { x: 2, y: 9 } },
   { contentId: NEXUS, player: "B", anchor: { x: 55, y: 9 } },
 ]
 
 function stateOf(forces: readonly Force[], structures: readonly StructurePlacement[] = NEXUSES): MatchState {
-  return openingState({ grid: FIELD, registry: FIXTURE_REGISTRY, structures, setup: { seed: 11, pulseTicks: 360, forces } })
+  return openingState({ terrain: FIELD, registry: FIXTURE_REGISTRY, structures, setup: { seed: 11, pulseTicks: 360, forces } })
 }
 
 const definitionOf = (entity: EntityState) => FIXTURE_REGISTRY.get(entity.contentId)
@@ -132,7 +132,7 @@ test("two sides in contact step back and form up with a gap between their fronts
   const ax = Math.max(...units(result.state, "A").map((entity) => entity.anchor.x))
   const bx = Math.min(...units(result.state, "B").map((entity) => entity.anchor.x))
   assert.ok(bx - ax - 1 >= FRONT_GAP, `the fronts stand ${bx - ax - 1} clear columns apart, at least ${FRONT_GAP}`)
-  for (const a of units(result.state, "A")) for (const b of units(result.state, "B")) assert.ok(gridDistance(a.anchor, b.anchor) > FRONT_GAP)
+  for (const a of units(result.state, "A")) for (const b of units(result.state, "B")) assert.ok(tileDistance(a.anchor, b.anchor) > FRONT_GAP)
 })
 
 test("survivors far behind the front form a group of their own where they stand, rather than walking up", () => {
@@ -170,7 +170,7 @@ test("the regroup is a pure function of the round's end: the same state gives th
 
 /** `state` mirrored west to east, each side's things given to the other. */
 function mirrored(state: MatchState, registry: ContentRegistry = FIXTURE_REGISTRY): MatchState {
-  const width = state.grid.width
+  const width = state.terrain.width
   return {
     ...state,
     entities: state.entities.map((entity) => {
@@ -188,7 +188,7 @@ test("mirror-fair: a mirrored end of round regroups into the mirrored formation"
   const state = stateOf(forces)
   const result = regroup(state, FIXTURE_REGISTRY)
   const flipped = regroup(mirrored(state), FIXTURE_REGISTRY)
-  const width = state.grid.width
+  const width = state.terrain.width
   for (const path of result.paths) {
     const twin = flipped.paths.find((each) => each.ordinal === path.ordinal) as (typeof flipped.paths)[number]
     assert.deepEqual(twin.to, { x: width - 1 - path.to.x, y: path.to.y }, `${path.contentId} #${path.ordinal} ends mirrored`)
@@ -233,7 +233,7 @@ test("a battle keeps its front: rounds of 30 seconds, the survivors regrouped wh
     return centreTile(nexus.anchor, sides[player].get(nexus.contentId).footprint)
   }
   const furthest = (player: Side): number =>
-    Math.max(...second.entities.filter((entity) => entity.player === player && sides[player].get(entity.contentId).layer !== "obstacles").map((entity) => gridDistance(entity.anchor, nexusOf(player))))
+    Math.max(...second.entities.filter((entity) => entity.player === player && sides[player].get(entity.contentId).layer !== "obstacles").map((entity) => tileDistance(entity.anchor, nexusOf(player))))
   assert.ok(furthest("A") > 16 || furthest("B") > 16, `a front stands out on the map (A ${furthest("A")}, B ${furthest("B")} from home)`)
 })
 
@@ -245,7 +245,8 @@ test("the regroup of a played battle round is pinned, on Node and on Bun", { tim
   // march by half speed, the Commander a regular troop, and the regroup's ranks went by the same priority list; and again when a unit came to keep the target it holds
   // until it falls: commitment.)
   assert.equal(pathsHash(result), "cc39d0c293e7f412")
-  assert.equal(hashState(result.state), "c2f41a410b3139c574aaa86b24f1c14ba075fc8de083f8eb71c6636edd9143e6")
+  // Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
+  assert.equal(hashState(result.state), "0d113f57de5e2e60a19cba09ce8fae8cf3186316627f02e98e4a6f26435cf27e")
 })
 
 test("the round's end settled where everyone stands: the regroup's first frame, what a match that is over keeps", () => {

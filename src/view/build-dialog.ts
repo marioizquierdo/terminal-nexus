@@ -22,7 +22,7 @@ import { text } from "./draw.ts"
 import type { ColorDepth } from "./roles.ts"
 import { entityGlyph, playerRole } from "./theme.ts"
 import type { BuildCompositionInput } from "./build.ts"
-import { inView } from "./build-grid.ts"
+import { inView } from "./build-map.ts"
 import { popupBorderStyle } from "./build-popup.ts"
 import { EFFECT_RECIPES } from "./effects/recipes.ts"
 import type { EffectContext, EffectInstance } from "./effects/types.ts"
@@ -109,7 +109,7 @@ export function drawLightAround(cells: BandCell[], input: BuildCompositionInput,
       const at = key(cell.tile)
       // The ring of one of a group's units falls on another of them: the focus is never lit, only its ground.
       if (lit.has(at) || (cell.seeThrough !== undefined && own.has(at))) continue
-      if (!inBounds(context.grid, cell.tile) || !inView(range, cell.tile)) continue
+      if (!inBounds(context.terrain, cell.tile) || !inView(range, cell.tile)) continue
       lit.add(at)
       const place = cellForTile(layout, state.camera, cell.tile)
       cells.push({ band: BANDS.highlights, x: place.x, y: place.y, style: effectCellStyle(cell) })

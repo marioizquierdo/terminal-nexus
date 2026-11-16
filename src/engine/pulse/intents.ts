@@ -146,7 +146,7 @@ export function intents(context: TickContext): Intent[] {
       // rather than pressing on them.
       if (area !== null && gatheredOf(actor.player, area).has(actor.ordinal)) continue
       const direction = wanted === null ? desiredDirection(actor, toward, heading) : directionOf(actor.anchor, wanted, actor.facing)
-      const cost = stepCost(rate, direction, weightAt(context.index.grid, actor.definition.footprint, step(actor.anchor, direction), terrainRuleOf(actor)))
+      const cost = stepCost(rate, direction, weightAt(context.index.terrain, actor.definition.footprint, step(actor.anchor, direction), terrainRuleOf(actor)))
       // Blocked is a step it could pay for and could not take; short of that step's credit — a step up or down
       // costs more than one across — it is still waiting for it, as it would be with the way clear.
       if (actor.moveCredit < cost) continue
@@ -267,7 +267,7 @@ function passBy(context: TickContext, declared: Intent[], held: readonly Held[],
     if (passer === undefined) continue
     const back = passer.plan.actor.anchor
     const direction = directionOf(slow.anchor, back, slow.facing)
-    const cost = stepCost(rate, direction, weightAt(context.index.grid, slow.definition.footprint, back, terrainRuleOf(slow)))
+    const cost = stepCost(rate, direction, weightAt(context.index.terrain, slow.definition.footprint, back, terrainRuleOf(slow)))
     swapped.add(passer.plan.actor.ordinal)
     swapped.add(ordinal)
     context.events.push({ kind: "march.made-way", tick: context.tick, entity: slow.id, ordinal: slow.ordinal, ally: passer.plan.actor.id, allyOrdinal: passer.plan.actor.ordinal })
@@ -369,7 +369,7 @@ function declareSwap(context: TickContext, declared: Intent[], a: Held, b: Held)
     })
     declared.push({
       actor,
-      choices: [{ direction, to: other.plan.actor.anchor, distanceAfter: 0, weight: weightAt(context.index.grid, actor.definition.footprint, other.plan.actor.anchor, terrainRuleOf(actor)) }],
+      choices: [{ direction, to: other.plan.actor.anchor, distanceAfter: 0, weight: weightAt(context.index.terrain, actor.definition.footprint, other.plan.actor.anchor, terrainRuleOf(actor)) }],
       chosen: 0,
       goal: mover.plan.toward,
       heading: mover.plan.heading,
@@ -415,7 +415,7 @@ function walk(
     const ordered = first === undefined ? free : [first, ...free.filter((candidate) => candidate !== first)]
     // What the step costs in credit is the ground's own weight (slow ground), never the field's: a route may weigh
     // ground dearer than a step across it takes, as it weighs burning ground (`TickRoutes.weightsOf`).
-    for (const candidate of ordered) choices.push({ direction: candidate.direction, to: candidate.to, distanceAfter: candidate.after, weight: weightAt(context.index.grid, actor.definition.footprint, candidate.to, terrainRuleOf(actor)) })
+    for (const candidate of ordered) choices.push({ direction: candidate.direction, to: candidate.to, distanceAfter: candidate.after, weight: weightAt(context.index.terrain, actor.definition.footprint, candidate.to, terrainRuleOf(actor)) })
   }
   return { choices, wanted, noRoute: false }
 }
@@ -457,25 +457,25 @@ function terrainRuleOf(actor: Actor): "impassable" | "ignore" {
   return actor.definition.layer === "air" ? "ignore" : "impassable"
 }
 
-/** Grids with slow ground, worked out once for each Grid a battle is played on. */
+/** battlefields with slow ground, worked out once for each battlefield a battle is played on. */
 const SLOW_GROUND = new WeakMap<object, boolean>()
 
 /**
  * What credit is capped at for `actor` this tick: the dearest of its four steps from where it stands, slow ground
- * weighed in, so it can save up for a step onto scrub; on a Grid with no slow ground, the dearest step on open ground,
+ * weighed in, so it can save up for a step onto scrub; on a battlefield with no slow ground, the dearest step on open ground,
  * as it always was.
  */
 function dearestStepFrom(context: TickContext, actor: Actor, rate: MovementRate): number {
-  const grid = context.index.grid
-  let slow = SLOW_GROUND.get(grid)
+  const terrain = context.index.terrain
+  let slow = SLOW_GROUND.get(terrain)
   if (slow === undefined) {
-    slow = grid.tiles.some((id) => TERRAIN[id].stepWeight !== 1)
-    SLOW_GROUND.set(grid, slow)
+    slow = terrain.tiles.some((id) => TERRAIN[id].stepWeight !== 1)
+    SLOW_GROUND.set(terrain, slow)
   }
   if (!slow || actor.definition.layer === "air") return stepCost(rate)
   let dearest = stepCost(rate)
   for (const direction of DIRECTIONS) {
-    dearest = Math.max(dearest, stepCost(rate, direction, weightAt(grid, actor.definition.footprint, step(actor.anchor, direction))))
+    dearest = Math.max(dearest, stepCost(rate, direction, weightAt(terrain, actor.definition.footprint, step(actor.anchor, direction))))
   }
   return dearest
 }

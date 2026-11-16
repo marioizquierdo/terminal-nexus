@@ -46,9 +46,9 @@ export const BARK_MOMENT_MEANING: Readonly<Record<BarkMoment, string>> = {
   "first-contact": "the first shot of the round, either side's",
   "raid-arrives": "a group of the raid arrives while the round is on",
   "unit-lost": "one of her side's units falls near her",
-  "building-lost": "one of her side's buildings falls (not the Grid Nexus)",
+  "building-lost": "one of her side's buildings falls (not the Nexus)",
   "badly-hurt": "she is badly hurt",
-  "nexus-hit": "her side's Grid Nexus is hit for the first time",
+  "nexus-hit": "her side's Nexus is hit for the first time",
   "falls": "she falls: her last words before the Nexus restores her",
   "round-won": "the raid breaks, or the Battle Round is won",
 }

@@ -12,20 +12,20 @@
 //
 // The rule, in the terms the state can express:
 //
-// - **Everything stays on the Grid.** Structures stand where they stand; a survivor walks, a step at a time at its own
+// - **Everything stays on the battlefield.** Structures stand where they stand; a survivor walks, a step at a time at its own
 //   pace (movement credit, `src/engine/pulse/movement.ts`), downhill on a distance field (`src/engine/routing/`), never onto rock, an
 //   enemy's building or another body. Nothing attacks, trains or shoots: the battle engine does not run.
 // - **The step back, 2 seconds** (`STEP_BACK_TICKS`): a survivor in a fight — an enemy unit or building within
-//   `FIGHT_REACH` of it — walks toward its own Grid Nexus. One not in a fight stands.
+//   `FIGHT_REACH` of it — walks toward its own Nexus. One not in a fight stands.
 // - **The formation, 6 seconds** (`FORM_TICKS`), then **2 seconds standing formed** (`STAND_TICKS`), in which the
-//   slowest still walk in. Each side forms up across its march line — from its Commander while she stands on the Grid,
+//   slowest still walk in. Each side forms up across its march line — from its Commander while she stands on the battlefield,
 //   else from its own Nexus, toward the enemy's Nexus (the guide line, movement.md) — in ranks across the line's main
 //   axis, the front rank where the side's front stands after stepping back (where its first rank's worth of units
 //   stands, so a straggler left forward does not pull the rest up to it): by the formation's priority list (movement.md,
 //   troop formation) front to back — flankers, melee, ranged, shorter range first, tank to siege — and units with no
 //   attack behind; the Commander takes the place her attack gives her. A side whose level names a target for it
 //   (a story's automatic target) forms up on the line to that target instead, and one with no enemy Nexus to face
-//   on the line to the Grid's middle; a side with neither a Commander nor a Nexus of its own (a mission's raid) has no
+//   on the line to the battlefield's middle; a side with neither a Commander nor a Nexus of its own (a mission's raid) has no
 //   line, and its survivors stand where the round left them. Survivors more than `BEHIND` columns behind
 //   that front (units that never left the base) form a group of their own where their own front stands. Each slot is
 //   claimed on free ground (`nearestFit`), never within `KEEP_APART` of a slot the enemy claimed, and two facing fronts
@@ -50,7 +50,7 @@ import { centreTile, nearestFit } from "./placement.ts"
 import type { RegroupPath, RegroupResult, RegroupStep } from "./types.ts"
 import { REGROUP_TICKS, STEP_BACK_TICKS } from "./types.ts"
 
-/** A survivor with an enemy unit or building this near (the Grid's distance, a row counting two columns) is in a fight
+/** A survivor with an enemy unit or building this near (the battlefield's distance, a row counting two columns) is in a fight
  *  and steps back: the march's own "near" (movement.md, closing). */
 export const FIGHT_REACH = 12
 /** How far behind its side's front a survivor may stand and still join the formation, in columns along the line:
@@ -58,7 +58,7 @@ export const FIGHT_REACH = 12
 export const BEHIND = 24
 /** The fewest columns left clear between two fronts that face each other across the march line. */
 export const FRONT_GAP = 6
-/** No slot is claimed this near (the Grid's distance) a slot the enemy claimed. */
+/** No slot is claimed this near (the battlefield's distance) a slot the enemy claimed. */
 export const KEEP_APART = 4
 /** The widest a rank is, in units. */
 export const RANK_WIDTH = 9
@@ -134,10 +134,10 @@ function lineAcross(line: Line, forward: number): number {
   return Math.floor(half / 2 + 0.5)
 }
 
-/** A side's line: from its Commander while she stands on the Grid (on the ground), else from its own Nexus, to the
+/** A side's line: from its Commander while she stands on the battlefield (on the ground), else from its own Nexus, to the
  *  middle of its target when its level names one (`MatchState.targets`), else of the enemy's Nexus, else (a mission's
- *  raid has none) of the Grid, so an army with no enemy base to face forms up facing out from its own; along the axis it
- *  runs further on, a row counting two columns. `null` for a side with neither a Commander nor a Nexus on the Grid. */
+ *  raid has none) of the battlefield, so an army with no enemy base to face forms up facing out from its own; along the axis it
+ *  runs further on, a row counting two columns. `null` for a side with neither a Commander nor a Nexus on the battlefield. */
 function lineOfSide(state: MatchState, definitionOf: Definitions, player: PlayerId): Line | null {
   const commander = state.entities.find((entity) => entity.player === player && definitionOf(entity).commander === true && definitionOf(entity).layer !== "air")
   const own = state.entities.find((entity) => entity.player === player && definitionOf(entity).nexus === true)
@@ -151,7 +151,7 @@ function lineOfSide(state: MatchState, definitionOf: Definitions, player: Player
       ? { x: 2 * area.x + area.width - 1, y: 2 * area.y + area.height - 1 }
       : enemy !== undefined
         ? middleOf(enemy.anchor, definitionOf(enemy).footprint)
-        : { x: state.grid.width - 1, y: state.grid.height - 1 }
+        : { x: state.terrain.width - 1, y: state.terrain.height - 1 }
   if (to.x === from.x && to.y === from.y) return null
   const dx = to.x - from.x
   const dy = to.y - from.y
@@ -194,10 +194,10 @@ function stepOrder(line: Line | null): readonly Direction[] {
  */
 export function regroup(state: MatchState, registry: ContentRegistry, sides?: Readonly<Partial<Record<PlayerId, ContentRegistry>>>): RegroupResult {
   const definitionOf = definitionsOf(state, registry, sides)
-  const grid = state.grid
-  const key = (tile: Coord): number => tile.y * grid.width + tile.x
-  const inside = (tile: Coord): boolean => tile.x >= 0 && tile.y >= 0 && tile.x < grid.width && tile.y < grid.height
-  const rock = (tile: Coord): boolean => TERRAIN[grid.tiles[key(tile)] as keyof typeof TERRAIN].impassable
+  const terrain = state.terrain
+  const key = (tile: Coord): number => tile.y * terrain.width + tile.x
+  const inside = (tile: Coord): boolean => tile.x >= 0 && tile.y >= 0 && tile.x < terrain.width && tile.y < terrain.height
+  const rock = (tile: Coord): boolean => TERRAIN[terrain.tiles[key(tile)] as keyof typeof TERRAIN].impassable
 
   const structures = state.entities.filter((entity) => definitionOf(entity).layer === "obstacles")
   const survivors = state.entities.filter((entity) => definitionOf(entity).layer !== "obstacles")
@@ -232,7 +232,7 @@ export function regroup(state: MatchState, registry: ContentRegistry, sides?: Re
     occupy(survivor.ordinal, survivor.anchor, definitionOf(survivor).footprint)
   }
 
-  /** Whether `entity` may stand at `anchor` now: on the Grid, off rock (on the ground), off an enemy's building (its
+  /** Whether `entity` may stand at `anchor` now: on the battlefield, off rock (on the ground), off an enemy's building (its
    *  own side's roof it may cross, as a unit leaves a roof in a Battle Round), and on no other body. */
   const free = (entity: EntityState, anchor: Coord): boolean => {
     const definition = definitionOf(entity)
@@ -258,7 +258,7 @@ export function regroup(state: MatchState, registry: ContentRegistry, sides?: Re
       const cached = groundCache.get(name)
       if (cached !== undefined) return cached
     }
-    const walls = wallsOf(grid, air ? "ignore" : "impassable")
+    const walls = wallsOf(terrain, air ? "ignore" : "impassable")
     if (!air) for (const structure of structures) if (structure.player !== entity.player) addWall(walls, structure.anchor, definitionOf(structure).footprint)
     for (const wall of extraWalls) addWall(walls, wall.anchor, wall.footprint)
     const ground = groundFor(walls, definition.footprint)
@@ -316,7 +316,7 @@ export function regroup(state: MatchState, registry: ContentRegistry, sides?: Re
         const options = order
           .map((direction, rank) => {
             const to = step(here, direction)
-            const weight = inside(to) && definition.layer !== "air" ? TERRAIN[grid.tiles[key(to)] as keyof typeof TERRAIN].stepWeight : 1
+            const weight = inside(to) && definition.layer !== "air" ? TERRAIN[terrain.tiles[key(to)] as keyof typeof TERRAIN].stepWeight : 1
             return { direction, to, rank, after: field.distanceAt(to), cost: stepCost(rate, direction, weight) }
           })
           .filter((option) => option.after < distance)

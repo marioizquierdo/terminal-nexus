@@ -32,7 +32,7 @@ import { rgbFor, sgrFor } from "./color-helpers.ts"
 /** The placement's numbers as the game plays them. */
 const FLAGS = TUNING
 const BARRACKS = "structure.citizen.barracks"
-/** Arm the Barracks from the menu (the cursor opens on the Grid Nexus, so arming finds the nearest good
+/** Arm the Barracks from the menu (the cursor opens on the Nexus, so arming finds the nearest good
  *  spot beside it) and place it with Space. */
 const PLACE_BARRACKS = "n 1 Down Space Space"
 

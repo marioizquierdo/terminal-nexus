@@ -51,7 +51,7 @@ test("z away from a building of the player's that makes units does nothing but s
 
 test("a held Barracks sends no wave in this round's Battle Round, and trains again the round after", { timeout: 120_000 }, () => {
   const context = withoutScene(DEFAULT_LEVEL.firstRound())
-  const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
+  const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
   const opened = createBuildState(context, STARTER_START_CURSOR, viewport)
   const trainedBy = (resolved: NonNullable<ReturnType<typeof DEFAULT_LEVEL.play.startPulse>>): number =>
     resolved.timeline.events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined).length

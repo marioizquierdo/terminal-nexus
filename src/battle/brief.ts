@@ -78,7 +78,7 @@ export type BriefData = Readonly<{
   /** What its buildings standing as the round opens can do this round: each one's upgrades, modes and orders. */
   actions: readonly BriefAction[]
   kept: readonly string[]
-  /** What stands for it as the round opens, and its units on the Grid after the last round, by name. */
+  /** What stands for it as the round opens, and its units on the battlefield after the last round, by name. */
   yours: Readonly<{ buildings: readonly string[]; units: Readonly<Record<string, number>> }>
   zones: Readonly<Record<string, Readonly<{ x: number; y: number }>>>
   enemy: Readonly<{
@@ -91,7 +91,7 @@ export type BriefData = Readonly<{
      *  powers are): where to look for an attack that hits an area. */
     trains: readonly string[]
   }>
-  /** The Grid as the round opens, as its printer drew it (`DrawMap`); empty when nothing drew it (a script's brief). */
+  /** The battlefield as the round opens, as its printer drew it (`DrawMap`); empty when nothing drew it (a script's brief). */
   map: readonly string[]
   /** The score so far: each side's damage dealt and Nexus share, and who leads by the rule a battle that runs out of
    *  rounds is judged by (`scoreOf`, `./reading/score.ts`). */
@@ -129,7 +129,7 @@ export function strengthOf(definition: ContentDef): number {
 /** What a power does, in its card's own line. */
 const cardOf = (card: PowerCard, number: number): BriefCard => ({ number, id: card.id, name: card.name, does: card.description, rarity: card.rarity })
 
-/** What the Grid looks like as a round opens, drawn by whoever prints the brief (the `skirmish` command draws an ASCII
+/** What the battlefield looks like as a round opens, drawn by whoever prints the brief (the `skirmish` command draws an ASCII
  *  screenshot, `src/cli/battle-map.ts`): the battle never reaches the view itself. Given each side's content. */
 export type DrawMap = (state: BattleState, registry: (side: Side) => ContentRegistry) => readonly string[]
 
@@ -176,7 +176,7 @@ export function briefOf(state: BattleState, side: Side, strategies?: string, dra
   const absence = state.sides[side].absent.find((entry) => entry.player === side)
   const status =
     absence === undefined
-      ? "on the Grid"
+      ? "on the battlefield"
       : absence.returnsInRound <= state.round
         ? "restored beside the Nexus as this round opens"
         : `out this round: ${pronouns.subject} fell in round ${absence.fellInRound} and is back for round ${absence.returnsInRound}`
@@ -232,7 +232,7 @@ export function briefOf(state: BattleState, side: Side, strategies?: string, dra
   const unitsOf = (who: Side): Record<string, number> => {
     const units: Record<string, number> = {}
     if (state.carried === null) {
-      // Round 1: nothing is on the Grid yet, but each side's Commander and its starting troops march out as it opens.
+      // Round 1: nothing is on the battlefield yet, but each side's Commander and its starting troops march out as it opens.
       const commander = armyOf(state, who).commander
       for (const { unit, count } of [{ unit: commander.unit, count: 1 }, ...commander.start]) units[titleOf(unit)] = (units[titleOf(unit)] ?? 0) + count
       return units
@@ -301,7 +301,7 @@ export function briefText(data: BriefData, strategies?: string): string {
   for (const skill of data.commander.skills) lines.push(`- ${skill}`)
   lines.push(`Your Commander is ${data.commander.status}.`)
   lines.push("")
-  lines.push(`Your buildings: ${data.yours.buildings.join(", ")}. Your units ${data.round === 1 ? "(the starting troops, who march out as the round opens)" : "on the Grid"}: ${Object.entries(data.yours.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}.`)
+  lines.push(`Your buildings: ${data.yours.buildings.join(", ")}. Your units ${data.round === 1 ? "(the starting troops, who march out as the round opens)" : "on the battlefield"}: ${Object.entries(data.yours.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}.`)
   lines.push(`Credits to spend: ${data.credits}. Supply: ${data.supply.used} of ${data.supply.cap ?? "unlimited"} places used (a building stops training while the army is full).`)
   lines.push(`Your Nexus: ${data.nexus.health} of ${data.nexus.most}. Theirs (${data.enemy.commander}): ${data.enemy.nexus.health} of ${data.enemy.nexus.most}. A side whose Nexus falls loses.`)
   lines.push(`Score: ${scoreLine(data.score, data.side)}`)
@@ -346,7 +346,7 @@ export function briefText(data: BriefData, strategies?: string): string {
   lines.push("What the enemy's buildings train, and whether any of it hits an area, is under The enemy, below.")
   lines.push("")
   lines.push("## The enemy")
-  lines.push(`${data.enemy.commander}. Buildings: ${data.enemy.buildings.join(", ") || "none"}. Units ${data.round === 1 ? "(the starting troops)" : "on the Grid after the last round"}: ${Object.entries(data.enemy.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}. Powers kept: ${data.enemy.kept.join(", ") || "none"}.`)
+  lines.push(`${data.enemy.commander}. Buildings: ${data.enemy.buildings.join(", ") || "none"}. Units ${data.round === 1 ? "(the starting troops)" : "on the battlefield after the last round"}: ${Object.entries(data.enemy.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}. Powers kept: ${data.enemy.kept.join(", ") || "none"}.`)
   if (data.enemy.trains.length > 0) lines.push(`What their buildings can train: ${data.enemy.trains.join("; ")}.`)
   if (data.last !== null) {
     lines.push("")

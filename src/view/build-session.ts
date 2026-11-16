@@ -188,7 +188,7 @@ export class BuildSession {
   /** Whether the terminal is marking presses, repeats and releases right now (the kitty keyboard
    *  protocol, pushed by the live loop): then a plain press is known to be a press, not guessed. */
   private keyReleases = false
-  /** The last left click on a Grid tile with a building armed: where on screen, when, and the tile it
+  /** The last left click on a tile with a building armed: where on screen, when, and the tile it
    *  pointed at — so a double click places there even if the first click scrolled the view. */
   private lastArmedClick: Readonly<{ column: number; row: number; at: number; tile: Coord }> | null = null
   /** The last left click that placed a building: where on screen and when — so the second half of a
@@ -526,7 +526,7 @@ export class BuildSession {
   /**
    * The result stands, and the player (or the Pulse, on its own) goes on: to the next round's Build Phase
    * if the mission goes on, or to the mission again from round 1 if it is over. A fresh Build Phase either
-   * way — the settings, the Experiments and the view carried over, the cursor on the Grid Nexus — and the
+   * way — the settings, the Experiments and the view carried over, the cursor on the Nexus — and the
    * Pulse is gone. Before the result stands it is nothing: a key must never skip the ending.
    */
   /** The result's way back to the setup screen: the shell leaves this screen for it, with the round's context. Only
@@ -573,7 +573,7 @@ export class BuildSession {
   }
 
   /** The screen moves on to `context`: a fresh Build Phase on it, the settings, the Experiments and the view carried over, the
-   *  cursor on the Grid Nexus, and no Pulse. A next round's way in, and a settled draft's. */
+   *  cursor on the Nexus, and no Pulse. A next round's way in, and a settled draft's. */
   private startRound(context: BuildContext): void {
     const before = this.buildState
     this.context = context

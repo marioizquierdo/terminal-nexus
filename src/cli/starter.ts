@@ -27,7 +27,7 @@ export function levelContext(level: Level, scrollMargin?: number, extra: Partial
   // The loader refused any level whose map the table does not have, so this is a level from elsewhere.
   if (map === undefined) throw new Error(`level "${level.id}" is played on the map "${level.map}", which the game does not have`)
   return missionPlay(level.mission).firstRound({
-    grid: map.grid(),
+    terrain: map.terrain(),
     // The armies' content: what a building that carries an upgrade or a mode resolves by (`fittedId`).
     registry: ARMIES.registry,
     catalog: constructMenu(level.offer),

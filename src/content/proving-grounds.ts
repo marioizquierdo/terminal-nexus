@@ -203,7 +203,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
   {
     // The control case commander-armies.md already predicted: "nothing about this needs a
     // new engine capability, only content shaped to use two rules that already exist" - a straight
-    // 4x1 footprint (multi-tile is a RULE, grid.md) and `behavior: "static"` (an armed structure
+    // 4x1 footprint (multi-tile is a RULE, battlefield.md) and `behavior: "static"` (an armed structure
     // never chased anything before this spike either, and did not need to start). Placed already
     // standing, it blocks a whole corridor and fights back at anything that reaches it, but never
     // advances - `bench-siege-composition.save.json` places it as the line the rushers above have to
@@ -225,7 +225,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     // "Moves, then anchors with a delay, then shoots with explosive AOE" needed two small, reusable
     // additions: `windupTicks` (a one-time hold before the first shot after arriving, spent only while
     // genuinely holding position - see `EntityState.windup`) and `splash` (the `detonation` shape
-    // reused as an attack's own AOE instead of a death's). Two tiles wide on purpose: grid.md's
+    // reused as an attack's own AOE instead of a death's). Two tiles wide on purpose: battlefield.md's
     // "range measures to the nearest occupied tile" already makes a body this size easier to hit just
     // by existing, before the windup adds a second, deliberate downside on top.
     id: "unit.bench.siegecrawler",
@@ -296,7 +296,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
 
   // --- Bulwark: a push, the rule for a unit that did not walk (`bench-bulwark-shove.save.json`) ----------
   {
-    // Milestone 16's test effect for a Grid that changes under a unit: every two seconds it shoves each enemy
+    // Milestone 16's test effect for a battlefield that changes under a unit: every two seconds it shoves each enemy
     // touching it two tiles straight away (`shove`, src/engine/abilities/shove.ts, through the battle engine's `displace`). A pushed
     // unit stops where its body would not fit and walks back from where it lands, by its route — so the first power
     // that pushes or pulls has the rule ready, proven here.
@@ -416,7 +416,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     constructionRadius: 6,
   },
   {
-    // The Grid Nexus as it was before it fought back: a target and nothing more. The battle engine's own sandboxes that send
+    // The Nexus as it was before it fought back: a target and nothing more. The battle engine's own sandboxes that send
     // a lone trooper round a wall, or ask what ends a Pulse, are about routes and rules, not about a Nexus that shoots
     // the trooper dead on arrival, so they stand this one where the Citizen Nexus stood.
     id: "structure.bench.nexus",

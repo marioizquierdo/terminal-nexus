@@ -71,7 +71,7 @@ export type MissionPlay = Readonly<{
   /** The round's context once `card`, the Nexus power just picked, is kept: what it does, applied for the rest of
    *  the mission (`keepPower`), and what the round brings foreseen again with it. */
   keep: (context: BuildContext, card: PowerCard) => BuildContext
-  /** Round 1's Build Phase, from the map's own (a context with the grid, the registry, the catalog, what
+  /** Round 1's Build Phase, from the map's own (a context with the terrain, the registry, the catalog, what
    *  stands on the map and the opening allotment). Validates the mission against that map first. */
   firstRound: (base: BuildContext) => BuildContext
   startPulse: (context: BuildContext, state: BuildState) => ResolvedPulse | null
@@ -196,7 +196,7 @@ export function commanderNews(restored: readonly Restoration[], absent: readonly
 
 // --- A round's scene: the dialog's lines, resolved on the round's own map ---------------------------
 
-/** The units the Nexus powers kept this round call up, mustered on the player's Grid Nexus — none on a map
+/** The units the Nexus powers kept this round call up, mustered on the player's Nexus — none on a map
  *  without one. */
 function callupsOf(context: BuildContext): Force[] {
   const nexus = nexusTile(context)
@@ -210,7 +210,7 @@ function arrivalsFor(mission: MissionDefinition, context: BuildContext, pulse: n
   const structures = context.carried == null ? context.standing.map((s) => ({ contentId: s.contentId, anchor: s.anchor })) : []
   const input: MissionPulseInput = {
     mission,
-    grid: context.grid,
+    terrain: context.terrain,
     registry: context.registry,
     pulse,
     carried: context.carried ?? null,
@@ -399,7 +399,7 @@ function bannerOf(context: BuildContext, state: BuildState | undefined): Pick<Mi
 export function missionPlay(mission: MissionDefinition): MissionPlay {
   const inputFor = (context: BuildContext, pulse: number, structures: MissionPulseInput["structures"], state?: BuildState): MissionPulseInput => ({
     mission,
-    grid: context.grid,
+    terrain: context.terrain,
     registry: context.registry,
     pulse,
     carried: context.carried ?? null,
@@ -443,7 +443,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
     },
 
     firstRound(base) {
-      validateMission(mission, base.grid, base.registry)
+      validateMission(mission, base.terrain, base.registry)
       const opened: BuildContext = {
         ...base,
         round: round(1),

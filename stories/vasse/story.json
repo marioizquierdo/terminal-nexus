@@ -64,7 +64,7 @@
             "y": 10,
             "width": 3,
             "height": 2,
-            "notes": "The player's Grid Nexus: what Corvane's last line in the intro looks at."
+            "notes": "The player's Nexus: what Corvane's last line in the intro looks at."
           },
           {
             "id": "line",
@@ -128,7 +128,7 @@
           },
           {
             "id": "intro",
-            "notes": "The intro, as round 1's Build Phase opens: Vasse's own bark, then the pre-battle exchange, every line already written in stories.md (mission one, in full), none new. The camera goes where each line looks: at her, at the raid on the ridge, and at the Nexus for Corvane's last. Corvane is not on the Grid; the raid speaks for them.",
+            "notes": "The intro, as round 1's Build Phase opens: Vasse's own bark, then the pre-battle exchange, every line already written in stories.md (mission one, in full), none new. The camera goes where each line looks: at her, at the raid on the ridge, and at the Nexus for Corvane's last. Corvane is not on the battlefield; the raid speaks for them.",
             "when": {"event": "build.start", "pulse": 1},
             "do": [
               {
@@ -399,14 +399,14 @@
     },
     {
       "id": "vasse-test-3",
-      "notes": "The power curve's test level (Commander Armies): six rounds on the starter map with only the Grid Nexus standing, credits every round from the curve, two troopers from the Nexus each round, and the Garrison — the tech tree's first second tier — unlocked by a Barracks standing. It unlocks the Garrison; everything else it offers PERIMETER unlocked before it. Reached by route: story?mission=vasse-test-3.",
+      "notes": "The power curve's test level (Commander Armies): six rounds on the starter map with only the Nexus standing, credits every round from the curve, two troopers from the Nexus each round, and the Garrison — the tech tree's first second tier — unlocked by a Barracks standing. It unlocks the Garrison; everything else it offers PERIMETER unlocked before it. Reached by route: story?mission=vasse-test-3.",
       "map": "starter-open",
       "credits": 100,
       "unlocks": {"buildings": ["garrison"]},
       "mission": {
         "id": "mission.test.curve",
         "name": "The curve",
-        "notes": "The power curve on the Grid, as a level (Commander Armies): six Battle Rounds on the starter map with only the Grid Nexus standing, so the tech tree is climbed from its first building — a Barracks, then the Garrison it unlocks the round after. Each round adds the curve's credits, and the raid grows round by round, slower than the credits at first and faster at the end, so survivors of the early rounds matter and the last rounds are decided by what came later. PERIMETER's regions, squads and post, so it reads as the same front. The raid's sizes are first guesses, measured against a scripted plan (tests/curve-level.test.ts), not balance. Once units found their way round rock (the pathfinding milestone, 2026-10-20) the raids of rounds 3 to 5 lost a runner and a raider each, so a base that builds nothing still reaches round 6, which is how a route opens a later round; the milestone measures it again at its end.",
+        "notes": "The power curve on the battlefield, as a level (Commander Armies): six Battle Rounds on the starter map with only the Nexus standing, so the tech tree is climbed from its first building — a Barracks, then the Garrison it unlocks the round after. Each round adds the curve's credits, and the raid grows round by round, slower than the credits at first and faster at the end, so survivors of the early rounds matter and the last rounds are decided by what came later. PERIMETER's regions, squads and post, so it reads as the same front. The raid's sizes are first guesses, measured against a scripted plan (tests/curve-level.test.ts), not balance. Once units found their way round rock (the pathfinding milestone, 2026-10-20) the raids of rounds 3 to 5 lost a runner and a raider each, so a base that builds nothing still reaches round 6, which is how a route opens a later round; the milestone measures it again at its end.",
         "pulses": 6,
         "pulseTicks": 360,
         "seed": 1129666118,

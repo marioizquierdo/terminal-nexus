@@ -1,7 +1,7 @@
 // STATE — what is true. Plain serializable data that knows nothing about time passing and nothing
 // about drawing (architecture.md). Only the Pulse mutates it.
 
-import type { Coord, Direction, GridTerrain, VacatedEntry } from "../geometry/types.ts"
+import type { Coord, Direction, MapTerrain, VacatedEntry } from "../geometry/types.ts"
 import type { RngState } from "../rng/pcg32.ts"
 
 export type PlayerId = "A" | "B"
@@ -16,7 +16,7 @@ export type EntityState = Readonly<{
   player: PlayerId
   contentId: string
   hp: number
-  /** The entity's coordinate and centre of authority (grid.md). */
+  /** The entity's coordinate and centre of authority (battlefield.md). */
   anchor: Coord
   /**
    * Presentation-only, and the single deliberate exception to "state carries nothing only
@@ -44,7 +44,7 @@ export type EntityState = Readonly<{
   focusStreak: number
   /**
    * Commitment to a target (`COMMIT_TICKS`, `src/engine/pulse/perception.ts`): the nearest this entity has come to the target
-   * it holds since it chose it (the Grid's distance), and the ticks since it last closed on it or had it in attack
+   * it holds since it chose it (the battlefield's distance), and the ticks since it last closed on it or had it in attack
    * range. Absent when it holds no target, and `commitStall` absent at zero, so a state with no fight in it hashes as
    * it did before commitment existed.
    */
@@ -63,7 +63,7 @@ export type EntityState = Readonly<{
   /**
    * For a unit a building trained: that building's ordinal, and the tile it came out on (its anchor as it was set
    * down on the roof). Recall once sent it home there, onto the roof of the building that made it; since survivors stay
-   * on the Grid and regroup (`src/match/regroup.ts`) no rule reads it, and it is kept for one that may. Absent on
+   * on the battlefield and regroup (`src/match/regroup.ts`) no rule reads it, and it is kept for one that may. Absent on
    * everything no building trained, so a state with none hashes as it did before; and a building's ordinal is never
    * reused, so a fallen home is simply not found.
    */
@@ -79,7 +79,7 @@ export type GroundItem = Readonly<{
 }>
 
 /**
- * A rectangle of the Grid a side's fighting units head for — a story level's target for the player's
+ * A rectangle of the battlefield a side's fighting units head for — a story level's target for the player's
  * troops (pulse.md, perception and intents). Inclusive of its north-west tile, `width` by `height` tiles.
  */
 export type TargetArea = Readonly<{ x: number; y: number; width: number; height: number }>
@@ -117,7 +117,7 @@ export type MatchState = Readonly<{
   tick: number
   /** Replay metadata that cannot change inside a ruleset version (pulse.md). */
   ticksPerSecond: number
-  grid: GridTerrain
+  terrain: MapTerrain
   /** Ordered by `ordinal`. Dead entities are removed; the event stream carries their story. */
   entities: readonly EntityState[]
   groundItems: readonly GroundItem[]
@@ -132,7 +132,7 @@ export type MatchState = Readonly<{
   nextOrdinal: number
   /**
    * Where each side's fighting units head when no enemy is within their reach: the target a story
-   * level names for a side (pulse.md). A side with none heads for the enemy's Grid Nexus, engaging what comes
+   * level names for a side (pulse.md). A side with none heads for the enemy's Nexus, engaging what comes
    * within its reach on the way (`headsForNexus`, `src/engine/pulse/perception.ts`). Only the trigger runner sets it (`src/match/mission.ts`),
    * at a Pulse's start or between two ticks; the battle engine reads it and never changes it.
    *

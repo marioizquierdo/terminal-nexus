@@ -29,7 +29,7 @@ the same document is the template for shape and weight.
 
 **The salvage economy, pulled forward from the backlog.** The engine design already describes it:
 destroying a structure returns half its value to its owner and drops the other half as salvage on the
-Grid, workers from either side can drain it, and building over remaining salvage destroys it.
+battlefield, workers from either side can drain it, and building over remaining salvage destroys it.
 [`backlog.md`](backlog.md) held this as unowned. RIGHT OF SALVAGE needs it, so it lands here.
 
 **Unlocks and intel, exercised for real.** Completing PERIMETER should fill the unlock record (Q31)
@@ -96,7 +96,7 @@ rounds played on it left unfinished. Each is to recheck when PERIMETER is polish
 settled by the pathfinding milestone.
 
 **From rows x2** ([his words](../history/feedback/2026-10-06-rows-x2.md); the rule is in
-[`grid.md`](../system-design/grid.md), distance, reach and movement):
+[`battlefield.md`](../system-design/battlefield.md), distance, reach and movement):
 
 - Ranges and raids are not tuned for balance: every reach became a whole number of rows and nothing more, since
   ranges get adjusted as units are made (his words). As played, at the default settings, PERIMETER is won in all

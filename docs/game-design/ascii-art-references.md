@@ -34,7 +34,7 @@ late-battle scrum first and the calm opening second.
 
 ## 2. Cogmind — the closest relative, and the best documentation
 
-[Grid Sage Games](https://www.gridsagegames.com/blog/) is the single most valuable resource here.
+[battlefield Sage Games](https://www.gridsagegames.com/blog/) is the single most valuable resource here.
 Cogmind is a commercial sci-fi roguelike built entirely from CP437 characters, with ~1,000 procedural
 particle effects and hand-drawn art for every item, and its developer wrote most of it down.
 
@@ -146,7 +146,7 @@ Distilled into things a session can actually do:
    one-cell actor gets its weight almost entirely from the four frames around it. This is also the
    cheapest way to make a one-cell actor feel like it has weight.
 5. **Negative space is material.** The most common failure in game ASCII is filling the grid.
-   Terminal Nexus has a 48 x 16 Grid and needs some of it to be empty for the rest to read.
+   Terminal Nexus has a 48 x 16 battlefield and needs some of it to be empty for the rest to read.
 6. **Every effect needs a reduced-motion form that keeps the causality.** Decide it when authoring
    the effect, not in a later accessibility pass.
 

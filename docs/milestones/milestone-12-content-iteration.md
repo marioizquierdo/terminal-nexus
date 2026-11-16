@@ -25,7 +25,7 @@ improves the sandboxes and the `skirmish` command, so the next unit is cheaper t
   of 72 scripted battles); Ravel buildings train about half the strength per credit that Citizen ones do; Dob Hunter wins
   mostly when he holds. The early lead deciding a battle is the Skirmish milestone's own step.
 - **A sparse formation** ([his idea](../history/feedback/2026-10-06-rows-x2.md)): units prefer a free column beside
-  them and not to stand straight above or below another, so a group spreads into a staggered grid, a preference that
+  them and not to stand straight above or below another, so a group spreads into a staggered pattern, a preference that
   never blocks a move; tested with formations facing up and down against formations facing sideways.
 
 **Two kinds of pass** (2026-11-12, [the review](../history/feedback/2026-11-12-skirmish-saves.md)):

@@ -28,7 +28,7 @@ export type BattleRoundScreen = Readonly<{
   /** The whole screen at a presentation instant, in milliseconds from the Pulse's start. `reducedMotion` overrides the
    *  presentation's own, as the player's setting does mid-Pulse. */
   frameAt(timeMs: number, colors: ColorDepth, reducedMotion?: boolean): ReadonlyCellFrame
-  /** The screen cell a Grid tile is drawn on. */
+  /** The screen cell a tile is drawn on. */
   cellOf(tile: Coord): Coord
 }>
 
@@ -36,19 +36,19 @@ export type BattleRoundOptions = Readonly<{
   presentation?: PresentationOptions
   /** The terminal it is drawn on: the 80 x 24 floor unless given. */
   terminal?: Readonly<{ columns: number; rows: number }>
-  /** The tile the view is centred near (clamped to the Grid): the north-west corner unless given. */
+  /** The tile the view is centred near (clamped to the battlefield): the north-west corner unless given. */
   look?: Coord
 }>
 
 /**
  * The Battle Round's screen for a timeline: the starter level's chrome (its scene left out) around this timeline's
- * Grid, the plan committed, the keyboard off the map so no cursor covers a tile (every tile then shows what the fight
+ * battlefield, the plan committed, the keyboard off the map so no cursor covers a tile (every tile then shows what the fight
  * draws there).
  */
 export function battleRoundScreen(timeline: PulseTimeline, options: BattleRoundOptions = {}): BattleRoundScreen {
   const presentation = options.presentation ?? DEFAULT_PRESENTATION
-  const context: BuildContext = { ...withoutScene(starterContext()), grid: timeline.grid, registry: timeline.registry }
-  const layout = buildLayout(options.terminal ?? { columns: 80, rows: 24 }, timeline.grid)
+  const context: BuildContext = { ...withoutScene(starterContext()), terrain: timeline.terrain, registry: timeline.registry }
+  const layout = buildLayout(options.terminal ?? { columns: 80, rows: 24 }, timeline.terrain)
   const opened = createBuildState(context, options.look ?? { x: 0, y: 0 }, layout.viewport)
   const state: BuildState = { ...opened, committed: true }
   const last = timeline.states[timeline.states.length - 1]

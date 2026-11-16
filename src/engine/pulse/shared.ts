@@ -168,7 +168,7 @@ export function resolveTarget(context: TickContext, actor: Actor): Actor | null 
 
 /**
  * The distance between two actors, to the nearest occupied tile of each footprint, a row counting two columns
- * (`footprintDistance`, grid.md). Perception scores targets by it and an attack event reports it; wrapping the
+ * (`footprintDistance`, battlefield.md). Perception scores targets by it and an attack event reports it; wrapping the
  * two anchors and two footprints here, rather than every call site reaching into both actors' `definition`, keeps
  * one way to ask the question.
  */
@@ -196,7 +196,7 @@ export function within(a: Actor, b: Actor, radius: number): boolean {
 /**
  * Whether `actor` can land `attack` on `target` from where it stands — the one test intents (hold, it is in
  * range) and attacks (fire) both ask, so the two can never disagree. **Melee is touching**: a melee attack reaches
- * what is within `range` steps along the Grid's sides (`stepsBetween`), so a trooper swings at an enemy straight
+ * what is within `range` steps along the battlefield's sides (`stepsBetween`), so a trooper swings at an enemy straight
  * above it as at one beside it. A ranged shot or a heal reaches as far as its range does, measured as range is
  * (`within`).
  */
@@ -300,7 +300,7 @@ export function actorsWithin(
  * Damage everyone within `radius` of an area, friend and foe alike — the one mechanism behind both
  * `detonation` (death.ts, centred on the dying entity's own anchor and footprint) and `attack.splash`
  * (attacks.ts, centred on the resolved target's anchor and footprint, the same "nearest occupied tile"
- * courtesy grid.md already extends to range checks): an area-damage rule shape triggered at two
+ * courtesy battlefield.md already extends to range checks): an area-damage rule shape triggered at two
  * different moments is still one rule shape, not two (a lesson of the unit-architecture spike). Returns who was
  * caught. `attack.splash` has no pre-existing event order to preserve, so it can use this all-in-one
  * form; `detonate()` cannot, and uses `actorsWithin` directly instead — see the comment there.

@@ -14,7 +14,7 @@ import { MOUSE_RIGHT } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import { nexusTile } from "../src/build/state.ts"
 import { starterContext } from "../src/cli/starter.ts"
-import { gridDistance } from "../src/engine/geometry/coords.ts"
+import { tileDistance } from "../src/engine/geometry/coords.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { frameToAnsi, frameToText } from "../src/view/frame.ts"
@@ -46,14 +46,14 @@ const times = (played: Pick<Played, "build">) => {
 const cellsWhere = (frame: ReadonlyCellFrame, test: (style: CellStyle) => boolean): Array<{ x: number; y: number; style: CellStyle }> =>
   frame.cells.flatMap((cell, index) => (test(cell.style) ? [{ x: index % frame.width, y: Math.floor(index / frame.width), style: cell.style }] : []))
 
-/** The timer's cells: the reversed ones inside the panel, west of the Grid. (Reversed video is also the
+/** The timer's cells: the reversed ones inside the panel, west of the battlefield. (Reversed video is also the
  *  cursor's and a spark's, out on the map.) */
 const timerCells = (frame: ReadonlyCellFrame, layout: BuildLayout) =>
-  cellsWhere(frame, (style) => style.inverse === true).filter((cell) => cell.x < layout.gridBox.left)
+  cellsWhere(frame, (style) => style.inverse === true).filter((cell) => cell.x < layout.mapBox.left)
 
-/** The light's cells: the tinted ones on the Grid's border. */
+/** The light's cells: the tinted ones on the battlefield's border. */
 const lightCells = (frame: ReadonlyCellFrame, layout: BuildLayout) => {
-  const box = layout.gridBox
+  const box = layout.mapBox
   return cellsWhere(frame, (style) => style.tint?.role === "fx.flash").filter(
     (cell) => cell.x === box.left || cell.x === box.right || cell.y === box.top || cell.y === box.bottom,
   )
@@ -63,7 +63,7 @@ test("answering yes turns the screen into the Battle Round, with the keyboard on
   const played = victorious()
   const { state } = played.build
   assert.equal(state.committed, true)
-  assert.equal(state.focus, "grid", "the keyboard is not on the map, so the arrows would move a menu highlight")
+  assert.equal(state.focus, "map", "the keyboard is not on the map, so the arrows would move a menu highlight")
   assert.equal(state.armed, null)
   const text = screenText(played)
   assert.match(text, /TERMINAL NEXUS battle round/)
@@ -109,7 +109,7 @@ test("the view is centred on the player's Nexus when the Pulse starts, wherever 
   const session = newSession()
   prepare(session.build)
   session.build.run([
-    { kind: "focus", target: "grid" },
+    { kind: "focus", target: "map" },
     { kind: "move-cursor", dx: 40, dy: 14 },
     { kind: "move-cursor", dx: 20, dy: 10 },
   ])
@@ -121,7 +121,7 @@ test("the view is centred on the player's Nexus when the Pulse starts, wherever 
   assert.deepEqual(session.build.state.cursor, nexus, "the cursor did not come to the Nexus")
   assert.deepEqual(
     session.build.state.camera,
-    centreOn(nexus, session.build.state.viewport, session.context.grid),
+    centreOn(nexus, session.build.state.viewport, session.context.terrain),
     "the view is not centred on the Nexus",
   )
 })
@@ -487,7 +487,7 @@ test("the panel's rows are clickable: Pause and Resume, Replay — and nothing e
     assert.equal(played.build.state, state, `a click on panel row ${row} did something`)
     assert.equal(pulse.paused, false)
   }
-  // A click just past the panel's right edge is the Grid, not a control.
+  // A click just past the panel's right edge is the battlefield, not a control.
   click(played, played.layout.panelColumn + played.layout.panelLimit + 3, pause.row)
   assert.equal(pulse.paused, false)
 })
@@ -634,7 +634,7 @@ test("starting over from the game menu is a fresh Build Phase with the Experimen
 
 test("a Pulse the battle engine cannot start from undoes the commit and says why, rather than leaving a dead screen", () => {
   const context = starterContext()
-  const layout = buildLayout(MINIMUM, context.grid)
+  const layout = buildLayout(MINIMUM, context.terrain)
   const build = new BuildSession({
     context,
     cursor: STARTER_START_CURSOR,
@@ -655,7 +655,7 @@ test("a Pulse the battle engine cannot start from undoes the commit and says why
 
 test("a session with nothing to start a Pulse still freezes the plan and draws the committed screen", () => {
   const context = starterContext()
-  const layout = buildLayout(MINIMUM, context.grid)
+  const layout = buildLayout(MINIMUM, context.terrain)
   const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })
   build.run([{ kind: "pick-nexus", index: 0 }, { kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.equal(build.state.committed, true)

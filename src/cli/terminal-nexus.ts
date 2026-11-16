@@ -96,7 +96,7 @@ ${example("skirmish?load=mine.save.json", "a save file, at its Build Phase")}
 ${levels}
 
       A Skirmish or a story mission opens its Build Phase on its map and plays from there: a
-      Grid larger than the screen, a cursor that scrolls it, buildings to place by keyboard,
+      battlefield larger than the screen, a cursor that scrolls it, buildings to place by keyboard,
       by mouse or from a script, a Nexus power to pick, then the Battle Round. Esc opens the
       game menu: Settings, in sections - the display settings (saved, like the title menu's)
       and Experiments, the choices still being tried, live, never saved; d jumps straight to

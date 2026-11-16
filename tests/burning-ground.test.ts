@@ -50,7 +50,7 @@ async function timelineWith(burningAt: (tick: number) => readonly BurningGround[
     seed: opening.seed,
     pulseTicks: ticks,
     ticksPerSecond: TICKS_PER_SECOND,
-    grid: loaded.state.grid,
+    terrain: loaded.state.terrain,
     registry: loaded.registry,
     states,
     events: [],
@@ -64,11 +64,11 @@ const quiet = (reducedMotion = false) => ({ ...DEFAULT_PRESENTATION, effects: fa
 /** The Battle Round's screen for a timeline, dressed as given: effects off unless told otherwise. */
 const screenOf = (timeline: PulseTimeline, presentation = quiet()): BattleRoundScreen => battleRoundScreen(timeline, { presentation })
 
-/** The Grid tiles burning on the Battle Round's screen: on the scorch, or on the glow under a tall flame. */
+/** The tiles burning on the Battle Round's screen: on the scorch, or on the glow under a tall flame. */
 function burningCells(frame: ReadonlyCellFrame, screen: BattleRoundScreen, timeline: PulseTimeline): Set<string> {
   const burning = new Set<string>()
-  for (let y = 0; y < timeline.grid.height; y += 1) {
-    for (let x = 0; x < timeline.grid.width; x += 1) {
+  for (let y = 0; y < timeline.terrain.height; y += 1) {
+    for (let x = 0; x < timeline.terrain.width; x += 1) {
       const at = screen.cellOf({ x, y })
       const cell = cellAt(frame, at.x, at.y)
       if (cell.style.bgRole !== undefined && FIRE_FILLS.has(cell.style.bgRole)) burning.add(`${x},${y}`)
@@ -82,9 +82,9 @@ const keyOf = (tile: Coord): string => `${tile.x},${tile.y}`
 /** The map alone, as text: the panel beside it counts time, and would differ between any two instants. */
 function mapText(frame: ReadonlyCellFrame, screen: BattleRoundScreen, timeline: PulseTimeline): string {
   const rows: string[] = []
-  for (let y = 0; y < timeline.grid.height; y += 1) {
+  for (let y = 0; y < timeline.terrain.height; y += 1) {
     let row = ""
-    for (let x = 0; x < timeline.grid.width; x += 1) {
+    for (let x = 0; x < timeline.terrain.width; x += 1) {
       const at = screen.cellOf({ x, y })
       row += cellAt(frame, at.x, at.y).glyph
     }
@@ -113,7 +113,7 @@ test("the drawn patch is the rule's own tiles: within its radius of its centre, 
     const frame = screen.frameAt(10 * TICK_MS, "truecolor")
     const onMap = [...ruled].filter((key) => {
       const [x = -1, y = -1] = key.split(",").map(Number)
-      return x >= 0 && y >= 0 && x < timeline.grid.width && y < timeline.grid.height
+      return x >= 0 && y >= 0 && x < timeline.terrain.width && y < timeline.terrain.height
     })
     assert.deepEqual(burningCells(frame, screen, timeline), new Set(onMap), `radius ${radius} on screen`)
   }

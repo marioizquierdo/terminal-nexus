@@ -1,4 +1,4 @@
-// The viewport and the camera — the scrolling rule in docs/system-design/grid.md.
+// The viewport and the camera — the scrolling rule in docs/system-design/battlefield.md.
 //
 // Pure arithmetic over tiles: a camera is a position in tiles, a viewport is a size in tiles, and
 // what either looks like is `src/view`'s problem. That split is what lets the whole scrolling rule
@@ -9,57 +9,57 @@
 // reach as wide as it is tall on screen. A viewport's width in tiles is its width in columns, and a terminal wider
 // than the largest viewport buys centring, never a wider tile.
 
-import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import type { Coord, MapTerrain } from "../engine/geometry/types.ts"
 
-/** RULE (docs/system-design/grid.md): below this the game is not playable and the renderer shows a resize gate. */
+/** RULE (docs/system-design/battlefield.md): below this the game is not playable and the renderer shows a resize gate. */
 export const MIN_VIEWPORT = { width: 48, height: 16 } as const
-/** RULE: nobody sees more Grid than this, however large their monitor. Fairness, and bounded
+/** RULE: nobody sees more map than this, however large their monitor. Fairness, and bounded
  *  arithmetic for every layout, cursor and scroll calculation downstream. */
 export const MAX_VIEWPORT = { width: 72, height: 24 } as const
 /**
- * The side panel's share of the terminal floor: the 80-column arithmetic in docs/system-design/grid.md
+ * The side panel's share of the terminal floor: the 80-column arithmetic in docs/system-design/battlefield.md
  * (1 + 30 + 48 + 1), which the resize gate measures against, so 80 × 24 is the floor.
  */
 export const FLOOR_PANEL_COLUMNS = 30
 /**
- * The columns the side panel actually takes: the panel and its divider, which **is** the Grid's west
- * side, rather than a column of its own beside the divider (the owner's choice). The column that sharing saves goes to the Grid: 49 tiles at 80 × 24, not 48.
+ * The columns the side panel actually takes: the panel and its divider, which **is** the battlefield's west
+ * side, rather than a column of its own beside the divider (the owner's choice). The column that sharing saves goes to the battlefield: 49 tiles at 80 × 24, not 48.
  */
 export const PANEL_COLUMNS = FLOOR_PANEL_COLUMNS - 1
-/** The top bar's one line, and the rule directly above the Grid that closes its rectangle. */
+/** The top bar's one line, and the rule directly above the battlefield that closes its rectangle. */
 export const HEADER_ROWS = 2
 /**
- * The rule directly below the Grid, then the bottom bar's **one** line: the contextual line — what the
+ * The rule directly below the battlefield, then the bottom bar's **one** line: the contextual line — what the
  * last key did when it said something, and otherwise what can be done where the keyboard is
  * (`src/build/help.ts`). The owner's call: "The bottom of the UI currently uses 3 rows. We have to
  * reduce that to 1 row". The position readout and the key help went, and the two rows they took went
- * to the Grid. (The bottom bar was once four rows, after a row moved here from the header, whose two
- * blank rows had left the Grid's own top edge three rows short of any line.)
+ * to the battlefield. (The bottom bar was once four rows, after a row moved here from the header, whose two
+ * blank rows had left the battlefield's own top edge three rows short of any line.)
  */
 export const FOOTER_ROWS = 2
 /** Left border + right border. 1 + 48 + 1 + 30 = exactly 80: the floor's arithmetic;
- *  since the shared west side the Grid gets one more of those columns (`PANEL_COLUMNS`). */
+ *  since the shared west side the battlefield gets one more of those columns (`PANEL_COLUMNS`). */
 export const BORDER_COLUMNS = 2
 /** Top border + header + footer + bottom border: 6 rows now that the bottom bar is one line — 18 rows
- *  of Grid at 80 × 24, where the 8-row budget of the floor (`FLOOR_CHROME_ROWS`) would leave 16. */
+ *  of battlefield at 80 × 24, where the 8-row budget of the floor (`FLOOR_CHROME_ROWS`) would leave 16. */
 export const CHROME_ROWS = BORDER_COLUMNS + HEADER_ROWS + FOOTER_ROWS
 /**
  * The vertical chrome the terminal floor is measured against: the 8-row budget in
- * docs/system-design/grid.md, which the
+ * docs/system-design/battlefield.md, which the
  * resize gate still uses, so 80 × 24 stays the floor and the acceptance target — the same move
  * `FLOOR_PANEL_COLUMNS` makes for the column the shared west side saved. The two rows the one-line
- * bottom bar saves go to the Grid, never to a smaller floor.
+ * bottom bar saves go to the battlefield, never to a smaller floor.
  */
 export const FLOOR_CHROME_ROWS = 8
 
 export type Viewport = Readonly<{ width: number; height: number }>
-/** The north-west tile of the viewport, in Grid tiles. */
+/** The north-west tile of the viewport, in tiles. */
 export type Camera = Readonly<{ x: number; y: number }>
 export type TerminalSize = Readonly<{ columns: number; rows: number }>
 
 /**
  * How many tiles a terminal of this size has room for once chrome is taken out, a tile to a column: the first
- * step of the fitting order in docs/system-design/grid.md. It may come back smaller than any viewport, zero at
+ * step of the fitting order in docs/system-design/battlefield.md. It may come back smaller than any viewport, zero at
  * the least: the caller decides whether that means "gate" (below the minimum) or "centre the leftover" (above
  * the maximum).
  */
@@ -74,39 +74,39 @@ export function availableTiles(
   }
 }
 
-/** Step 2: `viewport = min(availableTiles, maximumViewport, gridSize)`, verbatim. */
-export function fitViewport(terminal: TerminalSize, grid: GridTerrain): Viewport {
+/** Step 2: `viewport = min(availableTiles, maximumViewport, mapSize)`, verbatim. */
+export function fitViewport(terminal: TerminalSize, terrain: MapTerrain): Viewport {
   const available = availableTiles(terminal)
   return {
-    width: Math.min(available.width, MAX_VIEWPORT.width, grid.width),
-    height: Math.min(available.height, MAX_VIEWPORT.height, grid.height),
+    width: Math.min(available.width, MAX_VIEWPORT.width, terrain.width),
+    height: Math.min(available.height, MAX_VIEWPORT.height, terrain.height),
   }
 }
 
 /**
  * Step 3, asked as a question rather than acted on: is this terminal below the floor? Measured against the
  * floor's own chrome (`FLOOR_PANEL_COLUMNS`, `FLOOR_CHROME_ROWS`), so the gate stays at 80 × 24 while the column
- * and the rows the frame saves go to the Grid. A Grid smaller than the minimum viewport needs only its own size,
- * so a small tutorial Grid is never gated on a terminal that could show all of it.
+ * and the rows the frame saves go to the battlefield. A battlefield smaller than the minimum viewport needs only its own size,
+ * so a small tutorial battlefield is never gated on a terminal that could show all of it.
  */
-export function isGated(terminal: TerminalSize, grid: GridTerrain): boolean {
+export function isGated(terminal: TerminalSize, terrain: MapTerrain): boolean {
   const available = availableTiles(terminal, FLOOR_PANEL_COLUMNS, FLOOR_CHROME_ROWS)
   return (
-    available.width < Math.min(MIN_VIEWPORT.width, grid.width) ||
-    available.height < Math.min(MIN_VIEWPORT.height, grid.height)
+    available.width < Math.min(MIN_VIEWPORT.width, terrain.width) ||
+    available.height < Math.min(MIN_VIEWPORT.height, terrain.height)
   )
 }
 
-/** The camera is clamped so the viewport never leaves the Grid — the first bullet of the scrolling rule in docs/system-design/grid.md. */
-export function clampCamera(camera: Camera, viewport: Viewport, grid: GridTerrain): Camera {
+/** The camera is clamped so the viewport never leaves the battlefield — the first bullet of the scrolling rule in docs/system-design/battlefield.md. */
+export function clampCamera(camera: Camera, viewport: Viewport, terrain: MapTerrain): Camera {
   return {
-    x: Math.min(Math.max(0, camera.x), Math.max(0, grid.width - viewport.width)),
-    y: Math.min(Math.max(0, camera.y), Math.max(0, grid.height - viewport.height)),
+    x: Math.min(Math.max(0, camera.x), Math.max(0, terrain.width - viewport.width)),
+    y: Math.min(Math.max(0, camera.y), Math.max(0, terrain.height - viewport.height)),
   }
 }
 
 /**
- * Where one axis of the camera wants to be, before the Grid's own edges get a say. The margin is a
+ * Where one axis of the camera wants to be, before the battlefield's own edges get a say. The margin is a
  * *follow* rule, not an invariant: it says where the camera must be relative to the cursor when it
  * can be — no closer than `margin` tiles to either edge. Written as a range the camera is nudged
  * into rather than a position it is moved to, so a camera already inside the range does not twitch
@@ -124,22 +124,22 @@ function followAxis(camera: number, cursor: number, span: number, margin: number
 export type Margin = Readonly<{ x: number; y: number }>
 
 /**
- * **The whole scrolling interaction** (docs/system-design/grid.md): "The cursor drives it. Move the cursor within
+ * **The whole scrolling interaction** (docs/system-design/battlefield.md): "The cursor drives it. Move the cursor within
  * a scroll margin ... of a viewport edge and the camera follows. That is the whole interaction — no
  * separate pan mode, no modifier keys, no second cursor." (The margin was 3 tiles when that was
  * written; it is a share of the view now.)
  */
-export function followCursor(camera: Camera, cursor: Coord, viewport: Viewport, grid: GridTerrain, margin: Margin): Camera {
-  // The clamp is where the margin stops being honoured, and is right to: at the Grid's own edge the
+export function followCursor(camera: Camera, cursor: Coord, viewport: Viewport, terrain: MapTerrain, margin: Margin): Camera {
+  // The clamp is where the margin stops being honoured, and is right to: at the battlefield's own edge the
   // camera has nowhere left to go, so the cursor reaches the edge of the screen because there is no
-  // more Grid to reveal.
+  // more map to reveal.
   return clampCamera(
     {
       x: followAxis(camera.x, cursor.x, viewport.width, margin.x),
       y: followAxis(camera.y, cursor.y, viewport.height, margin.y),
     },
     viewport,
-    grid,
+    terrain,
   )
 }
 
@@ -168,12 +168,12 @@ function centredAxis(tile: number, span: number): number {
 
 /**
  * **Recentring**: the camera moved so `tile` sits in the middle of the view,
- * clamped to the Grid like every other camera — how a Battle Round looks at the player's Nexus. (The
+ * clamped to the battlefield like every other camera — how a Battle Round looks at the player's Nexus. (The
  * fast move re-centred along the axis it moved, and an exploring click could re-centre too, until the
  * owner settled both Experiments the other way.)
  */
-export function centreOn(tile: Coord, viewport: Viewport, grid: GridTerrain): Camera {
-  return clampCamera({ x: centredAxis(tile.x, viewport.width), y: centredAxis(tile.y, viewport.height) }, viewport, grid)
+export function centreOn(tile: Coord, viewport: Viewport, terrain: MapTerrain): Camera {
+  return clampCamera({ x: centredAxis(tile.x, viewport.width), y: centredAxis(tile.y, viewport.height) }, viewport, terrain)
 }
 
 /**
@@ -203,12 +203,12 @@ function edgeAxis(camera: number, tile: number, span: number, zone: number): num
 }
 
 /** Where a click on the map inside an edge zone moves the camera, a building armed or
- *  not: see `edgeAxis`. The zone is a percentage of the view along each axis. Clamped to the Grid. */
+ *  not: see `edgeAxis`. The zone is a percentage of the view along each axis. Clamped to the battlefield. */
 export function edgeClickCamera(
   camera: Camera,
   tile: Coord,
   viewport: Viewport,
-  grid: GridTerrain,
+  terrain: MapTerrain,
   zonePercent: number,
 ): Camera {
   const zone = marginForView(zonePercent, viewport)
@@ -218,7 +218,7 @@ export function edgeClickCamera(
       y: edgeAxis(camera.y, tile.y, viewport.height, zone.y),
     },
     viewport,
-    grid,
+    terrain,
   )
 }
 
@@ -229,8 +229,8 @@ export type VisibleRange = Readonly<{
   lastY: number
 }>
 
-/** The inclusive tile range on screen: what the Grid pane draws, and — with the Grid's own size — which
- *  of its sides have more Grid beyond them (`edgeMarkers`). A position readout in the footer named it
+/** The inclusive tile range on screen: what the map draws, and — with the battlefield's own size — which
+ *  of its sides have more map beyond them (`edgeMarkers`). A position readout in the footer named it
  *  until the owner took the readout out; the sides' weight is the signal. */
 export function visibleRange(camera: Camera, viewport: Viewport): VisibleRange {
   return {
@@ -249,26 +249,26 @@ export type EdgeMarkers = Readonly<{
 }>
 
 /**
- * Which sides have more Grid beyond them — the required "there is more Grid" signal of docs/system-design/grid.md, drawn
- * on the frame border. A Grid that fits entirely inside the viewport gets none of them, which is
- * exactly what that rule asks for: "Small Grids that fit entirely inside the viewport never scroll
+ * Which sides have more map beyond them — the required "there is more map" signal of docs/system-design/battlefield.md, drawn
+ * on the frame border. A battlefield that fits entirely inside the viewport gets none of them, which is
+ * exactly what that rule asks for: "Small battlefields that fit entirely inside the viewport never scroll
  * and show no edge markers."
  */
-export function edgeMarkers(camera: Camera, viewport: Viewport, grid: GridTerrain): EdgeMarkers {
+export function edgeMarkers(camera: Camera, viewport: Viewport, terrain: MapTerrain): EdgeMarkers {
   const range = visibleRange(camera, viewport)
   return {
     north: range.firstY > 0,
-    south: range.lastY < grid.height - 1,
+    south: range.lastY < terrain.height - 1,
     west: range.firstX > 0,
-    east: range.lastX < grid.width - 1,
+    east: range.lastX < terrain.width - 1,
   }
 }
 
-/** Keeps a tile inside the Grid — every cursor move goes through this, so the cursor can never be
- *  somewhere the Grid is not. */
-export function clampToGrid(tile: Coord, grid: GridTerrain): Coord {
+/** Keeps a tile inside the battlefield — every cursor move goes through this, so the cursor can never be
+ *  somewhere the battlefield is not. */
+export function clampToMap(tile: Coord, terrain: MapTerrain): Coord {
   return {
-    x: Math.min(Math.max(0, tile.x), grid.width - 1),
-    y: Math.min(Math.max(0, tile.y), grid.height - 1),
+    x: Math.min(Math.max(0, tile.x), terrain.width - 1),
+    y: Math.min(Math.max(0, tile.y), terrain.height - 1),
   }
 }

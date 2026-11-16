@@ -5,7 +5,7 @@
 // its value) and what it lost there. Public.
 
 import type { DomainEvent } from "../../engine/events/types.ts"
-import { gridDistance } from "../../engine/geometry/coords.ts"
+import { tileDistance } from "../../engine/geometry/coords.ts"
 import type { Coord } from "../../engine/geometry/types.ts"
 import type { MatchState } from "../../engine/state/types.ts"
 import type { Side } from "../types.ts"
@@ -45,7 +45,7 @@ export function readEngagements(context: RoundContext, start: Pick<MatchState, "
   // still lands where it stood.
   const seen = new Map(start.entities.map((entity) => [entity.id, entity.anchor] as const))
   const closed: Open[] = []
-  const near = (engagement: Open, at: Coord): boolean => engagement.tiles.some((tile) => gridDistance(tile, at) <= ENGAGEMENT_REACH)
+  const near = (engagement: Open, at: Coord): boolean => engagement.tiles.some((tile) => tileDistance(tile, at) <= ENGAGEMENT_REACH)
   const finish = (engagement: Open): Engagement => {
     const side = (which: Side): EngagementSide => ({
       dealt: engagement.dealt[which],
@@ -56,7 +56,7 @@ export function readEngagements(context: RoundContext, start: Pick<MatchState, "
       start: engagement.start,
       end: engagement.last,
       at: engagement.at,
-      reach: Math.max(0, ...engagement.tiles.map((tile) => gridDistance(tile, engagement.at))),
+      reach: Math.max(0, ...engagement.tiles.map((tile) => tileDistance(tile, engagement.at))),
       sides: { A: side("A"), B: side("B") },
     }
   }

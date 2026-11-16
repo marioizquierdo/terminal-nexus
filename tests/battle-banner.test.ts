@@ -32,8 +32,8 @@ function bannerSide(): BuildSide {
 
 /** The first rock tile of the map, in reading order. */
 function rock(context: BuildContext): Coord {
-  const index = context.grid.tiles.findIndex((tile) => tile === "terrain.rock")
-  return { x: index % context.grid.width, y: Math.floor(index / context.grid.width) }
+  const index = context.terrain.tiles.findIndex((tile) => tile === "terrain.rock")
+  return { x: index % context.terrain.width, y: Math.floor(index / context.terrain.width) }
 }
 
 test("Start Battle Round shows the banner over the menu, the camera on it: PERIMETER's default is the line, defensive", () => {
@@ -151,7 +151,7 @@ function perimeterPulse(banner?: BannerOrder) {
   const context = starterContext()
   return resolveMissionPulse({
     mission: PERIMETER,
-    grid: context.grid,
+    terrain: context.terrain,
     registry: context.registry,
     pulse: 1,
     carried: null,

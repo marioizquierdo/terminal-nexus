@@ -20,7 +20,7 @@ export type RoundContext = Readonly<{
   owner: (id: string) => Side | undefined
   content: (id: string) => string | undefined
   definition: (id: string) => ContentDef | undefined
-  /** A building on the Grid, or a unit? (A unit is anything not standing as a building: ground and air alike.) */
+  /** A building on the battlefield, or a unit? (A unit is anything not standing as a building: ground and air alike.) */
   isUnit: (id: string) => boolean
   /** What one of `contentId` costs `side` in credits: a building its card's cost; a unit what its building pays for one
    *  (the card's cost over the units it makes a round); 0 for what no card buys (a Nexus, a Commander). */

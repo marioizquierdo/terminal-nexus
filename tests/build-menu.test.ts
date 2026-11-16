@@ -68,7 +68,7 @@ test("the menu reads Explore Map, Nexus, the credits line, every building with i
       // end, the symbol in the deposit's colour and the amount in the title's.
       const deposit = terrainGlyph("terrain.deposit", pack)
       assert.equal(deposit.glyph, pack === "ascii" ? "*" : "◆")
-      // The army's supply on the line's left: the squads' five places of the twelve the Grid Nexus gives.
+      // The army's supply on the line's left: the squads' five places of the twelve the Nexus gives.
       const credits = `${deposit.glyph} ${remaining(side.context, side.build.state)}`
       assert.equal(line(panelRow(side, CREDITS_ROW)), `units 5/12${credits.padStart(layout.panelLimit - "units 5/12".length)}`)
       const symbol = cellAt(frame, layout.dividerColumn - 5, panelRow(side, CREDITS_ROW))
@@ -112,7 +112,7 @@ test("the map draws its deposits with the very glyph the credits line uses", () 
     const deposit = terrainGlyph("terrain.deposit", pack)
     let onMap = 0
     for (let y = side.layout.origin.row; y < side.layout.origin.row + side.layout.viewport.height; y += 1) {
-      for (let x = side.layout.origin.column; x < side.layout.gridBox.right; x += 1) {
+      for (let x = side.layout.origin.column; x < side.layout.mapBox.right; x += 1) {
         const cell = cellAt(frame, x, y)
         if (cell.glyph === deposit.glyph && cell.style.fgRole === deposit.role) onMap += 1
       }
@@ -123,7 +123,7 @@ test("the map draws its deposits with the very glyph the credits line uses", () 
 
 test("a building row the panel is too short for is neither drawn nor a click target", () => {
   // Three more buildings than the floor's panel holds between Nexus and Start Battle Round.
-  const floor = buildLayout(MINIMUM, starterContext().grid)
+  const floor = buildLayout(MINIMUM, starterContext().terrain)
   const room = menuFloor(floor) - (floor.panelRow + CREDITS_ROW + 1) + 1
   const long: ConstructItem[] = Array.from({ length: room + 3 }, (_, index) => ({
     ...(STARTER_CATALOG[index % STARTER_CATALOG.length] as ConstructItem),
@@ -343,6 +343,6 @@ test("a placement begun on the menu comes back with the building's row flashing 
   keys(fromMap, TAB, "2")
   const mapSeq = fromMap.build.state.ack?.seq
   keys(fromMap, ENTER)
-  assert.equal(fromMap.build.state.focus, "grid")
+  assert.equal(fromMap.build.state.focus, "map")
   assert.equal(fromMap.build.state.ack?.seq, mapSeq, "a placement on the map flashed a menu row")
 })

@@ -1,4 +1,4 @@
-// The map's own edge — the sides of the Grid rectangle that have reached the end of the map — in each
+// The map's own edge — the sides of the map rectangle that have reached the end of the map — in each
 // style a map may name (Mario's choice: "using map-specific borders
 // looks a lot better! Even in ascii mode, the rugged border style applied to the UI border when
 // reaching the map edge is an awesome UI touch").
@@ -26,7 +26,7 @@ export type ArmWeight = 0 | 1 | 2
 /** A cell's four arms, north, south, east and west. */
 export type Arms = Readonly<{ n: ArmWeight; s: ArmWeight; e: ArmWeight; w: ArmWeight }>
 
-/** Where on the Grid rectangle an edge cell is: along one side, or on a corner where two edges meet. */
+/** Where on the map rectangle an edge cell is: along one side, or on a corner where two edges meet. */
 export type EdgePlace = "north" | "south" | "west" | "east" | "nw" | "ne" | "sw" | "se"
 
 export type EdgeCell = Readonly<{ glyph: string; role: StyleRole; extra: DrawExtra }>

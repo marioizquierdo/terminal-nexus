@@ -12,7 +12,7 @@ import { playLevel } from "./suites.ts"
 
 /** What every entity of one content id on one side did in one battle. */
 export type UnitTally = Readonly<{
-  /** How many of it stood on the Grid at some moment. */
+  /** How many of it stood on the battlefield at some moment. */
   stood: number
   /** Attacks it launched, heals left out. */
   shots: number

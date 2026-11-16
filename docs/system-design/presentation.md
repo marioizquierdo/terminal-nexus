@@ -146,20 +146,20 @@ How an interactive screen behaves (focus, back and cancel, the mouse, menu row s
 line, ranges and the aura on the map) is [`ui-patterns.md`](ui-patterns.md), pattern by pattern; this document
 holds the frame, composition and bands those patterns draw into.
 
-The two phases need different amounts of screen, and pretending otherwise wastes the Grid.
+The two phases need different amounts of screen, and pretending otherwise wastes the battlefield.
 
-**Both phases share the same frame**: a **top bar**, the **Grid pane** closed into its own rectangle (see
-[`grid.md`](grid.md)), a **side panel** 30 columns wide counting the divider it shares with the Grid, and a **bottom bar** (RULE —
+**Both phases share the same frame**: a **top bar**, the **map** closed into its own rectangle (see
+[`battlefield.md`](battlefield.md)), a **side panel** 30 columns wide counting the divider it shares with the battlefield, and a **bottom bar** (RULE —
 `tests/build-focus.test.ts`, `tests/build-view.test.ts`). The top bar and the bottom bar run the whole
-width: at the 80-column floor the Grid pane is 49 columns, and the bottom bar's line is longer than that.
+width: at the 80-column floor the map is 49 columns, and the bottom bar's line is longer than that.
 The top bar carries the game's title and where the player is (the phase today; the mission and the round
 number once there are some), the bottom bar is **one line of contextual help**, and the side panel
 carries actions and their status. Both phases support the cursor, selection, inspection and scrolling: a
-player watching a Battle Round can hover a unit to read its state in real time, and can scroll the Grid, exactly
+player watching a Battle Round can hover a unit to read its state in real time, and can scroll the battlefield, exactly
 as they can while building. One composition means one cursor, one scroll rule and one set of muscle
 memory.
 
-**The side panel is to the left of the Grid** (RULE — `tests/build-focus.test.ts`). Build menus read
+**The side panel is to the left of the battlefield** (RULE — `tests/build-focus.test.ts`). Build menus read
 first, and a player's eyes start on the left. The frame's lines are derived from where the panel is
 rather than drawn around a fixed side (`drawChrome` in `src/view/build-frame.ts`), so the side is a
 layout choice, not a redraw of every line.
@@ -189,7 +189,7 @@ reach*, *Her aura's reach*). Two things of the frame's own: a popup and the card
 `chrome` band (below); and a reach is the rules' own tiles (*A tile is one column*).
 
 **Burning ground is drawn on its own ground, under what stands on it** (RULE — `tests/burning-ground.test.ts`). A
-patch a mortar's shell sets alight (`MatchState.burning`) is every tile within its radius of its centre by the Grid's
+patch a mortar's shell sets alight (`MatchState.burning`) is every tile within its radius of its centre by the battlefield's
 own test (`tilesWithin`, which is the battle engine's `withinArea`), so the patch drawn and the patch that burns cannot
 disagree, and it is drawn in the state of the tick shown, from the tick it was lit to its last. It has four roles of its own, red and
 yellow (the owner, 2026-10-21: "that red seems too intense ... red and yellow, more transparent and use flashing
@@ -198,7 +198,7 @@ drawn — the ground's own colour barely warmed, a fill only, chosen so both sid
 it; **`fx.fire`**, a low flame's red; **`fx.fire.tall`**, a tall flame's yellow; and **`fx.fire.glow`**, the red fill
 a tile flashes under a tall flame. At any instant most of a patch shows the ground itself on the scorch; on open
 ground about a quarter of its tiles show a low flame `~` in red on the scorch and about one in six flashes a tall
-flame `^` (the Unicode pack's `▴`), bold yellow on the glow — glyphs nothing else on a Battle Round's Grid uses; rock
+flame `^` (the Unicode pack's `▴`), bold yellow on the glow — glyphs nothing else on a Battle Round's battlefield uses; rock
 and deposits keep their glyphs. **Under a unit, a building, a corpse still drawn or salvage** the scorch alone is
 laid, a glyphless write that keeps its glyph and every colour of its own, so a unit standing in the fire is seen
 standing in it. Effects draw over it. **It flickers by cosmetic randomness only**: each tile rolls its look again once
@@ -222,16 +222,16 @@ presentation has failed and no panel will rescue it.
 
 **RULE** — `tests/rows-view.test.ts`, `tests/build-camera.test.ts`, `tests/view.test.ts`.
 
-**One Grid tile is one terminal cell, one column wide, at every terminal size**: the Build Phase, the Battle Round,
+**One tile is one terminal cell, one column wide, at every terminal size**: the Build Phase, the Battle Round,
 the `skirmish` command's ASCII screenshots and the browser page alike. A cell is about twice as tall as it is wide, and the rules
-count a row as two columns in every distance ([`grid.md`](grid.md), distance, reach and movement), so a reach is
+count a row as two columns in every distance ([`battlefield.md`](battlefield.md), distance, reach and movement), so a reach is
 twice as wide as it is tall in tiles and, drawn a column a tile, as wide as it is tall on screen; a unit walking
 down the screen crosses it at the pace of one walking across. A larger terminal never widens a tile: past the
 largest view it buys centring, never another shape. At 80 × 24 the map shows 49 × 18 tiles, and **80 × 24 is the
-acceptance target**; a larger terminal shows more of the same Grid, up to 72 × 24 tiles, and the same information.
+acceptance target**; a larger terminal shows more of the same battlefield, up to 72 × 24 tiles, and the same information.
 
 **A picture of an area the rules decide draws the rules' own tiles**: a building's or a unit's reach, the build
-range, Vasse's aura, a blast and burning ground are each drawn from the Grid's own sets of tiles (`tilesWithin`,
+range, Vasse's aura, a blast and burning ground are each drawn from the battlefield's own sets of tiles (`tilesWithin`,
 `src/engine/geometry/reach.ts`; a reach's outline, the last tiles it covers, is `outlineWithin`, `src/view/reach-outline.ts`), so what the screen shows
 as a reach is what the rules count. A picture that claims no area — death debris and its shockwave, the tracer's
 line, the intro highlight's ring — may take a shape of its own.
@@ -249,7 +249,7 @@ it through the camera.
 
 **RULE** — `src/view/effects/composite.ts`, `tests/effects.test.ts`.
 
-Fixed bands, not free z-indexes. The layers in [`grid.md`](grid.md) map onto them directly, which is the
+Fixed bands, not free z-indexes. The layers in [`battlefield.md`](battlefield.md) map onto them directly, which is the
 point:
 
 | Band | Fed by |
@@ -265,12 +265,12 @@ point:
 | 9 `highlights` | selection, cursor, preview, range: a building's reach |
 | 10 `chrome` | frame, sidebar, status strip, popups |
 
-Each band returns sparse cells; the topmost defined cell replaces the lower complete cell style. Grid
-bands clip to the Grid. **Presentation overlap never changes occupancy.**
+Each band returns sparse cells; the topmost defined cell replaces the lower complete cell style. battlefield
+bands clip to the battlefield. **Presentation overlap never changes occupancy.**
 
 **A popup has no band of its own.** It is drawn last in the `chrome` band: within one band a later write
 replaces an earlier one, so a popup drawn after the frame, the side panel and the bottom bar sits on top
-of all of them, and over the Grid bands beneath. The bands stay the fixed list above; an eleventh band
+of all of them, and over the battlefield bands beneath. The bands stay the fixed list above; an eleventh band
 for overlays would be the free z-index this design refuses.
 
 **The corruption law** (RULE — `src/view/effects/composite.ts`, `tests/effects.test.ts`,

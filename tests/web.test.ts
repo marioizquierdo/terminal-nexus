@@ -124,7 +124,7 @@ if (RUNTIME_IS_BUN) {
 
 function buildFrame(script: readonly string[]): ReadonlyCellFrame {
   const context = starterContext()
-  const layout = buildLayout({ columns: 80, rows: 24 }, context.grid)
+  const layout = buildLayout({ columns: 80, rows: 24 }, context.terrain)
   const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })
   for (const name of script) build.handleData(keyBytes(name), layout)
   return composeBuildFrame({ context, state: build.state, layout }, "truecolor")
@@ -137,7 +137,7 @@ function paintedText(frame: ReadonlyCellFrame, ops: ReturnType<typeof paintOps>)
 }
 
 test("the canvas paints every glyph the terminal shows, where it shows it", () => {
-  // The opening screen, a popup over the Grid, and the map scrolled to its west edge.
+  // The opening screen, a popup over the battlefield, and the map scrolled to its west edge.
   for (const script of [[], ["n"], ["n", "1", "Tab", "S-Left", "S-Left", "S-Left", "S-Left"]]) {
     const frame = buildFrame(script)
     for (const colors of ["truecolor", "color256", "monochrome"] as const) {

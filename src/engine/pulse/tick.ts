@@ -57,7 +57,7 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
     killer: null,
   }))
 
-  const index = new OccupancyIndex(state.grid)
+  const index = new OccupancyIndex(state.terrain)
   for (const actor of actors) {
     index.add(actor.definition.layer, actor.ordinal, actor.anchor, actor.definition.footprint)
   }
@@ -169,7 +169,7 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
 
 /** Exposed for the collision invariant test: the occupancy the battle engine would build for a state. */
 export function occupancyFor(state: MatchState, pulse: PulseContext): OccupancyIndex {
-  const index = new OccupancyIndex(state.grid)
+  const index = new OccupancyIndex(state.terrain)
   for (const entity of state.entities) {
     const definition = contentOf(pulse, entity.player).get(entity.contentId)
     index.add(definition.layer, entity.ordinal, entity.anchor, definition.footprint)

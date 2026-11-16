@@ -324,7 +324,7 @@ function popupGif(name, { keys, expect, cols = 80, rows = 24, colors = "truecolo
 }
 
 /**
- * The same placement as a contact sheet: a window of the Grid around the building at each of
+ * The same placement as a contact sheet: a window of the battlefield around the building at each of
  * `timesMs` after placing, side by side with the time over each — the whole run in one still, which a
  * phone shows without playing anything. The window is `span` tiles either side of the placement.
  */
@@ -373,7 +373,7 @@ function placementSheet(name, { before, place, expect, timesMs, colors = "trueco
   )
 }
 
-// Placement juice. Each placement is armed from the menu — the cursor opens on the Grid
+// Placement juice. Each placement is armed from the menu — the cursor opens on the battlefield
 // Nexus, where nothing fits, so arming moves it to the nearest spot with a free tile around it, a
 // free column to its right — and placed with Space.
 
@@ -467,33 +467,33 @@ placementGif("build-place-reduced-motion", {
 
 scriptedGif("build-hatchery-run", {
   // Mario's own flow from the opening screen: highlight the Hatchery, arm it from the menu (the
-  // cursor, on the Grid Nexus, moves to the nearest good spot), place it, arm it again (the cursor, now
-  // on the first, moves a free tile away from it), place it again — no arrow key on the Grid at all.
+  // cursor, on the Nexus, moves to the nearest good spot), place it, arm it again (the cursor, now
+  // on the first, moves a free tile away from it), place it again — no arrow key on the battlefield at all.
   keys: "Down*3 Space*4",
   expect: "Hatchery placed (credits: 40)",
 })
 
 scripted(
   "spike-minimum",
-  "80x24, the acceptance floor: the menu on the left - Explore Map, Nexus, the credits with the map's resource symbol, one list - a 49x18 window onto a 96x40 Grid closed into its own rectangle, the map's own fence where the map ends, and one line of help at the bottom",
+  "80x24, the acceptance floor: the menu on the left - Explore Map, Nexus, the credits with the map's resource symbol, one list - a 49x18 window onto a 96x40 battlefield closed into its own rectangle, the map's own fence where the map ends, and one line of help at the bottom",
   { keys: PICK_FIRST_POWER, expect: "* 130" },
 )
 
 scripted(
-  "build-focus-grid",
+  "build-focus-map",
   "Tab moves the keyboard to the map in plain navigation: nothing armed, the cursor the one highlight on screen, and the menu still drawn beside the map, so a click can arm from it. The bottom line says what works here",
   { keys: `${PICK_FIRST_POWER} Tab`, expect: "Arrows move the cursor" },
 )
 
 scripted(
   "build-info-panel",
-  "[e] Explore Map (which first steps the cursor off the Grid Nexus onto clear ground), then Left back onto the Nexus: the row turns active - [e] Explore Map > - with a line under it, then the building's own glyphs, its name, what it is for and its numbers. x, e or Esc goes back",
+  "[e] Explore Map (which first steps the cursor off the Nexus onto clear ground), then Left back onto the Nexus: the row turns active - [e] Explore Map > - with a line under it, then the building's own glyphs, its name, what it is for and its numbers. x, e or Esc goes back",
   { keys: `${PICK_FIRST_POWER} e Left*3`, expect: "Citizen Nexus" },
 )
 
 scripted(
   "build-smart-cursor",
-  "Down twice and Space: the Hatchery is armed from the menu and the panel becomes its card, under [2] Hatchery >. The cursor was on the Grid Nexus, where it cannot go, so it moves to the nearest spot that leaves a free tile around it - a free column to its right",
+  "Down twice and Space: the Hatchery is armed from the menu and the panel becomes its card, under [2] Hatchery >. The cursor was on the Nexus, where it cannot go, so it moves to the nearest spot that leaves a free tile around it - a free column to its right",
   { keys: `${PICK_FIRST_POWER} Down*2 Space`, expect: "[2] Hatchery" },
 )
 
@@ -522,14 +522,14 @@ scripted(
 )
 
 scripted(
-  "build-grid-edge",
-  "Hard against the Grid's north-west corner: the top and left sides are the map's own edge - this map's fence, in the quieter edge colour - because the map ends there, the bottom and right stay thin because there is more map that way",
+  "build-map-edge",
+  "Hard against the battlefield's north-west corner: the top and left sides are the map's own edge - this map's fence, in the quieter edge colour - because the map ends there, the bottom and right stay thin because there is more map that way",
   { keys: `${PICK_FIRST_POWER} Tab S-Left*5 S-Up*5`, expect: "Arrows move the cursor" },
 )
 
 scripted(
   "spike-maximum",
-  "104x30, the largest viewport the game will ever show: 72x24 tiles. A bigger terminal than this buys margin, never more Grid",
+  "104x30, the largest viewport the game will ever show: 72x24 tiles. A bigger terminal than this buys margin, never more map",
   { keys: PICK_FIRST_POWER, expect: "* 130", cols: 104, rows: 30 },
 )
 
@@ -554,7 +554,7 @@ scripted(
 
 scripted(
   "spike-crater",
-  "The north-east crater, 64 tiles east of where the cursor started - the part of the Grid that exists only because scrolling does",
+  "The north-east crater, 64 tiles east of where the cursor started - the part of the battlefield that exists only because scrolling does",
   { keys: `${PICK_FIRST_POWER} Tab S-Right*8 PgUp`, expect: "Arrows move the cursor" },
 )
 
@@ -593,7 +593,7 @@ scripted(
 
 handoffGif("build-focus-arrow", {
   // [1] from the menu arms the Barracks: the other rows fade, the row slides up and the card types in,
-  // while the arrow leaves from where the row was on the menu for the cursor beside the Grid Nexus, and
+  // while the arrow leaves from where the row was on the menu for the cursor beside the Nexus, and
   // the cursor blinks twice where it lands.
   before: PICK_FIRST_POWER,
   hand: "1",
@@ -860,19 +860,19 @@ const pickFirstPower = () => {
 
 live(
   "build-idle",
-  "The Build Phase opens on the menu, on the left: the keyboard on [e] Explore Map, [n] Nexus under it with its (1), the one pick still waiting, then the credits, and the bottom line saying what Explore Map is for. No cursor on the Grid while the menu has the keyboard",
+  "The Build Phase opens on the menu, on the left: the keyboard on [e] Explore Map, [n] Nexus under it with its (1), the one pick still waiting, then the credits, and the bottom line saying what Explore Map is for. No cursor on the battlefield while the menu has the keyboard",
   { waitForText: "Explore Map" },
 )
 
 live(
   "spike-scrolled",
-  "Scrolled into the middle of the Grid with Shift+Arrow and PageDown - real modified-arrow bytes through tmux. All four borders now mark more Grid",
+  "Scrolled into the middle of the battlefield with Shift+Arrow and PageDown - real modified-arrow bytes through tmux. All four borders now mark more map",
   {
     drive: () => {
       pickFirstPower()
       key("Tab")
       // A ten-tile jump since Mario's settings export of 2026-09-30 (it was five, then eight, then
-      // twelve): two east and one south, from 18,10 on the Grid Nexus, still leave more Grid on every
+      // twelve): two east and one south, from 18,10 on the Nexus, still leave more map on every
       // side. tmux's pause between keys is longer than the jump repeat limit, so no jump is dropped.
       key("S-Right")
       key("NPage")
@@ -890,12 +890,12 @@ live(
   {
     drive: () => {
       pickFirstPower()
-      literal("1") // arm Barracks: off the Grid Nexus, where the cursor opens, to 22,10 beside it
+      literal("1") // arm Barracks: off the Nexus, where the cursor opens, to 22,10 beside it
       // Column 61, row 14 (1-based) is tile 30,10 at the opening camera — the same cell
       // `cellForTile` hands the tests, formatted the way src/build/mouse.ts's own
       // `formatMouseEvent` would. The first click only moves the cursor there; the second, on the
       // same tile, is what actually places it. Chosen well inside the scroll margin: a first click
-      // near the Grid pane's edge scrolls the map under the pointer, and a second click in the same
+      // near the map's edge scrolls the map under the pointer, and a second click in the same
       // place is then a first click on the tile beside it.
       literal(`${ESC}[<0;61;14M`)
       literal(`${ESC}[<0;61;14M`)
@@ -924,7 +924,7 @@ live(
 
 live(
   "spike-resize-gate",
-  "79x24, one column below the floor: playback gates rather than cropping the Grid, and says exactly what it needs",
+  "79x24, one column below the floor: playback gates rather than cropping the battlefield, and says exactly what it needs",
   { cols: 79, rows: 24 },
 )
 

@@ -47,10 +47,10 @@ export type Region = Readonly<{
  *   there when the Pulse starts, and is what the Build Phase before it can show as incoming. A later
  *   tick is applied between two ticks of the battle engine.
  * - `{ event: "pulse.end" }` — a Pulse is over (for one Pulse, or every one when `pulse` is absent).
- * - `{ event: "nexus.destroyed", side }` — that side's Grid Nexus stood when the mission began and does
+ * - `{ event: "nexus.destroyed", side }` — that side's Nexus stood when the mission began and does
  *   not now. Read at a Pulse's end (the battle engine ends a Pulse the moment a Nexus falls).
  * - `{ event: "build.start", pulse }` — that round's Build Phase opens. Only presentation actions run
- *   here (`say`): nothing is resolved between two Pulses, so nothing about the Grid can change then.
+ *   here (`say`): nothing is resolved between two Pulses, so nothing about the battlefield can change then.
  */
 export type TriggerCondition =
   | Readonly<{ pulse: number; tick: number }>
@@ -78,11 +78,11 @@ export type SpawnAction = Readonly<{
 }>
 
 /**
- * **A side's target**: from this moment, every fighting unit of `side` — those on the Grid, those a building
+ * **A side's target**: from this moment, every fighting unit of `side` — those on the battlefield, those a building
  * trains, those carried into later rounds — heads for `region`, engages an enemy that comes within its reach
  * on the way, and stands there when nothing does (the battle engine's rule: `src/engine/pulse/target.ts`). It holds, round
  * after round, until another `target` for the side moves it. A side no `target` names heads for the enemy's
- * Grid Nexus, engaging what comes within its reach on the way (`headsForNexus`, `src/engine/pulse/perception.ts`).
+ * Nexus, engaging what comes within its reach on the way (`headsForNexus`, `src/engine/pulse/perception.ts`).
  *
  * It replaced the `order` a spawned group once carried (`{ advance: region }`), which the battle engine never read:
  * a side's target is what the battle engine keeps, and a group's line of `intent` is what the player reads.
@@ -121,7 +121,7 @@ export type SayAction = Readonly<{
     /**
      * Who says it: the content id of a unit the mission brings — its name, side and glyph then come from
      * the content and the spawn that brings it (`"unit.citizen.vasse"`) — or the name of someone who is not
-     * on the Grid (`"Corvane"`).
+     * on the battlefield (`"Corvane"`).
      */
     speaker: string
     /** Whose side the speaker speaks for — the colour of their name. A unit's own side when absent. */

@@ -1,4 +1,4 @@
-// A row counts two columns: the one rule of distance on the Grid (grid.md). A terminal cell is about twice as tall
+// A row counts two columns: the one rule of distance on the battlefield (battlefield.md). A terminal cell is about twice as tall
 // as it is wide, so the rules count the ground the way the screen shows it: every distance, range and radius counts
 // a row up or down as two columns (`ROW_DISTANCE`), a step up or down takes twice as long as a step across, and
 // touching is a side shared. First the few functions every distance is worked out with (`src/engine/geometry/coords.ts`,
@@ -22,8 +22,8 @@ import {
   footprintExtent,
   footprintSteps,
   footprintWithin,
-  gridDistance,
-  gridSteps,
+  tileDistance,
+  tileSteps,
   inColumns,
   nearestFootprintTile,
   nearestTile,
@@ -34,7 +34,7 @@ import {
   tilesWithin,
   wholeRows,
 } from "../src/engine/geometry/index.ts"
-import type { Coord, Direction, Footprint, GridTerrain } from "../src/engine/geometry/index.ts"
+import type { Coord, Direction, Footprint, MapTerrain } from "../src/engine/geometry/index.ts"
 import { foreseeIntents, regroup, resolveMissionPulse } from "../src/match/index.ts"
 import type { MissionPulseInput } from "../src/match/index.ts"
 import type { MissionDefinition } from "../src/mission/index.ts"
@@ -78,20 +78,20 @@ function extent(tiles: readonly Coord[]): Readonly<{ width: number; height: numb
 test("a row counts two columns in every distance; touching is a side shared, a row up as much as a column across", () => {
   assert.equal(ROW_DISTANCE, 2)
   assert.deepEqual(inColumns(3, -2), { across: 3, down: -4 })
-  assert.equal(gridDistance(ORIGIN, { x: 14, y: 10 }), 4)
-  assert.equal(gridDistance(ORIGIN, { x: 10, y: 12 }), 4)
-  assert.equal(gridDistance(ORIGIN, { x: 13, y: 11 }), 5)
-  assert.equal(gridDistance(ORIGIN, { x: 7, y: 7 }), 9)
+  assert.equal(tileDistance(ORIGIN, { x: 14, y: 10 }), 4)
+  assert.equal(tileDistance(ORIGIN, { x: 10, y: 12 }), 4)
+  assert.equal(tileDistance(ORIGIN, { x: 13, y: 11 }), 5)
+  assert.equal(tileDistance(ORIGIN, { x: 7, y: 7 }), 9)
   // The tile above is two away, and touches it: within a reach of 1, as the tile beside it is.
-  assert.equal(gridDistance(ORIGIN, { x: 10, y: 9 }), 2)
-  assert.equal(gridSteps(ORIGIN, { x: 10, y: 9 }), 1)
+  assert.equal(tileDistance(ORIGIN, { x: 10, y: 9 }), 2)
+  assert.equal(tileSteps(ORIGIN, { x: 10, y: 9 }), 1)
   assert.ok(footprintWithin(ORIGIN, ONE, { x: 10, y: 9 }, ONE, 1))
   assert.ok(footprintWithin(ORIGIN, ONE, { x: 11, y: 10 }, ONE, 1))
   assert.ok(!footprintWithin(ORIGIN, ONE, { x: 11, y: 9 }, ONE, 1), "a diagonal neighbour does not touch")
   assert.ok(!footprintWithin(ORIGIN, ONE, { x: 10, y: 9 }, ONE, 0), "nothing is within a reach of none")
   // From a reach of 2 on, what touches is within it anyway: within is the distance alone.
   for (const tile of around(ORIGIN, 6)) {
-    for (const radius of [2, 3, 4, 6, 8]) assert.equal(footprintWithin(ORIGIN, ONE, tile, ONE, radius), gridDistance(ORIGIN, tile) <= radius, `${tile.x},${tile.y} at ${radius}`)
+    for (const radius of [2, 3, 4, 6, 8]) assert.equal(footprintWithin(ORIGIN, ONE, tile, ONE, radius), tileDistance(ORIGIN, tile) <= radius, `${tile.x},${tile.y} at ${radius}`)
   }
   // A footprint is measured to its nearest tile: a Barracks covers 0,0 to 2,1, so 4,3 is two columns and two rows
   // off its corner — six — and four steps.
@@ -112,13 +112,13 @@ test("a step goes as far as it counts: one across a column, two up or down a row
   )
   for (const direction of DIRECTIONS) {
     const to = step(ORIGIN, direction)
-    assert.equal(stepLength(direction), gridDistance(ORIGIN, to), direction)
-    assert.equal(gridSteps(ORIGIN, to), 1, direction)
+    assert.equal(stepLength(direction), tileDistance(ORIGIN, to), direction)
+    assert.equal(tileSteps(ORIGIN, to), 1, direction)
   }
   // Worked out from the way the step goes, for every direction there is: a diagonal, which no mover takes, is a
   // column and a row, three.
   const everyWay: readonly Direction[] = ["n", "ne", "e", "se", "s", "sw", "w", "nw"]
-  for (const direction of everyWay) assert.equal(stepLength(direction), gridDistance(ORIGIN, step(ORIGIN, direction)), direction)
+  for (const direction of everyWay) assert.equal(stepLength(direction), tileDistance(ORIGIN, step(ORIGIN, direction)), direction)
   assert.deepEqual(["ne", "se", "sw", "nw"].map((direction) => stepLength(direction as Direction)), [3, 3, 3, 3])
 })
 
@@ -174,7 +174,7 @@ test("the rings searched outward from a point: every tile exactly its distance o
   ])
   for (let distance = 0; distance <= 12; distance += 1) {
     const ring = ringOffsets(distance)
-    const everyOffset = around({ x: 0, y: 0 }, distance).filter((offset) => gridDistance({ x: 0, y: 0 }, offset) === distance)
+    const everyOffset = around({ x: 0, y: 0 }, distance).filter((offset) => tileDistance({ x: 0, y: 0 }, offset) === distance)
     assert.deepEqual(ring, everyOffset, `distance ${distance}`)
     for (const offset of ring) assert.ok(!Object.is(offset.x, -0) && !Object.is(offset.y, -0), `${distance}: ${offset.x},${offset.y}`)
   }
@@ -220,7 +220,7 @@ function block(placed: readonly Placed[]): PlacementBlock {
   return { rows: rows.map((row) => row.join("")), legend }
 }
 
-/** An open Grid, 50 by 30, with each side placed as given, each side's target where `targets` says, and rock on
+/** An open battlefield, 50 by 30, with each side placed as given, each side's target where `targets` says, and rock on
  *  every tile `rocks` names; the content is `registry`'s. */
 function field(
   sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>,
@@ -236,7 +236,7 @@ function field(
   const opening: BattleOpening = {
     id: "rows-field",
     name: "rows field",
-    grid: { width: 50, height: 30 },
+    size: { width: 50, height: 30 },
     seed: 1,
     pulseTicks: 400,
     terrain: Array.from({ length: 30 }, (_, y) => Array.from({ length: 50 }, (_, x) => (rock(x, y) ? "#" : ".")).join("")),
@@ -498,12 +498,12 @@ test("losing a claim on a step down banks no sprint: the step across taken inste
   }
 })
 
-test("a state measures the Grid by the one rule and carries no measure: one that does is refused, not carried along", () => {
+test("a state measures the battlefield by the one rule and carries no measure: one that does is refused, not carried along", () => {
   const state = field({ A: [[5, 5, TROOPER]], B: [[30, 20, TROOPER]] })
   const text = serializeState(state)
   assert.equal(hashState(parseState(text)), hashState(state))
   const measured = JSON.stringify({ ...(JSON.parse(text) as Record<string, unknown>), measure: { row: 2, tile: 1 } })
-  assert.throws(() => parseState(measured), /^Error: state carries a measure, but every state measures the Grid by the one rule/)
+  assert.throws(() => parseState(measured), /^Error: state carries a measure, but every state measures the battlefield by the one rule/)
 })
 
 test("every battle on file keeps every unit's credit between none and its dearest step: no step is taken on credit it did not have", async () => {
@@ -526,9 +526,9 @@ test("every battle on file keeps every unit's credit between none and its deares
 
 // --- The rules round a battle --------------------------------------------------------------------------------------
 
-/** A ridge of rock across an open field, a Grid Nexus of the player's south-west of it, and one trooper of the
+/** A ridge of rock across an open field, a Nexus of the player's south-west of it, and one trooper of the
  *  raid's coming from the north-east to it. */
-function ridgeWalk(): Readonly<{ mission: MissionDefinition; grid: GridTerrain }> {
+function ridgeWalk(): Readonly<{ mission: MissionDefinition; terrain: MapTerrain }> {
   const width = 40
   const height = 24
   const tiles = Array.from({ length: width * height }, (_, index) => {
@@ -536,7 +536,7 @@ function ridgeWalk(): Readonly<{ mission: MissionDefinition; grid: GridTerrain }
     const y = Math.floor(index / width)
     return y === 9 && x >= 14 && x <= 24 ? ("terrain.rock" as const) : ("terrain.plain" as const)
   })
-  const grid: GridTerrain = { width, height, tiles }
+  const terrain: MapTerrain = { width, height, tiles }
   const mission: MissionDefinition = {
     id: "rows-walk",
     name: "rows walk",
@@ -549,15 +549,15 @@ function ridgeWalk(): Readonly<{ mission: MissionDefinition; grid: GridTerrain }
       { id: "end", when: { event: "pulse.end", pulse: 1 }, do: [{ win: true }] },
     ],
   }
-  validateMission(mission, grid, FIXTURE_REGISTRY)
-  return { mission, grid }
+  validateMission(mission, terrain, FIXTURE_REGISTRY)
+  return { mission, terrain }
 }
 
 test("the forecast's way is the Pulse's own walk: down the screen's diagonal from the north-east, and round the ridge", () => {
-  const { mission, grid } = ridgeWalk()
+  const { mission, terrain } = ridgeWalk()
   const input: MissionPulseInput = {
     mission,
-    grid,
+    terrain,
     registry: FIXTURE_REGISTRY,
     pulse: 1,
     carried: null,
@@ -588,11 +588,11 @@ test("the forecast's way is the Pulse's own walk: down the screen's diagonal fro
 })
 
 test("the forecast's way ends touching what it goes for, straight above or below it, never on it", () => {
-  // An open field, the player's Grid Nexus far to the south-west, a trooper of the player's out on it, and one trooper
+  // An open field, the player's Nexus far to the south-west, a trooper of the player's out on it, and one trooper
   // of the raid's straight above or below it, within its reach: the raid's turns to it rather than heading on for the
   // Nexus (`headsForNexus`). Units never block
   // a forecast's way, so a way that ran on to the target's own tile would stand on it.
-  const grid: GridTerrain = { width: 40, height: 24, tiles: Array.from({ length: 40 * 24 }, () => "terrain.plain" as const) }
+  const terrain: MapTerrain = { width: 40, height: 24, tiles: Array.from({ length: 40 * 24 }, () => "terrain.plain" as const) }
   const endOfWay = (raidAt: Coord, postAt: Coord): Coord | undefined => {
     const mission: MissionDefinition = {
       id: "rows-touch",
@@ -610,8 +610,8 @@ test("the forecast's way ends touching what it goes for, straight above or below
         { id: "end", when: { event: "pulse.end", pulse: 1 }, do: [{ win: true }] },
       ],
     }
-    validateMission(mission, grid, FIXTURE_REGISTRY)
-    const input: MissionPulseInput = { mission, grid, registry: FIXTURE_REGISTRY, pulse: 1, carried: null, structures: [{ contentId: NEXUS, anchor: { x: 5, y: 17 } }] }
+    validateMission(mission, terrain, FIXTURE_REGISTRY)
+    const input: MissionPulseInput = { mission, terrain, registry: FIXTURE_REGISTRY, pulse: 1, carried: null, structures: [{ contentId: NEXUS, anchor: { x: 5, y: 17 } }] }
     const [group] = foreseeIntents(input)
     assert.equal(group?.target?.contentId, TROOPER, "the raid's trooper does not go for the player's")
     assert.deepEqual(group?.target?.anchor, postAt)
@@ -637,16 +637,17 @@ test("the battle with the most rules in it resolves the same way on every run, a
 
 // The Citizens against the Ravels, blasts among its rules: its state and its events (pinned again when every tie came
 // to go by what a unit faces, then a draw, when units came to walk by routes, and when a side with no target came to
-// head for the enemy's Nexus, turning only to what comes within its reach, when the Grid Nexus came to fight back,
+// head for the enemy's Nexus, turning only to what comes within its reach, when the Nexus came to fight back,
 // and when an army came to march in its lines: the same losses, 7 of 10 and 9 of 11; and again when an army came to
 // sort itself on the march by half speed, the Commander a regular troop: the same losses still, 7 and 9).
 // Pinned again when a unit came to keep the target it holds until it falls, or goes 30 ticks unable to strike it
 // (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
-const PINNED_BATTLE = ["0d47933d019fc875c2f63500ef59befa482b5ff1068b1278f80958c88491bffe", "979be6f7659a0466feee9dc505760481aed9293a0849a6aeeaa94b78982e21a0"] as const
+// Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
+const PINNED_BATTLE = ["b97634f9a666c47c908d55c7736eb2bce334f621a7bed14afd0e34477071124d", "979be6f7659a0466feee9dc505760481aed9293a0849a6aeeaa94b78982e21a0"] as const
 
 test("every reach the content and the Experiments offer is a whole number of rows, 1, which is touching, or even, and so is every reach the rules work out from them", () => {
   // A reach of R covers R / 2 rows up and down, rounded down, so an odd reach above 1 buys a column at each end of
-  // its rows and no row: the grid design's "whole rows". Content keeps to even reaches; 1 means touching.
+  // its rows and no row: the battlefield design's "whole rows". Content keeps to even reaches; 1 means touching.
   const whole = (reach: number): boolean => reach === 1 || reach % 2 === 0
   const odd: string[] = []
   for (const id of FIXTURE_REGISTRY.ids()) {
@@ -664,7 +665,7 @@ test("every reach the content and the Experiments offer is a whole number of row
       "flight trigger": definition.attack === undefined ? undefined : fleeTrigger(definition),
     }
     for (const [what, reach] of Object.entries(reaches)) if (reach !== undefined && !whole(reach)) odd.push(`${id} ${what} ${reach}`)
-    // Melee is touching, counted in steps, not in the Grid's distance: a melee range is 1, or it would reach a row
+    // Melee is touching, counted in steps, not in the battlefield's distance: a melee range is 1, or it would reach a row
     // and a corner its card's words do not say.
     if (definition.attack?.kind === "melee" && definition.attack.range !== 1) odd.push(`${id} melee range ${definition.attack.range}`)
   }

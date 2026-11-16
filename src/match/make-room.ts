@@ -12,14 +12,14 @@
 // - every unit on the ground (or a worker) whose body the new building covers is **displaced**, whoever's it is; a
 //   flyer passes over a building and stays;
 // - the displaced go one at a time — those standing nearest the building's middle first, then the northern, then by
-//   ordinal — each walking (one column a step across, two a row, the Grid's own distance) to the **nearest place off
+//   ordinal — each walking (one column a step across, two a row, the battlefield's own distance) to the **nearest place off
 //   every building** that no one displaced before it has taken: a search outward from where it stands, over the ground
 //   it can walk (never rock, never another building);
 // - **a ripple**: a unit already standing on the place it takes is displaced in its turn, after it, and makes room the
 //   same way (never back onto a place taken), starting its walk as the one that pushed it arrives; nobody is displaced
 //   twice by one building, so the ripple always ends;
 // - a unit with nowhere to go stays where it is (the opening then refuses the round, as it refuses a force with no
-//   room: a Grid with no free ground at all).
+//   room: a battlefield with no free ground at all).
 //
 // Its walks are steps in ticks of the Build Phase's presentation clock (`ROOM_STEP_TICKS` a step), the same shape as
 // the regroup's, so the view plays both the same way.
@@ -54,9 +54,9 @@ export function makeRoom(
 ): RoomResult {
   const contentFor = (player: PlayerId): ContentRegistry => sides?.[player] ?? registry
   const definitionOf = (entity: Pick<EntityState, "player" | "contentId">): ContentDef => contentFor(entity.player).get(entity.contentId)
-  const grid = state.grid
-  const key = (tile: Coord): number => tile.y * grid.width + tile.x
-  const inside = (tile: Coord): boolean => tile.x >= 0 && tile.y >= 0 && tile.x < grid.width && tile.y < grid.height
+  const terrain = state.terrain
+  const key = (tile: Coord): number => tile.y * terrain.width + tile.x
+  const inside = (tile: Coord): boolean => tile.x >= 0 && tile.y >= 0 && tile.x < terrain.width && tile.y < terrain.height
 
   const built = new Set<number>()
   for (const entity of state.entities) {
@@ -104,7 +104,7 @@ export function makeRoom(
       const onItself = (tile: Coord): boolean => under.has(key(tile)) || ownKeys.has(key(tile))
       const way = wayOut(from, entity.player === "A" ? 1 : -1, (anchor) => {
         const tiles = tilesOf(anchor, definition.footprint)
-        if (!tiles.every((tile) => inside(tile) && !TERRAIN[grid.tiles[key(tile)] as keyof typeof TERRAIN].impassable)) return "wall"
+        if (!tiles.every((tile) => inside(tile) && !TERRAIN[terrain.tiles[key(tile)] as keyof typeof TERRAIN].impassable)) return "wall"
         if (tiles.some((tile) => taken.has(key(tile)))) return "wall"
         // A building it stands under it may walk out across; any other is a wall.
         if (tiles.some((tile) => built.has(key(tile)))) return tiles.some((tile) => built.has(key(tile)) && !onItself(tile)) ? "wall" : "through"
@@ -145,7 +145,7 @@ export function makeRoom(
 
 /**
  * The way from `from` to the nearest anchor `ground` calls room, as the anchors walked, `from` first — or `null` when
- * there is none. A search outward by the Grid's own distance (a step across one, a step up or down two), over anchors
+ * there is none. A search outward by the battlefield's own distance (a step across one, a step up or down two), over anchors
  * that are room or that it may pass `through`; ties go forward first (toward `forward`'s side: +1 east), then back, then
  * north, then south, so a mirrored map gives mirrored ways.
  */

@@ -64,12 +64,12 @@ function block(placed: readonly Placed[]): PlacementBlock {
   return { rows: rows.map((row) => row.join("")), legend }
 }
 
-/** A small Grid with each side placed as given, resolved tick by tick: every event, in order. */
+/** A small battlefield with each side placed as given, resolved tick by tick: every event, in order. */
 function run(sides: Readonly<Record<PlayerId, readonly Placed[]>>, ticks: number, registry = REGISTRY, abilities?: AbilityTable, seed = 1): DomainEvent[] {
   const opening: BattleOpening = {
     id: "abilities",
     name: "abilities",
-    grid: { width: 24, height: 8 },
+    size: { width: 24, height: 8 },
     seed,
     pulseTicks: ticks,
     terrain: Array.from({ length: 8 }, () => ".".repeat(24)),
@@ -93,7 +93,7 @@ const triggered = (events: readonly DomainEvent[]): Triggered[] => events.filter
 
 test("a bounty pays for each enemy that falls within its reach while its bearer stands, a building its own price, and nothing else", () => {
   // Side A: the hunter, and a killer beside each of three enemies: one in reach, one out of it, a shed in reach.
-  // A prey far off nobody reaches keeps side B on the Grid, so the battle runs until the shed falls too.
+  // A prey far off nobody reaches keeps side B on the battlefield, so the battle runs until the shed falls too.
   const events = run(
     {
       A: [[2, 2, "unit.test.hunter"], [4, 2, "unit.test.killer"], [16, 2, "unit.test.killer"], [3, 5, "unit.test.killer"]],

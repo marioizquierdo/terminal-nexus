@@ -17,7 +17,7 @@ purpose, and repeatably, before the units need it.
 ## Question
 
 Is there a workflow — research, a tool, an image model and a pass by hand — that makes ASCII and ANSI art for a
-unit, a portrait or a vignette that a person calls good, at the sizes the screen gives it, inside the Grid's rules
+unit, a portrait or a vignette that a person calls good, at the sizes the screen gives it, inside the battlefield's rules
 (style roles and not colours, the monochrome floor, plain ASCII with the optional Unicode pack)?
 
 ## Steps
@@ -31,7 +31,7 @@ Not started. Each waits for Mario's word, and the order is a first guess.
       [`ascii-art-references.md`](../game-design/ascii-art-references.md).
 - [ ] The tools that turn an image into text (chafa, jp2a, ascii-image-converter, libcaca and the like), each tried on
       the same pictures at the sizes the game uses, with what each is good for.
-- [ ] Rules for the game's art, as a design document: sizes (a Grid glyph, a card's portrait, a vignette), what
+- [ ] Rules for the game's art, as a design document: sizes (a battlefield glyph, a card's portrait, a vignette), what
       a Commander's art builds on (her symbol, below), and what the monochrome floor keeps.
 
 ### Step 15B — The workflow
@@ -51,9 +51,9 @@ Not started. Each waits for Mario's word, and the order is a first guess.
 
 **A Commander's symbol is her identity, and her art builds on it** (the owner: "the symbology and the icon used to
 represent the commander is important in the identity, and it should be kind of related, not just arbitrary"). Her
-glyph on the Grid is chosen for who she is, and her portrait and her vignette grow out of it.
+glyph on the battlefield is chosen for who she is, and her portrait and her vignette grow out of it.
 
 ## Out of scope
 
-A Grid glyph's size (a unit is still the glyph its tile holds), colours outside the style roles, and art for content
+A battlefield glyph's size (a unit is still the glyph its tile holds), colours outside the style roles, and art for content
 no milestone builds.

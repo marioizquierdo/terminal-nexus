@@ -1,7 +1,7 @@
 {
   "format": "terminal-nexus.save/1",
   "name": "Citizens versus Ravels - the ruined middle",
-  "notes": "The first asymmetric fixture, on the default 48x16 preset - the one the whole composition is derived from, so the Grid fills the viewport exactly. Ten Citizens against eleven Ravels, each in front of a Grid Nexus: fewer and tougher on one cadence against more, faster, off the beat, and mostly explosive. Neither roster is a Commander Army; both are disposable bench content, and the point is contrast rather than balance. Both sides are staggered across columns on purpose - with every unit on one rank an entire army targets one enemy, because at long range every enemy is equidistant in Chebyshev and the tie breaks on entity id (Q17).",
+  "notes": "The first asymmetric fixture, on the default 48x16 preset - the one the whole composition is derived from, so the battlefield fills the viewport exactly. Ten Citizens against eleven Ravels, each in front of a Nexus: fewer and tougher on one cadence against more, faster, off the beat, and mostly explosive. Neither roster is a Commander Army; both are disposable bench content, and the point is contrast rather than balance. Both sides are staggered across columns on purpose - with every unit on one rank an entire army targets one enemy, because at long range every enemy is equidistant in Chebyshev and the tie breaks on entity id (Q17).",
   "setup": {
     "map": {
       "id": "citizens-versus-ravels",

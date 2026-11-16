@@ -1,7 +1,7 @@
 {
   "format": "terminal-nexus.save/1",
   "name": "March: the Commander is a regular troop - she walks in her place and nobody waits for her",
-  "notes": "Vasse marches from the north-west corner on the enemy's Grid Nexus in the south-east, the long way across the map, with four troopers behind her, two marksmen ahead of her and a flanker (the bench's runner that goes beyond the line) behind her on a row of its own. She is a ranged unit like any other, short of the marksmen: the troopers walk past her at full speed, she walks at half speed while they are in her sight, the marksmen settle behind her, and only the flanker, ahead of everyone in the list, is ahead of the troopers. Nothing waits for her, nothing is held back by her. Done when the army reaches the Nexus with its troopers ahead of her and its marksmen behind, and it falls.",
+  "notes": "Vasse marches from the north-west corner on the enemy's Nexus in the south-east, the long way across the map, with four troopers behind her, two marksmen ahead of her and a flanker (the bench's runner that goes beyond the line) behind her on a row of its own. She is a ranged unit like any other, short of the marksmen: the troopers walk past her at full speed, she walks at half speed while they are in her sight, the marksmen settle behind her, and only the flanker, ahead of everyone in the list, is ahead of the troopers. Nothing waits for her, nothing is held back by her. Done when the army reaches the Nexus with its troopers ahead of her and its marksmen behind, and it falls.",
   "setup": {
     "map": {
       "id": "march-commander",

@@ -26,12 +26,12 @@ test("a Battle Round at the 80 x 24 floor is exactly 80 x 24, a column for each 
   const frame = screen.frameAt(1000, "color256")
   assert.deepEqual([frame.width, frame.height], [MENU_SIZE.width, MENU_SIZE.height])
   assert.equal(frame.cells.length, MENU_SIZE.width * MENU_SIZE.height)
-  // The sandbox's 48 x 16 Grid is the minimum viewport, all of it on screen, one cell a tile.
-  assert.deepEqual([timeline.grid.width, timeline.grid.height], [MIN_VIEWPORT.width, MIN_VIEWPORT.height])
+  // The sandbox's 48 x 16 battlefield is the minimum viewport, all of it on screen, one cell a tile.
+  assert.deepEqual([timeline.terrain.width, timeline.terrain.height], [MIN_VIEWPORT.width, MIN_VIEWPORT.height])
   assert.ok(screen.layout.viewport.width >= MIN_VIEWPORT.width && screen.layout.viewport.height >= MIN_VIEWPORT.height)
   const north = screen.cellOf({ x: 0, y: 0 })
-  const south = screen.cellOf({ x: timeline.grid.width - 1, y: timeline.grid.height - 1 })
-  assert.deepEqual([south.x - north.x + 1, south.y - north.y + 1], [timeline.grid.width, timeline.grid.height])
+  const south = screen.cellOf({ x: timeline.terrain.width - 1, y: timeline.terrain.height - 1 })
+  assert.deepEqual([south.x - north.x + 1, south.y - north.y + 1], [timeline.terrain.width, timeline.terrain.height])
   assert.ok(north.x > 0 && north.y > 0 && south.x < frame.width - 1 && south.y < frame.height - 1)
 })
 

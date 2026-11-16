@@ -7,13 +7,13 @@
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../engine/events/types.ts"
-import type { Coord, GridTerrain } from "../engine/geometry/types.ts"
+import type { Coord, MapTerrain } from "../engine/geometry/types.ts"
 import type { MatchState, PlayerId } from "../engine/state/types.ts"
 import type { ActiveEffect } from "./effects/index.ts"
 import { EffectTimeline, buildFlightHoldTicks, deriveEffects, flightHoldTicks } from "./effects/index.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { ColorDepth } from "./roles.ts"
-import type { HeldCorpse } from "./grid-layer.ts"
+import type { HeldCorpse } from "./map-layers.ts"
 import type { FireTile } from "./burning.ts"
 import { fireAt } from "./burning.ts"
 
@@ -23,7 +23,7 @@ export type PulseTimeline = Readonly<{
   seed: number
   pulseTicks: number
   ticksPerSecond: number
-  grid: GridTerrain
+  terrain: MapTerrain
   registry: ContentRegistry
   /** `states[t]` is the state settled at the end of tick `t`; `states[0]` is the opening state. */
   states: readonly MatchState[]
@@ -60,8 +60,8 @@ const STEP_LANDS_AT = 0.5
 /**
  * Everything the view draws at one presentation instant, before it is laid onto a screen: which tick's
  * state, where each entity is drawn between ticks, the ranged kills still waiting for their tracers, what
- * every effect is painting, and the feed up to that tick. The Battle Round's frame puts it on the Grid through
- * the camera (`pulse-scene.ts`); the ASCII screenshot draws the board from it. Pure, like the rest of the view.
+ * every effect is painting, and the feed up to that tick. The Battle Round's frame puts it on the battlefield through
+ * the camera (`pulse-scene.ts`); the ASCII screenshot draws the battlefield from it. Pure, like the rest of the view.
  */
 export type PulseSample = Readonly<{
   tick: number

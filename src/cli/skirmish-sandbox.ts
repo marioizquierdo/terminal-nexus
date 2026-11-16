@@ -1,6 +1,6 @@
-// A sandbox played by the `skirmish` command (`./skirmish.ts`): a save with a `start`, a board written by hand
-// (docs/system-design/skirmish-saves.md, "A board written by hand"). Its one Battle Round is the battle engine run from
-// that board to its end or its ticks (`playSandboxRound`), as every Battle Round of a battle is; nothing is saved after
+// A sandbox played by the `skirmish` command (`./skirmish.ts`): a save with a `start`, a battlefield set up by hand
+// (docs/system-design/skirmish-saves.md, "A battlefield set up by hand"). Its one Battle Round is the battle engine run from
+// that battlefield to its end or its ticks (`playSandboxRound`), as every Battle Round of a battle is; nothing is saved after
 // it, since the file is the battle.
 
 import { writeFileSync } from "node:fs"
@@ -23,7 +23,7 @@ export function playSandbox(save: SaveFile, request: SkirmishRequest, write: (li
   for (const slot of SLOTS) if (request.slots[slot] !== undefined) throw new Error(`--${slot}: a sandbox's slots plan nothing, its units are in its start`)
   if (request.save !== undefined) throw new Error("--save: a sandbox plays the one Battle Round its start writes, with nothing to save after it")
   const opening = openingOf(save)
-  write(`${opening.name} (${opening.id}), seed ${save.setup.seed}: a sandbox, its board written by hand, ${save.setup.roundTicks} ticks at most`)
+  write(`${opening.name} (${opening.id}), seed ${save.setup.seed}: a sandbox, its battlefield set up by hand, ${save.setup.roundTicks} ticks at most`)
   if (request.playTo === undefined) {
     write("add --play-to next to play it")
     return { refused: false }

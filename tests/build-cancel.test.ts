@@ -97,7 +97,7 @@ test("x x x from anywhere lands on the menu with the keyboard there, and stays",
   }
   // The driver's `back` is the same walk.
   const driver = buildSide()
-  driver.build.run([{ kind: "focus", target: "grid" }, { kind: "arm", index: 0 }, { kind: "back" }, { kind: "back" }, { kind: "back" }])
+  driver.build.run([{ kind: "focus", target: "map" }, { kind: "arm", index: 0 }, { kind: "back" }, { kind: "back" }, { kind: "back" }])
   assert.ok(onMenu(driver.build.state))
 })
 
@@ -129,7 +129,7 @@ test("Esc while placing disarms and goes back one level, to where the placing be
   const onMap = buildSide()
   keys(onMap, TAB, "1", ESC)
   assert.equal(onMap.build.state.armed, null)
-  assert.equal(onMap.build.state.focus, "grid", "Esc from a map arming left the map")
+  assert.equal(onMap.build.state.focus, "map", "Esc from a map arming left the map")
   assert.equal(onMap.build.state.status.text, "Cancelled.")
   keys(onMap, ESC)
   assert.equal(onMap.build.state.focus, "menu")
@@ -159,7 +159,7 @@ test("a right click walks back as x does, and never opens a menu", () => {
   keys(side, TAB, "1")
   rightClickMap(side)
   assert.equal(side.build.state.armed, null)
-  assert.equal(side.build.state.focus, "grid")
+  assert.equal(side.build.state.focus, "map")
   rightClickMap(side)
   assert.ok(onMenu(side.build.state))
   rightClickMap(side)

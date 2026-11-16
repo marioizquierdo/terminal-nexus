@@ -27,7 +27,7 @@ export function undecided(level: PlayableLevel): PlayableLevel {
   }
 }
 
-/** One round of the empty walk: the battle's verdict, and the lowest health player A's Grid Nexus fell to in it. */
+/** One round of the empty walk: the battle's verdict, and the lowest health player A's Nexus fell to in it. */
 export type EmptyRound = Readonly<{ round: number; verdict: string; nexusLow: number; nexusMax: number }>
 
 /** The empty walk, round by round, until the level ends: what `openRound` plays to reach a later round. */
@@ -35,7 +35,7 @@ export function emptyWalk(level: PlayableLevel): EmptyRound[] {
   const rounds: EmptyRound[] = []
   let context = level.firstRound()
   for (let round = 1; round <= level.rounds; round += 1) {
-    const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
+    const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
     const state = createBuildState(withoutScene(context), STARTER_START_CURSOR, viewport)
     const resolved = level.play.startPulse(context, state)
     if (resolved === null) break

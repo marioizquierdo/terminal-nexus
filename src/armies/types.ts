@@ -19,7 +19,7 @@
 
 import type { ContentEntry } from "../content/data.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import type { GridTerrain } from "../engine/geometry/types.ts"
+import type { MapTerrain } from "../engine/geometry/types.ts"
 import type { MissionDefinition } from "../mission/types.ts"
 import type { Barks } from "./barks.ts"
 import type { Lean } from "./curve.ts"
@@ -110,7 +110,7 @@ export type BuildingActionCard = Readonly<{
  * player (commander-armies.md, "what a Nexus power does") — and what it does. `credits` is War Chest's, the owner's
  * tool for testing placement, kept beside the real draft.
  *
- * - `spawnUnits`: so many of a unit join the player's troops at the Grid Nexus as the round's Battle Round
+ * - `spawnUnits`: so many of a unit join the player's troops at the Nexus as the round's Battle Round
  *   starts, and stay with the army after (Reserve Callup).
  * - `addWaves`: a building that spawns sends so many more waves a round, for the rest of the mission
  *   (Drill Schedule). `building` is a building card's id.
@@ -260,7 +260,7 @@ export const PORTRAIT_WIDTH = 5
 /** The cards a level adds to what its story offers, by id: from its own army or one it requires. */
 export type Unlocks = Readonly<{ buildings?: readonly string[]; powers?: readonly string[] }>
 
-/** The trigger a mission reads when its story's Commander walks onto the Grid: a spawn of `"@commander"` sets down
+/** The trigger a mission reads when its story's Commander walks onto the battlefield: a spawn of `"@commander"` sets down
  *  whichever Commander leads the story that plays the level, so a level is written once for every Commander. */
 export const COMMANDER_PLACEHOLDER = "@commander"
 
@@ -332,9 +332,9 @@ export type ArmyManifest = Readonly<{
 
 // --- What the loader needs besides the armies -----------------------------------------------------------
 
-/** A map a level can name: its Grid, and the structures already standing on it. */
+/** A map a level can name: its battlefield, and the structures already standing on it. */
 export type LevelMap = Readonly<{
-  grid: () => GridTerrain
+  terrain: () => MapTerrain
   standing: readonly Readonly<{ contentId: string }>[]
 }>
 

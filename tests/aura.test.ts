@@ -76,12 +76,12 @@ function block(placed: readonly Placed[]): PlacementBlock {
   return { rows: rows.map((row) => row.join("")), legend }
 }
 
-/** A small Grid with each side placed as given, resolved tick by tick for `ticks`: every event, in order. */
+/** A small battlefield with each side placed as given, resolved tick by tick for `ticks`: every event, in order. */
 function run(sides: Readonly<Record<PlayerId, readonly Placed[]>>, ticks: number): DomainEvent[] {
   const opening: BattleOpening = {
     id: "aura-edges",
     name: "aura edges",
-    grid: { width: 12, height: 8 },
+    size: { width: 12, height: 8 },
     seed: 1,
     pulseTicks: ticks,
     terrain: Array.from({ length: 8 }, () => ".".repeat(12)),

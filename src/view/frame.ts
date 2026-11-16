@@ -71,7 +71,7 @@ export const BLANK: Cell = { glyph: " ", style: {} }
  */
 export type BandCellStyleOnly = Readonly<{ band: number; x: number; y: number; style: CellStyle }>
 
-/** Bands, not free z-indexes (`presentation.md`). The Grid layers map onto them directly. */
+/** Bands, not free z-indexes (`presentation.md`). The battlefield layers map onto them directly. */
 export const BANDS = {
   terrain: 1,
   territory: 2,
@@ -201,9 +201,9 @@ const PACK_GLYPHS = new Set([
   "\u2518",
   "\u2504",
   "\u2506",
-  "\u2501", // heavy horizontal, a border side that has reached the Grid's own edge
+  "\u2501", // heavy horizontal, a border side that has reached the battlefield's own edge
   "\u2503", // heavy vertical, the same
-  "\u251c", // the junctions where the rules closing the Grid pane meet the frame and the divider
+  "\u251c", // the junctions where the rules closing the map meet the frame and the divider
   "\u2524",
   "\u252c",
   "\u2534",

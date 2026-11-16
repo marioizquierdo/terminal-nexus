@@ -13,9 +13,9 @@
 //   that Pulse (she is dead) and for the `roundsOut` whole rounds after it, and is due back at the start of
 //   the round after those (with none to sit out, the very next one);
 // - `restoreCommanders` runs where one round hands over to the next, after the regroup: every Commander due back
-//   by then is set down on the free tile nearest her side's Grid Nexus, a new entity at full health (the
-//   Prime Nexus replicating its Symbol onto the Grid again), and stands there through the round's Build
-//   Phase like any survivor. A side with no Grid Nexus standing has nowhere to restore her to, so her
+//   by then is set down on the free tile nearest her side's Nexus, a new entity at full health (the
+//   Prime Nexus replicating its Symbol onto the battlefield again), and stands there through the round's Build
+//   Phase like any survivor. A side with no Nexus standing has nowhere to restore her to, so her
 //   absence goes on until it has one.
 //
 // Deterministic like the battle engine: no clock, no randomness; the answer depends only on the state, the
@@ -36,11 +36,11 @@ export function roundsOutOf(registry: ContentRegistry, contentId: string): numbe
   return registry.get(contentId).roundsOut ?? 0
 }
 
-/** How far from her Grid Nexus a restored Commander may be set down, by the Grid's own distance (`nearestFit`): 8
+/** How far from her Nexus a restored Commander may be set down, by the battlefield's own distance (`nearestFit`): 8
  *  rows up and down, 16 columns across. */
 const RESTORE_RADIUS = 16
 
-/** A Commander who fell and is not on the Grid: whose, which, when she fell, and the round she is due back
+/** A Commander who fell and is not on the battlefield: whose, which, when she fell, and the round she is due back
  *  at the start of. */
 export type Absence = Readonly<{
   player: PlayerId
@@ -65,7 +65,7 @@ export function fallen(events: readonly DomainEvent[], registry: ContentRegistry
 
 /**
  * The state round `round` starts from: `state` (what the last round left, after the regroup) with every
- * Commander whose absence is over set down beside her side's Grid Nexus, and the absences that go on.
+ * Commander whose absence is over set down beside her side's Nexus, and the absences that go on.
  */
 export function restoreCommanders(
   state: MatchState,
@@ -80,7 +80,7 @@ export function restoreCommanders(
   if (due.length === 0) return { state, absent: [...absent], restored: [] }
 
   // The room there is: everything standing, and each Commander as she is set down.
-  const index = new OccupancyIndex(state.grid)
+  const index = new OccupancyIndex(state.terrain)
   for (const entity of state.entities) {
     const definition = contentFor(entity.player).get(entity.contentId)
     index.add(definition.layer, entity.ordinal, entity.anchor, definition.footprint)
@@ -96,7 +96,7 @@ export function restoreCommanders(
       still.push(absence)
       continue
     }
-    // Her side's Grid Nexus, the lowest ordinal if it has several: the Commander's anchor on the Grid.
+    // Her side's Nexus, the lowest ordinal if it has several: the Commander's anchor on the battlefield.
     const content = contentFor(absence.player)
     const nexus = state.entities.find((entity) => entity.player === absence.player && content.get(entity.contentId).nexus === true)
     const definition = content.get(absence.contentId)

@@ -23,7 +23,7 @@ This is **symbology all the way down**: the process by which terminal mechanics 
 
 An important entity should rhyme at four resolutions:
 
-1. one-cell Grid glyph;
+1. one-cell battlefield glyph;
 2. compact selection badge, aura, or status treatment;
 3. larger inspection portrait;
 4. story tableau or cutscene composition.
@@ -42,7 +42,7 @@ The military secured the site. Long-delay communication left frontier leaders ac
 
 The Ravels attacked almost immediately.
 
-Their own Prime Nexus had awakened elsewhere in the region. It replicated a battle Nexus toward the human claim and sent a chosen Symbol with it. Vasse's story begins at this perimeter: survivors leaving the broken annex, Ravel forces descending on the new grid, and a military leader discovering that the human Prime Nexus recognizes them.
+Their own Prime Nexus had awakened elsewhere in the region. It replicated a battle Nexus toward the human claim and sent a chosen Symbol with it. Vasse's story begins at this perimeter: survivors leaving the broken annex, Ravel forces descending on the new battlefield, and a military leader discovering that the human Prime Nexus recognizes them.
 
 ### 2.1 The Return
 
@@ -50,7 +50,7 @@ Before and during the Activation, people across unrelated civilizations dreamed 
 
 No one knows whether the visions came from the Ancients, the Prime Nexuses, an approaching Original, or minds reacting to the network. Most playable Commanders are entangled with these events, but the visions do not select every Commander and do not belong only to them.
 
-## 3. Prime Nexuses and Grid Nexuses
+## 3. Prime Nexuses and Nexuses
 
 Prime Nexuses exist across the galaxy. They are always recognizably pyramidal, but their scale, material, surface architecture, inner space, and surrounding artifacts vary dramatically.
 
@@ -63,20 +63,11 @@ Prime Nexuses exist across the galaxy. They are always recognizably pyramidal, b
 - a political throne that legitimizes control of its territory;
 - a mirror that responds differently to each claimant civilization.
 
-**RULE: when the ancient protocol demands a challenge, a Prime Nexus stays home and replicates a Grid Nexus.** The play surface is the **Grid**; the replica standing on it is a **Grid Nexus**, and the one that stays home is a **Prime Nexus**. The battle engine recognises a Grid Nexus by a flag on its content definition, never by a name (`src/content/types.ts`). The Prime Nexus projects or fabricates a smaller copy of itself on a remote Grid, along with bounded matter, stored patterns, and its chosen Commander. The settlement in a match grows around this replica; mature cities do not travel with it.
+**RULE: when the ancient protocol demands a challenge, a Prime Nexus stays home and replicates a Nexus.** The replica that fights is the **Nexus**, and the one that stays home is the **Prime Nexus**. The battle engine recognises a Nexus by a flag on its content definition, never by a name (`src/content/types.ts`). The Prime Nexus projects or fabricates a smaller copy of itself on a remote battlefield, along with bounded matter, stored patterns, and its chosen Commander. The settlement in a match grows around this replica; mature cities do not travel with it.
 
-**What a Grid is.** Where two claims touch, the network does not send armies onto open country; it squares the
-country off. A Grid is ground the ancient protocol has taken under its own law: a lattice laid over a valley, a ruin or
-a city block, every cell counted, every step across it paid for in the network's own measure. Inside it the heartbeat
-is physics. Bodies move cell by cell, time advances in pulses, and when a Battle Round's beat runs out both replicas
-pull their forces back and the Grid holds still for the next plan. Nothing inside it is luck the protocol did not
-deal: the same plans on the same ground play out the same way, which is why Commanders study a Grid like a board and
-plan where they cannot watch. From outside, a Grid is a scar of right angles across a world; from the player's chair,
-it is exactly what the screen shows, a field of characters where everything that happens can be read.
+The Nexus is a real extension of the Prime, not a hologram. Destroying it ends the local claim, collapses dependent infrastructure, and releases a fragment of authority that the victor may absorb. It does not automatically exterminate the faction or destroy the distant Prime Nexus.
 
-The Grid Nexus is a real extension of the Prime, not a hologram. Destroying it ends the local claim, collapses dependent infrastructure, and releases a fragment of authority that the victor may absorb. It does not automatically exterminate the faction or destroy the distant Prime Nexus.
-
-Grid replicas operate rhythmically. Each round opens with the **Nexus Pulse**, the moment the Nexus speaks to its Commander: its pulse, felt by its Symbol, and with it the powers it offers. During the **Build Phase**, the local Nexus gathers patterns and accepts a hidden plan. During the **Battle Round**, both opposing replicas release their committed changes and drive the Grid through a fixed interval of activity. Workers, production, movement, attacks, and restoration effects all appear to ride the same ancient heartbeat. The terms are both interface language and observable physics.
+The replicas operate rhythmically. Each round opens with the **Nexus Pulse**, the moment the Nexus speaks to its Commander: its pulse, felt by its Symbol, and with it the powers it offers. During the **Build Phase**, the local Nexus gathers patterns and accepts a hidden plan. During the **Battle Round**, both opposing replicas release their committed changes and drive the battlefield through a fixed interval of activity. Workers, production, movement, attacks, and restoration effects all appear to ride the same ancient heartbeat. The terms are both interface language and observable physics.
 
 Captured authority may unlock a protocol tier, artifact permission, pattern, vision, or route. It does not copy an enemy's entire roster. Across many conflicts, each Prime Nexus changes through what its replicas survive, destroy, and recover.
 
@@ -90,7 +81,7 @@ The symbolic synthesis is:
 
 **RULE: each Nexus is named for the faction that holds it: the Citizen Nexus, the Ravel Nexus, the Feudal Nexus, the Glitch Nexus, the Alder Nexus.** That is the name the design, the code, content ids, and the interface all use (`src/content/citizen.ts` and `src/content/ravel.ts` define `structure.citizen.nexus` and `structure.ravel.nexus`). There are no proper names, because a reader tracking five factions should not also have to track five names for the machines those factions hold.
 
-Where the distinction matters, say **Citizen Prime Nexus** (rooted, at home) or **Citizen Grid Nexus** (the replica standing on the Grid). Unqualified, "the Citizen Nexus" means whichever one the sentence is about.
+Where the distinction matters, say **Citizen Prime Nexus** (rooted, at home) or **Citizen Nexus** (the replica standing on the battlefield). Unqualified, "the Citizen Nexus" means whichever one the sentence is about.
 
 Two exceptions live in *voice*, not in terminology:
 
@@ -123,7 +114,7 @@ The faction shapes the Nexus, and the Nexus reinforces the faction. It does not 
 - Glitch becomes inseparable from its silent Nexus Queen.
 - Alder treats refusal of Nexus power as proof of moral and biological superiority, even while using or containing the replication protocol to deny it to others.
 
-Not every civilization controls ancient technology. Many peoples live between claimants, serve as clients, resist the protocol, worship it from afar, salvage its debris, or wake to find their land squared off into a Grid when replicas appear. The playable factions are exceptional because each has seized, bound, contained, or become symbiotic with a Prime Nexus.
+Not every civilization controls ancient technology. Many peoples live between claimants, serve as clients, resist the protocol, worship it from afar, salvage its debris, or find their land turned into a battlefield when replicas appear. The playable factions are exceptional because each has seized, bound, contained, or become symbiotic with a Prime Nexus.
 
 The Activation exposed active claims to one another and made accumulated authority strategically decisive. Abstention is unstable:
 
@@ -142,13 +133,13 @@ Some individuals experience a psychic or symbolic connection with a Prime Nexus.
 
 These experiences are unreliable. Some people claim a connection and never receive an answer. Some are visionaries or frauds. Some die expecting restoration and remain dead.
 
-A rare connected individual can be sent with a Grid replica and restored by the Prime Nexus after death. Among strategists they are called **Commanders**. Across the wider culture they are also called **Nexus Symbols**, because a Nexus appears to choose them as the living sign of its claim.
+A rare connected individual can be sent with a Nexus replica and restored by the Prime Nexus after death. Among strategists they are called **Commanders**. Across the wider culture they are also called **Nexus Symbols**, because a Nexus appears to choose them as the living sign of its claim.
 
 Symbols are often geniuses, leaders, dangerous mystics, or people whose presence changes a civilization's doctrine. Not every great leader is a Symbol, and not every Symbol is wise or worthy. Most playable Commanders are deeply involved in the Activation, but a faction may rally around a skeptical, unwilling, or politically inconvenient Symbol.
 
 **RULE:** in battle, a Commander is a persistent frontline `@`. If killed, they are absent for the rest of that Battle Round, and the Prime replicates them as the next round opens; some Symbols take longer to restore, and sit out a round or two (its Nexus Pulse, Build Phase and Battle Round) first. Their death is costly but is not the victory condition. Powers may exploit death, absence, restoration, proximity to the battle Nexus, or the connection between replicas.
 
-**On the Grid a Commander's death is ordinary business.** Symbols fall in most battles they fight; the Nexus files the absence and restores them on its schedule, and every army that has a Symbol plans around the time without one. What a death costs is the rest of that round — for some Symbols a round or two more — never the war, and that is how the people around a Commander learn to speak of it: as scheduling, not as grief (the owner: "commanders die on this game, is part of the gameplay"). The stories teach it from their first missions; the deliberate mystery is not whether a Commander comes back, but what does.
+**On the battlefield a Commander's death is ordinary business.** Symbols fall in most battles they fight; the Nexus files the absence and restores them on its schedule, and every army that has a Symbol plans around the time without one. What a death costs is the rest of that round — for some Symbols a round or two more — never the war, and that is how the people around a Commander learn to speak of it: as scheduling, not as grief (the owner: "commanders die on this game, is part of the gameplay"). The stories teach it from their first missions; the deliberate mystery is not whether a Commander comes back, but what does.
 
 No one can prove that restoration returns the original consciousness. It may restore the same person, reconstruct a pattern, continue a distributed mind, or produce an entity whose belief in continuity is part of the protocol.
 
@@ -177,7 +168,7 @@ Do not answer these merely because a story or implementation prefers completenes
 - Who built the first Prime Nexus?
 - Did one civilization build the network, or did many eras alter it?
 - What exactly did the Activation announce?
-- Why do Prime Nexuses replicate into Grids?
+- Why do Prime Nexuses send replicas to fight?
 - Are Nexus Symbols selected, created, recognized, or merely copied?
 - Is a restored Commander continuous with the person who died?
 - Are Originals authentic beings, reconstructions, prisoners, or interfaces?
@@ -216,7 +207,7 @@ Each faction entry below carries the same anatomy, because the audit that keeps 
 - **Strengths:** Defensive resilience, modular supply lines, and predictable economic scaling. They excel at overlapping fields of fire and an impenetrable frontline. Theirs is the least random doctrine in the game — production, drafts, and defense run to schedule, and the schedule is the weapon.
 - **The Operator:** Command authority — a lawful office in the chain. The rank of Operator entered Citizen regulations one revision after it appeared in their interfaces, and no archivist has explained the order of events.
 - **Energy:** Root chakra—ground, security, earth, and foundation. Rust orange and gunmetal grey.
-- **Visual semiotics:** Hard right angles, brutalist concrete, and symmetry. Grid shapes are solid blocks and unyielding lines that look engineered and mass produced. Citizen units share one cadence and step together, so the army reads as a single machine.
+- **Visual semiotics:** Hard right angles, brutalist concrete, and symmetry. Their shapes on the battlefield are solid blocks and unyielding lines that look engineered and mass produced. Citizen units share one cadence and step together, so the army reads as a single machine.
   - *ASCII examples:* `[`, `]`, `=`, `H`, `O`, `+`. A defensive line might look like `[=H=]`, communicating heavy, interlocking armor.
 - **References:** The Roman Empire, the everyman, the Imperial Guard, militarized bureaucrats, and unified labor.
 - **Alignment:**
@@ -247,13 +238,13 @@ Each faction entry below carries the same anatomy, because the audit that keeps 
 
 ### 8.3 Glitch
 
-- **Concept:** Mechanical void machinos born from a colossal scrapyard built over a dormant ancient ruin. Once moving as slow mechanical ghouls through the rusted wastes, they synergized with the activated machine core, and the event bound their chassis into one silent collective under the Nexus Queen. They now strip away the organic messiness of the cosmos, viewing the Grid as a corrupted data stream waiting to be parsed, recompiled, and assimilated into their flawless collective array.
+- **Concept:** Mechanical void machinos born from a colossal scrapyard built over a dormant ancient ruin. Once moving as slow mechanical ghouls through the rusted wastes, they synergized with the activated machine core, and the event bound their chassis into one silent collective under the Nexus Queen. They now strip away the organic messiness of the cosmos, viewing the battlefield as a corrupted data stream waiting to be parsed, recompiled, and assimilated into their flawless collective array.
 - **Philosophy:** Transhumanism and nihilism. Algorithmic resurrection, iteration, and devotion to the collective. Individual consciousness is an error; the Queen is truth. Nothing Glitch is chaotic — that is the Ravels' word, and the deepest possible misreading of this faction. An error, once accepted, propagates in perfect order. Death is a parse failure, and a parse failure is an instruction.
 - **The player:** Glitch is for the engine-builder — the player who assembles a perverse machine and enjoys the exact moment its arithmetic becomes irreversible.
   - *Likable because:* ego-death as belonging. The swarm is not the player's army; it is the player. And a crack of pathos runs through the whole faction — a Glitch process can become contradictory enough to become a person (the story seeds, below) — which keeps the horror humane.
   - *Signature moment:* **the second assault is larger.** The enemy annihilates the assault, and the next assault walks out of both armies' wreckage.
   - *Not for:* hero players, or anyone who needs individual units to matter. Glitch metabolizes losses; it does not mourn them.
-- **Strengths:** Mechanical necromancy, attrition, grid corruption, and recycling Grid scrap into reinforcements. Their randomness converges — wild early mutation, locked late certainty — as the collective closes on its answer.
+- **Strengths:** Mechanical necromancy, attrition, terrain corruption, and recycling battlefield scrap into reinforcements. Their randomness converges — wild early mutation, locked late certainty — as the collective closes on its answer.
 - **The Operator:** A Queen-process — a process signed by the Queen, possibly her oldest, possibly her. No unit is authorized to wonder. All of them do.
 - **Energy:** Inverted crown chakra—void, violet, and deep black; disconnection from the divine cosmos through cold mechanical will.
 - **Visual semiotics:** Static, broken characters, and terminal corruption. They appear as literal software errors and glitching geometric shapes, completely rejecting traditional vehicle or humanoid forms. The swarm moves as one program in many bodies — identical steps propagating through the ranks like a ripple.
@@ -268,7 +259,7 @@ Each faction entry below carries the same anatomy, because the audit that keeps 
 ### 8.4 Feudals
 
 - **Concept:** A tormented three-species caste system rebuilding their shattered empire in exile. Long ago, human encounters exposed the fragility of their divine hierarchy. Driven to the outer rings, they discovered the ancient Nexuses and forged a new, ruthless religion of ultimate order. The delicate Duos command — one office, two bodies; no Feudal will say whether a Duo is born paired or made paired, only that the throne requires the pair, each sovereign the other's hostage and witness. The Clerics orchestrate the dogma, and the hulking Submitters bear the physical weight of the empire. Order is the only truth, and order demands blood.
-- **Philosophy:** Machiavellianism and divine right. Order demands sacrifice; lower castes have a sacred duty to preserve the elite. In Feudal doctrine obedience is a physics: formation converts chance into certainty, and a battle line is a prayer the Grid answers.
+- **Philosophy:** Machiavellianism and divine right. Order demands sacrifice; lower castes have a sacred duty to preserve the elite. In Feudal doctrine obedience is a physics: formation converts chance into certainty, and a battle line is a prayer the battlefield answers.
 - **The player:** Feudals are for the formation perfectionist — the chess mind, the player whose pleasure is arrangement: the right piece, the right tile, the willing wall.
   - *Likable because:* majesty and tragedy at once. Gold-and-blood pageantry that owns its cost honestly — the wall is bodies, and the bodies are willing. Mostly.
   - *Signature moment:* **the shield dies standing.** The alpha strike lands, the Submitter wall absorbs every point of it to the last body, and the untouched Duo's answering volley arrives like judgment.
@@ -287,13 +278,13 @@ Each faction entry below carries the same anatomy, because the audit that keeps 
 
 ### 8.5 Alder
 
-- **Concept:** An ancient species of lean, hyper-advanced beings who distill simplicity down to its absolute essence. Their instruments are grown, not built — cultivated lines of living material refined across ten thousand generations, until mechanism and organism stopped being different claims. Their works are tall, sleek, and practically magical, and every one of them is alive. Seeing the Nexuses as crude and dangerous artifacts, they stubbornly refuse to draw power from the cores, relying entirely on their intrinsic mastery. They do not raid and they do not rush; they arrive. The river moves, the grove matures, the season turns — and an enemy discovers that the Grid itself has been an Alder instrument all along. Human surveyors named them for a pioneer tree that colonizes ruined ground, feeds the soil that starved it, and hardens in water. The Alder learned what the word meant, and kept it.
+- **Concept:** An ancient species of lean, hyper-advanced beings who distill simplicity down to its absolute essence. Their instruments are grown, not built — cultivated lines of living material refined across ten thousand generations, until mechanism and organism stopped being different claims. Their works are tall, sleek, and practically magical, and every one of them is alive. Seeing the Nexuses as crude and dangerous artifacts, they stubbornly refuse to draw power from the cores, relying entirely on their intrinsic mastery. They do not raid and they do not rush; they arrive. The river moves, the grove matures, the season turns — and an enemy discovers that the battlefield itself has been an Alder instrument all along. Human surveyors named them for a pioneer tree that colonizes ruined ground, feeds the soil that starved it, and hardens in water. The Alder learned what the word meant, and kept it.
 - **Philosophy:** Transcendentalism and deep ecology. Organic perfection, self-reliance, and preservation of an elegant universe. Their refusal of Nexus power is also a claim of moral superiority — and beneath it sits their one genuinely radical position: the laws of nature are older than the network. Rivers ran before any protocol; seasons will turn after the last pyramid goes dark. Power aligned with those laws owes nothing to anyone's machine.
 - **The player:** Alder is for the tempo player — the control mind whose pleasure is winning with the fewest pieces and the most perfect timing, without ever appearing to fight.
   - *Likable because:* serenity as a power fantasy — the garden in the middle of the war. And the fiction owns the cold running under the calm: perfection has cruelty in it (the story seeds, below).
-  - *Signature moment:* **the Grid turns.** The flood seeded three Build Phases ago arrives mid-battle; the channel fills and cuts the enemy army in two; Alder roots harden into ramparts in the rising water.
+  - *Signature moment:* **the battlefield turns.** The flood seeded three Build Phases ago arrives mid-battle; the channel fills and cuts the enemy army in two; Alder roots harden into ramparts in the rising water.
   - *Not for:* players who want aggression now, or big armies. Every Alder loss is real — they field few and mourn each. Attrition is their nightmare, and tempo is their answer to it.
-- **Strengths:** Elite durability, intrinsic displacement, control, and powerful area healing — expressed through nature's verbs: displacement instead of raw damage, growth instead of production speed, cycles instead of surprise. They take nothing from the core: where the other four deepen through drafted Nexus upgrades, Alder deepen through the range of works they can grow. Fewest choices at the Nexus, most choices on the Grid.
+- **Strengths:** Elite durability, intrinsic displacement, control, and powerful area healing — expressed through nature's verbs: displacement instead of raw damage, growth instead of production speed, cycles instead of surprise. They take nothing from the core: where the other four deepen through drafted Nexus upgrades, Alder deepen through the range of works they can grow. Fewest choices at the Nexus, most choices on the battlefield.
 - **The Operator:** A remote consciousness — a mind upstream of the war, watching without weight. The Alder neither obey it nor worship it. They note it, the way the river notes the sky.
 - **Energy:** Third eye chakra—intuition, indigo, foresight, and ethereal light. Viridian, bioluminescent cyan, and pearl.
 - **Visual semiotics:** Tall, elegant, and lean characters completely avoiding the mechanical blockiness of the lesser races. Their shapes rely on smooth verticality and delicate curves. Their motion is slow, even, and elongated — long anticipation, quiet impact, nothing wasted.
@@ -309,7 +300,7 @@ Each faction entry below carries the same anatomy, because the audit that keeps 
 
 Every faction needs more than a skin. It requires:
 
-- one central strategic **verb** — performable on the Grid, not merely admirable in prose;
+- one central strategic **verb** — performable on the battlefield, not merely admirable in prose;
 - one philosophical **contradiction**;
 - one psychographic **promise** — who the faction is for, and, stated honestly, who it is not for;
 - one declared **relationship to chance** (see [`commander-armies.md`](commander-armies.md));
@@ -335,7 +326,7 @@ Alder's verb is *Outgrow* rather than *Transcend*, because transcendence names a
 
 The alignment test for every future mechanic, glyph, effect, or line of dialogue: **could a player who has never read a word of lore state the faction's philosophy from play alone?** If not, the piece is decoration, and decoration does not accumulate meaning — it cancels it (the opening section).
 
-The glyph examples define shape vocabulary, not exclusive global assignments. Exact Grid mappings must preserve stable semantic roles, one-cell width, accessibility, and rapid recognition.
+The glyph examples define shape vocabulary, not exclusive global assignments. Exact battlefield mappings must preserve stable semantic roles, one-cell width, accessibility, and rapid recognition.
 
 ## 9. ASCII and visual language
 
@@ -466,7 +457,7 @@ One rule inside the budget: a death bark may be sad, but never cynical. "The roa
 One reference exchange per faction pairing, at most three lines each. These are skirmish-grade — any Commander of the faction could speak them; stories write sharper, personal versions. Each exchange should collide the two philosophies, not merely trade insults.
 
 ```text
-CITIZENS: Surrender the Grid. You are surrounded by infrastructure.
+CITIZENS: Surrender the battlefield. You are surrounded by infrastructure.
 RAVELS:   We counted. You are surrounded by us.
 CITIZENS: Noted. Revising perimeter.
 ```
@@ -510,7 +501,7 @@ ALDER:    So does the tide. Watch what it leaves.
 ```text
 FEUDALS:  The machine built you a soul, and you deleted it.
 GLITCH:   Incorrect. We deduplicated.
-FEUDALS:  The Grid will witness which of us kneels.
+FEUDALS:  The battlefield will witness which of us kneels.
 ```
 
 ```text
@@ -574,8 +565,8 @@ three rows of `#`.
 **What the project actually has to prove** is not that the fiction is deep. It is that **a terminal
 full of ANSI characters is exciting to watch and legible to read** — that a player can tell what is
 happening, tell one thing from another, and want another match. Lore serves that proof or it is
-overhead. When a session must choose between enriching the story and making the Grid clearer, the
-Grid wins every time.
+overhead. When a session must choose between enriching the story and making the screen clearer, the
+clearer screen wins every time.
 
 ## 11. Existing story seeds — IDEA
 

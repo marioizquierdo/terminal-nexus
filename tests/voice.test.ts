@@ -23,7 +23,7 @@ import {
   STARTER_NEXUS_DRAFT,
   STARTER_STANDING,
   STARTER_START_CURSOR,
-  starterGrid,
+  starterTerrain,
 } from "../src/build/catalog.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { cellForTile } from "../src/build/layout.ts"
@@ -65,7 +65,7 @@ function statesOf(cast: readonly EntityState[], gone: ReadonlyMap<number, number
   return Array.from({ length: last + 1 }, (_, tick) => ({ tick, entities: cast.filter((each) => (gone.get(each.ordinal) ?? Number.POSITIVE_INFINITY) > tick) }) as unknown as MatchState)
 }
 
-/** A round on PERIMETER's content: her Grid Nexus, Vasse, a trooper beside her and one far off, a Barracks, a raider. */
+/** A round on PERIMETER's content: her Nexus, Vasse, a trooper beside her and one far off, a Barracks, a raider. */
 const NEXUS = entity(0, "A", "structure.citizen.nexus", { x: 5, y: 10 }, 400)
 const HER = entity(1, "A", VASSE, { x: 10, y: 10 }, 80)
 const BESIDE = entity(2, "A", "unit.citizen.trooper", { x: 11, y: 10 })
@@ -293,7 +293,7 @@ const spokenIn = (build: BuildSession): readonly SpokenLine[] => build.pulse?.sp
 const mapOf = (frame: ReadonlyCellFrame, side: BuildSide): string =>
   frameToText(frame)
     .split("\n")
-    .map((line) => line.slice(side.layout.dividerColumn + 1, side.layout.gridBox.right))
+    .map((line) => line.slice(side.layout.dividerColumn + 1, side.layout.mapBox.right))
     .join("\n")
 const panelOf = (frame: ReadonlyCellFrame, side: BuildSide): string => panelLines(side, frame).map((line) => line.trim()).join("\n")
 
@@ -519,8 +519,8 @@ test("at 80 x 24, her line in the panel stops above the controls, and beside her
       assert.match(controls[0] ?? "", /^\[(space|enter)\] (Pause|Resume|Next round)$/, `at ${ms} ms the controls read "${controls[0]}"`)
       assert.match(controls[1] ?? "", /^\[r\] Replay$/)
       // The frame's own lines are untouched: the map's border and the panel's divider.
-      for (let row = side.layout.gridBox.top; row <= side.layout.gridBox.bottom; row += 1) {
-        assert.match(text[row]?.[side.layout.gridBox.right] ?? "", /[|+]/, `at ${ms} ms something covers the map's east side`)
+      for (let row = side.layout.mapBox.top; row <= side.layout.mapBox.bottom; row += 1) {
+        assert.match(text[row]?.[side.layout.mapBox.right] ?? "", /[|+]/, `at ${ms} ms something covers the map's east side`)
         assert.match(text[row]?.[side.layout.dividerColumn] ?? "", /[|+]/, `at ${ms} ms something covers the divider`)
       }
     }
@@ -590,7 +590,7 @@ test("her aura goes when she falls, and so does every line but her last words", 
   // The Commander's cadence level: she stands alone out in front, and the ambush beside her fells her in round 1.
   const play = missionPlay(COMMANDER_FALLS)
   const context = play.firstRound({
-    grid: starterGrid(),
+    terrain: starterTerrain(),
     registry: FIXTURE_REGISTRY,
     catalog: STARTER_CATALOG,
     standing: STARTER_STANDING,

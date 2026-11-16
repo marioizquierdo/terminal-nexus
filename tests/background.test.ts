@@ -31,7 +31,7 @@ const WITH_COLOURS: readonly Exclude<ColorDepth, "monochrome">[] = ["color256", 
 /** The opening screens a player sees: the title menu, the map, and a popup over it. */
 function screens(colors: ColorDepth): readonly ReadonlyCellFrame[] {
   const context = starterContext()
-  const layout = buildLayout({ columns: 80, rows: 24 }, context.grid)
+  const layout = buildLayout({ columns: 80, rows: 24 }, context.terrain)
   const frames: ReadonlyCellFrame[] = [composeMenuFrame({ state: createMenuList(TOP_LEVEL_ITEMS), notice: null }, colors)]
   for (const script of [[], ["n", "1"]]) {
     const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })

@@ -74,3 +74,20 @@ entry (`resolvePulse`), which a battle's Battle Round now runs through too, wher
 whole battle's report is identical before and after). The Grid stays: it is the word a player reads on screen, and
 the lore now says what it is, ground the ancient protocol has squared off, where things move cell by cell, time moves
 in pulses and the same plans play out the same way, which is the game's own rules told as fiction.
+
+### F302 — no Grid: the battlefield, the map and the Nexus
+
+> I still, with everything you said, don't think that grid makes sense in this vocabulary. We should refer to the
+> battlefield as the battlefield or the map. There is no need to use an extra word, even if we have it around. I think
+> it just spread from those early discussions. [...] we can keep it with more standard gameplay, real-time strategy,
+> nomenclature, and that will also benefit the players. [...] If you find anything else around this or the files that
+> are being edited, please use this round to simplify more and more vocabulary terminology.
+
+**Built.** The word is gone from the game, the code and the current documents. The ground a battle is fought on is the
+**battlefield**; the screen's region that draws it is the **map** (once the Grid pane); each side's pyramid is the
+**Nexus** (once the Grid Nexus), and the Prime Nexus stays in the lore alone. A sandbox sets up the battlefield by hand
+(once "a board written by hand"). In the code the terrain type is `MapTerrain` and every `grid` field is `terrain`; the
+design page is [`battlefield.md`](../../system-design/battlefield.md). The lore's paragraph on what a Grid is was
+removed, and its rule now says clearer ASCII wins over a richer story. The repository check refuses "Grid" from now on.
+Eight pinned battle hashes moved, only because the saved state's field changed name: with the old name they hash as
+before.

@@ -9,7 +9,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { defaultValue } from "../src/build/all-settings.ts"
-import { STARTER_STANDING, starterGrid } from "../src/build/catalog.ts"
+import { STARTER_STANDING, starterTerrain } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY, withProduction } from "../src/content/index.ts"
 import { hasRoom, supplyCostOf, supplyOf } from "../src/content/supply.ts"
 import type { ProductionRecipe } from "../src/content/index.ts"
@@ -27,7 +27,7 @@ const BARRACKS = "structure.citizen.barracks"
 const HATCHERY = "structure.bench.hatchery"
 const TROOPER = "unit.citizen.trooper"
 const SWARMER = "unit.bench.spawnling"
-const grid = starterGrid()
+const terrain = starterTerrain()
 const recipe = (overrides: Partial<ProductionRecipe> = {}): ProductionRecipe => ({
   output: TROOPER,
   perWave: 4,
@@ -42,7 +42,7 @@ const recipe = (overrides: Partial<ProductionRecipe> = {}): ProductionRecipe => 
 function lone(given: ProductionRecipe, ticks = 90, anchor = { x: 25, y: 10 }, forces: readonly Force[] = []) {
   const registry = withProduction(FIXTURE_REGISTRY, { [BARRACKS]: given })
   const initialState = openingState({
-    grid,
+    terrain,
     registry,
     structures: [{ contentId: BARRACKS, anchor }],
     setup: { seed: 1, pulseTicks: ticks, forces },
@@ -84,9 +84,9 @@ test("a building makes its units one way in a battle: given a recipe, the Hatche
   // The shared content keeps it, so a sandbox with a Hatchery (hatchery-spawn) breeds as it always did.
   assert.deepEqual(FIXTURE_REGISTRY.get(HATCHERY).spawn, ownSpawner)
 
-  // On the Grid: its whole brood on the wave's tick, and nothing from the old timer before or after it.
+  // On the battlefield: its whole brood on the wave's tick, and nothing from the old timer before or after it.
   const initialState = openingState({
-    grid,
+    terrain,
     registry: opted,
     structures: [{ contentId: HATCHERY, anchor: { x: 21, y: 13 } }],
     setup: { seed: 1, pulseTicks: 180, forces: [] },
@@ -145,7 +145,7 @@ test("a crowded building never spawns fewer: what fits comes out on the wave's t
   // fills, the rest of what it owes stays owed, and the schedule does not wait for it, so both waves have come.
   const free = footprintRing(3, 2, 1)
     .map((offset) => ({ x: corner.x + offset.x, y: corner.y + offset.y }))
-    .filter((tile) => grid.tiles[tile.y * grid.width + tile.x] !== "terrain.rock")
+    .filter((tile) => terrain.tiles[tile.y * terrain.width + tile.x] !== "terrain.rock")
   assert.equal(free.length, 6)
   const crowd: Force[] = free.map((tile) => ({ player: "A", muster: tile, units: [TROOPER] }))
   const boxed = lone(recipe({ perWave: 4, waves: 2, firstTicks: 12, intervalTicks: 24 }), 60, corner, crowd)
@@ -157,7 +157,7 @@ test("a crowded building never spawns fewer: what fits comes out on the wave's t
 test("a building without a recipe carries no production fields, so a state without a producer is byte for byte what it was", () => {
   const registry = FIXTURE_REGISTRY
   const initialState = openingState({
-    grid,
+    terrain,
     registry,
     structures: [{ contentId: BARRACKS, anchor: { x: 25, y: 10 } }],
     setup: { seed: 1, pulseTicks: 30, forces: [] },
@@ -190,7 +190,7 @@ function round(
   registry = storyRegistry,
 ): MissionPulse {
   const structures = [...(pulse === 1 ? STARTER_STANDING : []), ...plan]
-  return resolveMissionPulse({ mission: PERIMETER, grid, registry, pulse, carried, structures })
+  return resolveMissionPulse({ mission: PERIMETER, terrain, registry, pulse, carried, structures })
 }
 
 test("the Barracks and the Hatchery say what they spawn on their own cards, and the story's battles run on it", () => {
@@ -227,7 +227,7 @@ test("PERIMETER's round 1: the Barracks on the map sends its four troopers toget
 })
 
 test("a building the player placed spawns too, its wave on the same tick as the map's; a Hatchery's brood the same way", () => {
-  // A Supply Depot beside them, so the army has room for both waves (the Grid Nexus alone gives twelve: the squads
+  // A Supply Depot beside them, so the army has room for both waves (the Nexus alone gives twelve: the squads
   // and the map's Barracks's wave fill ten of them).
   const placed = [
     { contentId: BARRACKS, anchor: { x: 17, y: 13 } },
@@ -254,7 +254,7 @@ test("a building the player placed spawns too, its wave on the same tick as the 
 })
 
 test("supply: an army fields no more than its buildings give, and a wave past it waits for a place, coming as one falls", () => {
-  // No Supply Depot: the Grid Nexus gives twelve. The squads take five and the map's Barracks's wave four; a planned
+  // No Supply Depot: the Nexus gives twelve. The squads take five and the map's Barracks's wave four; a planned
   // Barracks's four and a Hatchery's three would take the army to sixteen.
   const placed = [
     { contentId: BARRACKS, anchor: { x: 17, y: 13 } },
@@ -268,11 +268,11 @@ test("supply: an army fields no more than its buildings give, and a wave past it
   // Seven fit as the first waves come; the rest wait for a place.
   assert.equal(trained.filter((tick) => tick === 60).length, 7)
 
-  // And a wave that waits comes as places open: twelve troopers fill what the Grid Nexus gives and meet eight raiders;
+  // And a wave that waits comes as places open: twelve troopers fill what the Nexus gives and meet eight raiders;
   // the Barracks's wave of four comes as they fall, each the tick after a place opens, never past twelve.
   const full = withProduction(FIXTURE_REGISTRY, { [BARRACKS]: recipe() })
   const initialState = openingState({
-    grid,
+    terrain,
     registry: full,
     structures: [{ contentId: "structure.citizen.nexus", anchor: { x: 17, y: 10 } }, { contentId: BARRACKS, anchor: { x: 25, y: 10 } }],
     setup: {
@@ -306,7 +306,7 @@ test("supply's arithmetic: a unit takes 1 unless it says, a Commander none, a st
   assert.equal(hasRoom({ used: 99, cap: null }, pikeman), true)
 })
 
-test("a wave's survivors stay on the Grid; the regroup and the next opening start its counters afresh, on the recipe that round runs", () => {
+test("a wave's survivors stay on the battlefield; the regroup and the next opening start its counters afresh, on the recipe that round runs", () => {
   // A Turret north of the Barracks, facing the raid's way in, so some of the wave live to come home: with nothing
   // built, the raid's raiders outlast all four.
   const first = round(1, null, [{ contentId: "structure.bench.beamturret", anchor: { x: 25, y: 7 } }])
@@ -318,7 +318,7 @@ test("a wave's survivors stay on the Grid; the regroup and the next opening star
   assert.deepEqual([barracks.productionCooldown, barracks.produced, barracks.owed], [FIRST_WAVE, 0, 0])
   const ordinals = new Set(trained.map((event) => (event.kind === "entity.spawned" ? event.ordinal : -1)))
   const kept = back.paths.filter((path) => ordinals.has(path.ordinal))
-  assert.ok(kept.length > 0, "no trooper of the wave survived round 1 to stay on the Grid")
+  assert.ok(kept.length > 0, "no trooper of the wave survived round 1 to stay on the battlefield")
 
   // A building given a second wave between rounds (what a Nexus power may one day do) raises `waves` and
   // nothing else: the carried Barracks sends both from the next round, ten seconds apart.
@@ -355,4 +355,5 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
 // (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
 // A unit that can reach no enemy came to look further afield for one it can, and to wait a second beside the fight before
 // it walks on round it: this round is byte for byte what it was.
-const PINNED_ROUND_1 = "c091635c566f3e6f98cfde83fe6dbb5f4e89658c728ef2585df0cd5071e40cc8"
+// Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
+const PINNED_ROUND_1 = "77d33ac77f7767d5ee6b649524d50471c0084f2df1e6ea835dfeb55a92e75826"

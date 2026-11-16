@@ -27,7 +27,7 @@ before you build, so the build carries the Experiment, the event and the filter 
 - **Lead with behaviour.** "Tab now moves between the menu and the map", not "focus is reducer
   state". Internal refactors get at most one bullet.
 - **Plain English.** No section numbers, no question ids like Q57, no feedback item numbers like F87,
-  no RULE or GUIDANCE, no step numbers in the body. Game words are fine (Grid, Nexus Pulse, Build Phase, Battle Round, Nexus power); process
+  no RULE or GUIDANCE, no step numbers in the body. Game words are fine (battlefield, Nexus Pulse, Build Phase, Battle Round, Nexus power); process
   words (milestone, step) belong only in the footer.
 - **No "Mario said X".** At most "(from your playtest)" after the change it prompted.
 - **Short.** 150-400 words above the footer. Bullets of one or two lines. No table wider than two

@@ -91,7 +91,7 @@
     "portrait": [" ,$, ", "(^_~)", "/{$}\\"],
     "portraitFalls": [[" ,$, ", "(O_O)", "/{$}\\"], [" *$* ", "(x_x)", "/{$}\\"]],
     "barks": {
-      "appears": ["Dob. Bounties open.", "Hunter on the Grid. Pay up.", "New job. Same odds."],
+      "appears": ["Dob. Bounties open.", "Hunter on the battlefield. Pay up.", "New job. Same odds."],
       "restored": [
         "Back. The house always pays.",
         "Rebuilt. Double or nothing.",

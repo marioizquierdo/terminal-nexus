@@ -91,7 +91,7 @@ export function openRound(level: PlayableLevel, round: number, scrollMargin?: nu
   let context = level.firstRound(scrollMargin, extra)
   for (let played = 1; played < round; played += 1) {
     // The scene a round opens on is the player's to read, not this walk's: it plays from the state without it.
-    const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
+    const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
     const state = createBuildState(withoutScene(context), STARTER_START_CURSOR, viewport)
     const resolved = level.play.startPulse(context, state)
     if (resolved === null) throw new Error(`level "${level.id}": round ${played} could not start, so round ${round} cannot be reached`)

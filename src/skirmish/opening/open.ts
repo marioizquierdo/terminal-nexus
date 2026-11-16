@@ -6,7 +6,7 @@
 import type { ContentDef, ContentRegistry } from "../../content/index.ts"
 import { FIXTURE_REGISTRY, freshEntityFields } from "../../content/index.ts"
 import { footprintCentre, tilesOf } from "../../engine/geometry/coords.ts"
-import type { Coord, GridTerrain, TerrainId } from "../../engine/geometry/types.ts"
+import type { Coord, MapTerrain, TerrainId } from "../../engine/geometry/types.ts"
 import { TERRAIN } from "../../engine/geometry/types.ts"
 import { gameplayRng } from "../../engine/rng/pcg32.ts"
 import type { EntityState, MatchState, PlayerId, TargetArea } from "../../engine/state/types.ts"
@@ -18,33 +18,33 @@ import type { PlacementEntry, BattleOpening } from "./types.ts"
 export class OpeningError extends Error {}
 
 /**
- * An opening declares its own grid size — there is no autoscroll, streaming, or chunked geography
- * yet, so an unbounded custom grid isn't a slow map, it's an unbounded per-tick allocation:
+ * An opening declares its own map size — there is no autoscroll, streaming, or chunked geography
+ * yet, so an unbounded custom map isn't a slow map, it's an unbounded per-tick allocation:
  * `OccupancyIndex` sizes four `Int32Array`s to `width * height` and rebuilds them every tick
- * (grid/occupancy.ts). This cap is a declared-mode convention, not a promise about what the
+ * (engine/geometry/occupancy.ts). This cap is a declared-mode convention, not a promise about what the
  * engine can render or path across — it exists so a mistyped or exploratory sandbox fails loudly
  * at load time instead of degrading silently, tick after tick. The largest current preset
  * (extra-large-extra-wide, 72x24 = 1728 tiles) has roughly 5x headroom under it; raise it
  * deliberately, with measurements, when a sandbox actually needs to be bigger — see
  * docs/system-design/architecture.md ("Scaling toward hundreds or thousands of units").
  */
-export const MAX_DECLARED_GRID_TILES = 10_000
+export const MAX_DECLARED_MAP_TILES = 10_000
 
 function fail(opening: BattleOpening, message: string): never {
   throw new OpeningError(`${opening.id}: ${message}`)
 }
 
 function dimensionsOf(opening: BattleOpening): { width: number; height: number } {
-  const grid = opening.grid
-  const { width, height } = "preset" in grid ? presetDimensions(grid.preset) : grid
-  if (!("preset" in grid) && (!Number.isInteger(width) || !Number.isInteger(height))) {
-    fail(opening, "grid width and height must be integers")
+  const size = opening.size
+  const { width, height } = "preset" in size ? presetDimensions(size.preset) : size
+  if (!("preset" in size) && (!Number.isInteger(width) || !Number.isInteger(height))) {
+    fail(opening, "map width and height must be integers")
   }
-  if (width * height > MAX_DECLARED_GRID_TILES) {
+  if (width * height > MAX_DECLARED_MAP_TILES) {
     fail(
       opening,
-      `grid is ${width}x${height} (${width * height} tiles), over the ` +
-        `${MAX_DECLARED_GRID_TILES}-tile declared-mode cap — see src/skirmish/opening/open.ts`,
+      `the map is ${width}x${height} (${width * height} tiles), over the ` +
+        `${MAX_DECLARED_MAP_TILES}-tile declared-mode cap — see src/skirmish/opening/open.ts`,
     )
   }
   return { width, height }
@@ -58,13 +58,13 @@ function checkOverlay(
   height: number,
 ): void {
   if (rows.length !== height) {
-    fail(opening, `${label} has ${rows.length} rows; the grid is ${height} tall`)
+    fail(opening, `${label} has ${rows.length} rows; the map is ${height} tall`)
   }
   rows.forEach((row, y) => {
     if (row.length !== width) {
       fail(
         opening,
-        `${label} row ${y + 1} (y=${y}) is ${row.length} characters; the grid is ${width} wide`,
+        `${label} row ${y + 1} (y=${y}) is ${row.length} characters; the map is ${width} wide`,
       )
     }
   })
@@ -101,10 +101,10 @@ export function openBattle(
       tiles.push(terrainId)
     })
   })
-  const grid: GridTerrain = { width, height, tiles }
+  const terrain: MapTerrain = { width, height, tiles }
 
   // Placements — one block per player, gathered first and only then turned into entities, because
-  // **ordinals are assigned in Grid reading order, not in the order the file happens to list the
+  // **ordinals are assigned in battlefield reading order, not in the order the file happens to list the
   // players**. Ordinal is identity and the battle engine's one iteration order (state/types.ts), so letting
   // it depend on whether the A block or the B block was typed first would let a purely editorial
   // change move every id, every event, and the state hash with them.
@@ -129,7 +129,7 @@ export function openBattle(
       [...row].forEach((character, columnIndex) => {
         if (character === " ") return
         const centre = { x: origin.x + columnIndex, y: origin.y + rowIndex }
-        // Reported in absolute Grid coordinates as well as the block-relative row and column: the
+        // Reported in absolute battlefield coordinates as well as the block-relative row and column: the
         // block may be offset, so "row 2, column 3" alone would send a reader to the wrong tile.
         const where =
           `placements for player ${player}, row ${rowIndex + 1}, column ${columnIndex + 1} ` +
@@ -145,7 +145,7 @@ export function openBattle(
         const definition = registry.get(entry.content)
 
         // The symbol marks the entity's **centre tile**, whatever its size; the anchor it is stored
-        // under is derived. Authoring a 3x3 walker by its middle is what makes a placement grid
+        // under is derived. Authoring a 3x3 walker by its middle is what makes a placement block
         // still read as one character per unit once units stop being one tile.
         const offset = footprintCentre(definition.footprint)
         const anchor = { x: centre.x - offset.x, y: centre.y - offset.y }
@@ -155,7 +155,7 @@ export function openBattle(
     })
   }
 
-  // Grid reading order: north to south, then west to east. Two entities may legally share a tile
+  // battlefield reading order: north to south, then west to east. Two entities may legally share a tile
   // across layers, so the last two keys only exist to make that tie deterministic as well.
   placed.sort(
     (a, b) =>
@@ -188,7 +188,7 @@ export function openBattle(
         fail(
           opening,
           `${where}: the footprint of "${entry.content}" reaches (${tile.x},${tile.y}), which is ` +
-            `outside the ${width}x${height} Grid`,
+            `outside the ${width}x${height} battlefield`,
         )
       }
       // A ground entity may not start inside terrain it could never walk into. The battle engine builds
@@ -224,7 +224,7 @@ export function openBattle(
 
       // Cross-layer sharing is a same-side convenience, never a way for two players to start on top
       // of each other. Separate placement blocks make that easy to write by accident — each player's
-      // grid is legible on its own, and nothing in one block hints at what the other put there — so
+      // block is legible on its own, and nothing in one block hints at what the other put there — so
       // it is checked rather than left to the author noticing.
       const tileKey = `${tile.x},${tile.y}`
       const holder = heldBy.get(tileKey)
@@ -262,12 +262,12 @@ export function openBattle(
   const seed = options.seed ?? opening.seed
   if (!Number.isInteger(seed)) fail(opening, `seed must be an integer, received ${seed}`)
 
-  const targets = targetsOf(opening, grid)
+  const targets = targetsOf(opening, terrain)
   const state: MatchState = {
     schemaVersion: SCHEMA_VERSION,
     tick: 0,
     ticksPerSecond: TICKS_PER_SECOND,
-    grid,
+    terrain,
     entities,
     groundItems: [],
     vacatedTiles: [],
@@ -281,9 +281,9 @@ export function openBattle(
   return { opening, registry, state }
 }
 
-/** A map's targets, checked: a side's is a rectangle of whole tiles on the Grid, on ground its units can
+/** A map's targets, checked: a side's is a rectangle of whole tiles on the battlefield, on ground its units can
  *  stand on. `undefined` when the map gives none. */
-function targetsOf(opening: BattleOpening, grid: GridTerrain): MatchState["targets"] {
+function targetsOf(opening: BattleOpening, terrain: MapTerrain): MatchState["targets"] {
   const given = opening.targets
   if (given === undefined) return undefined
   const targets: Partial<Record<PlayerId, TargetArea>> = {}
@@ -294,12 +294,12 @@ function targetsOf(opening: BattleOpening, grid: GridTerrain): MatchState["targe
     if (![x, y, width, height].every((value) => Number.isInteger(value)) || width < 1 || height < 1) {
       fail(opening, `the target for side ${side} must be whole tiles, at least one wide and tall`)
     }
-    if (x < 0 || y < 0 || x + width > grid.width || y + height > grid.height) {
-      fail(opening, `the target for side ${side} reaches off the ${grid.width}x${grid.height} Grid`)
+    if (x < 0 || y < 0 || x + width > terrain.width || y + height > terrain.height) {
+      fail(opening, `the target for side ${side} reaches off the ${terrain.width}x${terrain.height} battlefield`)
     }
     for (let row = y; row < y + height; row += 1) {
       for (let column = x; column < x + width; column += 1) {
-        const terrainId = grid.tiles[row * grid.width + column]
+        const terrainId = terrain.tiles[row * terrain.width + column]
         if (terrainId !== undefined && TERRAIN[terrainId].impassable) {
           fail(opening, `the target for side ${side} covers (${column},${row}), which is impassable ${terrainId}: a target is ground its units can stand on`)
         }

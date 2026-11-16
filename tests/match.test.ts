@@ -6,8 +6,8 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
-import { gridDistance, tilesOf } from "../src/engine/geometry/coords.ts"
-import type { Coord, GridTerrain, TerrainId } from "../src/engine/geometry/types.ts"
+import { tileDistance, tilesOf } from "../src/engine/geometry/coords.ts"
+import type { Coord, MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { PulseSetupError, centreTile, openingState, regroup } from "../src/match/index.ts"
 import type { Force, PulseSetup, StructurePlacement } from "../src/match/index.ts"
 import { gameplayRng } from "../src/engine/rng/pcg32.ts"
@@ -25,8 +25,8 @@ const RUNNER = "unit.ravel.runner"
 const RAIDER = "unit.ravel.raider"
 const SPAWNLING = "unit.bench.spawnling"
 
-/** A Grid from rows of `.` (plain), `#` (rock) and `*` (deposit), north to south. */
-function gridOf(rows: readonly string[]): GridTerrain {
+/** A battlefield from rows of `.` (plain), `#` (rock) and `*` (deposit), north to south. */
+function terrainOf(rows: readonly string[]): MapTerrain {
   const ids: Record<string, TerrainId> = { ".": "terrain.plain", "#": "terrain.rock", "*": "terrain.deposit" }
   const width = rows[0]?.length ?? 0
   return {
@@ -36,7 +36,7 @@ function gridOf(rows: readonly string[]): GridTerrain {
   }
 }
 
-const OPEN = gridOf(Array.from({ length: 24 }, () => ".".repeat(40)))
+const OPEN = terrainOf(Array.from({ length: 24 }, () => ".".repeat(40)))
 
 function setupOf(forces: readonly Force[], pulseTicks = 240, seed = 4242): PulseSetup {
   return { seed, pulseTicks, forces }
@@ -45,10 +45,10 @@ function setupOf(forces: readonly Force[], pulseTicks = 240, seed = 4242): Pulse
 function open(
   structures: readonly StructurePlacement[],
   forces: readonly Force[],
-  grid: GridTerrain = OPEN,
+  terrain: MapTerrain = OPEN,
   registry: ContentRegistry = FIXTURE_REGISTRY,
 ): MatchState {
-  return openingState({ grid, registry, structures, setup: setupOf(forces) })
+  return openingState({ terrain, registry, structures, setup: setupOf(forces) })
 }
 
 const definitionOf = (entity: EntityState) => FIXTURE_REGISTRY.get(entity.contentId)
@@ -67,7 +67,7 @@ function assertNoTileShared(state: MatchState, label: string): void {
 
 const centreOf = (entity: EntityState): Coord => centreTile(entity.anchor, definitionOf(entity).footprint)
 
-const distance = gridDistance
+const distance = tileDistance
 
 // ---------------------------------------------------------------------------------------------
 // The opening state
@@ -112,7 +112,7 @@ test("the opening state follows the conventions of a sandbox's opening: ids, rea
 })
 
 test("a state built here is the state a sandbox's opening builds from the same picture", () => {
-  const grid = gridOf([
+  const terrain = terrainOf([
     "........................",
     "........................",
     "....##..................",
@@ -134,8 +134,8 @@ test("a state built here is the state a sandbox's opening builds from the same p
       { player: "B", muster: { x: 20, y: 4 }, units: [RAIDER, RUNNER] },
     ],
   ] as const
-  const built = open(picture[0], picture[1], grid)
-  // Redraw exactly what was built as a sandbox's character grids, and load it.
+  const built = open(picture[0], picture[1], terrain)
+  // Redraw exactly what was built as a sandbox's character rows, and load it.
   const symbols = new Map<string, string>()
   const letter = (contentId: string): string => {
     const known = symbols.get(contentId)
@@ -145,7 +145,7 @@ test("a state built here is the state a sandbox's opening builds from the same p
     return next
   }
   const rowsOf = (player: "A" | "B"): string[] => {
-    const rows = Array.from({ length: grid.height }, () => " ".repeat(grid.width))
+    const rows = Array.from({ length: terrain.height }, () => " ".repeat(terrain.width))
     for (const entity of built.entities) {
       if (entity.player !== player) continue
       const centre = centreOf(entity)
@@ -154,9 +154,9 @@ test("a state built here is the state a sandbox's opening builds from the same p
     }
     return rows
   }
-  const terrainRows = Array.from({ length: grid.height }, (_, y) =>
-    Array.from({ length: grid.width }, (_unused, x) => {
-      const id = grid.tiles[y * grid.width + x]
+  const terrainRows = Array.from({ length: terrain.height }, (_, y) =>
+    Array.from({ length: terrain.width }, (_unused, x) => {
+      const id = terrain.tiles[y * terrain.width + x]
       return id === "terrain.rock" ? "#" : id === "terrain.deposit" ? "*" : "."
     }).join(""),
   )
@@ -166,7 +166,7 @@ test("a state built here is the state a sandbox's opening builds from the same p
   const opening: BattleOpening = {
     id: "opening-parity",
     name: "opening parity",
-    grid: { width: grid.width, height: grid.height },
+    size: { width: terrain.width, height: terrain.height },
     seed: 4242,
     pulseTicks: 240,
     terrain: terrainRows,
@@ -178,7 +178,7 @@ test("a state built here is the state a sandbox's opening builds from the same p
   }
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY })
   // A sandbox's Barracks trains its army card's wave, so the picture is built again on the registry the opening ran on.
-  const builtOnIt = open(picture[0], picture[1], grid, loaded.registry)
+  const builtOnIt = open(picture[0], picture[1], terrain, loaded.registry)
   assert.equal(hashState(builtOnIt), hashState(loaded.state), "the opening is not the state the loader builds from the same picture")
 })
 
@@ -198,7 +198,7 @@ test("units gather on the free tiles nearest their muster point, none on top of 
 test("a group comes out round on screen: thirteen troopers fill every tile within three of their muster, seven across and three rows", () => {
   const muster = { x: 20, y: 12 }
   const state = open([{ contentId: NEXUS, anchor: { x: 2, y: 2 } }], [{ player: "A", muster, units: Array.from({ length: 13 }, () => TROOPER) }])
-  // Listed in reading order, as ordinals are: every tile within three of the muster by the Grid's own distance, and
+  // Listed in reading order, as ordinals are: every tile within three of the muster by the battlefield's own distance, and
   // no other — three columns either side on its row, one either side on the rows above and below.
   const tiles = state.entities.filter((entity) => definitionOf(entity).layer === "units").map(centreOf)
   assert.deepEqual(tiles, [
@@ -239,7 +239,7 @@ test("a building committed on the muster point moves the units aside rather than
 })
 
 test("a multi-tile unit is set down only where its whole footprint fits", () => {
-  const walled = gridOf([
+  const walled = terrainOf([
     "##########",
     "#........#",
     "#..####..#",
@@ -265,12 +265,12 @@ test("the opening is deterministic: the same picture is the same state, hash for
 })
 
 test("a setup the loader would refuse is refused, by name", () => {
-  const walled = gridOf(["......", "..##..", "..##..", "......"])
+  const walled = terrainOf(["......", "..##..", "..##..", "......"])
   const refuses = (run: () => unknown, pattern: RegExp, label: string): void => {
     assert.throws(run, (error: unknown) => error instanceof PulseSetupError && pattern.test(error.message), label)
   }
   refuses(() => open([{ contentId: "structure.nothing", anchor: { x: 0, y: 0 } }], []), /unknown content id "structure.nothing"/, "unknown id")
-  refuses(() => open([{ contentId: NEXUS, anchor: { x: 38, y: 0 } }], []), /outside the 40x24 Grid/, "off the Grid")
+  refuses(() => open([{ contentId: NEXUS, anchor: { x: 38, y: 0 } }], []), /outside the 40x24 battlefield/, "off the battlefield")
   refuses(() => open([{ contentId: BARRACKS, anchor: { x: 1, y: 0 } }], [], walled), /impassable terrain\.rock/, "on rock")
   refuses(
     () =>
@@ -284,16 +284,16 @@ test("a setup the loader would refuse is refused, by name", () => {
     /occupancy conflict/,
     "two buildings on one tile",
   )
-  refuses(() => open([], []), /nothing on the Grid/, "an empty battle")
+  refuses(() => open([], []), /nothing on the battlefield/, "an empty battle")
   refuses(
-    () => openingState({ grid: OPEN, registry: FIXTURE_REGISTRY, structures: [], setup: { seed: 1.5, pulseTicks: 10, forces: [] } }),
+    () => openingState({ terrain: OPEN, registry: FIXTURE_REGISTRY, structures: [], setup: { seed: 1.5, pulseTicks: 10, forces: [] } }),
     /seed must be an integer/,
     "a fractional seed",
   )
   refuses(
     () =>
       openingState({
-        grid: OPEN,
+        terrain: OPEN,
         registry: FIXTURE_REGISTRY,
         structures: [{ contentId: NEXUS, anchor: { x: 1, y: 1 } }],
         setup: { seed: 1, pulseTicks: 0, forces: [] },
@@ -301,7 +301,7 @@ test("a setup the loader would refuse is refused, by name", () => {
     /pulseTicks must be a positive integer/,
     "no ticks",
   )
-  const sealed = gridOf(["#####", "#...#", "#####"])
+  const sealed = terrainOf(["#####", "#...#", "#####"])
   refuses(
     () => open([], [{ player: "A", muster: { x: 2, y: 1 }, units: [TROOPER, TROOPER, TROOPER, TROOPER] }], sealed),
     /no room for "unit.citizen.trooper"/,
@@ -355,7 +355,7 @@ test("the regroup between rounds resets what a Pulse leaves running and clears t
   )
   for (const entity of state.entities) {
     const wornEntity = worn.entities.find((candidate) => candidate.ordinal === entity.ordinal) as EntityState
-    // Between rounds nothing heals but what mends, the Grid Nexus (`ContentDef.mends`), and never past full.
+    // Between rounds nothing heals but what mends, the Nexus (`ContentDef.mends`), and never past full.
     const mends = definitionOf(entity).mends ?? 0
     assert.equal(entity.hp, Math.min(definitionOf(entity).maxHp, wornEntity.hp + mends), "only what mends heals")
     assert.equal(entity.cooldown, 0)
@@ -366,7 +366,7 @@ test("the regroup between rounds resets what a Pulse leaves running and clears t
   }
 })
 
-test("the Grid Nexus mends between rounds: what it lost, up to its mending, never past full; nothing else mends", () => {
+test("the Nexus mends between rounds: what it lost, up to its mending, never past full; nothing else mends", () => {
   // The owner, 2026-10-21: "perhaps we add like a little bit of self-healing", so an early raid that hurt the Nexus
   // is not a wound it carries all match. The Citizen and the Ravel Nexus mend alike, for now.
   const nexus = FIXTURE_REGISTRY.get(NEXUS)

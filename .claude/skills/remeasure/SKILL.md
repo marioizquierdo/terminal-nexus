@@ -1,6 +1,6 @@
 ---
 name: remeasure
-description: Remeasure a change and leave the record clean: decide how much to play, sort the tests it breaks (re-pin, isolate, re-probe; never loosen), keep the run, retire what it supersedes, check every claim against the events. Use after a rule, content or power-curve change (the Grid Nexus, supply, credits, a tier, a unit's numbers), when many pinned tests fail at once, and before telling Mario how a change played or where to watch it.
+description: Remeasure a change and leave the record clean: decide how much to play, sort the tests it breaks (re-pin, isolate, re-probe; never loosen), keep the run, retire what it supersedes, check every claim against the events. Use after a rule, content or power-curve change (the Nexus, supply, credits, a tier, a unit's numbers), when many pinned tests fail at once, and before telling Mario how a change played or where to watch it.
 ---
 
 # Remeasure: a change, measured, and the record left clean
@@ -21,7 +21,7 @@ the change can move:
 | A number on one unit or building: health, damage, cost, a timer | A sandbox it fights in, played by the `skirmish` command before and after (the `skirmish` skill), then `measure who <content id>` on the levels it stands in; the quick spec's duels if a Commander's army fields it |
 | A new unit kind or ability | A sandbox that shows it (the `skirmish` skill), a battle with it in an army, then `measure who <content id>`; the quick spec's duels if an army fields it |
 | A battle engine rule on movement, routes or targeting | The engage and route sandboxes before and after (`skirmish --load <sandbox> --play-to next --log-level info`, `diff` the logs; read target switches, idle and stalled units, not only who won), the quick spec, the full spec's maps (`--spec full --parts saves`), and `measure formations` if it touches how units leave their buildings; the full spec's duels too when it changes how a common unit chooses or moves (the quick spec plays the balanced player alone, and only a rush showed the runner as a backliner emptying Dob's front) |
-| A power-curve change: the Grid Nexus, supply, credits, income, a tier, the Nexus Pulse's hand | The full spec, then retire what it supersedes ("Retire what it supersedes") |
+| A power-curve change: the Nexus, supply, credits, income, a tier, the Nexus Pulse's hand | The full spec, then retire what it supersedes ("Retire what it supersedes") |
 
 The quick spec takes about a minute with `--jobs 4` (two alone); the full spec's 162 duels are the long part. Do not
 play the full spec for a change the quick one can answer.
@@ -33,7 +33,7 @@ own fix, and **no test is loosened, skipped or deleted to make it pass**.
 
 | Kind | How it looks | Fix |
 | --- | --- | --- |
-| **A pin moved** | A hash, a tick count or a winner held "so a change is a change on purpose" (measurement.md lists them) | Check it passed on the commit before, then re-pin and append to the pin's comment a clause saying why it moved: "…and when the Grid Nexus came to fight back". |
+| **A pin moved** | A hash, a tick count or a winner held "so a change is a change on purpose" (measurement.md lists them) | Check it passed on the commit before, then re-pin and append to the pin's comment a clause saying why it moved: "…and when the Nexus came to fight back". |
 | **A premise broke** | The test is about something else, and the change got in its way: route saves sent a lone trooper at a Nexus that now shoots it | Isolate the rule under test with a fixture that lacks the new behaviour (the passive `structure.bench.nexus` in `src/content/proving-grounds.ts`), swap it in, and say why in a note. Never bend the rule to suit the test. |
 | **The inputs no longer reach the meaning** | The claim still holds, but its setup no longer shows it: "a force wiped out with its Nexus standing plays on" needs a raid the Nexus cannot stop | Find new inputs with a short probe script in `.playtest/` (four raiders, not one), and say in the comment why the number is what it is. |
 | **A false pass, revealed** | The test was passing for the wrong reason: an impact drawn in the same letter as the unit | Make it assert what it means (compare the style too). |

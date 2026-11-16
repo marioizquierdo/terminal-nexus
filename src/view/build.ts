@@ -1,13 +1,13 @@
 // The Build Phase frame — `docs/system-design/presentation.md`'s composition, on the same band compositor, style roles and
 // glyph packs as the Pulse view and the menu, so monochrome and the colour tiers come free.
 //
-// The Grid pane is a **window onto a Grid larger than itself**: every tile is drawn at
-// `tile - camera` and clipped to the viewport, and the signal `docs/system-design/grid.md` requires in place of a
-// minimap — the weight of the lines around the Grid pane — comes from the same camera the cursor moved
+// The map is a **window onto a battlefield larger than itself**: every tile is drawn at
+// `tile - camera` and clipped to the viewport, and the signal `docs/system-design/battlefield.md` requires in place of a
+// minimap — the weight of the lines around the map — comes from the same camera the cursor moved
 // (the only signal: no position readout).
 //
 // This file puts the frame together; each part the design names is drawn in a file of its own: the
-// frame and the two bars (`build-frame.ts`), the Grid pane (`build-grid.ts`), the menu and its rows
+// frame and the two bars (`build-frame.ts`), the map (`build-map.ts`), the menu and its rows
 // (`build-menu.ts`), cards and the card reveal (`build-card.ts`), hand-offs to the map
 // (`build-handoff.ts`) and popups (`build-popup.ts`).
 
@@ -22,14 +22,14 @@ import type { Ack, RaidForecast } from "../build/types.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { text } from "./draw.ts"
-import { drawTerrain } from "./grid-layer.ts"
+import { drawTerrain } from "./map-layers.ts"
 import type { PulseFrame } from "./pulse-scene.ts"
 import { drawFrameLight, drawPulseEffects, drawPulseEntities, drawPulseFire, drawPulsePanel } from "./pulse-scene.ts"
 import type { ColorDepth } from "./roles.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { PlacementClock, PlacementTuning, RemovalClock } from "./placement.ts"
 import { drawChrome, drawTopBarAndBottomLine } from "./build-frame.ts"
-import { animatingPlacements, drawGrid, drawEffects, drawPreview, drawCursor, drawRefusedTry, drawRaidIntent } from "./build-grid.ts"
+import { animatingPlacements, drawMapTiles, drawEffects, drawPreview, drawCursor, drawRefusedTry, drawRaidIntent } from "./build-map.ts"
 import { drawPanel } from "./build-menu.ts"
 import type { CardReveal } from "./build-card.ts"
 import { drawCard } from "./build-card.ts"
@@ -55,7 +55,7 @@ export type BuildCompositionInput = Readonly<{
    *  "pressed" flash or the "refused" flicker. Presentation only; absent in every still frame. */
   ack?: RowAck
   /**
-   * The camera the Grid is drawn through, while the live loop is sliding the view toward the state's
+   * The camera the battlefield is drawn through, while the live loop is sliding the view toward the state's
    * own camera. Presentation only: absent, the state's camera is drawn — every still frame,
    * every test, every scripted playtest.
    */
@@ -119,7 +119,7 @@ export type BuildCompositionInput = Readonly<{
   dialogLight?: Readonly<{ elapsedMs: number }>
   /**
    * A Battle Round is on screen: what it is showing at this instant, worked out by the presenter
-   * (`pulse-live.ts`). Present, the Grid shows the fight and the panel the forces and the ending, in this
+   * (`pulse-live.ts`). Present, the battlefield shows the fight and the panel the forces and the ending, in this
    * same frame and under the same popups; absent — every Build Phase frame, and every test that never
    * starts a Pulse — the frame is the Build Phase's, exactly as it always was.
    */
@@ -193,16 +193,16 @@ export function composeBuildFrame(
   colors: ColorDepth,
 ): ReadonlyCellFrame {
   // A sliding view is drawn through the camera it has reached, not the one it is heading for: the
-  // Grid, the preview, the cursor and the edge weights all move together.
+  // battlefield, the preview, the cursor and the edge weights all move together.
   const input: BuildCompositionInput =
     given.camera === undefined ? given : { ...given, state: { ...given.state, camera: given.camera } }
   const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []
 
-  // A Battle Round on screen replaces what the Build Phase drew on the Grid and in the panel with the fight
+  // A Battle Round on screen replaces what the Build Phase drew on the battlefield and in the panel with the fight
   // and its forces; the frame, the top and bottom bars, the cursor and every popup are the same code.
   if (input.pulse !== undefined) {
-    const view = { camera: input.state.camera, viewport: input.state.viewport, layout: input.layout, grid: input.context.grid }
+    const view = { camera: input.state.camera, viewport: input.state.viewport, layout: input.layout, terrain: input.context.terrain }
     drawTerrain(cells, view, pack)
     const occupied = drawPulseEntities(cells, view, input.pulse)
     drawPulseFire(cells, view, input.pulse, occupied, pack)
@@ -226,7 +226,7 @@ export function composeBuildFrame(
   const preview = armedPreview(input.context, input.state)
   const animating = animatingPlacements(input)
   const hidden = commanderHidden(input.context, input.roundElapsed?.elapsedMs, input.reducedMotion === true)
-  drawGrid(cells, hidden ? { ...input, commanderHidden: true } : input, pack, animating)
+  drawMapTiles(cells, hidden ? { ...input, commanderHidden: true } : input, pack, animating)
   drawOutInBuild(cells, input)
   drawExploredCommander(cells, input, colors)
   drawRaidIntent(cells, input, pack)
@@ -257,7 +257,7 @@ export function composeBuildFrame(
   return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
 }
 
-/** The tile in the middle of the player's Grid Nexus in a Battle Round's frame, or `null` without one standing. */
+/** The tile in the middle of the player's Nexus in a Battle Round's frame, or `null` without one standing. */
 function nexusIn(pulse: PulseFrame): Coord | null {
   const nexus = pulse.sample.state.entities.find((entity) => entity.player === "A" && pulse.registry.get(entity.contentId).nexus === true)
   if (nexus === undefined) return null

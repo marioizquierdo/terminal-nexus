@@ -1,4 +1,4 @@
-// The Grid Nexus fights back (the owner, 2026-10-21: "the Nexus have a single attack that deals enough damage to kill a
+// The Nexus fights back (the owner, 2026-10-21: "the Nexus have a single attack that deals enough damage to kill a
 // trooper"): one shot every three seconds at a unit within a marksman's reach, never at a building, and a trooper or a
 // runner falls to it where it stands. Its mending between rounds is the regroup's, tested in tests/match.test.ts.
 
@@ -18,7 +18,7 @@ test("the Citizen and the Ravel Nexus each shoot alike: enough to drop a trooper
   assert.ok(citizen.attack.damage < FIXTURE_REGISTRY.get("unit.ravel.raider").maxHp, "a raider falls to one shot: the Nexus is a stop, not a wall")
   assert.equal(citizen.attack.range, FIXTURE_REGISTRY.get("unit.citizen.marksman").attack?.range)
   assert.ok(!(citizen.targetLayers ?? []).includes("obstacles"), "it may shoot a building")
-  // The bench's own Grid Nexus, the sandboxes' target, stays as the Nexus was: it never shoots and never mends.
+  // The bench's own Nexus, the sandboxes' target, stays as the Nexus was: it never shoots and never mends.
   const bench = FIXTURE_REGISTRY.get("structure.bench.nexus")
   assert.equal(bench.nexus, true)
   assert.equal(bench.attack, undefined)

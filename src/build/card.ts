@@ -254,8 +254,8 @@ export function entityCard(
 }
 
 /** A bare tile's card: what the ground is, and where. */
-export function groundCard(context: Pick<BuildContext, "grid">, tile: Coord): Card {
-  const terrainId = context.grid.tiles[tile.y * context.grid.width + tile.x] ?? "terrain.plain"
+export function groundCard(context: Pick<BuildContext, "terrain">, tile: Coord): Card {
+  const terrainId = context.terrain.tiles[tile.y * context.terrain.width + tile.x] ?? "terrain.plain"
   const text = CARD_TEXT[terrainId] ?? { title: "Ground", subtitle: "", description: "" }
   return { icon: { kind: "terrain", terrainId }, ...text, stats: [{ label: "TILE", value: `${tile.x},${tile.y}` }] }
 }

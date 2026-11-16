@@ -1,7 +1,7 @@
 {
   "format": "terminal-nexus.save/1",
-  "name": "Structure destruction - a Grid Nexus falls",
-  "notes": "Four troopers and a marksman bring down a 3x2 Grid Nexus. A multi-tile structure is damaged and destroyed as one entity, range measures to its nearest occupied tile, and destroying it ends the Pulse.",
+  "name": "Structure destruction - a Nexus falls",
+  "notes": "Four troopers and a marksman bring down a 3x2 Nexus. A multi-tile structure is damaged and destroyed as one entity, range measures to its nearest occupied tile, and destroying it ends the Pulse.",
   "setup": {
     "map": {
       "id": "structure-destruction",

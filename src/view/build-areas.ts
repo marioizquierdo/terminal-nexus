@@ -85,7 +85,7 @@ export function drawBuildRange(cells: BandCell[], input: BuildCompositionInput, 
     for (let x = range.firstX; x <= range.lastX; x += 1) {
       if (!territory.has({ x, y })) continue
       const cell = cellForTile(layout, state.camera, { x, y })
-      const open = context.grid.tiles[y * context.grid.width + x] === "terrain.plain" && !taken.has(`${x},${y}`)
+      const open = context.terrain.tiles[y * context.terrain.width + x] === "terrain.plain" && !taken.has(`${x},${y}`)
       if (open) cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: dot.glyph, style: { fgRole: dot.role, dim: true } } })
       cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, style: wash })
     }
@@ -166,7 +166,7 @@ export function drawReach(
 ): void {
   const { context, state, layout } = input
   // The cursor's own conditions: a committed plan's map shows no cursor, so nothing rests on a building there.
-  if (state.focus !== "grid" || state.popup !== null || state.committed || input.pulse !== undefined) return
+  if (state.focus !== "map" || state.popup !== null || state.committed || input.pulse !== undefined) return
   const reaching = reachingNow(context, input, preview, shift)
   if (reaching === null) return
   const range = visibleRange(state.camera, state.viewport)
@@ -175,7 +175,7 @@ export function drawReach(
   const lit: CellStyle = { ...style, ...BUILD_RANGE_LIGHT }
   for (const { tile, stroke } of reachOutline(reaching.anchor, reaching.footprint, reaching.radius)) {
     if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
-    if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain" || avoid.has(`${tile.x},${tile.y}`)) continue
+    if (context.terrain.tiles[tile.y * context.terrain.width + tile.x] !== "terrain.plain" || avoid.has(`${tile.x},${tile.y}`)) continue
     const cell = cellForTile(layout, state.camera, tile)
     cells.push({ band: BANDS.highlights, x: cell.x, y: cell.y, cell: { glyph: RING_GLYPHS[pack][stroke], style: floor?.has(tile) === true ? lit : style } })
   }

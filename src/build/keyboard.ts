@@ -69,9 +69,9 @@ export type KeyboardContext = Readonly<{
   /** How many build-menu rows there are, so a digit past the end of the list means nothing
    *  rather than arming something that is not on screen. */
   itemCount: number
-  /** Whether a structure is armed: on the Grid, Enter/Space then places rather than opening Explore Map. */
+  /** Whether a structure is armed: on the battlefield, Enter/Space then places rather than opening Explore Map. */
   armed: boolean
-  /** Which half of the screen arrows and Enter/Space belong to. Defaults to the Grid, the
+  /** Which half of the screen arrows and Enter/Space belong to. Defaults to the battlefield, the
    *  meaning every key had before focus existed. */
   focus?: Focus
   /** The popup that is open, if any. A popup holds the keyboard: only its own keys reach it, and
@@ -81,7 +81,7 @@ export type KeyboardContext = Readonly<{
    *  click on it sends, each setting its `decrease` and `increase`. The keyboard sends those same
    *  commands, so a key and a click on a popup's row cannot disagree. */
   popupSpec?: PopupSpec | null
-  /** A Battle Round is on screen: its playback keys are the screen's, ahead of the Grid's. */
+  /** A Battle Round is on screen: its playback keys are the screen's, ahead of the battlefield's. */
   pulse?: boolean
   /** The Pulse on screen has ended and its result stands: Enter, Space and `n` go on. */
   pulseOver?: boolean
@@ -245,7 +245,7 @@ function popupCommand(key: string, popup: Popup, context: KeyboardContext): Buil
   return side < 0 ? on.decrease : on.increase
 }
 
-/** Any of the Grid's cursor keys, as the move it is — **the one place a move is sized**: the input
+/** Any of the battlefield's cursor keys, as the move it is — **the one place a move is sized**: the input
  *  path's motion rules when it times keys (`KeyboardContext.moveTiles`), and otherwise a press on its
  *  own, a tap or the fast move's jump (`pressTiles`) — or `null`, for another key or a move of none. */
 function cursorMove(key: string, context: KeyboardContext): BuildCommand | null {
@@ -271,7 +271,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (popup !== null) {
     return popupCommand(key, popup, context)
   }
-  const focus = context.focus ?? "grid"
+  const focus = context.focus ?? "map"
   // `!` opens the note from anywhere, a Battle Round included.
   if (key === NOTE_KEY) return { kind: "open-note" }
 
@@ -292,7 +292,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   const back = backCommand(key)
   if (back !== null) return back
   if (key === "q") return { kind: "open-game-menu" }
-  if (key === TAB) return { kind: "focus", target: focus === "grid" ? "menu" : "grid" }
+  if (key === TAB) return { kind: "focus", target: focus === "map" ? "menu" : "map" }
   if (key === "u") return { kind: "undo" }
   // A building's actions, on the building Explore Map is on, each listed on its card under its key: `z` its order
   // (Hold production; not `h`, which is an arrow, h j k l), `c` `v` `b` `f` its upgrades and modes in its card's

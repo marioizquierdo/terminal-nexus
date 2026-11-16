@@ -60,7 +60,7 @@ export type ResolveOptions = Readonly<{
   /** Shown every state as it is reached, the opening first (with no events), then each tick with its own events: what
    *  a measurement records a battle from. It sees; it changes nothing. */
   watch?: (state: MatchState, events: readonly DomainEvent[]) => void
-  /** Whether the run's events open with an `entity.spawned` for each entity already on the board (true, the default).
+  /** Whether the run's events open with an `entity.spawned` for each entity already on the battlefield (true, the default).
    *  A battle's Battle Round says no: what stood at its opening was already reported when it arrived. */
   openingSpawns?: boolean
 }> &

@@ -35,7 +35,7 @@ import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../engine/events/types.ts"
 import { tilesOf } from "../engine/geometry/coords.ts"
 import type { BattleState, Player, RoundReport, Side, BuildActions } from "../battle/index.ts"
-import { SIDES, armyOf, briefOf, battleGrid, handOf, loadoutOf, mapOf, beginBattle, placementsOf, restoredOf, roundOpening, standingOf } from "../battle/index.ts"
+import { SIDES, armyOf, briefOf, battleTerrain, handOf, loadoutOf, mapOf, beginBattle, placementsOf, restoredOf, roundOpening, standingOf } from "../battle/index.ts"
 import type { RegroupResult } from "../match/index.ts"
 import { centreTile, standDown } from "../match/index.ts"
 import { spawnEvents } from "../engine/pulse/index.ts"
@@ -99,7 +99,7 @@ function arrivalsOf(battle: BattleState, callups: BuildContext["callups"]): Inco
 /** A Commander as a watched battle's force bars and lines call her: her id, capitalized (Vasse, Averno, Dob). */
 const shortName = (commander: string | undefined): string => (commander === undefined ? "?" : `${commander.slice(0, 1).toUpperCase()}${commander.slice(1)}`)
 
-/** The enemy's Grid Nexus as a dialog line looks at it. */
+/** The enemy's Nexus as a dialog line looks at it. */
 function enemyNexusFocus(battle: BattleState): DialogLine["focus"] {
   const nexus = armyOf(battle, "B").nexus
   const anchor = mapOf(battle).nexus.B
@@ -142,7 +142,7 @@ export function saveNameOf(position: SkirmishPosition): string {
  * **A Skirmish's round, ready for the Build Phase**: side A's view of the battle in play. Its build menu and content are
  * its Commander's whole army with every power it kept applied (`loadoutOf`, as the battle reads it); its credits the
  * battle's; its hand the one the battle deals it (`handOf`), so the card picked is the card the round keeps; its buildings
- * standing, and everything else on the Grid as the field, every Commander due back already beside her Nexus — each
+ * standing, and everything else on the battlefield as the field, every Commander due back already beside her Nexus — each
  * survivor with the walk that brought it there when `regroup` is the one the last round ended in. The round opens on
  * `scene` and says `opening` on the bottom line.
  */
@@ -181,7 +181,7 @@ function roundContext(position: SkirmishPosition, previous: Partial<BuildContext
   const watching = spectating(position.setup)
   const context: BuildContext = {
     ...carriedOver(previous),
-    grid: battleGrid(map),
+    terrain: battleTerrain(map),
     registry: loadout.registry,
     catalog: watching ? [] : loadout.catalog,
     standing,
@@ -416,7 +416,7 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
   return play
 }
 
-/** The player's Grid Nexus as a dialog line looks at it. */
+/** The player's Nexus as a dialog line looks at it. */
 function nexusFocus(context: BuildContext): DialogLine["focus"] {
   const tile = nexusTile(context)
   const nexus = context.standing.find((structure) => context.registry.get(structure.contentId).nexus === true)
@@ -512,7 +512,7 @@ export type DrivenSkirmish = Readonly<{ battle: BattleState; rounds: readonly Ro
  */
 export function scriptedRound(context: BuildContext, player: Player, play: LevelPlay): Readonly<{ context: BuildContext; state: BuildState }> {
   const { battle } = positionOf(context)
-  const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
+  const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
   const opened = createBuildState(withoutScene(context), nexusTile(context) ?? STARTER_START_CURSOR, viewport)
   return planOnRound(context, opened, player(briefOf(battle, "A").data), play.keep as NonNullable<LevelPlay["keep"]>)
 }

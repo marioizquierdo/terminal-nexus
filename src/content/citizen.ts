@@ -146,7 +146,7 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     behavior: "static",
     salvage: 100,
     constructionRadius: 6,
-    // Supply: the army a Grid Nexus alone can field (`src/content/supply.ts`); a Supply Depot adds more.
+    // Supply: the army a Nexus alone can field (`src/content/supply.ts`); a Supply Depot adds more.
     supplyProvided: 12,
   },
   {

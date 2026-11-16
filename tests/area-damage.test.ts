@@ -44,7 +44,7 @@ function block(placed: readonly Placed[]): PlacementBlock {
   return { rows: rows.map((row) => row.join("")), legend }
 }
 
-/** An open Grid, 50 by 30, each side placed as given, its targets, rock on every tile `rocks` names. */
+/** An open battlefield, 50 by 30, each side placed as given, its targets, rock on every tile `rocks` names. */
 function field(
   sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>,
   { targets = {}, rocks = [], registry = FIXTURE_REGISTRY }: Readonly<{ targets?: Partial<Record<PlayerId, TargetArea>>; rocks?: readonly Coord[]; registry?: ContentRegistry }> = {},
@@ -58,7 +58,7 @@ function field(
   const opening: BattleOpening = {
     id: "area-field",
     name: "area field",
-    grid: { width: 50, height: 30 },
+    size: { width: 50, height: 30 },
     seed: 1,
     pulseTicks: 400,
     terrain: Array.from({ length: 30 }, (_, y) => Array.from({ length: 50 }, (_, x) => (rock(x, y) ? "#" : ".")).join("")),
@@ -174,7 +174,7 @@ test("a bomber runs past the nearest enemy to the thickest knot and bursts in it
   assert.equal(run.events.filter((event) => event.kind === "entity.died" && event.player === "B").length, 0)
 })
 
-test("aiming at a crowd: the most of a side round it first, the nearest of those next; the same from the other end of the Grid", () => {
+test("aiming at a crowd: the most of a side round it first, the nearest of those next; the same from the other end of the battlefield", () => {
   // A bomber at 10,10: a lone trooper 4 away; a pair 12 away across; another pair 16 away down. Each pair is a crowd
   // of two. The bomber takes the nearer pair's nearer trooper.
   const choose = (mirror: boolean): Coord | null => {
@@ -303,7 +303,7 @@ test("burning ground burns every unit and worker on it, of either side, each bea
   // Burning while it burns, and gone once out: a state with nothing burning carries no `burning` at all.
   assert.ok(states.slice(0, 71).every((each) => each.burning?.length === 1))
   assert.ok(states.slice(71).every((each) => !("burning" in each)), "a state with no fire still carries the field")
-  // The hits name the shooter, which has fallen (it was never on this Grid): by its id.
+  // The hits name the shooter, which has fallen (it was never on this battlefield): by its id.
   const hit = events.find((event) => event.kind === "damage.applied")
   assert.ok(hit?.kind === "damage.applied" && hit.source === "A:mortar#99")
 })
@@ -382,8 +382,9 @@ test("battles with a bomber and with burning ground resolve to the same hashes o
   // stands, falling by the same tick; the mortar heads for the west end of its strip above the block's target, so its
   // first shell lands two columns sooner (its walker moved up two to meet the fire) and the block falls by tick 200.
   const pins: Readonly<Record<string, readonly [string, string, number]>> = {
-    "bomber-crowd.save.json": ["10a4f80b1c101ab634277df86987c9da043f4363e7b713e1a6980898ced266fc", "68819c077dd11333e70771ca4a4b8834f6693062ac0fccdb9f45a29db3c1e9b5", 37],
-    "mortar-burning-ground.save.json": ["77e07c9e5a083a461000b1806ec3f482e5362323bd2a05db2603e40417f7c491", "03efa2d64ed413f94453bd758d687ade00ca5985fe8876bc61f7ecb7a8644dbf", 200],
+    // Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
+    "bomber-crowd.save.json": ["9b104563dd7074af500d0185e98f657b90231dacce47f525e2e38039204675c8", "68819c077dd11333e70771ca4a4b8834f6693062ac0fccdb9f45a29db3c1e9b5", 37],
+    "mortar-burning-ground.save.json": ["aa8904bed25690b40e5d07d5161d81e33530ddb3540c66237a8c6d6f3ab06be1", "03efa2d64ed413f94453bd758d687ade00ca5985fe8876bc61f7ecb7a8644dbf", 200],
   }
   for (const [name, [stateHash, eventsHash, ticks]] of Object.entries(pins)) {
     const first = await playSandbox(name)

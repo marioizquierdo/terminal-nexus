@@ -26,7 +26,7 @@ Not started; each waits for Mario's word, and the order is a first guess.
 
 - [ ] The context that teaches the game: the rules a player needs, written once for a model and kept beside the
       brief a battle already writes, small enough to send every round.
-- [ ] The interface it plays through: the plan as JSON with a schema, or a few tools (look at the Grid, read a
+- [ ] The interface it plays through: the plan as JSON with a schema, or a few tools (look at the battlefield, read a
       building's card, submit the plan), whichever measures better; a plan refused is refused by name and the model
       may try once more.
 

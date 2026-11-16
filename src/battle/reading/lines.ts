@@ -45,7 +45,7 @@ export function readingLines(reading: RoundReading, side: Side): string[] {
   lines.push(`Their army: ${said(theirs.army.start)} as it opened${trained(theirs.army)}; ${said(theirs.army.end)} as it ended; units lost ${said(theirs.army.lost)}.`)
   const damaged = mine.buildings.damaged.map((building) => `${nameOf(building.contentId)} at ${building.at.x},${building.at.y} ${building.hp}/${building.most}`)
   lines.push(`Your buildings: ${said(mine.buildings.standing)} standing${damaged.length === 0 ? "" : `; damaged ${damaged.join(", ")}`}${Object.keys(mine.buildings.lost).length === 0 ? "" : `; destroyed ${namedCounts(mine.buildings.lost)}`}.`)
-  const where = (at: number | null): string => (at === null ? "none on the Grid" : `${at}%`)
+  const where = (at: number | null): string => (at === null ? "none on the battlefield" : `${at}%`)
   lines.push(`Advance (0% your Nexus, 100% theirs): your army ${where(mine.advance.start)} -> ${where(mine.advance.end)}, theirs ${where(theirs.advance.start === null ? null : 100 - theirs.advance.start)} -> ${where(theirs.advance.end === null ? null : 100 - theirs.advance.end)}${mine.advance.closest === null ? "" : `; the nearest an enemy came to your Nexus: ${mine.advance.closest} tiles`}.`)
   if (Object.keys(mine.damage.taken).length > 0) lines.push(`Damage you took, by source: ${Object.entries(mine.damage.taken).sort((a, b) => b[1] - a[1]).map(([by, amount]) => `${nameOf(by)} ${amount}`).join(", ")}${mine.damage.own > 0 ? ` (${mine.damage.own} of it your own blasts and splashes)` : ""}.`)
   lines.push(...engagementLines(reading, side))

@@ -3,8 +3,8 @@
 _How a battle is measured, so that a result taken before a rule changes and one taken after compare like with like: what a battle's record holds, which battles are played, over which seeds, how a result is written down, what the numbers can say, how Story levels are played, and the command. Every unmarked statement is GUIDANCE._
 
 **Where to measure what.** The game's gameplay and balance are measured in Skirmish (the duels below, and the
-`skirmish` command), the ground that tests the real game: the Grid Nexus, credits, rounds, who wins. A sandbox measures one
-rule on a slice of the Grid ([sandboxes and trials](skirmish-saves.md)). Story levels are played by fixed plans only so a rule change is seen
+`skirmish` command), the ground that tests the real game: the Nexus, credits, rounds, who wins. A sandbox measures one
+rule on a slice of the battlefield ([sandboxes and trials](skirmish-saves.md)). Story levels are played by fixed plans only so a rule change is seen
 on them too; they serve Story's puzzles and intros, built on what Skirmish settles (section 7). How to start a change
 from its measurement is in `DEVELOPMENT.md`, "Developing and testing a change".
 
@@ -41,7 +41,7 @@ was wiped out, time ran out). For each side:
   | `route-pocket` | a trooper at the bottom of a cup of rock, its goal beyond the bottom | it climbs out and round |
   | `route-ridge-gap` | six troopers, a ridge the whole height of the map, one gap far off the straight line | the squad files through the gap |
   | `route-wide-gap` | a raider three tiles wide above a gap two wide, a gap three wide further off | it walks to the wide gap |
-  | `route-crowd` | eight troopers in a file against one Grid Nexus | they spread round it and strike together |
+  | `route-crowd` | eight troopers in a file against one Nexus | they spread round it and strike together |
   | `route-corridor` | two squads, one corridor, each side's Nexus beyond it | the battle never stands still for good |
   | `route-falling-building` | a building closing the one gap in a ridge | the troopers break it and go through |
 
@@ -116,7 +116,7 @@ and what they measured, with a row in its index: the build, the rules it measure
 - **current**: the latest result on the rules now built.
 - **current, short of** a change: a later change moved part of what it measured (a movement rule after a full run)
   and those parts have not been played again.
-- **superseded by** a later file: the rules it measured have changed under it — a power-curve change (the Grid
+- **superseded by** a later file: the rules it measured have changed under it — a power-curve change (the battlefield
   Nexus, supply, credits, income, a tier, the Nexus Pulse's hand) supersedes every result before it.
 
 A superseded result's report gets one line at its top saying so and linking what replaced it. Nothing is deleted
@@ -129,7 +129,7 @@ measurement file with no row in the index.
   struck and how long units stood blocked; per pair of Commanders, who won; for mirrors, how often each end won; for
   each level and plan, the verdict, the round it ended, the rounds its Commander fell and what it lost.
 - **How soon duels end**: how many were over by the end of rounds 1, 2 and 3. An opening that ends a match is what
-  the Grid Nexus's own shot was built against.
+  the Nexus's own shot was built against.
 - **The catch-up measure** (Commander Armies' last step): of the duels where the two sides' first two kept cards
   differ in rarity, how often the luckier side won; and of those where one side was ahead after round 2 (more of its
   Nexus left, then more damage dealt), how often it won. A lucky early hand that wins nearly always is the runaway
@@ -168,7 +168,7 @@ change reach it. Their code lives with the command-line layer (`src/cli/levels.t
   unlocked and that the round's credits afford, places it on the legal tile nearest `near` (a row counts two columns),
   and goes on until nothing fits. A row the menu does not offer or has not unlocked is skipped without a word.
 - **The two fixed plans** (`LEVEL_PLANS`, `src/measure/spec.ts`): *nothing built*, and *a defended base* (a Barracks and a
-  Supply Depot each round, as far as the credits go), each near the centre of the level's Grid Nexus. `measureLevel`
+  Supply Depot each round, as far as the credits go), each near the centre of the level's Nexus. `measureLevel`
   (`src/measure/suites.ts`) plays a level by one: plan, start the Pulse, record the round's battle, open the next
   round. It says how the level ended: the round, and the mission's verdict (`won` or `lost`; `none` when the rounds ran
   out with the mission undecided; `unplayed` when no round ran).

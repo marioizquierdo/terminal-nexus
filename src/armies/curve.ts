@@ -5,7 +5,7 @@
 // pulse, so armies can build around this curve with different tradeoffs." Power is counted in credits, the one
 // resource: what a round is expected to bring, what a Nexus Pulse's pick is expected to be worth, and from which
 // round each rarity may be dealt. An army's difference is where it takes its power, never how much. Every number is
-// a first guess for the next step to put on the Grid and measure; only the earliest round of each rarity is a rule
+// a first guess for the next step to put on the battlefield and measure; only the earliest round of each rarity is a rule
 // today, which the loader holds a level's schedule to and the dealer keeps when it falls back to a rarer card.
 //
 // Pure data and whole-number arithmetic, like the dealer beside it: the same on every runtime.

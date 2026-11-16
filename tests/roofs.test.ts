@@ -48,7 +48,7 @@ function block(placed: readonly Placed[]): PlacementBlock {
 
 type Battle = Readonly<{ registry: ContentRegistry; states: MatchState[]; events: DomainEvent[] }>
 
-/** An open 48 x 16 Grid with each side placed as given, its buildings making units by `recipes`, played tick by
+/** An open 48 x 16 battlefield with each side placed as given, its buildings making units by `recipes`, played tick by
  *  tick for `ticks` (or until it ends). `between`, when given, may change the state between two ticks. */
 function battle(
   sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>,
@@ -65,7 +65,7 @@ function battle(
   const opening: BattleOpening = {
     id: "roofs",
     name: "roofs",
-    grid: { width: WIDTH, height: HEIGHT },
+    size: { width: WIDTH, height: HEIGHT },
     seed: 1,
     pulseTicks: ticks,
     terrain: Array.from({ length: HEIGHT }, () => ".".repeat(WIDTH)),
@@ -227,7 +227,7 @@ test("a building that falls with units on its roof leaves them standing where th
 })
 
 test("in PERIMETER's first round with the defence plan, every unit that walks out over a roof stays out", async () => {
-  const { STARTER_STANDING, starterGrid } = await import("../src/build/catalog.ts")
+  const { STARTER_STANDING, starterTerrain } = await import("../src/build/catalog.ts")
   const { defaultValue } = await import("../src/build/all-settings.ts")
   const { resolveMissionPulse, spawningRegistry } = await import("../src/match/index.ts")
   const { PERIMETER, PERIMETER_LEVEL } = await import("../src/armies/index.ts")
@@ -236,7 +236,7 @@ test("in PERIMETER's first round with the defence plan, every unit that walks ou
   // Two Barracks of the player's side by side with the map's, which they may now touch.
   const run = resolveMissionPulse({
     mission: PERIMETER,
-    grid: starterGrid(),
+    terrain: starterTerrain(),
     registry,
     pulse: 1,
     carried: null,

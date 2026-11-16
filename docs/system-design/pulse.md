@@ -46,7 +46,7 @@ An integer accumulator, no floating point:
 - each tick, `credit += rate.numerator`
 - a step costs a beat's worth of credit, `rate.numerator × beat`, for each column of distance it covers
   (`stepCost`, `stepLength`): a step across costs one beat's worth, and a step up or down twice that, since a
-  row counts two columns ([`grid.md`](grid.md), distance, reach and movement)
+  row counts two columns ([`battlefield.md`](battlefield.md), distance, reach and movement)
 - when `credit >= cost` of the step it wants, the actor attempts that step and `credit -= cost`
 
 So a step across takes exactly one beat and a step up or down exactly two, at every rate, and a walk takes as many
@@ -116,7 +116,7 @@ Melee is an attempt to enter an enemy-occupied tile on the same layer. When the 
 step 8, the winning claimant may occupy the tile on the following tick.
 
 **Melee is touching** (RULE — `src/engine/pulse/shared.ts`, `tests/rows.test.ts`): a melee attack reaches what is
-within its range in steps along the Grid's sides, so a trooper swings at an enemy straight above it as at one
+within its range in steps along the battlefield's sides, so a trooper swings at an enemy straight above it as at one
 beside it. Everything else that reaches — a shot, a heal, an aura, a blast or splash, a vision, a worker's
 flight and a contact detonator's trigger — is measured as range is, to the nearest tile of each footprint, a row
 counting two columns, and a reach of one or more always includes what touches.
@@ -222,7 +222,7 @@ diagonal".
 - **Blows land together.** Every hit of a speed tier is worked out against the state as the tier began and applied
   at once (the attacks step), so two equal units that strike each other in the same tick both fall.
 - **A building sets its units down facing the fight**: on the tile of its roof nearest where they head — its side's
-  target if it follows one, else the enemy's Grid Nexus, else the nearest enemy as the tick began — ties drawn; with
+  target if it follows one, else the enemy's Nexus, else the nearest enemy as the tick began — ties drawn; with
   nowhere to head, the roof's own order. Neighbouring buildings set theirs down front first, nearest the enemy, and two as far forward in
   a drawn order (`src/engine/pulse/spawn.ts`), so neither claims the ground between them by its id.
 - **A step as good as another** goes by the turn from the way the unit faces its goal, then a draw (section 1.6),
@@ -236,7 +236,7 @@ diagonal".
   tick's parity (the same on either side), and two allies that would swap with one slower unit are drawn between; a
   mirrored march stays a mirror tick for tick (`march-mirror`).
 - **Between rounds** (`src/match/`), where nothing is drawn: a group set down round a point, a Commander's return and a mission's
-  arrivals break a tie toward the enemy's Grid Nexus (`enemyNexusMiddle`); the regroup's slots and the order units make
+  arrivals break a tie toward the enemy's Nexus (`enemyNexusMiddle`); the regroup's slots and the order units make
   room for a building go by what a side faces, and the sides alternate. Forces whose
   musters meet are set down in turns, a unit of each at a time, the order reversed each turn, so the first listed does
   not take all the ground between them. A battle places a building by its footprint's middle, not its north-west
@@ -300,7 +300,7 @@ down — 12 for a Commander who charges, content's `vision`, Averno's — or its
 every unit does. When nothing is in range it walks on, and at the target
 it stands. Units fill the target first, each toward the nearest free tile of it; one that cannot get in stands
 beside one that did, or beside its own building in the target, and claims no tile. **A side with no target heads for
-the enemy's Grid Nexus** (the owner, 2026-10-20: "It's just going to be going to the enemy nexus"): its fighting units
+the enemy's Nexus** (the owner, 2026-10-20: "It's just going to be going to the enemy nexus"): its fighting units
 turn on an enemy within the same vision on the way, a melee unit only on one it could walk to without a long detour (twice its vision), and
 otherwise keep walking to the Nexus; a unit that cannot strike a Nexus, or a map with none, still engages the nearest
 enemy wherever it is (`headsForNexus`, `src/engine/pulse/perception.ts`, `tests/heading.test.ts`). Workers that flee,
@@ -310,7 +310,7 @@ always did. The named sandbox is `target-head-engage-stand`.
 ### 1.6 Routes — RULE — `src/engine/routing/`, `src/engine/pulse/routes.ts`, `tests/routing.test.ts`, `tests/route-saves.test.ts`
 
 The owner, 2026-10-19, watching raiders stand behind rocks: units must get where they are going, round obstacles,
-through crowds and narrow gaps, on a Grid that changes ([the milestone](../history/milestones/milestone-16-pathfinding.md)).
+through crowds and narrow gaps, on a battlefield that changes ([the milestone](../history/milestones/milestone-16-pathfinding.md)).
 Routes are built from small parts, each tested alone (`src/engine/routing/`): where a body of a given shape may stand, the
 anchors from which it reaches a goal, a distance field from a goal outward, and the ranking of a unit's four steps.
 How they fit together, in plain words, and where a new way of moving plugs in, is [`movement.md`](movement.md).
@@ -369,7 +369,7 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   pace. Two allies of one tile each that want each other's tile swap, together.
 - **The march** (the owner, 2026-10-21 and 2026-10-27; `src/engine/pulse/march.ts`, `tests/march.test.ts`, how it reads in
   [`movement.md`](movement.md), the three states and troop formation). A unit is in one of three states
-  (`MoveState`): it **marches** with no enemy to turn to (walking for its side's goal — its target, or the enemy's Grid
+  (`MoveState`): it **marches** with no enemy to turn to (walking for its side's goal — its target, or the enemy's battlefield
   Nexus while that is beyond its vision — stepping off its roof, holding at its target), is in **battle** when it walks
   to an enemy or fights one, and **retreats** when it runs. Every unit with an attack, other than a flyer and a unit on
   its own roof, has a place in one priority list (`formationRank`, `src/content/types.ts`): its type (flanker, melee,
@@ -384,14 +384,14 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   walk to.
 - **Slow ground** (`TerrainKind.stepWeight`): a step onto scrub costs twice its length, in credit and in a route, so
   a unit crosses it at half pace and a route goes round it when that is quicker. Credit is capped at the dearest step
-  from where a unit stands, so it can save up for a step onto scrub ([`grid.md`](grid.md), terrain).
+  from where a unit stands, so it can save up for a step onto scrub ([`battlefield.md`](battlefield.md), terrain).
 - **Burning ground is dear ground** (`TickRoutes.weightsOf`, `BURNING_WEIGHT`; `tests/area-damage.test.ts`). While
   anything burns, an anchor where a unit's or a worker's body covers a burning tile weighs four times its ground in
   that body's fields, so a walker goes round a patch when the way round is less than four times as long and walks
   through it when it is not. Only the route weighs it: a step onto burning ground costs the credit its ground does, so
   a unit that crosses fire crosses it at its own pace. The patches are those burning as the tick began; what the
   attacks light weighs from the next tick. A flyer flies over it.
-- **Workers cross their own side's troops, and not the enemy's**; a trooper the same with workers ([`grid.md`](grid.md),
+- **Workers cross their own side's troops, and not the enemy's**; a trooper the same with workers ([`battlefield.md`](battlefield.md),
   collision masks). The enemy's are walls to their routes.
 - **A unit that flees walks a flight map** (`TickRoutes.safetyOf`): the walk from every enemy that can strike, scaled
   by 1.2 and worked out again from every anchor at once, walked downhill. It runs from all threats, not only the
@@ -408,10 +408,10 @@ map take a third of a frame at most, and a battle's stop far sooner ([`movement.
 
 ## 2. Match structure
 
-**A Grid Nexus is a flag on a content definition**, never a content id the battle engine recognises (RULE —
+**A Nexus is a flag on a content definition**, never a content id the battle engine recognises (RULE —
 [`architecture.md`](architecture.md), invariants; `tests/ravel.test.ts`, `src/engine/pulse/victory.ts`): a victory
 condition keyed on the id `structure.citizen.nexus` broke the moment the second faction existed. Anything a
-faction calls its Grid Nexus declares itself one, and the rules read the flag.
+faction calls its Nexus declares itself one, and the rules read the flag.
 
 A match alternates (RULE — `tests/pulse-run.test.ts`, `tests/mission.test.ts`):
 
@@ -420,7 +420,7 @@ A match alternates (RULE — `tests/pulse-run.test.ts`, `tests/mission.test.ts`)
 - **Battle Round** — simultaneous reveal, then a fixed number of deterministic ticks: the Pulse this
   document describes.
 
-Each round opens with the **Nexus Pulse**, when the Grid Nexus deals its Commander a hand of Nexus powers,
+Each round opens with the **Nexus Pulse**, when the Nexus deals its Commander a hand of Nexus powers,
 one of which the player may keep during the Build Phase (a rule outside the battle engine, section 2.4). One
 Nexus Pulse, one Build Phase and one Battle Round, in that order, are a **round**, the unit the player
 counts. A match runs **as many rounds as it needs** — a mission is a sequence of rounds, not
@@ -430,12 +430,12 @@ watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
 
 **The battle engine's victory condition never learns about a mission's goal.** A mission's objective is
 resolved one level up, by the mission and trigger layer, which fires an ordinary `win`/`lose` action
-when its own condition holds (see [`story.md`](../game-design/story.md)). What follows — Grid
+when its own condition holds (see [`story.md`](../game-design/story.md)). What follows — battlefield
 Nexus destroyed, a side with no Nexus standing annihilated, tick limit reached — is the fallback a
 battle with no declared objective lands on: every Skirmish battle (RULE —
 `src/engine/pulse/victory.ts`).
 
-Both players see the resolved Grid: terrain, deposits, neutral zones, known actors, health,
+Both players see the resolved battlefield: terrain, deposits, neutral zones, known actors, health,
 structures, public construction coverage. Newly committed construction and upgrade choices stay
 hidden until reveal.
 
@@ -443,11 +443,11 @@ At Pulse start plans reveal together and valid construction becomes operational.
 producers attempt recipes, actors move and fight automatically. Playback controls cannot change the
 result (RULE — `tests/pulse-run.test.ts`).
 
-**At Pulse end every survivor stays on the Grid and regroups** (RULE — the owner, 2026-10-26: "double down the RTS
+**At Pulse end every survivor stays on the battlefield and regroups** (RULE — the owner, 2026-10-26: "double down the RTS
 style, leaving troops on the map"; `src/match/regroup.ts`, `tests/regroup.test.ts`, `tests/kept-front.test.ts`). The
 Nexus announces a pause and the troops respect it: nothing attacks or trains, and for 10 seconds (120 ticks, the
 Build Phase's first 10 seconds on screen) they move. For 2 seconds those within 12 of an enemy step back toward their
-own Grid Nexus; for 6 more each side forms up in ranks across its march line — from its Commander, or its own Nexus
+own Nexus; for 6 more each side forms up in ranks across its march line — from its Commander, or its own Nexus
 while she is out, toward its level's target, else the enemy Nexus — in the formation's priority list, front to back:
 flankers, melee, then ranged by range, tank to siege within a range, then what does not fight (the Commander takes the
 place her attack gives her, in the middle of her rank); the last 2 seconds let the slowest arrive. Survivors more
@@ -471,28 +471,28 @@ recipe that Pulse runs (RULE — `src/match/regroup.ts`, `src/match/opening.ts`,
 `tests/production.test.ts`). **Burning ground is put out between rounds** (RULE — `src/match/regroup.ts`,
 `tests/area-damage.test.ts`): the next Pulse opens with nothing burning.
 
-**The Grid Nexus mends between rounds** (RULE — the owner, 2026-10-21: "perhaps we add like a little bit of
+**The Nexus mends between rounds** (RULE — the owner, 2026-10-21: "perhaps we add like a little bit of
 self-healing"; `ContentDef.mends`, `src/match/regroup.ts`, `tests/match.test.ts`). Between rounds a structure whose
-definition `mends` regains that much health, never past its full: the Citizen and the Ravel Grid Nexus 40 of their
+definition `mends` regains that much health, never past its full: the Citizen and the Ravel Nexus 40 of their
 400, so an early raid that hurt the Nexus is not a wound it carries all match. Nothing else mends between rounds; a
 building or a unit stays as hurt as it was. How much a Nexus mends may differ by faction and be raised by a
 Nexus power, later.
 
-**Destroying the enemy Grid Nexus wins** (RULE — `src/engine/pulse/victory.ts`,
+**Destroying the enemy Nexus wins** (RULE — `src/engine/pulse/victory.ts`,
 `tests/sandboxes.test.ts`). Any attacker in a legal attack position may damage it. Defences and
 terrain make practical outer layers; there is no hidden exposure meter.
 
-**The Grid Nexus fights back** (RULE — the owner, 2026-10-21: "the Nexus have a single attack that deals enough
+**The Nexus fights back** (RULE — the owner, 2026-10-21: "the Nexus have a single attack that deals enough
 damage to kill a trooper"; `src/content/citizen.ts`, `src/content/ravel.ts`, `sandboxes/rules/nexus-fights-back.save.json`,
 `tests/nexus-fights-back.test.ts`). It is an ordinary ranged attack on its definition, so no rule knows a Nexus
 shoots: 40 damage every three seconds, at a marksman's reach of 6, at units, workers and flyers, never at a
 building. A trooper or a runner falls to one shot; a raider takes two. It matters most early, when a raid is a few
 units and the Nexus alone can turn it, and less as armies grow. The Citizen and the Ravel Nexus are alike for now;
 the factions' Nexuses may differ, and a Nexus power may raise either, later. The engine's own test maps that ask
-about routes and endings stand the bench's passive Grid Nexus (`structure.bench.nexus`) instead, the Nexus as it
+about routes and endings stand the bench's passive Nexus (`structure.bench.nexus`) instead, the Nexus as it
 was before, so a lone trooper sent round a wall is not shot on arrival.
 
-**A side whose Grid Nexus stands is never wiped out** (RULE — Mario, 2026-10-01; `src/engine/pulse/victory.ts`,
+**A side whose Nexus stands is never wiped out** (RULE — Mario, 2026-10-01; `src/engine/pulse/victory.ts`,
 `sandboxes/rules/nexus-stands.save.json`, `tests/sandboxes.test.ts`). Its Pulse goes on until the Nexus falls or
 the time runs out, and a mission may add a losing condition of its own; a side with no Nexus, a raid, is
 still beaten by losing every unit. So a defence round does not stop with the raid at the gate when the player's
@@ -508,15 +508,15 @@ its definition says (`roundsOut`, none when it says nothing), then the Prime Nex
 R + 1 + roundsOut opens. Vasse sits none out, so the Nexus restores her as the round after she falls opens
 (the owner, 2026-10-14: "Base will just come back immediately after"); sitting rounds out is a disadvantage
 a Commander may be given, proven on a test-only Commander who sits one round out, and one who sits two. **Commander death is not the victory condition** (RULE —
-`src/engine/pulse/victory.ts`, which reads only the Grid Nexus flag and annihilation).
+`src/engine/pulse/victory.ts`, which reads only the Nexus flag and annihilation).
 
-What is built is that cadence, for the Commanders in `armies/`. A unit is a Commander by a content flag (`commander`) that only the rules between rounds read: the battle engine sees a unit like any other, so she fights and dies by the ordinary rules and nothing in a Pulse brings her back. When she falls, the round loop carries an absence beside the state (whose, which, the round she fell in, the round she is due); as that round begins, after the regroup and before its Build Phase, the Nexus sets her down on the free tile nearest her side's Grid Nexus: a new body at full health. "May replicate" is taken as "does", as the story's third mission reads it ("the next restores her"); a side with no Grid Nexus standing has nowhere to restore her, so her absence goes on until it has one. At a Pulse's end she regroups with her army, in the middle of her rank.
+What is built is that cadence, for the Commanders in `armies/`. A unit is a Commander by a content flag (`commander`) that only the rules between rounds read: the battle engine sees a unit like any other, so she fights and dies by the ordinary rules and nothing in a Pulse brings her back. When she falls, the round loop carries an absence beside the state (whose, which, the round she fell in, the round she is due); as that round begins, after the regroup and before its Build Phase, the Nexus sets her down on the free tile nearest her side's Nexus: a new body at full health. "May replicate" is taken as "does", as the story's third mission reads it ("the next restores her"); a side with no Nexus standing has nowhere to restore her, so her absence goes on until it has one. At a Pulse's end she regroups with her army, in the middle of her rank.
 
 A mission brings its Commander once (`src/mission/validate.ts` refuses a second arrival, or two of her), and the Commander it brings for the player is its story's (`src/armies/load.ts` refuses another). How much she can take is her army's data (80 for Vasse). Her skill, By the Book, is an ability the battle engine keeps (above); its strength is an Experiment while it is tuned (**By the Book**). Where she goes is her side's: where a level names a target for the player's troops she heads there with them, fights what comes within reach and stands with them (a side's target, above). Holding a post waits (posts, in the backlog).
 
 ### 2.2 Structures
 
-Common roles: Grid Nexus (victory target, construction root, upgrade draft, Commander anchor);
+Common roles: Nexus (victory target, construction root, upgrade draft, Commander anchor);
 economic structures with worker slots; warehouses for global storage; supply structures for the
 shared population cap; worker producers; military producers; defences; research facilities that are
 themselves tech tree nodes (below); outposts that project construction coverage; capture structures
@@ -525,7 +525,7 @@ that claim a neutral-zone bonus while connected.
 Structures live on the `obstacles` layer, are operational immediately after reveal, cannot move or
 be sold, and keep working while disconnected but stop projecting coverage.
 
-**The Prime Nexus remains at its home location and replicates a smaller Grid Nexus onto the Grid;
+**The Prime Nexus remains at its home location and replicates a smaller Nexus onto the battlefield;
 Nexuses do not teleport** (RULE).
 
 ### 2.3 Automatic production
@@ -596,7 +596,7 @@ structure, and completing one unlocks its dependents. Only the tree unlocks: a N
 unlocks, and what it adds the tree does not hold. The tree is limited entirely by which structures exist,
 never by a second resource (the one-resource rule in the economy below is untouched).
 
-The Grid Nexus also offers a small draft of upgrades; research facilities modify that draft's tier,
+The Nexus also offers a small draft of upgrades; research facilities modify that draft's tier,
 breadth, redraws, weighting, or visibility. A structure has no levels: it has actions of its own — an upgrade kept by
 that building alone, a mode, an order for one round ([`commander-armies.md`](../game-design/commander-armies.md), what
 changes between rounds). Nexus powers are
@@ -615,7 +615,7 @@ round deals the same hand every time, and dealing never moves a battle's draws. 
 not dealt again unless it may be kept again. What it does reaches the battle through the round's own inputs, never a
 rule the battle engine reads: the content the Pulse runs on (a Commander's aura reach, a building's waves), the build
 menu (a building added), and the units set down at its opening — a power's **called-up units** muster on the
-player's Grid Nexus at tick 0, after the mission's own arrivals, and are survivors like any other once the round
+player's Nexus at tick 0, after the mission's own arrivals, and are survivors like any other once the round
 ends. How the Nexus Pulse deals (rarities, roles, the schedule, chance, requirements, upgrades) is in
 [`commander-armies.md`](../game-design/commander-armies.md), which also holds the designed-not-built legendary hand
 and what a Commander may bend.
@@ -640,7 +640,7 @@ round's resources arrive, and the worker economy will earn on top of it or repla
 
 **Supply** (RULE — `src/content/supply.ts`, `src/engine/pulse/production.ts`, `tests/production.test.ts`; the owner,
 2026-10-16: "go with your recommendation, supply cap", and "Supply should be controlled by another building"). An
-army fields so many units at once: what its standing buildings give (`supplyProvided`: the Grid Nexus 12, a Supply
+army fields so many units at once: what its standing buildings give (`supplyProvided`: the Nexus 12, a Supply
 Depot 8 more). A unit takes its `supplyCost` places (1 when it says nothing; a pikeman 2; a Commander none). A
 building whose next unit would take its side past its supply keeps the unit owed and waits, so once an army is full
 a new unit comes only as an old one falls. Units a mission or a Nexus power sets down are never held back, and count
@@ -667,12 +667,12 @@ its four orthogonal neighbours, so five may work one deposit. A depleted tile be
 buildable terrain.
 
 **Destruction** returns half a structure's value to its owner automatically and drops the other half
-as salvage on the Grid. Workers from either side drain salvage. Building over remaining salvage
+as salvage on the battlefield. Workers from either side drain salvage. Building over remaining salvage
 destroys it.
 
 **Construction territory** (RULE — `src/build/territory.ts`, `tests/build-territory.test.ts`). The player may
 build only inside their *build range* (the owner, 2026-10-04: "they also can only be built within the
-build-range of the other buildings"). The Grid Nexus roots it, and every structure that projects one (a
+build-range of the other buildings"). The Nexus roots it, and every structure that projects one (a
 content definition with a `constructionRadius`; today every building the player places) lets its player build
 within that reach of it, measured as range is, to the nearest tile of its footprint, a row counting two
 columns: a build range of 6 reaches 6 columns across and 3 rows up and down (`tests/rows-view.test.ts`). Two of
@@ -687,7 +687,7 @@ never leaves another outside it. **A new building may be placed where at least o
 inside the range** (the owner: "This is important for large buildings otherwise they have no space to build");
 rock, another building and the map's edge are still refused tile by tile. A range passes over rock, which is
 refused on its own. While the "Build range" Experiment is felt, its value (4, 6 or 8; 6 to begin with)
-is every projecting structure's radius; outposts that reach farther wait for outposts (Q5). With no Grid Nexus
+is every projecting structure's radius; outposts that reach farther wait for outposts (Q5). With no Nexus
 of the player's standing there is no network and nothing can be built. The Build Phase enforces this and the
 engine never reads it, since the Build Phase is the only way a player's plan is made.
 

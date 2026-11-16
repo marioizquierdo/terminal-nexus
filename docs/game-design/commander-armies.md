@@ -37,7 +37,7 @@ The differences should be smaller than the differences between factions but larg
 
 **The Commander is a prominent, persistent frontline `@`** (RULE — `src/match/commander.ts`, `tests/commander.test.ts`; Vasse, at the size PERIMETER needs, is the one built), not only a portrait or menu choice. Fictionally it is a Nexus Symbol. When it dies it is out for the rest of that Battle Round, and the Nexus Pulse that opens the next round restores it — unless its Commander is given rounds to sit out, a disadvantage some Commanders may carry (the owner, 2026-10-14: "Base will just come back immediately after"); Vasse sits none. Commander-focused builds should be viable but should compete with army, economy, science, and fortification strategies.
 
-**A Commander's symbol is her identity, and her art builds on it** (GUIDANCE — the owner, 2026-10-14: "the symbology and the icon used to represent the commander is important in the identity, and it should be kind of related, not just arbitrary"). Her glyph on the Grid is chosen for who she is, not taken because it was free; her portrait, her vignette and anything else drawn of her grow out of it, as Vasse's portrait wears her `@` on her cap and her chest. The owner's first reading was that `@` feels fluid, closer to the Alder, and a stricter glyph might suit Vasse; he settled it the next day: **Vasse keeps `@`** (2026-10-15). The ASCII art milestone draws on this rule.
+**A Commander's symbol is her identity, and her art builds on it** (GUIDANCE — the owner, 2026-10-14: "the symbology and the icon used to represent the commander is important in the identity, and it should be kind of related, not just arbitrary"). Her glyph on the battlefield is chosen for who she is, not taken because it was free; her portrait, her vignette and anything else drawn of her grow out of it, as Vasse's portrait wears her `@` on her cap and her chest. The owner's first reading was that `@` feels fluid, closer to the Alder, and a stricter glyph might suit Vasse; he settled it the next day: **Vasse keeps `@`** (2026-10-15). The ASCII art milestone draws on this rule.
 
 ### 2.1 Commander Army composition
 
@@ -49,7 +49,7 @@ The differences should be smaller than the differences between factions but larg
 
 **The parts list** (RULE — settled; parts of it are built, as the paragraph above says). A Commander Army is composed of these parts:
 
-1. **A Nexus and a faction.** The army belongs to one faction (two, for a Dual-bound Commander, section 2.2), anchored on the Grid by a **Grid Nexus**. This document keeps the one name, Grid Nexus, and never "Nexus Proxy".
+1. **A Nexus and a faction.** The army belongs to one faction (two, for a Dual-bound Commander, section 2.2), anchored on the battlefield by a **Nexus**. This document keeps the one name, Nexus, and never "Nexus Proxy".
 2. **A Commander** — the persistent `@` (section 2).
 3. **Starting units**, including workers, placed when the battle begins.
 4. **Starting structures**, placed when the battle begins.
@@ -59,14 +59,14 @@ The differences should be smaller than the differences between factions but larg
 
    **RULE — the tree holds buildings and building upgrades, and only the tree unlocks** (settled by the owner, 2026-10-07: "the tech tree will be specific to buildings and building upgrades", and "a power that unlocks a building should probably not be called unlock because we should keep that for the tech tree"; no code holds the tree yet). Inside a battle, *unlock* is the tree's word alone; a Nexus power **adds** (section 4.5a). The answers to a threat — the **hard counters**, the building that brings down air, the one that breaks armor — are tree buildings, so every player can always reach them by building, and never needs luck to (section 3).
 
-   A building unlocks what it leads to once it stands: at the Build Phase after the one it was placed in, the way only a building standing when a Build Phase opens gives build range. An opponent therefore sees the new building on the Grid a round before what it leads to can arrive — tech you can see is tech you can read (GUIDANCE).
+   A building unlocks what it leads to once it stands: at the Build Phase after the one it was placed in, the way only a building standing when a Build Phase opens gives build range. An opponent therefore sees the new building on the battlefield a round before what it leads to can arrive — tech you can see is tech you can read (GUIDANCE).
 
-   **RULE — the tech tree's state is always in sight** (settled by the owner, 2026-10-07: "the state of the tech tree should be always visible through buildings in the grid and build-menu items"; built: `tests/curve-level.test.ts`). What a player has reached is the buildings standing on the Grid; what they can build now is the rows of the build menu, and what they cannot yet is there too, dimmed, saying what it needs. There is no hidden list to open, and an opponent reads the same buildings.
+   **RULE — the tech tree's state is always in sight** (settled by the owner, 2026-10-07: "the state of the tech tree should be always visible through buildings in the grid and build-menu items"; built: `tests/curve-level.test.ts`). What a player has reached is the buildings standing on the battlefield; what they can build now is the rows of the build menu, and what they cannot yet is there too, dimmed, saying what it needs. There is no hidden list to open, and an opponent reads the same buildings.
 
    **RULE — the tree is the army's data, one rule in every mode** (the owner, 2026-10-15: "Let's define a tech tree and keep working to simplify and streamline thinking this will work for both the campaign, runs and pvp"; `tier` and `requires` on a building card, `src/armies/load.ts`, `src/build/state.ts` `missingFor`, `tests/power-curve.test.ts`, `tests/curve-level.test.ts`). A building card has a tier, 1 to 3, and the buildings it requires, each of a lower tier and one of the tier just below. A building can be built once what it requires stands for the player as the Build Phase opens; before that it is locked. The loader refuses a tree that cannot be climbed in order, and a level that offers a building whose requirement it neither offers nor has standing. **A mode decides which cards are offered, never how they unlock**: a story's missions unlock cards between missions, a Skirmish's battle file may narrow a roster, two players each bring their army whole — and inside every battle the same tree locks and opens the same way. Built: the first second tier, the Garrison (100 credits, four pikemen a wave, each about three troopers), which a Barracks standing unlocks.
 6. **Upgrades.** **A building has no levels**: each has its own upgrades, as many or as few as suits it, taken one building at a time as its actions (below, "What changes between rounds, and how"); what one changes is that building's own, the units it sends included. A kind of unit, or every building of a kind, is made better by a general upgrade — a Nexus power ("Troopers gain +1 attack"), or a building whose standing improves them all — never one unit at a time (the owner, 2026-10-07 and 2026-10-22). A Nexus power may have an upgrade of its own (section 4.5a). A Commander may start with some upgrades already made, the same way a few blueprints start unlocked.
 
-   **RULE — an upgrade shows where a player looks for it** (settled by the owner, 2026-10-07: "Unit and building upgrades are visible when exploring the details on the unit or building, and some-times have effects on the gird [grid] icon, background, aura, particles or other effects"). Explore Map's card on a unit or a building says every upgrade it carries, and an upgrade may also change how it looks on the Grid: its glyph, its background, an aura, particles. Built so far: a Barracks's card says the waves Drill Schedule and Drill Schedule II gave it (`WAVES 4 at 5s, 15s`), and Vasse's card and the ring of her aura during a battle say Standing Order's reach.
+   **RULE — an upgrade shows where a player looks for it** (settled by the owner, 2026-10-07: "Unit and building upgrades are visible when exploring the details on the unit or building, and some-times have effects on the gird [grid] icon, background, aura, particles or other effects"). Explore Map's card on a unit or a building says every upgrade it carries, and an upgrade may also change how it looks on the battlefield: its glyph, its background, an aura, particles. Built so far: a Barracks's card says the waves Drill Schedule and Drill Schedule II gave it (`WAVES 4 at 5s, 15s`), and Vasse's card and the ring of her aura during a battle say Standing Order's reach.
 7. **Nexus powers** — a small hand dealt from the army's own pool at each Nexus Pulse, one kept for the rest of the mission — for now a pick may be left unmade (section 4.5); how a hand is dealt is section 4.5a. A power reaches beside the tree, never into it: troops, a kind of unit made better, a building the tree does not hold, the Commander, information. It leans a plan — a soft counter, a strategy — and never hands out an answer the tree holds.
 8. **Specials** — **RULE — cast once per battle**, during a Build Phase of the player's choosing, for a short-lived bonus. Examples: grant 20% more damage to random units, give a shield to the Commander. "Special" is a game-wide category name, not a faction voice: unlike a Nexus power (whose specific *names* carry faction flavor — "Aid Station Permit" for Citizens — over one shared code-level effect union), the category word is the same across every faction, the way "Nexus power" and "Upgrade" are. A specific Special may still get a flavored name in play. Modelled the same way as Nexus powers otherwise: a small army-specific pool the Commander Army carries, of which the player prepares one and may trigger it exactly once — not one bespoke ability bolted on separately. The naming decisions (section 2.1a) have the alternatives considered.
 
@@ -82,7 +82,7 @@ What a player can do during one battle splits by who decides it and when it is a
 | --- | --- | --- | --- |
 | **Common structures** | the structures every Commander of the faction can always build, and the units those structures produce | the faction | always; never drafted, never unlocked |
 | **Army structures** | the special structures this Commander Army brought — a subset of the faction's structure pool, its own tech tree branch — and their units | the Commander Army: authored, grown through a story's missions, or drafted in a future drafting mode | unlocked over the battle as the tree opens |
-| **Nexus powers** | the powers the Grid Nexus can deal — a subset of the faction's power pool | the army defines the pool; **the Nexus deals a small hand from it at every Nexus Pulse, as each round opens, and the player takes one — or, for now, none** (section 4.5), by a schedule of rarities (section 4.5a) | dealt at each Nexus Pulse |
+| **Nexus powers** | the powers the Nexus can deal — a subset of the faction's power pool | the army defines the pool; **the Nexus deals a small hand from it at every Nexus Pulse, as each round opens, and the player takes one — or, for now, none** (section 4.5), by a schedule of rarities (section 4.5a) | dealt at each Nexus Pulse |
 | **Specials** | the one-cast bonus, drawn from the army's small Special pool | the Commander Army | prepared once, triggered once, whenever the player chooses |
 
 Around those sit the things that frame this composition rather than fill it: the Commander, the starting package, the faction's rules (section 4.1) and the Commander's exceptions to them.
@@ -139,7 +139,7 @@ Where this shows on screen: the Build Phase's build menu lists the buildings the
 
 **The naming rule**: prefer a word a strategy-game or deckbuilder player already knows (`Upgrade`, `Tech Tree`, `Blueprint`, `Draft`, `Ability`) over an invented one; add flavor through the *name of a specific instance* (a faction's voice, section 4.5), never through the *category word*; use one category word per concept, in every document. A name for an ability the whole game shares belongs to no faction.
 
-Settled without argument, as the genre's own words ([glossary](glossary.md)): Commander Army, Faction, Grid Nexus and Prime Nexus, Commander, Unit and Building (ids and code say *structure*), Tech tree, Nexus power, Rarity, Tier and Role. The terms with a decision behind them:
+Settled without argument, as the genre's own words ([glossary](glossary.md)): Commander Army, Faction, Nexus and Prime Nexus, Commander, Unit and Building (ids and code say *structure*), Tech tree, Nexus power, Rarity, Tier and Role. The terms with a decision behind them:
 
 | Term | What it names | Analysis | Alternatives considered | Ambiguity |
 | --- | --- | --- | --- | --- |
@@ -156,7 +156,7 @@ Settled without argument, as the genre's own words ([glossary](glossary.md)): Co
 | Word | What it names |
 | --- | --- |
 | **Round** | One Nexus Pulse, one Build Phase and one Battle Round, in that order |
-| **Nexus Pulse** | The moment a round opens: the Grid Nexus speaks to its Commander and deals a hand. Its row and popup are `[n] Nexus Pulse` and `NEXUS PULSE` |
+| **Nexus Pulse** | The moment a round opens: the Nexus speaks to its Commander and deals a hand. Its row and popup are `[n] Nexus Pulse` and `NEXUS PULSE` |
 | **Nexus power** | A card the Nexus Pulse deals: a name, one line, and what it does |
 | **Hand** | The powers one Nexus Pulse deals, three by default, War Chest beside them while the owner tests |
 | **Nexus power pool** | Every power a level or an army can deal a hand from; never "pool" alone |
@@ -188,7 +188,7 @@ Nexus powers reach beside the tree and never into it (what a power may add: sect
 
 ### 2.2 Nexus, faction, and Commander — the affinity model
 
-There are **five Prime Nexuses, one per faction** ([`lore.md`](lore.md)). A Prime is rooted and never travels; it replicates a Grid Nexus and sends one psychically connected Commander with it. Many people claim a connection. Few receive an answer.
+There are **five Prime Nexuses, one per faction** ([`lore.md`](lore.md)). A Prime is rooted and never travels; it replicates a Nexus and sends one psychically connected Commander with it. Many people claim a connection. Few receive an answer.
 
 **A Commander is not the faction's employee. They are the Nexus's signature.** The gap between those two things is design space, and it is wider than "which faction am I playing":
 
@@ -210,7 +210,7 @@ Two constraints keep it from turning to mush:
 
 ### 2.3 The expected power curve
 
-The owner, 2026-10-13: "We can focus on the expected power curve, with some rules on expected power per nexus pulse, so armies can build around this curve with different tradeoffs"; and of what a round brings: "I like being able to keep fighting with the previous units if they survive (stacking with the new army), but new unlocked units should be a lot stronger so that makes the initial moves more exploratory and opportunistic and the last few moves more decisive." The curve is the frame every army is designed against: one table of what a round is expected to bring, so that an army's difference is *where* it takes its power, never *how much*. Its numbers are first guesses, in code beside the loader (`src/armies/curve.ts`, `tests/power-curve.test.ts`), for the next step to put on the Grid and measure; the rules around them are GUIDANCE but where marked.
+The owner, 2026-10-13: "We can focus on the expected power curve, with some rules on expected power per nexus pulse, so armies can build around this curve with different tradeoffs"; and of what a round brings: "I like being able to keep fighting with the previous units if they survive (stacking with the new army), but new unlocked units should be a lot stronger so that makes the initial moves more exploratory and opportunistic and the last few moves more decisive." The curve is the frame every army is designed against: one table of what a round is expected to bring, so that an army's difference is *where* it takes its power, never *how much*. Its numbers are first guesses, in code beside the loader (`src/armies/curve.ts`, `tests/power-curve.test.ts`), for the next step to put on the battlefield and measure; the rules around them are GUIDANCE but where marked.
 
 **Power is counted in credits.** Every source of power is priced in the one resource ([`pulse.md`](../system-design/pulse.md)): a building at its cost, a unit at what it costs to field, a Nexus power at what it is expected to be worth over the rest of the battle. A number an author cannot price in credits is a number nobody can balance.
 
@@ -238,11 +238,11 @@ Over nine rounds that is 2,080 credits: the opening brings about a sixth of it, 
 
 **Each tier is much stronger than the last, and a little better value** (GUIDANCE; the tree's tiers are the next step's). A unit of the second tier is about as strong as three of the first and costs about two and a half times as much; a unit of the third, about eight for six. A tier's units can first fight about the act its number names: the first from round 1, the second from round 4 (its building placed in round 3 unlocks it once it stands, section 2.1), the third from round 7. "Much stronger" is per unit, as the owner asked; "a little better value" is per credit, and it is the second thing that devalues an early lead: what the opening bought is outclassed, not only outnumbered.
 
-**Survivors stack, and are expected to be outgrown** (GUIDANCE; measured on the new routes: not yet). Units that live stay on the Grid, regroup at the front and fight again beside the new ones, as they do now. By the closing, what the opening bought should be at most about a fifth of the army that fights the last round: enough that keeping units alive matters every round, never so much that the first round's luck is still fighting the last.
+**Survivors stack, and are expected to be outgrown** (GUIDANCE; measured on the new routes: not yet). Units that live stay on the battlefield, regroup at the front and fight again beside the new ones, as they do now. By the closing, what the opening bought should be at most about a fifth of the army that fights the last round: enough that keeping units alive matters every round, never so much that the first round's luck is still fighting the last.
 
-**How it is measured** (`src/cli/curve-measure.ts`, `tests/curve-level.test.ts`; the curve's test level, `story?mission=vasse-test-3`): a scripted player that climbs the tree — Barracks in round 1, Garrisons from round 2 — against one that stays on Barracks, each army counted by the round that bought each of its units: a unit counts for the round its building was bought, so a building bought in round 1 that sends its wave every round after counts for round 1. What the first three rounds bought, against the last round's army, is the number to watch. Last measured on the pathfinding milestone's routes, before the Grid Nexus fought back, it was 0.55 climbing the tree and 0.56 on Barracks alone, far above the fifth the curve expects because early units mostly live; it waits to be measured again ([the report](../history/reports/2026-10-20-pathfinding-measured.md); earlier numbers in [the history](../history/reports/2026-10-20-measured-before-routing.md)).
+**How it is measured** (`src/cli/curve-measure.ts`, `tests/curve-level.test.ts`; the curve's test level, `story?mission=vasse-test-3`): a scripted player that climbs the tree — Barracks in round 1, Garrisons from round 2 — against one that stays on Barracks, each army counted by the round that bought each of its units: a unit counts for the round its building was bought, so a building bought in round 1 that sends its wave every round after counts for round 1. What the first three rounds bought, against the last round's army, is the number to watch. Last measured on the pathfinding milestone's routes, before the Nexus fought back, it was 0.55 climbing the tree and 0.56 on Barracks alone, far above the fifth the curve expects because early units mostly live; it waits to be measured again ([the report](../history/reports/2026-10-20-pathfinding-measured.md); earlier numbers in [the history](../history/reports/2026-10-20-measured-before-routing.md)).
 
-**The owner's answer: a supply cap, given by a building** (2026-10-16: "go with your recommendation, supply cap", and "Supply should be controlled by another building"; built, [`pulse.md`](../system-design/pulse.md), supply). An army fields what its buildings give — the Grid Nexus 12, a Supply Depot 8 more — and a pikeman takes two places where a trooper takes one, so a full army is stronger made of the higher tier. The cap holds an army's size and makes room a decision, but it frees a place only as a unit falls; a raid that wears an army down, which a harder level or another player brings, is what turns the opening over.
+**The owner's answer: a supply cap, given by a building** (2026-10-16: "go with your recommendation, supply cap", and "Supply should be controlled by another building"; built, [`pulse.md`](../system-design/pulse.md), supply). An army fields what its buildings give — the Nexus 12, a Supply Depot 8 more — and a pikeman takes two places where a trooper takes one, so a full army is stronger made of the higher tier. The cap holds an army's size and makes room a decision, but it frees a place only as a unit falls; a raid that wears an army down, which a harder level or another player brings, is what turns the opening over.
 
 **What changes between rounds, and how** (RULE — the owner, 2026-10-22: "Let's formalize our current design as it is, not
 as we wish"; [`ui-patterns.md`](../system-design/ui-patterns.md); his words in
@@ -265,7 +265,7 @@ Round, and only in these ways:
     round (built).
 - **What changes many at once is a general upgrade**: every unit of a kind, or every building of a kind, through a
   Nexus power or through a building whose standing improves them all ("general construction"). It applies to those
-  already on the Grid too.
+  already on the battlefield too.
 - **Nothing else**: no unit upgrades, no building levels, no change made during a Battle Round.
 
 How the actions look and how a player finds them is the interface's to work out, in the UX passes the owner will run
@@ -319,12 +319,12 @@ The owner, 2026-10-13: "start thinking about catch-up mechanics (specially for m
 - **The schedule deals commons first.** No rare before round 4, no legendary before round 7 (the loader holds it), so the luckiest opening hand is still commons and uncommons, and commons must be enough to win with ([`game-modes.md`](game-modes.md)).
 - **The answers are in the tree.** Hard counters are tree buildings every player can reach by building (section 3), so no hand denies the answer to a threat.
 - **What is kept is public.** Each side's kept powers are shown to the other once the Battle Round starts, as its buildings are; and when two players meet they are dealt the same hand (section 3). A lucky hand can be read and answered a round later.
-- **The defender's ground.** A side fighting near its own Grid Nexus walks less, builds in range, mends at its Aid Station and regroups beside its own buildings; an attack spends a round of travel the defence does not.
-- **The Commander comes back.** A Commander who falls is restored by the Nexus Pulse, the round after for most; an early win does not take her off the board for long.
+- **The defender's ground.** A side fighting near its own Nexus walks less, builds in range, mends at its Aid Station and regroups beside its own buildings; an attack spends a round of travel the defence does not.
+- **The Commander comes back.** A Commander who falls is restored by the Nexus Pulse, the round after for most; an early win does not take her off the battlefield for long.
 
 **What an army must not do:**
 
-- **No hidden rubber-banding.** Nothing a player cannot read on the Grid or in a card changes how the battle goes because one side is ahead. If help exists, its rule is on a card.
+- **No hidden rubber-banding.** Nothing a player cannot read on the battlefield or in a card changes how the battle goes because one side is ahead. If help exists, its rule is on a card.
 - **No rewards for falling behind.** No power, skill or income that grows because a side is losing: it teaches a player to lose on purpose, and it takes the winner's play away from them.
 - **No taking from the leader.** Nothing that removes what the leading side earned because they lead; a power may act on the enemy (Averno's do), by its own rule, never by the score.
 - **No luck the army did not choose.** A side gets variance by choosing an army that runs on it (section 4.2); the curve and the schedule are the same for everyone.
@@ -337,7 +337,7 @@ The owner, 2026-10-13: "start thinking about catch-up mechanics (specially for m
 
 **The owner's answer: the Nexus fights back, and mends** (2026-10-21: "let's start with just saying the Nexus have a
 single attack that deals enough damage to kill a trooper ... And perhaps we add like a little bit of self-healing";
-built, [`pulse.md`](../system-design/pulse.md)). Every Grid Nexus shoots a unit within a marksman's reach every
+built, [`pulse.md`](../system-design/pulse.md)). Every Nexus shoots a unit within a marksman's reach every
 three seconds, hard enough to drop a trooper, and mends 40 of its 400 between rounds. It is a stop for the opening,
 not a wall: a few units marching on an unguarded Nexus in round 1 are shot down one by one, while an army of the
 later tiers walks through its fire. The Citizen and the Ravel Nexus are alike for now; a faction's Nexus differing,
@@ -370,7 +370,7 @@ Faction asymmetry reduces the number of options each player must understand whil
 **Hard counters are the tree's; soft counters are the draft's** (RULE — settled by the owner, 2026-10-07; no code holds the tree yet). In his words: "hard counters being part of the tech tree and sub counters [soft counters] or things that can lean you into a specific strategy being part of the draft. Uh, like adding a few units seems part of the draft." Why this way round:
 
 - **A counter you cannot get is not a counter.** If the answer to air came from the draft, a player who was not dealt it would lose to air however well they read the enemy. The tree makes every answer reachable by building.
-- **Tech you can see is tech you can read.** Tree buildings stand on the Grid both players study after each Battle Round, a round before what they lead to can arrive (section 2.1). That warning turns guessing into reading; a power kept in secret gives none.
+- **Tech you can see is tech you can read.** Tree buildings stand on the battlefield both players study after each Battle Round, a round before what they lead to can arrive (section 2.1). That warning turns guessing into reading; a power kept in secret gives none.
 - **Tech that costs resources is a strategy.** The genre's triangle — a rush beats a greedy economy, the economy outgrows a defense, a defense holds a rush — works only while all three spend the same resources. A free power stands outside it.
 
 For a game meant to feel light, keep the hard counters few (GUIDANCE): with plans hidden, a hard counter turns a wrong guess into a lost battle, and a soft one into a lost round.
@@ -409,14 +409,14 @@ The standard every entry must meet is the alignment test from the faction design
 | --- | --- | --- |
 | Recompilation | Producers consume nearby salvage to discount or accelerate recipes | The dead — anyone's dead — are a deposit |
 | Attrition inversion | Sustained trades bend toward Glitch by arithmetic | You cannot win a war of losses against the thing that eats losses |
-| Corruption | Area unsettlement that taxes enemy movement, drawn under the corruption law ([`effects.md`](../system-design/effects.md)) | Where the swarm has been, the Grid itself runs wrong |
+| Corruption | Area unsettlement that taxes enemy movement, drawn under the corruption law ([`effects.md`](../system-design/effects.md)) | Where the swarm has been, the battlefield itself runs wrong |
 | Convergence | Glitch variance decreases as the battle runs — early rolls mutate, late rolls lock | Iteration: every error narrows the next build |
 
 **Feudals — Obey.**
 
 | Rule shape | What it does | What it teaches without words |
 | --- | --- | --- |
-| Fealty adjacency | Doctrine effects flow from a liege to adjacent vassals; the org chart is drawn on the Grid | Power is a chain, and the chain is literal |
+| Fealty adjacency | Doctrine effects flow from a liege to adjacent vassals; the org chart is drawn on the battlefield | Power is a chain, and the chain is literal |
 | Living shields | Submitters intercept damage for adjacent higher castes | The caste system is a damage-routing rule |
 | Consecrated artillery | The longest range in the game, usable only under a Cleric's standing rite | Every power routes through hierarchy; nothing fires alone |
 | Conditional certainty | In sanctioned formation, the game's most reliable outcomes; with the hierarchy broken, its least | Obedience converts chance into certainty |
@@ -425,13 +425,13 @@ The standard every entry must meet is the alignment test from the faction design
 
 | Rule shape | What it does | What it teaches without words |
 | --- | --- | --- |
-| Displacement | Signature attacks move enemies instead of damaging them — into water, thorns, or each other's paths | Position is the resource, and the Grid is the weapon |
+| Displacement | Signature attacks move enemies instead of damaging them — into water, thorns, or each other's paths | Position is the resource, and the battlefield is the weapon |
 | Growth | Alder works are planted cheap and mature over rounds — sapling, grove, bastion | Time is currency, and patience compounds |
-| Cycles | Grid-wide scheduled events — flood, bloom, frost — that both players can read and only Alder can seed | Announced physics, not traps: inevitability you can watch coming |
+| Cycles | battlefield-wide scheduled events — flood, bloom, frost — that both players can read and only Alder can seed | Announced physics, not traps: inevitability you can watch coming |
 | Phase variance | Alder outcomes are certain but scheduled; the uncertainty an opponent feels is *when*, never *whether* | Nature does not gamble; it takes turns |
 | Refusal | Little or nothing taken from the Nexus Pulse; progression lives in a wider catalogue of grown structures instead | They take nothing from the core — what they have, they grew |
 
-Alder's refusal is mechanical, settled at concept level: **little or nothing taken from the Nexus Pulse, and more complexity in the structures they can grow.** Where every other faction deepens through drafted upgrades, Alder deepens through its catalogue of works — the faction with the least to choose from at the Nexus and the most to choose from on the Grid. The exact split waits for a milestone that builds Alder content.
+Alder's refusal is mechanical, settled at concept level: **little or nothing taken from the Nexus Pulse, and more complexity in the structures they can grow.** Where every other faction deepens through drafted upgrades, Alder deepens through its catalogue of works — the faction with the least to choose from at the Nexus and the most to choose from on the battlefield. The exact split waits for a milestone that builds Alder content.
 
 ### 4.2 Variance is doctrine
 
@@ -455,9 +455,9 @@ Each faction's signature moment (defined in [`lore.md`](lore.md)) implies a smal
 | --- | --- | --- |
 | The line holds | Citizens | Derived per-tick modifiers: bonuses computed as a pure function of the state at tick start (adjacency, alignment, overlapping arcs). Fits the narrow-hook sketch in [`content.md`](../system-design/content.md) |
 | The cascade | Ravels | Event-triggered effects: on-death area damage resolving inside the tick's Resolution step, with cascades bounded by a decreasing progress measure — the same discipline arbitration already has |
-| The second assault is larger | Glitch | Production recipes with Grid-state inputs: a producer consuming salvage tiles within a radius. A small extension of `ProductionRecipe` |
+| The second assault is larger | Glitch | Production recipes with battlefield-state inputs: a producer consuming salvage tiles within a radius. A small extension of `ProductionRecipe` |
 | The shield dies standing | Feudals | Damage interception: a Resolution-step rule redirecting damage between adjacent units, deterministic under the existing tick order |
-| The Grid turns | Alder | Two capabilities: forced displacement — moves imposed on enemies, resolved through the same collision masks and tie-breaks as voluntary intents — and scheduled terrain mutation — tiles changing cost or passability at a declared tick, emitted as first-class events |
+| The battlefield turns | Alder | Two capabilities: forced displacement — moves imposed on enemies, resolved through the same collision masks and tie-breaks as voluntary intents — and scheduled terrain mutation — tiles changing cost or passability at a declared tick, emitted as first-class events |
 
 Scheduled terrain mutation also serves Glitch corruption as a temporary movement-cost overlay — one capability, two factions, opposite meanings. That kind of leverage is what makes a capability worth its complexity. Every capability above must execute inside the deterministic engine and emit events; none may live in presentation, and none is built until a milestone step asks for it.
 
@@ -510,7 +510,7 @@ The name carries the faction's voice — the Citizen Nexus issues permits, order
 | Kind | Does | Example card |
 | --- | --- | --- |
 | `addBuilding` | adds a building the tree does not hold to the build menu | *Aid Station Permit* — "Adds building: Aid Station." |
-| `spawnUnits` | places units on the Grid | *Second Shift* — "Two workers arrive at your Nexus" |
+| `spawnUnits` | places units on the battlefield | *Second Shift* — "Two workers arrive at your Nexus" |
 | `addWaves`, `setDetonation` (built), more to come | changes a content definition for the rest of the battle | *Plate Revision* — "All troopers gain +2 health, including ones already fielded" |
 | `modifyRule` | changes a battle rule for the rest of the battle | *Roadworks* — "Your units move faster inside your own territory" |
 | `modifyAbility` | changes an ability: the Commander's skill, or a building's | *Standing Order* — "By the Book reaches twice as far" |
@@ -612,7 +612,7 @@ And from the shared Citizen pool, in `armies/all`, which any Citizen Commander m
 
 **What is built of him** (first fixtures, no balance claim; `armies/averno`, `unit.citizen.averno`). The Ravel leak is his army's own schedule, not a card he picks: Countersigned Elsewhere is his quirk as data, and Unfiled Ordnance is the first of his few.
 
-- **On the Grid he is `&`, 70 health, melee 9 every 12 ticks**: lighter than Vasse, in the front rank where she fires from behind it.
+- **On the battlefield he is `&`, 70 health, melee 9 every 12 ticks**: lighter than Vasse, in the front rank where she fires from behind it.
 - **He charges** (RULE for him, GUIDANCE as a content field): he turns from his side's target to fight anything within 12 columns or 6 rows, twice the reach every other unit waits for. A Commander who holds the line with his troops is the one who never swings.
 - **Forward Order**, his aura: he and his units within a reach of 4 deal a quarter more with every hit, rounded down and never less than the hit. Her By the Book makes them last; his makes them hit. A unit may be guarded by one and boosted by the other.
 - **He is filed a round late.** He is out for the round after the one he falls in, and back for the one after that, where Vasse is back the next round.
@@ -712,7 +712,7 @@ Catch-up:
 
 Balance hypotheses:
 - strong against, vulnerable to, degenerate strategy risks
-- fixtures and metrics, measured on the Grid
+- fixtures and metrics, measured on the battlefield
 ```
 
 Every literal glyph is theme data mapped from a semantic role. Every exceptional mechanic executes through a validated engine capability or narrow hook. Flavor text never becomes an implicit rule.
@@ -731,7 +731,7 @@ Skirmish exposes each legal Commander Army from the start; a story introduces an
 
 A handful of small ideas that came from reading the battle engine closely, offered the way section 4 frames its own content: they compete for a place, and none is built until a milestone step asks for it. Nothing here is more settled than that.
 
-- **A Citizen unit that is a wall segment, not a wall builder.** The alignment bonus of section 4.1 already rewards unbroken orthogonal runs of structures, and multi-tile footprints are already a rule ([`grid.md`](../system-design/grid.md)). A slow, high-integrity Citizen unit whose footprint is a straight 1×3 or 1×4 line — marched into place and left standing — turns "the player draws Citizen geometry because it is strong" from a structure-placement idea into a Grid one: formation *is* the unit, not just the base layout around it. Nothing about this needs a new engine capability, only content shaped to use two rules that already exist. It has been tried once, as a deliberate control case in the unit-architecture spike ([report](../history/reports/2026-09-10-unit-architecture-spike.md)): it needed nothing new, as predicted. It lives in the Proving Grounds bench roster (`src/content/proving-grounds.ts`, `tests/proving-grounds.test.ts`), still not a Commander Army.
-- **A Ravel death that denies ground, not just deals damage.** A death's tile stays blocked for a short window after the entity is gone (the settle delay, `vacatedTiles`; see [`grid.md`](../system-design/grid.md)). A Ravel unit whose detonation *extends* that window inside its blast radius — not just damaging what is caught, but making the ground itself slower to reclaim — combines two things the battle engine already has into a new expressive beat for "everything is fuel, and endings are loud," at what looks like a small engine cost (a radius-scoped write to an already-existing table) rather than a new system.
-- **A large, slow unit is already interesting for a reason nobody had to design.** Range is measured to the nearest occupied tile of the target's footprint, not its anchor ([`grid.md`](../system-design/grid.md)), so a big, dangerous, multi-tile siege unit is *easier* to hit than a small one just by existing at that size — real tension, falling straight out of two rules already locked. Worth remembering when a "big scary unit" gets designed: the footprint rule is already doing half the balancing work.
+- **A Citizen unit that is a wall segment, not a wall builder.** The alignment bonus of section 4.1 already rewards unbroken orthogonal runs of structures, and multi-tile footprints are already a rule ([`battlefield.md`](../system-design/battlefield.md)). A slow, high-integrity Citizen unit whose footprint is a straight 1×3 or 1×4 line — marched into place and left standing — turns "the player draws Citizen geometry because it is strong" from a structure-placement idea into a battlefield one: formation *is* the unit, not just the base layout around it. Nothing about this needs a new engine capability, only content shaped to use two rules that already exist. It has been tried once, as a deliberate control case in the unit-architecture spike ([report](../history/reports/2026-09-10-unit-architecture-spike.md)): it needed nothing new, as predicted. It lives in the Proving Grounds bench roster (`src/content/proving-grounds.ts`, `tests/proving-grounds.test.ts`), still not a Commander Army.
+- **A Ravel death that denies ground, not just deals damage.** A death's tile stays blocked for a short window after the entity is gone (the settle delay, `vacatedTiles`; see [`battlefield.md`](../system-design/battlefield.md)). A Ravel unit whose detonation *extends* that window inside its blast radius — not just damaging what is caught, but making the ground itself slower to reclaim — combines two things the battle engine already has into a new expressive beat for "everything is fuel, and endings are loud," at what looks like a small engine cost (a radius-scoped write to an already-existing table) rather than a new system.
+- **A large, slow unit is already interesting for a reason nobody had to design.** Range is measured to the nearest occupied tile of the target's footprint, not its anchor ([`battlefield.md`](../system-design/battlefield.md)), so a big, dangerous, multi-tile siege unit is *easier* to hit than a small one just by existing at that size — real tension, falling straight out of two rules already locked. Worth remembering when a "big scary unit" gets designed: the footprint rule is already doing half the balancing work.
 - **One idea to warn against, not recommend.** The replay format needed a precise definition of "an engagement" — attacks clustered in space and time ([`replay-format.md`](../system-design/replay-format.md)). It is tempting to let a Commander power react to that same idea — "bonus effect if cast into an active fight." Do not reuse the *replay's* engagement detector for it: that algorithm is deliberately a post-hoc report-layer read over an already-resolved event log, and letting gameplay rules depend on it would either mean the battle engine re-deriving report logic inside the Pulse, or presentation-adjacent code influencing simulation — the exact boundary the three-worlds rule ([`architecture.md`](../system-design/architecture.md)) exists to hold. If a "reacts to a fight in progress" power is ever wanted, it needs its own simple, engine-native notion of local density (nearby hostile count within a radius, computed live, the way perception already scans), not a borrowed copy of a tool built for a different job.

@@ -31,13 +31,13 @@ displaying.
   actions, riding on the events Milestone 6's simulation half emits. `focus` moves the camera through
   the ordinary cursor-driven scroll. `card` is the character's portrait card (face tableau, name,
   faction glyph role), drawn in the side panel or the `chrome` band; it is the same card inspection
-  shows for that character on the Grid. `say` is the attributed line beneath it. In Mario's words:
+  shows for that character on the battlefield. `say` is the attributed line beneath it. In Mario's words:
   "focusing on a character, showing their face/card and displaying some text while they talk."
   PERIMETER's intro is the first use: cards and lines, then a scripted Battle Round in which the raid arrives
   and takes position (already built by Milestone 6), then `startBuild`.
 - **Playback controls.** Advance by Enter, click or the driver; skip; replay; and the same
   accessibility modes (reduced motion, monochrome) as every other piece of presentation, not a second
-  accessibility story. Skip leaves the same Grid: it jumps past the presentation actions and the
+  accessibility story. Skip leaves the same battlefield: it jumps past the presentation actions and the
   scripted Battle Round still resolves, so a skipped intro and a watched one hand the player an identical
   first Build Phase. This is asserted in a test.
 - **PERIMETER's six pieces, played at the right moments.**
@@ -58,7 +58,7 @@ displaying.
 - [ ] `focus`, `card` and `say` work as trigger actions riding on Milestone 6's events.
 - [ ] The character card is drawn once and reused by inspection.
 - [ ] Advance, skip and replay work through all three adapters (keyboard, mouse, driver).
-- [ ] Skip provably leaves the same Grid.
+- [ ] Skip provably leaves the same battlefield.
 
 ### Step 9B — PERIMETER's six pieces at their moments
 
@@ -90,7 +90,7 @@ fiction wrapped around the mechanism, not a mechanism with captions bolted on.
 
 - [ ] All six pieces of PERIMETER's written material play at the correct moment.
 - [ ] Advance, skip and replay work through keyboard, mouse and the driver, and a skipped intro leaves
-      the Grid identical to a watched one.
+      the battlefield identical to a watched one.
 - [ ] Every cutscene passes the three-forms bar described in
       [`docs/system-design/effects.md`](../system-design/effects.md), like any other presentation.
 - [ ] `./scripts/check-repository.sh` passes.

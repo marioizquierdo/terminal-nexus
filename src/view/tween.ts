@@ -66,7 +66,7 @@ export function numberAt(tween: Tween<number>, now: number): number {
 
 export type Point = Readonly<{ x: number; y: number }>
 
-/** A point's value at `now`, in **whole tiles** — the Grid has no half tiles to draw. */
+/** A point's value at `now`, in **whole tiles** — the battlefield has no half tiles to draw. */
 export function tileAt<P extends Point>(tween: Tween<P>, now: number): Point {
   const progress = tweenProgress(tween, now)
   if (progress >= 1) return { x: tween.to.x, y: tween.to.y }

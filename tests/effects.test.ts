@@ -40,7 +40,7 @@ import type {
 import { battleRoundScreen } from "./battle-round-frame.ts"
 import { loadSandbox, playSandbox, sandboxFiles } from "./helpers.ts"
 
-const GRID = { width: 24, height: 12 }
+const STARTER_TERRAIN = { width: 24, height: 12 }
 
 /** The footprint of a single tile. */
 const ONE_TILE_FOOTPRINT: readonly Coord[] = [{ x: 0, y: 0 }]
@@ -56,7 +56,7 @@ function context(overrides: Partial<EffectContext> = {}): EffectContext {
 }
 
 /**
- * One instance per recipe, positioned in the middle of a Grid so nothing clips by accident - two
+ * One instance per recipe, positioned in the middle of a battlefield so nothing clips by accident - two
  * for `fx.death.collapse`, since `deathRingOutset` branches its tail on footprint size and the
  * shared invariant tests below (purity, band legality, one-cell ASCII glyphs, all three forms)
  * should exercise `bigDeathScatter` exactly as they exercise everything else, not just the
@@ -563,7 +563,7 @@ test("a Battle Round's frames stay the 80 x 24 floor, one ASCII cell each, at ev
       }
     }
   }
-  void GRID
+  void STARTER_TERRAIN
 })
 
 test("every render tier shows the same Pulse, and only monochrome shows no colour", async () => {

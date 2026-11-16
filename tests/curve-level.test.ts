@@ -1,4 +1,4 @@
-// The power curve on the Grid (src/cli/curve-measure.ts; docs/game-design/commander-armies.md, the expected power
+// The power curve on the battlefield (src/cli/curve-measure.ts; docs/game-design/commander-armies.md, the expected power
 // curve and the tech tree): the six-round curve level is played by scripted plans, the same every run; climbing the
 // tree to its second tier fields a stronger last army than staying on the first; and how much of the last round's
 // army the first three rounds bought is measured and held, so a change to it is a change on purpose.

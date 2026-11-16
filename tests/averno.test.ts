@@ -30,7 +30,7 @@ test("his level is hers with him in her place: her map, raids and seed, her firs
   const walked = undecided(LEVEL)
   for (let round = 1; round <= LEVEL.rounds; round += 1) assert.equal(openRound(walked, round).round?.number, round)
   const first = LEVEL.firstRound()
-  assert.deepEqual(first.grid, HERS.firstRound().grid)
+  assert.deepEqual(first.terrain, HERS.firstRound().terrain)
   assert.ok((first.incoming ?? []).some((entity) => entity.contentId === AVERNO), "he does not walk out with the squads")
   assert.equal((first.incoming ?? []).some((entity) => entity.contentId === "unit.citizen.vasse"), false)
 })

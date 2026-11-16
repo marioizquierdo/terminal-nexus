@@ -172,13 +172,13 @@ export function frontFirst(context: TickContext, actors: readonly Actor[]): Acto
 
 /**
  * The tiles of `free` nearest where a new `child` of `origin`'s side is headed: its side's target when it follows one
- * (`followsTarget`), else the enemy's Grid Nexus when it would head there, else the nearest enemy as the tick began, measured footprint to footprint (`footprintDistance`).
+ * (`followsTarget`), else the enemy's Nexus when it would head there, else the nearest enemy as the tick began, measured footprint to footprint (`footprintDistance`).
  * `null` when there is nowhere to head: no target and no enemy.
  */
 function nearestHeading(context: TickContext, origin: Actor, child: ContentDef, free: readonly Coord[]): Coord[] | null {
   const area = followsTarget(child) ? context.targets[origin.player] : undefined
   const all = area !== undefined ? [] : context.actors.filter((other) => other.player !== origin.player && !other.pendingDead && other.ordinal < context.bornFrom)
-  // A fighting unit with no target heads for the enemy's Grid Nexus (`headsForNexus`, perception.ts).
+  // A fighting unit with no target heads for the enemy's Nexus (`headsForNexus`, perception.ts).
   const nexus = followsTarget(child) ? all.filter((other) => other.definition.nexus === true) : []
   const enemies = nexus.length > 0 ? nexus : all
   if (area === undefined && enemies.length === 0) return null

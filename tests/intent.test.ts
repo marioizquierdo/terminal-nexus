@@ -6,7 +6,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { STARTER_STANDING, STARTER_START_CURSOR, starterGrid } from "../src/build/catalog.ts"
+import { STARTER_STANDING, STARTER_START_CURSOR, starterTerrain } from "../src/build/catalog.ts"
 import type { RaidForecast } from "../src/build/types.ts"
 import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
@@ -21,7 +21,7 @@ import { ENTER, buildSide, keys } from "./build-helpers.ts"
 import { isTroops } from "../src/view/troops-post.ts"
 import type { BuildSide } from "./build-helpers.ts"
 
-const grid = starterGrid()
+const terrain = starterTerrain()
 const registry = FIXTURE_REGISTRY
 const TURRET = "structure.bench.beamturret"
 const BARRACKS = "structure.citizen.barracks"
@@ -72,7 +72,7 @@ function rounds(plan: readonly (readonly StructurePlacement[])[]): MissionPulseI
     // What earlier rounds built stands in the carried state; the round's own plan is new.
     const own = plan[pulse - 1] ?? []
     const structures = pulse === 1 ? [...STARTER_STANDING, ...own] : own
-    const input: MissionPulseInput = { mission: PERIMETER, grid, registry, pulse, carried, structures }
+    const input: MissionPulseInput = { mission: PERIMETER, terrain, registry, pulse, carried, structures }
     inputs.push(input)
     const run = resolveMissionPulse(input)
     if (run.verdict.kind !== "continue") break
@@ -200,13 +200,13 @@ test("a building on the raid's way moves the way it would go round it, not what 
 
   side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 26, y: 7 }, { kind: "click-tile", x: 26, y: 7 }])
   assert.equal(way(side.build.raid()), way(turret))
-  side.build.run([{ kind: "focus", target: "grid" }, { kind: "remove" }])
+  side.build.run([{ kind: "focus", target: "map" }, { kind: "remove" }])
   assert.equal(side.build.state.planned.length, 0)
   assert.equal(way(side.build.raid()), way(before), "removing did not put the way back")
 })
 
 /** Whether a tile is rock on the starter map. */
-const rock = (tile: Coord): boolean => grid.tiles[tile.y * grid.width + tile.x] === "terrain.rock"
+const rock = (tile: Coord): boolean => terrain.tiles[tile.y * terrain.width + tile.x] === "terrain.rock"
 
 test("the way each group would go is the battle engine's own route: one tile at a time, never through rock, round the ridge, ending next to what it goes for", () => {
   let checked = 0
@@ -246,7 +246,7 @@ test("the forecast says where the player's troops head as each round starts — 
       assert.ok(troops !== null, `round ${input.pulse}: no troops foreseen`)
       assert.deepEqual([troops.player, troops.region, troops.name], ["A", "line", "the line"])
       assert.deepEqual(troops.tiles, line)
-      // Who goes: every unit of the player's that moves and fights, standing on the Grid as the round opens.
+      // Who goes: every unit of the player's that moves and fights, standing on the battlefield as the round opens.
       const opening = resolveMissionPulse(input).states[0] as MatchState
       const own = opening.entities.filter((entity) => entity.player === "A" && registry.get(entity.contentId).behavior === "advance" && registry.get(entity.contentId).layer !== "obstacles")
       assert.equal(troops.units.reduce((sum, entry) => sum + entry.count, 0), own.length, `round ${input.pulse}: the count`)

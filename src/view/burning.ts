@@ -13,10 +13,10 @@
 //     colour of its own and only the ground round it changes (the corruption law).
 //
 // Every picture of a Pulse draws it from the same `PulseSample.fire`: the Build Phase screen's live Battle Round and
-// the replay of the last round (`pulse-scene.ts`), with them the browser page, and the board alone
-// (`drawGridLayers`, the ASCII screenshot).
+// the replay of the last round (`pulse-scene.ts`), with them the browser page, and the battlefield alone
+// (`drawMapLayers`, the ASCII screenshot).
 
-import type { Coord, GridTerrain, TerrainId } from "../engine/geometry/types.ts"
+import type { Coord, MapTerrain, TerrainId } from "../engine/geometry/types.ts"
 import type { Footprint } from "../engine/geometry/types.ts"
 import { inBounds } from "../engine/geometry/coords.ts"
 import { tilesWithin } from "../engine/geometry/reach.ts"
@@ -50,7 +50,7 @@ export const FIRE = {
 } as const
 
 /** The glyphs, by pack: a tall flame, a low one. ASCII first: `^` is a tongue of flame and `~` the low flicker
- *  and heat of it, neither used on the Battle Round's Grid by anything else (the effects' marks are `+ x = - | / \
+ *  and heat of it, neither used on the Battle Round's battlefield by anything else (the effects' marks are `+ x = - | / \
  *  * , : ' . !`, units are letters). The Unicode pack's tall flame is a small solid triangle, `▴`, a filled tongue
  *  of one cell's width (East Asian width neutral, so never two columns), with the same low `~`. */
 export const FIRE_GLYPHS: Readonly<Record<GlyphPack, Readonly<{ tall: string; low: string }>>> = {
@@ -69,7 +69,7 @@ const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
 const FLAMMABLE: ReadonlySet<TerrainId> = new Set<TerrainId>(["terrain.plain", "terrain.scrub"])
 
 /**
- * Every tile a patch burns, in reading order: the tiles within its `radius` of its `centre`, by the Grid's own test
+ * Every tile a patch burns, in reading order: the tiles within its `radius` of its `centre`, by the battlefield's own test
  * (`tilesWithin`, `footprintWithin`, which the battle engine's `withinArea` is) — a row counts two columns, so a diamond twice
  * as wide as it is tall in tiles and as wide as it is tall on screen. What is drawn burning is what burns.
  */
@@ -146,10 +146,10 @@ const SCORCHED: CellStyle = { bgRole: "fx.fire.ground" }
 export const FIRE_FILLS: ReadonlySet<string> = new Set(["fx.fire.ground", "fx.fire.glow"])
 
 export type FireView = Readonly<{
-  grid: GridTerrain
+  terrain: MapTerrain
   /** The frame cell a tile is drawn on. */
   cellOf: (tile: Coord) => Coord
-  /** Whether a tile is drawn on this frame at all (the camera's view; the whole Grid for a view without one). */
+  /** Whether a tile is drawn on this frame at all (the camera's view; the whole battlefield for a view without one). */
   visible: (tile: Coord) => boolean
   /** Whether something stands on a tile and keeps its glyph there: a unit, a building, a corpse still drawn. */
   standing: (tile: Coord) => boolean
@@ -172,14 +172,14 @@ export type FireView = Readonly<{
 export function drawFire(cells: BandCell[], fire: readonly FireTile[], pack: GlyphPack, view: FireView): void {
   const glyphs = FIRE_GLYPHS[pack]
   for (const { tile, flame, dying } of fire) {
-    if (!inBounds(view.grid, tile) || !view.visible(tile)) continue
+    if (!inBounds(view.terrain, tile) || !view.visible(tile)) continue
     const { x, y } = view.cellOf(tile)
     if (view.standing(tile)) {
       // Over the units' and the structures' bands, so it lands on their own cells; an effect over it still restyles it.
       cells.push({ band: BANDS.air, x, y, style: SCORCHED })
       continue
     }
-    const terrain = view.grid.tiles[tile.y * view.grid.width + tile.x]
+    const terrain = view.terrain.tiles[tile.y * view.terrain.width + tile.x]
     if (flame === null || terrain === undefined || !FLAMMABLE.has(terrain)) {
       cells.push({ band: BANDS.territory, x, y, style: SCORCHED })
       continue

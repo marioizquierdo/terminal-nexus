@@ -1,4 +1,4 @@
-// The power curve, measured on the Grid (docs/game-design/commander-armies.md): a scripted player climbs a level's tech tree round by
+// The power curve, measured on the battlefield (docs/game-design/commander-armies.md): a scripted player climbs a level's tech tree round by
 // round, and the measure says how much of the army that fights the last round each round bought.
 //
 // The owner, 2026-10-13: survivors stack, and "new unlocked units should be a lot stronger so that makes the initial
@@ -53,7 +53,7 @@ export type CurveMeasure = Readonly<{
 /** The tiles a building may be placed on, nearest `near` first (a row counting two columns, as range does). */
 function candidates(context: BuildContext, near: Coord): Coord[] {
   const tiles: Coord[] = []
-  for (let y = 0; y < context.grid.height; y += 1) for (let x = 0; x < context.grid.width; x += 1) tiles.push({ x, y })
+  for (let y = 0; y < context.terrain.height; y += 1) for (let x = 0; x < context.terrain.width; x += 1) tiles.push({ x, y })
   const distance = (tile: Coord): number => Math.abs(tile.x - near.x) + 2 * Math.abs(tile.y - near.y)
   return tiles.sort((a, b) => distance(a) - distance(b) || a.y - b.y || a.x - b.x)
 }
@@ -96,7 +96,7 @@ export function measureCurve(level: PlayableLevel, plan: CurvePlan): CurveMeasur
   const armies: RoundArmy[] = []
   let ended = { round: 0, verdict: "unplayed" }
   for (let round = 1; round <= level.rounds; round += 1) {
-    const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
+    const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
     const opened = createBuildState(withoutScene(context), STARTER_START_CURSOR, viewport)
     const planned = planRound(context, opened, plan)
     bought.push(planned.bought)

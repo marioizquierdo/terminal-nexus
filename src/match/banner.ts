@@ -1,13 +1,13 @@
 // **The battle banner** (the challenge runs, step 11G): where the player planted the army's banner in the Build Phase,
 // and its stance — the rules layer's half of it. The battle engine already sends a side's fighting units to a target area and
-// has them stand there (`src/engine/pulse/target.ts`); a side with none marches on the enemy's Grid Nexus. So the banner needs
+// has them stand there (`src/engine/pulse/target.ts`); a side with none marches on the enemy's Nexus. So the banner needs
 // no engine change:
 //
 // - **defensive**: the banner's area is the side's target for the whole round: they go there, fight what comes within
 //   reach, and hold it;
 // - **aggressive**: the banner's area is the side's target until the army has reached it — at least half of the side's
 //   fighting units standing in it or within a tile of it, read between two ticks as a mission's `target` is — and from
-//   the next tick the side has no target, so it marches on the enemy's Grid Nexus (or, with none on the map, fights the
+//   the next tick the side has no target, so it marches on the enemy's Nexus (or, with none on the map, fights the
 //   nearest enemy). A route of two legs, the second the march the side makes by default.
 //
 // Read and set between ticks by the trigger runner (`mission.ts`), never inside one: integers, ordinal order, the

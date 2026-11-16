@@ -10,7 +10,7 @@ Two different kinds of material, both kept for reference:
   see what the game might feel like. **Do not take it too seriously.** Nothing here is a commitment,
   and no session should treat a detail in it as a requirement.
 - **Dev screenshots and prototypes** (`2026-08-21 - *.png`) — actual captures of `grid`
-  running, once there was a real Grid to watch. This is the material the original concept art
+  running, once there was a real battlefield to watch. This is the material the original concept art
   predicted would eventually replace it: concept art cannot answer whether motion reads; `grid` can,
   and now some of it has.
 
@@ -33,10 +33,10 @@ the moment the presentation changes again.
 | `2026-08-19 - gameplay concept 2.png` | Gameplay composition concept |
 | `2026-08-21 - dev screenshot 1.png` | A real captured frame of `grid` running |
 | `2026-08-21 - dev screenshot 2.png` | A real captured frame of `grid` running |
-| `2026-08-21 - grid prototype 1 - b&w.PNG` | `grid`, monochrome colour depth |
-| `2026-08-21 - grid prototype 1 - color.PNG` | `grid`, colour depth |
-| `2026-08-21 - grid prototype 2 - ravelsclash wide.png` | `grid`, a Ravels engagement, wide composition |
-| `2026-08-21 - grid prototype 2 - ravelsclash.png` | `grid`, a Ravels engagement |
+| `2026-08-21 - battlefield prototype 1 - b&w.PNG` | `grid`, monochrome colour depth |
+| `2026-08-21 - battlefield prototype 1 - color.PNG` | `grid`, colour depth |
+| `2026-08-21 - battlefield prototype 2 - ravelsclash wide.png` | `grid`, a Ravels engagement, wide composition |
+| `2026-08-21 - battlefield prototype 2 - ravelsclash.png` | `grid`, a Ravels engagement |
 
 The descriptions are written from the filenames, not from a close look at each piece; a "what is worth
 keeping from each" analysis is worth doing against the real art when someone needs it.

@@ -6,7 +6,7 @@
 // a shortest route ranks first, wherever the route bends. Steps that leave as long a walk are equally good, and go by
 // how far each turns from the way the unit faces its goal, so a unit walks the way a viewer expects; what is still tied
 // after that is a tie the caller breaks with a seeded draw (no side wins by where it stands, `pulse.md`) — never by a
-// compass order. Mirrored Grids rank mirrored steps alike.
+// compass order. Mirrored battlefields rank mirrored steps alike.
 
 import { DIRECTIONS, step, stepLength } from "../geometry/coords.ts"
 import type { Coord, Direction } from "../geometry/types.ts"

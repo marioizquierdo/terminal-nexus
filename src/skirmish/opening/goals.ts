@@ -1,7 +1,7 @@
 // Every side that fields a fighting unit has somewhere to go (docs/system-design/skirmish-saves.md): its own target,
-// or an enemy Grid Nexus to head for, as every side of the game has one. A battle where a side has neither is one the
+// or an enemy Nexus to head for, as every side of the game has one. A battle where a side has neither is one the
 // game never plays — its units fall back on engaging the nearest enemy wherever it is — so a checked-in map is
-// refused one (`tests/sandboxes.test.ts`), so no board written by hand leaves a side without one.
+// refused one (`tests/sandboxes.test.ts`), so no battlefield written by hand leaves a side without one.
 
 import type { ContentRegistry } from "../../content/index.ts"
 import type { MatchState, PlayerId, TargetArea } from "../../engine/state/types.ts"

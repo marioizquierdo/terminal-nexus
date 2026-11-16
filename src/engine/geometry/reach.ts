@@ -1,4 +1,4 @@
-// The shape of a distance on the Grid (grid.md): which tiles it covers, row by row. A row counts `ROW_DISTANCE`
+// The shape of a distance on the battlefield (battlefield.md): which tiles it covers, row by row. A row counts `ROW_DISTANCE`
 // columns (`coords.ts`), so a reach covers its whole length in columns on its own row, two columns less on each row
 // further up or down, and as many rows as it pays for whole: a diamond twice as wide as it is tall in tiles, as wide
 // as it is tall on screen. A reach of 6 from one tile (`@`):
@@ -35,7 +35,7 @@ export function columnsWithin(distance: number, rows: number): number {
 
 /**
  * A reach rounded up to whole rows: the least multiple of `ROW_DISTANCE` at or above it, so its last point is a whole
- * row, as every reach the content gives is, but touching's 1 (grid.md, whole rows). It is for a reach the rules work out from content
+ * row, as every reach the content gives is, but touching's 1 (battlefield.md, whole rows). It is for a reach the rules work out from content
  * numbers: a worker's nerve, a threat's range and two more, comes to 3 against a trooper's melee, which reaches three
  * columns across but only one row up or down, and rounds up to 4, two rows up or down as well as four columns across.
  */
@@ -44,8 +44,8 @@ export function wholeRows(reach: number): number {
 }
 
 /**
- * The offsets exactly `distance` from a tile (`gridDistance`), in reading order, north to south and west to east: a
- * ring of the Grid's own distance, wider than tall in tiles and round on screen. Distance 0 is the tile itself, 1
+ * The offsets exactly `distance` from a tile (`tileDistance`), in reading order, north to south and west to east: a
+ * ring of the battlefield's own distance, wider than tall in tiles and round on screen. Distance 0 is the tile itself, 1
  * the tiles either side, 2 the tiles two columns either side and the ones straight above and below. Searched
  * outward ring by ring, so whatever is set down round a point comes out round on screen (`nearestFit`,
  * `src/match/placement.ts`).

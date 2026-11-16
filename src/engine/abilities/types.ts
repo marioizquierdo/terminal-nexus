@@ -55,7 +55,7 @@ export type AbilityView = Readonly<{
   /** Every unit and structure still standing this tick, in ordinal order. */
   bodies: () => readonly Body[]
   /** Whether `b` is within `radius` of `a`, measured as range is: to the nearest tile of each footprint, a row counting
-   *  two columns (grid.md). */
+   *  two columns (battlefield.md). */
   within: (a: Body, b: Body, radius: number) => boolean
 }>
 

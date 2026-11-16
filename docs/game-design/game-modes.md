@@ -97,7 +97,7 @@ the setup screen asks them in this order.
 | Modifiers | yes | yes | none |
 | The seed | shown, editable | yes | from the clock |
 | Rounds at most, Battle Round length | no | yes | 8, 360 ticks (30 seconds) |
-| Each side's starting credits, roster, and units and buildings already on the Grid | no | yes (`start`) | the curve's round 1, the whole army, the starting package |
+| Each side's starting credits, roster, and units and buildings already on the battlefield | no | yes (`start`) | the curve's round 1, the whole army, the starting package |
 | Settings and Experiments | no | yes, as `--settings` text | the saved settings |
 
 **There is no difficulty setting** (the owner, 2026-11-11): the opponent's script and its credits are what make a

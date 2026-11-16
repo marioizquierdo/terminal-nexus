@@ -127,7 +127,7 @@ export function placeholderContext(): BuildContext {
   return { ...context, catalog: context.catalog.map(({ spawns: _spawns, ...item }) => item) }
 }
 
-/** A session on the starter map, opening on the Grid Nexus as the game does, playing the test mission for a
+/** A session on the starter map, opening on the Nexus as the game does, playing the test mission for a
  *  setup (the probe, by default) with the shell's own `startPulse` and `nextRound`. */
 export function newSession(
   size: Readonly<{ columns: number; rows: number }> = MINIMUM,
