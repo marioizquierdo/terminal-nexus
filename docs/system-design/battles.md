@@ -23,7 +23,7 @@ sides A and B; a Skirmish calls them slots `p1` (west) and `p2` (east).
    room round a building that trains, rock, cost; the tech tree as the round opens). The two sides' build actions are blind to each
    other and revealed together; a building both sides put on the same ground is built by neither, and paid back.
 3. **The Battle Round**: each side's troops take its stance — `attack` marches on the enemy Nexus, `hold` gathers in
-   front of its own — and the battle engine runs it, **each side on its own content** (`PulseContext.sides`): what one side's
+   front of its own — or head for its banner when its plan planted one, and the battle engine runs it, **each side on its own content** (`PulseContext.sides`): what one side's
    powers changed is that side's alone, though both may field troopers.
 4. **Between rounds**: survivors stay on the battlefield and regroup across their march line (`src/match/regroup.ts`), a Commander who fell is out by her own rule, credits carry over,
    and each side adds the curve's credits for the round and what its abilities earned (Dob's bounty).
@@ -141,9 +141,10 @@ lines say `built 3 (block)`, and a measurement names each side's player with it 
 plan's buildings at their exact anchors, the power picked, the buildings held (`hold`, Hold production), the actions
 taken on its buildings (`actions`: `{x, y, action}`, taken after its buildings are placed, from the credits they leave,
 and said in its report; the `-upgrade` scripts buy them), and the
-banner, with the Battle banner Experiment on and when it is not the default (the enemy Nexus, aggressive); its stance
-follows it, `hold` for a defensive banner and `attack` otherwise. The banner stays planted into the next round, and a
-saved round keeps it. `placementsOf` says where a scripted plan's buildings would
+banner the player planted, with the Battle banner Experiment on (planting it back on the default, the enemy Nexus,
+aggressive, clears it); its stance follows it, `hold` for a defensive banner and `attack` otherwise. On the screen the
+banner stays planted into the next round, and a saved round keeps it; a build file names it for the rounds it covers,
+so a banner for every round goes under `"round": "*"`. `placementsOf` says where a scripted plan's buildings would
 go, so the screen plays a scripted side through the Build Phase's own functions.
 
 ## 5. No turns, and model against model
@@ -183,7 +184,7 @@ rules: a round plays the same whether or not it is read.
 
 **Public and private.** A round's report (`RoundReport`) has two halves, and the split is the brief's. `reading` is the
 Battle Round: fought in the open, every part of it public, both sides see all of it. `sides` (`SideReport`) is the Build
-Phase: a side's commander, credits, spent, earned, kept power, hand, built, actions, refused, stance, formation and note,
+Phase: a side's commander, credits, spent, earned, kept power, hand, built, actions, refused, stance, banner, formation and note,
 all its own, and no reading touches them. The brief says so in a line, and keeps to it as data: the other side's part of
 each round's `sides` reaches a brief without its credits, what it spent and earned, its hand, what the rules refused it
 and its note (`seenBy`, `src/battle/brief.ts`), and `reading` reaches it whole. The command's own round report, which a

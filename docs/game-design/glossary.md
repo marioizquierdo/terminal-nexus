@@ -34,7 +34,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **army value** — what an army cost, in credits: each unit valued at what its building pays for one unit, its card's
   cost divided by the units it makes a round ([`battles.md`](../system-design/battles.md)).
 - **banner** — where the player sets the army's target in the Build Phase, aggressive or defensive (by default the
-  enemy Nexus, aggressive); **the battle banner** is the panel that starts a Battle Round with it. Behind the Battle
+  enemy Nexus, aggressive), carried by a side's build actions and deciding in place of its stance; **the battle banner** is the panel that starts a Battle Round with it. Behind the Battle
   banner Experiment ([`ui-patterns.md`](../system-design/ui-patterns.md)).
 - **battle** — one battlefield, two sides, rounds until a result: the unit of play. The code is `src/battle/` (`BattleState`,
   `BattleSetup`, `BattleResult`); the battle engine says *match* ([`battles.md`](../system-design/battles.md)).
@@ -114,7 +114,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   battle; a battle reading (`scoreOf`).
 - **Skirmish** — one battle against a scripted Commander Army, set up by the player: the centre of the game and of its
   testing ([`game-modes.md`](game-modes.md)).
-- **stance** — whether a side's army attacks or holds this round (`attack`, `hold`).
+- **stance** — whether a side's army attacks or holds this round (`attack`, `hold`); a banner, when planted, decides instead.
 - **starter map** — the Build Phase's one disposable map and the few buildings it offers; not a mission.
 - **Story** — a Commander's story: missions in order, with **technologies** carried from one to the next, ending in a
   final battle; its parts are the tutorial, technology missions, the **endless stand** and the final battle

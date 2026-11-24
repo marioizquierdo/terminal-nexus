@@ -66,7 +66,8 @@ export function bannerReached(state: MatchState, registry: ContentRegistry, bann
 /**
  * **The area a banner planted on a tile sends its troops to**, on the battlefield as a Battle Round opens: the footprint
  * of the structure standing on the tile (either side's) and a ring of one tile round it, or the 3 × 3 round the tile;
- * clipped to the battlefield. The Build Phase's own reading of the same spot (`src/build/banner.ts`) gives the same area.
+ * clipped to the battlefield. The Build Phase's reading of the same spot (`src/build/banner.ts`) is a preview of it: it
+ * cannot see what the round refuses of the plan, or what the enemy builds that round.
  */
 export function bannerAreaAt(state: MatchState, registryOf: (player: PlayerId) => ContentRegistry, tile: Coord): TargetArea {
   let box = { left: tile.x, right: tile.x, top: tile.y, bottom: tile.y }

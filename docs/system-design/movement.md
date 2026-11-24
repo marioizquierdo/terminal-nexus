@@ -61,7 +61,7 @@ what it does is worked out fresh every tick from what stands on the battlefield.
 
 RULE (`headsForNexus`, `src/engine/pulse/perception.ts`; a side's target, `src/engine/pulse/target.ts`). **An army's goal is the
 enemy's Nexus.** A mission may name a target instead, a region the side heads for and holds; a battle's side
-may hold in front of its own Nexus (the battle's stance). The stance and banners in the Build Phase come next (below).
+may hold in front of its own Nexus (the battle's stance), or head for the banner its plan planted (below).
 
 **How the way is found: a distance field, not a path.** The game does not search a path for each unit. It works out a
 number on every tile saying how far it is, walking, to the goal, shared by every unit going there; a unit takes the step
@@ -108,8 +108,8 @@ before.
 | An aggressive banner | March to the banner, then on to the enemy Nexus | The side's target until half its fighting units reach it, then none (built, in the rules layer, for missions and battles) |
 | A secondary banner (a building's) | That building's waves follow its banner instead | The same rules, the goal read from the unit's building (`EntityState.home`) |
 
-Two banners and the secondary banner wait; the banner (and the stance, if it replaces the banner) are the Skirmish
-milestone's first steps ([`milestone-17-skirmish.md`](../history/milestones/milestone-17-skirmish.md)).
+The banner is built, for missions and battles; two banners and the secondary banner wait
+([`milestone-20-skirmish-worth-showing.md`](../milestones/milestone-20-skirmish-worth-showing.md), Step 20A).
 
 ## Troop spawning
 

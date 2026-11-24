@@ -602,6 +602,7 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
 - **Change Target** makes the cursor the banner (`!`, `⚑` with Unicode symbols), pulsing on 500 ms beats; the arrows and the mouse move it. The panel and the bottom line say "[enter] Place Target on <spot>": a structure ("the enemy Nexus", "your Barracks"), a named place ("the line"), or ground and what it is near ("ground near resources", "ground near the enemy base", "open ground").
 - **Lines** run to it in the player's colour, from the Nexus and from the Commander, walked on the routing field round terrain and every standing or planned structure (the route with nobody in the way). Rock, ground with no footing, or anywhere troops could not get is refused: the tile flashes, the line turns red and the panel says why.
 - **Planting** (Enter, Space, the panel row, or a second click on the same tile) opens a ring outward from the banner and asks `[a] Aggressive — Keep pushing on` or `[d] Defensive — Hold position`. Aggressive adds a fainter line from the banner on to the enemy.
+- The area the screen reads for a spot is a preview of the round's (`bannerAreaAt`, `src/match/banner.ts`): the round reads the battlefield as it opens, so a planned building the round refuses, or one the enemy places that round, can change it.
 - The banner carries to the next round until moved; outside the panels a moved banner stays as a dim mark. Under reduced motion the ring is skipped and the pulse holds. (GUIDANCE — `tests/battle-banner.test.ts`)
 
 ## The bottom line

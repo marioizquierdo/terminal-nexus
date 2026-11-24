@@ -406,10 +406,15 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
         const opened = roundContext({ kind: "skirmish", setup, battle, ...(position.file === undefined ? {} : { file: position.file }) }, context, [], "", played.regroup)
         const back = restoredOf(battle, contentOf(battle))
         const news = back === null ? null : commanderNews(back.restored, back.absent, battle.round, battle.setup.rounds)
-        const refused = isPlayer(setup, "p1") ? report.sides.A.refused : []
+        const refusedAll = isPlayer(setup, "p1") ? report.sides.A.refused : []
+        // The banner's refusal is not a building's: it says where the troops went instead.
+        const isBanner = (line: string): boolean => line.startsWith("banner at ")
+        const refused = refusedAll.filter((line) => !isBanner(line))
+        const bannerRefused = refusedAll.filter(isBanner)
         const scene = [
           ...(news === null ? [] : [said(news, nexusFocus(opened))]),
           ...(refused.length === 0 ? [] : [said(`Not built last round: ${refused.join("; ")}.`)]),
+          ...bannerRefused.map((line) => said(`The ${line.replace(/, so the stance decided$/u, "")}: the troops took the stance instead.`)),
         ]
         const next = spectating(setup) ? "[s] starts the next round." : "The Nexus Pulse deals a new hand: [n]."
         // The banner stays where it was planted, round after round, until it is moved.
