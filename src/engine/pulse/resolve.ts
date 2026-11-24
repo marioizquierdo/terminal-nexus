@@ -63,11 +63,24 @@ export type ResolveOptions = Readonly<{
   /** Whether the run's events open with an `entity.spawned` for each entity already on the battlefield (true, the default).
    *  A battle's Battle Round says no: what stood at its opening was already reported when it arrived. */
   openingSpawns?: boolean
+  /** The rules layer's one say inside a Battle Round: after each tick that leaves the round going, the sides' targets
+   *  for the next tick, read from the state that tick settled (an aggressive banner reached releases its side,
+   *  `src/match/banner.ts`). Returning the state's own `targets` changes nothing; absent, nothing is asked. It must be a
+   *  pure function of the state it is given, so the same run hashes the same. */
+  retarget?: (state: MatchState) => MatchState["targets"]
 }> &
   PulseOptions
 
+/** The state with these targets: none at all when `undefined`, as a state with no target has none. The same state
+ *  when they are its own. */
+function withTargets(state: MatchState, targets: MatchState["targets"]): MatchState {
+  if (targets === state.targets) return state
+  const { targets: _old, ...rest } = state
+  return targets === undefined ? rest : { ...rest, targets }
+}
+
 export function resolvePulse(options: ResolveOptions): PulseRun {
-  const { initialState, registry, pulseTicks, seed, sides, abilities, watch } = options
+  const { initialState, registry, pulseTicks, seed, sides, abilities, watch, retarget } = options
   const context = createContext(initialState, registry, pulseTicks, { ...(sides === undefined ? {} : { sides }), ...(abilities === undefined ? {} : { abilities }) })
   const events: DomainEvent[] = options.openingSpawns === false ? [] : spawnEvents(initialState, registry)
 
@@ -77,6 +90,7 @@ export function resolvePulse(options: ResolveOptions): PulseRun {
     const result = stepTick(state, context)
     state = result.state
     events.push(...result.events)
+    if (retarget !== undefined && state.outcome === null) state = withTargets(state, retarget(state))
     watch?.(state, result.events)
   }
 

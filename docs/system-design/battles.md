@@ -71,13 +71,18 @@ whatever the player wrote. A build file holds them for one round or many, each e
 `"2-4"`, `"*"`), the first that fits winning (the `skirmish` command's manual says how a run plays them).
 
 ```json
-{ "power": 1, "build": [{ "building": "barracks", "at": "forward" }, { "building": "depot", "at": "back" }], "formation": "block", "stance": "attack", "note": "why" }
+{ "power": 1, "build": [{ "building": "barracks", "at": "forward" }, { "building": "depot", "at": "back" }], "formation": "block", "stance": "attack", "banner": { "x": 25, "y": 3, "stance": "aggressive" }, "note": "why" }
 ```
 
 `power` is the hand's card number (0 for none); `build` is in order, while credits last, each `at` one of `nexus`,
 `forward` (ahead of the furthest building, so a base pushed forward builds further forward), `back`, `north`,
 `south`, or an `x` and `y`; `formation`, which may be left out, is `block`, `apart` or `zones` (formations,
-below); `stance` is `attack` or `hold`. What the rules refuse is said in the next brief, and a field it cannot
+below); `stance` is `attack` or `hold`; `banner`, which may be left out, is a tile and `aggressive` (the default) or
+`defensive`, and decides where the troops go in place of the stance: defensive, they go there and hold it; aggressive,
+they go there and, once half the army has reached it, march on the enemy Nexus (the area is the structure on the tile
+and a ring of one, or the 3 × 3 round it; [`movement.md`](movement.md), banners). A banner off the battlefield, or on
+rock with nothing built there, is refused and the stance decides. Each side's banner is public in the next brief, as
+its stance is. What the rules refuse is said in the next brief, and a field it cannot
 read (a formation it does not know) is dropped with the problem said.
 
 The brief also says, in a section of its own, that where a side builds decides how tight its army fights and what that
@@ -136,7 +141,9 @@ lines say `built 3 (block)`, and a measurement names each side's player with it 
 plan's buildings at their exact anchors, the power picked, the buildings held (`hold`, Hold production), the actions
 taken on its buildings (`actions`: `{x, y, action}`, taken after its buildings are placed, from the credits they leave,
 and said in its report; the `-upgrade` scripts buy them), and the
-troops attacking, since the Build Phase has no stance. `placementsOf` says where a scripted plan's buildings would
+banner, with the Battle banner Experiment on and when it is not the default (the enemy Nexus, aggressive); its stance
+follows it, `hold` for a defensive banner and `attack` otherwise. The banner stays planted into the next round, and a
+saved round keeps it. `placementsOf` says where a scripted plan's buildings would
 go, so the screen plays a scripted side through the Build Phase's own functions.
 
 ## 5. No turns, and model against model

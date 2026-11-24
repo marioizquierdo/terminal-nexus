@@ -6,7 +6,9 @@
 // none, each building where its placement says. What the round then refuses (a
 // building it cannot afford, a card number past the hand) is the round's to say (`playRound`).
 
-import type { BuildingOrder, Formation, Placement, BuildActions, Stance, Zone } from "./types.ts"
+import { BANNER_STANCES } from "../match/banner.ts"
+import type { BannerStance } from "../match/banner.ts"
+import type { BuildingOrder, Formation, Placement, BuildActions, PlanBanner, Stance, Zone } from "./types.ts"
 import { FORMATIONS, STANCES, ZONES } from "./types.ts"
 
 /** Build actions read from text, and every problem found reading them. */
@@ -98,6 +100,18 @@ export function readBuildActions(given: string | unknown): ReadBuildActions {
       actions.push({ x, y, action })
     })
   }
+  let banner: PlanBanner | undefined
+  const planted = raw["banner"]
+  if (planted !== undefined && planted !== null) {
+    const fields = typeof planted === "object" && !Array.isArray(planted) ? (planted as Record<string, unknown>) : {}
+    const { x, y } = fields
+    const stanceOf = fields["stance"] ?? "aggressive"
+    if (typeof x !== "number" || typeof y !== "number" || !Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0) {
+      problems.push(`"banner" should be { "x", "y", "stance" }: a tile and "aggressive" or "defensive"; the stance decides`)
+    } else if (typeof stanceOf !== "string" || !(BANNER_STANCES as readonly string[]).includes(stanceOf)) {
+      problems.push(`"banner.stance" should be ${BANNER_STANCES.map((name) => `"${name}"`).join(" or ")}; the stance decides`)
+    } else banner = { x, y, stance: stanceOf as BannerStance }
+  }
   const note = typeof raw["note"] === "string" ? raw["note"].slice(0, 300) : undefined
   return {
     actions: {
@@ -106,6 +120,7 @@ export function readBuildActions(given: string | unknown): ReadBuildActions {
       ...(formation === undefined ? {} : { formation }),
       stance,
       ...(actions.length === 0 ? {} : { actions }),
+      ...(banner === undefined ? {} : { banner }),
       ...(note === undefined ? {} : { note }),
     },
     problems,

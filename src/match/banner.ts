@@ -15,12 +15,14 @@
 // absent) resolves byte for byte as before.
 
 import type { ContentRegistry } from "../content/index.ts"
-import { tilesOf } from "../engine/geometry/coords.ts"
+import { footprintBox, tilesOf } from "../engine/geometry/coords.ts"
+import type { Coord } from "../engine/geometry/types.ts"
 import { followsTarget } from "../engine/pulse/target.ts"
 import type { MatchState, PlayerId, TargetArea } from "../engine/state/types.ts"
 
 /** Aggressive: there, then on to the enemy's Nexus. Defensive: hold it. */
-export type BannerStance = "aggressive" | "defensive"
+export const BANNER_STANCES = ["aggressive", "defensive"] as const
+export type BannerStance = (typeof BANNER_STANCES)[number]
 
 /** The player's banner for a round: the area its troops head for, what the screen calls it, and its stance. */
 export type BannerOrder = Readonly<{ side: PlayerId; area: TargetArea; name: string; stance: BannerStance }>
@@ -59,4 +61,46 @@ export function bannerReached(state: MatchState, registry: ContentRegistry, bann
     if (tilesOf(entity.anchor, definition.footprint).some((tile) => tile.x >= left && tile.x <= right && tile.y >= top && tile.y <= bottom)) there += 1
   }
   return fighters > 0 && there * 2 >= fighters
+}
+
+/**
+ * **The area a banner planted on a tile sends its troops to**, on the battlefield as a Battle Round opens: the footprint
+ * of the structure standing on the tile (either side's) and a ring of one tile round it, or the 3 × 3 round the tile;
+ * clipped to the battlefield. The Build Phase's own reading of the same spot (`src/build/banner.ts`) gives the same area.
+ */
+export function bannerAreaAt(state: MatchState, registryOf: (player: PlayerId) => ContentRegistry, tile: Coord): TargetArea {
+  let box = { left: tile.x, right: tile.x, top: tile.y, bottom: tile.y }
+  for (const entity of state.entities) {
+    const definition = registryOf(entity.player).get(entity.contentId)
+    if (definition.layer !== "obstacles") continue
+    if (tilesOf(entity.anchor, definition.footprint).some((each) => each.x === tile.x && each.y === tile.y)) {
+      box = footprintBox(entity.anchor, definition.footprint)
+      break
+    }
+  }
+  const left = Math.max(0, box.left - 1)
+  const top = Math.max(0, box.top - 1)
+  const right = Math.min(state.terrain.width - 1, box.right + 1)
+  const bottom = Math.min(state.terrain.height - 1, box.bottom + 1)
+  return { x: left, y: top, width: right - left + 1, height: bottom - top + 1 }
+}
+
+const sameArea = (a: TargetArea | undefined, b: TargetArea): boolean =>
+  a !== undefined && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
+
+/**
+ * **The sides' targets for the next tick with these banners** (the battle engine's `retarget`): an aggressive banner
+ * whose side still heads for it, and which its army has reached (`bannerReached`), is released, so the side marches on
+ * from the next tick; everything else stays as it is. A pure function of the state: once released, the side has no
+ * target and nothing sends it back.
+ */
+export function bannerRetarget(banners: readonly BannerOrder[], registryOf: (player: PlayerId) => ContentRegistry): (state: MatchState) => MatchState["targets"] {
+  return (state) => {
+    let targets = state.targets
+    for (const banner of banners) {
+      if (banner.stance !== "aggressive" || !sameArea(targets?.[banner.side], banner.area)) continue
+      if (bannerReached(state, registryOf(banner.side), banner)) targets = withBannerTargets(targets, banner, true)
+    }
+    return targets
+  }
 }

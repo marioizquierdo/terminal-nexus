@@ -31,6 +31,8 @@ import { STARTER_START_CURSOR, nexusDraftOf } from "../build/catalog.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { DialogLine, FieldEntity, IncomingEntity, StandingStructure } from "../build/types.ts"
 import { status } from "../build/status.ts"
+import { setting } from "../build/all-settings.ts"
+import { bannerOrder } from "../build/banner.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../engine/events/types.ts"
 import { tilesOf } from "../engine/geometry/coords.ts"
@@ -265,23 +267,29 @@ const tileOf = (key: string): Readonly<{ x: number; y: number }> => {
 /**
  * **Side A's battle plan from a Build Phase**: the power picked (its number in the hand, which is the battle's hand), every
  * building placed at its exact anchor in the order placed, the buildings held this round, the building actions taken,
- * and the troops marching on the enemy's Nexus — the Build Phase has no stance to choose.
+ * and the banner (with the Battle banner Experiment on): where it was planted and its stance, when it is not the
+ * default (the enemy's Nexus, aggressive). The stance follows it — `hold` for a defensive banner, `attack` otherwise —
+ * so a report or a script reading the stance reads what the troops were told.
  */
 export function buildActionsOf(context: BuildContext, state: BuildState): BuildActions {
   const { battle } = positionOf(context)
   const hold = state.held.map(tileOf)
   const actions = state.fitted.map((taken) => ({ ...tileOf(taken.anchor), action: taken.action }))
+  const order = setting(state, "battleBanner") === "on" ? bannerOrder(context, state) : null
+  const banner = order === null || state.banner === null ? undefined : { x: state.banner.tile.x, y: state.banner.tile.y, stance: order.stance }
   return {
     ...(state.nexusPick === null ? {} : { power: state.nexusPick + 1 }),
     build: state.planned.map((placement) => ({ building: cardIdOf(battle, placement.contentId), x: placement.anchor.x, y: placement.anchor.y })),
-    stance: "attack",
+    stance: banner?.stance === "defensive" ? "hold" : "attack",
     ...(hold.length === 0 ? {} : { hold }),
     ...(actions.length === 0 ? {} : { actions }),
+    ...(banner === undefined ? {} : { banner }),
   }
 }
 
-/** Whether a plan has anything in it: a power, a building, a hold or an action. */
-const planned = (plan: BuildActions): boolean => plan.power !== undefined || plan.build.length > 0 || (plan.hold?.length ?? 0) > 0 || (plan.actions?.length ?? 0) > 0
+/** Whether a plan has anything in it: a power, a building, a hold, an action or a banner. */
+const planned = (plan: BuildActions): boolean =>
+  plan.power !== undefined || plan.build.length > 0 || (plan.hold?.length ?? 0) > 0 || (plan.actions?.length ?? 0) > 0 || plan.banner !== undefined
 
 /**
  * **A round as a save**: its setup, the battle as this Build Phase opened, and the plan so far as p1's draft — what Save
@@ -316,6 +324,7 @@ export function planOnRound(context: BuildContext, state: BuildState, plan: Buil
       bonusAllotment: option?.bonusAllotment ?? 0,
       held: (plan.hold ?? []).map((tile) => `${tile.x},${tile.y}`),
       fitted: (plan.actions ?? []).map((taken) => ({ anchor: `${taken.x},${taken.y}`, action: taken.action })),
+      ...(plan.banner === undefined ? {} : { banner: { tile: { x: plan.banner.x, y: plan.banner.y }, stance: plan.banner.stance } }),
     },
   }
 }
@@ -385,7 +394,7 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
       return resolved
     },
 
-    nextRound(context, _state, resolved, alternative = false) {
+    nextRound(context, state, resolved, alternative = false) {
       const played = playedOf(resolved)
       if (played === undefined) return null
       const position = positionOf(context)
@@ -403,7 +412,8 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
           ...(refused.length === 0 ? [] : [said(`Not built last round: ${refused.join("; ")}.`)]),
         ]
         const next = spectating(setup) ? "[s] starts the next round." : "The Nexus Pulse deals a new hand: [n]."
-        return { ...withoutScene(opened), ...(scene.length === 0 ? {} : { scene }), openingStatus: status(`${last} ${next}`, "hint") }
+        // The banner stays where it was planted, round after round, until it is moved.
+        return { ...withoutScene(opened), ...(scene.length === 0 ? {} : { scene }), openingStatus: status(`${last} ${next}`, "hint"), placedBanner: state.banner }
       }
       // The battle is over: the same battle again from round 1, or a new one on a new seed (the result's other choice).
       // Either is a new battle: no longer the file it was loaded from, so Save game offers a new name.

@@ -5,6 +5,7 @@
 // Everything here is plain data, serializable as JSON, so a battle can be saved after any round, a plan can come from a
 // script, a file or a language model, and the same setup and plans resolve the same battle on every machine.
 
+import type { BannerStance } from "../match/banner.ts"
 import type { Absence } from "../match/commander.ts"
 import type { MatchState, PlayerId } from "../engine/state/types.ts"
 import type { BattleMap } from "./maps.ts"
@@ -104,8 +105,19 @@ export type BuildActions = Readonly<{
    * Absent: none, as every script but the `-upgrade` ones plays.
    */
   actions?: readonly BuildingOrder[]
+  /**
+   * The battle banner (the Build Phase's, behind the Battle banner Experiment): the tile the side's troops head for
+   * this round, and its stance. Aggressive: there, then on to the enemy's Nexus once half the army has reached it;
+   * defensive: there, and held. The area is the structure standing on the tile and a ring of one, or the 3 × 3 round
+   * it (`bannerAreaAt`, `src/match/banner.ts`). It decides where the troops go in place of `stance`. Absent: the stance
+   * decides, as every script plays.
+   */
+  banner?: PlanBanner
   note?: string
 }>
+
+/** A plan's banner: a tile on the battlefield and its stance. */
+export type PlanBanner = Readonly<{ x: number; y: number; stance: BannerStance }>
 
 /** One of a plan's building actions: the building by its anchor, and the action by its id. */
 export type BuildingOrder = Readonly<{ x: number; y: number; action: string }>
@@ -140,6 +152,8 @@ export type SideReport = Readonly<{
   /** What it asked for and could not have, each with the reason. */
   refused: readonly string[]
   stance: Stance
+  /** Where its banner sent its troops, when its plan planted one (`banner: defensive at 40,9`). */
+  banner?: string
   /** The formation its plan named, when it named one. */
   formation?: Formation
   note?: string

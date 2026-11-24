@@ -29,7 +29,7 @@ prototype behind the Battle banner Experiment:
 
 - [ ] The owner plays the placement in a Skirmish and says whether it is comfortable and clear, or a stance row
       replaces it (the plan already carries a stance: attack or hold).
-- [ ] **A banner** placed in the Build Phase, aggressive or defensive; by default on the enemy Nexus, aggressive.
+- [x] **A banner** placed in the Build Phase, aggressive or defensive; by default on the enemy Nexus, aggressive.
       Aggressive elsewhere: the army goes there first, then on to the enemy Nexus. Defensive: it holds the line there.
       Battles carry it: a plan names a banner, and the brief says where each side's stood last round.
 - [ ] The battle scripts place a banner, so a kept front has an answer: a script whose front is beaten holds or falls

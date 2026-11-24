@@ -19,7 +19,10 @@ import type { ContentRegistry } from "../content/index.ts"
 import { baseContentId, fittedId, fittingsOf } from "../content/index.ts"
 import type { DomainEvent } from "../engine/events/types.ts"
 import { footprintDistance, footprintExtent, footprintSteps, tilesOf } from "../engine/geometry/coords.ts"
+import { TERRAIN } from "../engine/geometry/types.ts"
 import type { Coord, Footprint, MapTerrain } from "../engine/geometry/types.ts"
+import { bannerAreaAt, bannerRetarget } from "../match/banner.ts"
+import type { BannerOrder } from "../match/banner.ts"
 import { centreTile, creditsEarned, fallen, regroup, spawningRegistry, standDown } from "../match/index.ts"
 import type { RegroupResult, StructurePlacement } from "../match/index.ts"
 import { roundOpening } from "./round-opening.ts"
@@ -486,8 +489,15 @@ export function playRound(
     }
   }
   const { state: opened, restored } = roundOpening(state, { sides, callups: { A: phases.A.callups, B: phases.B.callups }, built, ...heldBy(state, plans, phases), ...refitsOf(phases) })
-  const targets: Record<Side, TargetArea> = { A: targetOf(state, "A", plans.A.stance, sides), B: targetOf(state, "B", plans.B.stance, sides) }
+  // Each side's banner, read on the battlefield as it opens (a banner on a building just placed takes its footprint);
+  // where a side planted none, or one its troops cannot stand on, its stance decides.
+  const banners = { A: bannerOf(opened, "A", plans.A, sides), B: bannerOf(opened, "B", plans.B, sides) }
+  const targets: Record<Side, TargetArea> = {
+    A: banners.A.order?.area ?? targetOf(state, "A", plans.A.stance, sides),
+    B: banners.B.order?.area ?? targetOf(state, "B", plans.B.stance, sides),
+  }
   const start: MatchState = { ...opened, targets }
+  const planted = SIDES.flatMap((side) => (banners[side].order === undefined ? [] : [banners[side].order]))
 
   // The Battle Round, each side on its own content: the battle engine run from the opening until a Nexus falls or the
   // round's ticks run out, read as it goes. The same engine entry a sandbox, a measurement and a test run one by.
@@ -499,6 +509,8 @@ export function playRound(
     pulseTicks: state.setup.pulseTicks,
     seed: state.setup.seed,
     openingSpawns: false,
+    // An aggressive banner releases its side once half its army stands there: it marches on from the next tick.
+    ...(planted.some((order) => order.stance === "aggressive") ? { retarget: bannerRetarget(planted, (player) => sides[player]) } : {}),
     watch: (battle, happened) => {
       // The opening is shown first, with no events; the reader starts from it already.
       if (battle.tick > start.tick) reader.step(battle, happened)
@@ -520,7 +532,7 @@ export function playRound(
       credits: next[side].credits + incomeOf(state.setup, side, round + 1) + earned,
       absent: [...stillOut, ...fell.filter((absence) => absence.player === side)],
     }
-    reports[side] = sideReport(phases[side], plans[side], state.sides[side].credits, earned)
+    reports[side] = sideReport(phases[side], plans[side], state.sides[side].credits, earned, banners[side])
   }
   const ended = current.outcome?.reason === "nexus-destroyed" ? "nexus" : "time"
   const report: RoundReport = { round, sides: reports, ticks: current.tick, ended, reading: reader.reading(current) }
@@ -605,6 +617,28 @@ export function musterOf(state: BattleState, side: Side, registry: ContentRegist
   return { x: centre.x + facing(map, side) * 4, y: centre.y }
 }
 
+/** A plan's banner as the round reads it: the match layer's order, or why it was not planted. Neither: no banner. */
+type PlantedBannerOf = Readonly<{ order?: BannerOrder; refusal?: string }>
+
+/** A side's banner on the battlefield as the round opens: refused off the battlefield and on rock with nothing built
+ *  there, where no unit can stand; otherwise the area round its tile (`bannerAreaAt`). */
+function bannerOf(state: MatchState, side: Side, plan: BuildActions, sides: Readonly<Record<Side, ContentRegistry>>): PlantedBannerOf {
+  const banner = plan.banner
+  if (banner === undefined) return {}
+  const tile = { x: banner.x, y: banner.y }
+  const where = `banner at ${tile.x},${tile.y}`
+  const { terrain } = state
+  if (tile.x >= terrain.width || tile.y >= terrain.height) return { refusal: `${where}: off the battlefield (${terrain.width} by ${terrain.height}), so the stance decided` }
+  const area = bannerAreaAt(state, (player) => sides[player], tile)
+  const ground = terrain.tiles[tile.y * terrain.width + tile.x]
+  const built = state.entities.some((entity) => {
+    const definition = sides[entity.player].get(entity.contentId)
+    return definition.layer === "obstacles" && tilesOf(entity.anchor, definition.footprint).some((each) => each.x === tile.x && each.y === tile.y)
+  })
+  if (ground !== undefined && TERRAIN[ground].impassable && !built) return { refusal: `${where}: rock, where no troops can stand, so the stance decided` }
+  return { order: { side, area, name: where, stance: banner.stance } }
+}
+
 /** Where a side's troops head: the enemy's Nexus when it attacks, its own holding ground when it holds. */
 function targetOf(state: BattleState, side: Side, stance: BuildActions["stance"], sides: Readonly<Record<Side, ContentRegistry>>): TargetArea {
   const map = mapOf(state)
@@ -625,6 +659,7 @@ function sideReport(
   plan: BuildActions,
   credits: number,
   earned: number,
+  banner: PlantedBannerOf,
 ): SideReport {
   return {
     commander: phase.army.commander.id,
@@ -635,8 +670,9 @@ function sideReport(
     hand: phase.hand.map((card) => card.name),
     built: phase.placed.built,
     ...(phase.acted.took.length === 0 ? {} : { actions: phase.acted.took }),
-    refused: phase.placed.refused,
+    refused: banner.refusal === undefined ? phase.placed.refused : [...phase.placed.refused, banner.refusal],
     stance: plan.stance,
+    ...(banner.order === undefined ? {} : { banner: `${banner.order.stance} at ${plan.banner?.x},${plan.banner?.y}` }),
     ...(plan.formation === undefined ? {} : { formation: plan.formation }),
     ...(plan.note === undefined ? {} : { note: plan.note }),
   }

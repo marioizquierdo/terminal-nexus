@@ -20,7 +20,9 @@
 //   skirmish --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --play-to end
 //
 // A build file is a slot's build actions as JSON: the power it keeps, what it builds and where, the actions taken on
-// its buildings, the formation and the stance (docs/system-design/battles.md, the brief and the build actions). One object
+// its buildings, the formation, the stance and the banner (docs/system-design/battles.md, the brief and the build
+// actions; "banner": { "x": 25, "y": 3, "stance": "defensive" } sends the troops to that tile in place of the stance,
+// "aggressive" on to the enemy Nexus once half of them reach it). One object
 // is for the first round played; a list of them is by round, each with "round": 3, "2-4" or "*", the first that
 // fits winning:
 //   [{ "round": 1, "build": [{ "building": "barracks", "at": "forward" }], "stance": "hold" },

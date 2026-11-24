@@ -155,7 +155,7 @@ function reportLine(label: string, report: SeenReport["sides"][Side], read: Side
   const { dealt } = read.damage
   const { nexus } = read.buildings
   return [
-    `${label} (${report.commander}): kept ${report.kept ?? "nothing"}; built ${report.built.length === 0 ? "nothing" : report.built.join(", ")}${report.formation === undefined ? "" : ` (formation ${report.formation})`}${report.actions === undefined ? "" : `; took ${report.actions.join(", ")}`}${(report.refused ?? []).length === 0 ? "" : `; refused ${(report.refused ?? []).join("; ")}`}; stance ${report.stance}.`,
+    `${label} (${report.commander}): kept ${report.kept ?? "nothing"}; built ${report.built.length === 0 ? "nothing" : report.built.join(", ")}${report.formation === undefined ? "" : ` (formation ${report.formation})`}${report.actions === undefined ? "" : `; took ${report.actions.join(", ")}`}${(report.refused ?? []).length === 0 ? "" : `; refused ${(report.refused ?? []).join("; ")}`}; ${report.banner === undefined ? `stance ${report.stance}` : `banner ${report.banner}`}.`,
     `  fielded ${counts(read.army.start.counts)}; trained ${counts(read.army.trained.counts)}; lost ${counts(lostOf(read))}.`,
     `  dealt ${dealt.units} to units, ${dealt.buildings} to buildings, ${dealt.nexus} to the Nexus; Nexus ${nexus.before} -> ${nexus.after} of ${nexus.most}${read.army.commanderFell ? "; the Commander fell" : ""}${(report.earned ?? 0) > 0 ? `; earned ${report.earned} credits` : ""}${Object.keys(read.army.abilities).length === 0 ? "" : `; abilities ${counts(read.army.abilities)}`}.`,
   ].join("\n")
@@ -378,5 +378,6 @@ export function briefText(data: BriefData, strategies?: string): string {
   )
   lines.push(`- "actions" (you may leave it out): what your buildings do this round, each { "x", "y", "action" } naming a building of yours by its anchor and one of its actions by id, as listed above; taken after your buildings are placed, from the credits they leave.`)
   lines.push(`- "stance": ${STANCES.map((stance) => `"${stance}"`).join(" or ")}: your troops march on their Nexus, or hold the ground in front of yours. Units that survive stay where the round left them, step back and form up across the line between the Nexuses, and fight again next round from there. A building may go where units stand, yours or theirs: they walk out from under it as the round begins.`)
+  lines.push(`- "banner" (you may leave it out): { "x", "y", "stance" }, a tile your troops head for in place of the stance. "defensive": they go there and hold it; "aggressive" (the default): they go there and, once half of them have reached it, march on their Nexus. A banner on a building covers it and a ring of one round it; on open ground, the 3 by 3 round the tile. Off the battlefield or on rock it is refused, and the stance decides.`)
   return lines.join("\n")
 }

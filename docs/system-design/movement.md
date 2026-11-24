@@ -95,14 +95,17 @@ placement before the stance; the stance row is the fallback). How it is placed i
 [`ui-patterns.md`](ui-patterns.md), "The battle banner". A side's banner is its target for the round. Defensive, the
 side heads there and holds it. Aggressive, it heads there, and from the tick at least half its fighting units stand in
 or beside the banner's area (3 × 3 round a spot, or a structure's footprint and a ring of one) it has no target, so it
-marches on the enemy's Nexus as by default. The rules layer sets this between ticks (`src/match/banner.ts`); the
-engine is unchanged. With no banner, a level's own target and the march on the enemy Nexus are as before.
+marches on the enemy's Nexus as by default. The rules layer sets this between ticks (`src/match/banner.ts`): a mission's
+trigger runner by hand, a battle's round through the engine's `retarget` (one entry, `resolvePulse`); the tick itself
+is unchanged. In a battle the banner is a plan's (`BuildActions.banner`, a tile and a stance), so the Skirmish screen,
+a save and a build file carry it alike. With no banner, a level's own target and the march on the enemy Nexus are as
+before.
 
 | Order | What the troops do | In the machinery |
 | --- | --- | --- |
 | None, or aggressive | March on the enemy Nexus | As today |
 | Hold the line, or a defensive banner | Gather at the place and hold it; fight what comes into vision; come back to it after | A side's target, as a mission's is (built) |
-| An aggressive banner | March to the banner, then on to the enemy Nexus | The side's target until half its fighting units reach it, then none (built, in the rules layer) |
+| An aggressive banner | March to the banner, then on to the enemy Nexus | The side's target until half its fighting units reach it, then none (built, in the rules layer, for missions and battles) |
 | A secondary banner (a building's) | That building's waves follow its banner instead | The same rules, the goal read from the unit's building (`EntityState.home`) |
 
 Two banners and the secondary banner wait; the banner (and the stance, if it replaces the banner) are the Skirmish

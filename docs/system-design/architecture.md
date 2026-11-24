@@ -45,7 +45,9 @@ everything above at once.
 
 **A Battle Round is the engine run from a state** (RULE — one entry, `resolvePulse`, `src/engine/pulse/resolve.ts`): a
 state on a map, its content, a seed and a number of ticks in; every tick's state and events out, until a Nexus falls,
-one side is gone or the ticks run out. The Build Phase is apart from it: it builds the state (what each side built,
+one side is gone or the ticks run out. The rules layer's one say inside a round is `retarget`: between two ticks, the
+sides' targets for the next, a pure function of the state the tick settled (an aggressive banner reached releases its
+side, `src/match/banner.ts`). The Build Phase is apart from it: it builds the state (what each side built,
 kept and called up, laid on what the last round left) and the engine plays it until the round ends. The game, the
 `skirmish` command, the measurement and a unit test all play a Battle Round on the same engine, so a test through the
 `skirmish` command exercises the code a player's battle runs. A **sandbox** (a save whose `start` sets the battlefield up by hand,

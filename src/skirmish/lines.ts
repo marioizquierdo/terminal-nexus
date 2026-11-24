@@ -34,7 +34,7 @@ export function roundLines(report: RoundReport): string[] {
     const own = report.sides[side]
     const read = report.reading.sides[side]
     lines.push(
-      `  ${SLOT_OF[side]} ${own.commander}: ${own.credits} credits, spent ${own.spent}${own.earned > 0 ? `, earned ${own.earned}` : ""}; kept ${own.kept ?? "nothing"}; built ${own.built.length}${own.formation === undefined ? "" : ` (${own.formation})`}${own.actions === undefined ? "" : `; ${own.actions.join(", ")}`}${own.refused.length > 0 ? `; refused: ${own.refused.join("; ")}` : ""}; ${own.stance}`,
+      `  ${SLOT_OF[side]} ${own.commander}: ${own.credits} credits, spent ${own.spent}${own.earned > 0 ? `, earned ${own.earned}` : ""}; kept ${own.kept ?? "nothing"}; built ${own.built.length}${own.formation === undefined ? "" : ` (${own.formation})`}${own.actions === undefined ? "" : `; ${own.actions.join(", ")}`}${own.refused.length > 0 ? `; refused: ${own.refused.join("; ")}` : ""}; ${own.banner === undefined ? own.stance : `banner ${own.banner}`}`,
       `     fielded ${counts(read.army.start.counts)}; trained ${counts(read.army.trained.counts)}; lost ${counts(lostOf(read))}`,
       `     dealt ${read.damage.dealt.units}/${read.damage.dealt.buildings}/${read.damage.dealt.nexus} (units/buildings/Nexus); Nexus ${read.buildings.nexus.after}/${read.buildings.nexus.most}${read.army.commanderFell ? "; Commander fell" : ""}${Object.keys(read.army.abilities).length > 0 ? `; ${counts(read.army.abilities)}` : ""}`,
     )
