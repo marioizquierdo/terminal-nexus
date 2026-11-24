@@ -106,10 +106,10 @@ fi
 # A question is either open (a heading in open-questions.md) or answered (a table row in
 # history/answered-questions.md). Any Q<n> cited anywhere under docs/ must be one of the two.
 
-defined_questions="$(sed -n 's/^### \(Q[0-9]\+\) .*$/\1/p' docs/milestones/open-questions.md | sort -u)"
+defined_questions="$(sed -n 's/^### \(Q[0-9][0-9]*\) .*$/\1/p' docs/milestones/open-questions.md | sort -u)"
 answered_questions=""
 if [[ -f docs/history/answered-questions.md ]]; then
-  answered_questions="$(sed -n 's/^| *\(Q[0-9]\+\) *|.*$/\1/p' docs/history/answered-questions.md | sort -u)"
+  answered_questions="$(sed -n 's/^| *\(Q[0-9][0-9]*\) *|.*$/\1/p' docs/history/answered-questions.md | sort -u)"
 fi
 
 referenced_questions="$(grep -rhoE '\bQ[0-9]+\b' docs --include='*.md' 2>/dev/null | sort -u || true)"
