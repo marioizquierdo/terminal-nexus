@@ -139,11 +139,22 @@ test("the Skirmish screen hands no banner when it is the default, or the Battle 
   assert.equal(buildActionsOf(off.context, off.state).stance, "attack")
 })
 
-test("a saved round keeps its banner, and loading it plants it again", () => {
+test("a saved round keeps its rally point, and loading it plants it again", () => {
   const { context, state } = screenRound("on", { tile: FLANK, stance: "aggressive" })
   const save = saveOfRound(context, state)
-  assert.deepEqual(save.draft?.p1?.banner, { ...FLANK, stance: "aggressive" })
+  // The screen asks no stance: what the troops do there is the Rally point Experiment's, hold by default.
+  assert.deepEqual(save.draft?.p1?.banner, { ...FLANK, stance: "defensive" })
   const read = readSave(saveText(save))
   assert.deepEqual(read.problems, [])
-  assert.deepEqual(read.save?.draft?.p1?.banner, { ...FLANK, stance: "aggressive" })
+  assert.deepEqual(read.save?.draft?.p1?.banner, { ...FLANK, stance: "defensive" })
+})
+
+test("the Rally point Experiment decides what the troops do there: hold, or push on", () => {
+  const { context, state } = screenRound("on", { tile: FLANK, stance: "defensive" })
+  const held = buildActionsOf(context, { ...state, experiments: { ...state.experiments, rallyPoint: "hold" } })
+  assert.deepEqual(held.banner, { ...FLANK, stance: "defensive" })
+  assert.equal(held.stance, "hold")
+  const pushed = buildActionsOf(context, { ...state, experiments: { ...state.experiments, rallyPoint: "push-on" } })
+  assert.deepEqual(pushed.banner, { ...FLANK, stance: "aggressive" })
+  assert.equal(pushed.stance, "attack")
 })

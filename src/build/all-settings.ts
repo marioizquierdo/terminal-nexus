@@ -451,6 +451,29 @@ export const ALL_SETTINGS = {
     values: ["on", "off"],
     default: "on",
   },
+
+  // --- The rally point (the owner, 2026-11-25, after playing the banner in a Skirmish) -------------------------
+  // "Don't think we need any options to do aggressive or defensive ... It's just the direction where it goes." The
+  // rally point no longer asks for a stance; what the troops do once they reach it is this Experiment (an open
+  // question): hold it, or push on to the enemy Nexus. On the enemy Nexus, its default, both attack it.
+  // Owner's playtest feedback: docs/history/feedback/2026-11-25-rally-point.md.
+
+  /** What the troops do at a rally point the player moved: hold it, or gather there and push on to the enemy Nexus
+   *  once half the army has arrived. First guess: hold, so where it stands is the whole order. */
+  rallyPoint: {
+    tier: "experiment",
+    section: "mission",
+    label: "Rally point",
+    question: "Hold: the troops gather at the rally point and stay. Push on: they gather there, then march on the enemy Nexus.",
+    values: ["hold", "push-on"],
+    names: { hold: "hold", "push-on": "push on" },
+    default: "hold",
+  },
+  /** How often, during a Battle Round, a few arrows run from the Nexus to the rally point to say where it stands; a
+   *  first guess from the owner's "maybe every 5 seconds". */
+  rallyArrowsEveryMs: { tier: "tuned", default: 5000 },
+  /** How many arrows run each time: the owner's "like 2 or 3 arrows". */
+  rallyArrowsCount: { tier: "tuned", default: 3 },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 
 // --- Names, values and tiers, as types --------------------------------------------------------------

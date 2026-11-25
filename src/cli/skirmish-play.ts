@@ -276,7 +276,9 @@ export function buildActionsOf(context: BuildContext, state: BuildState): BuildA
   const hold = state.held.map(tileOf)
   const actions = state.fitted.map((taken) => ({ ...tileOf(taken.anchor), action: taken.action }))
   const order = setting(state, "battleBanner") === "on" ? bannerOrder(context, state) : null
-  const banner = order === null || state.banner === null ? undefined : { x: state.banner.tile.x, y: state.banner.tile.y, stance: order.stance }
+  // The rally point asks no stance: what the troops do there is the Rally point Experiment's (hold, or push on).
+  const stance: "aggressive" | "defensive" = setting(state, "rallyPoint") === "push-on" ? "aggressive" : "defensive"
+  const banner = order === null || state.banner === null ? undefined : { x: state.banner.tile.x, y: state.banner.tile.y, stance }
   return {
     ...(state.nexusPick === null ? {} : { power: state.nexusPick + 1 }),
     build: state.planned.map((placement) => ({ building: cardIdOf(battle, placement.contentId), x: placement.anchor.x, y: placement.anchor.y })),
