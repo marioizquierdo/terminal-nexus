@@ -10,8 +10,8 @@ import { buildLayout } from "../src/build/layout.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
 import { createBuildState, nexusTile, withoutScene } from "../src/build/state.ts"
 import type { BattleState, BuildActions, RoundReport } from "../src/battle/index.ts"
-import { beginBattle, playRound, readBuildActions } from "../src/battle/index.ts"
-import { buildActionsOf, newSkirmishLevel, playedOf, saveOfRound } from "../src/cli/skirmish-play.ts"
+import { armyOf, beginBattle, loadoutOf, playRound, readBuildActions } from "../src/battle/index.ts"
+import { buildActionsOf, newSkirmishLevel, playedOf, positionOf, rallyStartTile, saveOfRound } from "../src/cli/skirmish-play.ts"
 import type { MatchState } from "../src/engine/state/types.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
 import { followsTarget } from "../src/engine/pulse/target.ts"
@@ -130,13 +130,24 @@ test("the Skirmish screen hands its banner to the round, and the troops follow i
   assert.deepEqual(next.placedBanner, { tile: FLANK, stance: "defensive" }, "the banner did not carry to the next round")
 })
 
-test("the Skirmish screen hands no banner when it is the default, or the Battle banner Experiment is off", () => {
+test("the rally point starts in front of the base: the screen hands it unmoved, and none with the Experiment off", () => {
+  // Rally point start at 20 (the default): a fifth of the way from your Nexus to the enemy's, on the Crossing 18,14.
   const defaulted = screenRound("on", null)
-  assert.equal(buildActionsOf(defaulted.context, defaulted.state).banner, undefined)
-  assert.equal(buildActionsOf(defaulted.context, defaulted.state).stance, "attack")
+  assert.deepEqual(defaulted.context.bannerDefault?.tile, { x: 18, y: 14 })
+  assert.deepEqual(buildActionsOf(defaulted.context, defaulted.state).banner, { x: 18, y: 14, stance: "defensive" })
+  assert.equal(buildActionsOf(defaulted.context, defaulted.state).stance, "hold")
   const off = screenRound("off", { tile: FLANK, stance: "defensive" })
   assert.equal(buildActionsOf(off.context, off.state).banner, undefined)
   assert.equal(buildActionsOf(off.context, off.state).stance, "attack")
+})
+
+test("Rally point start: each share is that far along the way, on open ground; 100 is the enemy Nexus and no order", () => {
+  const { context } = screenRound("on", null)
+  const { battle } = positionOf(context)
+  const content = { A: loadoutOf(armyOf(battle, "A"), battle.sides.A).registry, B: loadoutOf(armyOf(battle, "B"), battle.sides.B).registry }
+  const xs = [10, 20, 30].map((share) => rallyStartTile(battle, content, share)?.x)
+  assert.deepEqual(xs, [13, 18, 24], "the shares are not in order along the way")
+  assert.equal(rallyStartTile(battle, content, 100), null)
 })
 
 test("a saved round keeps its rally point, and loading it plants it again", () => {

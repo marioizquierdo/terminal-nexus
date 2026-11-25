@@ -475,6 +475,27 @@ export const ALL_SETTINGS = {
   rallyArrowsEveryMs: { tier: "tuned", default: 5000 },
   /** How many arrows run each time: the owner's "like 2 or 3 arrows". */
   rallyArrowsCount: { tier: "tuned", default: 3 },
+  /** When, into a Battle Round, the arrows run once for both sides, the flag showing as they arrive: the owner,
+   *  2026-11-25, "every 5 seconds ... is a little bit too noisy. So let's do that only once ... 5 seconds later". */
+  rallyArrowsAtMs: { tier: "tuned", default: 5000 },
+
+  // --- Where the rally point starts (the owner, 2026-11-25, second playtest) ----------------------------------
+  // "Instead of by default having the rally at the enemy nexus, I think it would be better to have it 10% of the
+  // distance or 30% of the distance. So basically in front of your base ... I always start by leaving the units in
+  // front of the base so I can form an army." A Skirmish's rally point starts this far along the way from the
+  // player's Nexus to the enemy's (an open question between his two numbers; 100 is the enemy Nexus as before).
+
+  /** Where a Skirmish's rally point starts each battle, as a share of the way from your Nexus to the enemy's. First
+   *  guess: 20, between the owner's 10 and 30. */
+  rallyStart: {
+    tier: "experiment",
+    section: "mission",
+    label: "Rally point start",
+    question: "Where the rally point starts: this share of the way from your Nexus to the enemy's; 100 is their Nexus.",
+    values: [10, 20, 30, 100],
+    unit: "percent",
+    default: 20,
+  },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 
 // --- Names, values and tiers, as types --------------------------------------------------------------
