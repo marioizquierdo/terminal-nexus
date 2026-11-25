@@ -17,7 +17,7 @@ import { openSkirmish } from "../src/cli/skirmish-open.ts"
 import type { SaveEntry } from "../src/cli/title-screens.ts"
 import type { LevelDestination } from "../src/cli/route.ts"
 import { formatRoute, parseRoute } from "../src/cli/route.ts"
-import { isShippedSave, planOnRound, playedOf, positionOf, skirmishLevel } from "../src/cli/skirmish-play.ts"
+import { buildActionsOf, isShippedSave, planOnRound, playedOf, positionOf, skirmishLevel } from "../src/cli/skirmish-play.ts"
 import { listSaves } from "../src/cli/skirmish-files.ts"
 import { readProfiles } from "../src/skirmish/profile-files.ts"
 import { SHIPPED_PROFILES, SHIPPED_SAVES } from "../src/skirmish/shipped-players.ts"
@@ -203,7 +203,10 @@ test("the screen plays a round exactly as playNext plays it headless: the same s
   assert.ok(resolved !== null)
   const onScreen = playedOf(resolved)
   assert.ok(onScreen !== undefined)
-  const headless = playNext(RICH, battleOf(save, SHIPPED_PROFILES), { p1: { ...plan, stance: "attack" } }, SHIPPED_PROFILES)
+  // The plan the screen hands the round: the one laid on it, with the rally point it starts with in front of the base.
+  const screenPlan = buildActionsOf(planned.context, planned.state)
+  assert.equal(screenPlan.banner?.stance, "defensive", "the screen handed no rally point")
+  const headless = playNext(RICH, battleOf(save, SHIPPED_PROFILES), { p1: screenPlan }, SHIPPED_PROFILES)
   assert.deepEqual(onScreen.battle, headless.state)
   // The share and the modifiers acted: p2 earns more than the curve, p1 less, and the round was half as long.
   assert.equal(onScreen.battle.setup.pulseTicks, Math.round(RICH.roundTicks / 2))

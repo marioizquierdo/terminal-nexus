@@ -128,7 +128,9 @@ test("a round played from a Build Phase places exactly the buildings the player 
   assert.deepEqual(standing, expected)
   assert.deepEqual(played.report.sides.A.refused, [])
   assert.equal(played.report.sides.A.kept, context.nexusDraft[0]?.name)
-  assert.equal(played.report.sides.A.stance, "attack", "the troops march on the enemy's Nexus")
+  // The rally point starts in front of the base (Rally point start, 20%): the troops gather there and hold it.
+  assert.equal(played.report.sides.A.stance, "hold", "the troops do not hold the rally point")
+  assert.equal(played.report.sides.A.banner, "defensive at 18,14", "the rally point is not in front of the base")
   assert.equal(resolved.mission?.round, 1)
   assert.equal(resolved.mission?.of, 8)
   assert.equal(resolved.enemy, "enemy")

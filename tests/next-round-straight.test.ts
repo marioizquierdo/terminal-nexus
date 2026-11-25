@@ -75,7 +75,7 @@ test("Replay last battle: refused before any battle; after one, the game menu pl
   assert.equal(first.state.replayRequests, 0)
   assert.match(first.state.status.text, /No battle to replay yet/u)
 
-  const steps = parseKeyScript("Esc n 1 s Enter wait~1000*36 Esc Esc b wait~1000*36 Enter")
+  const steps = parseKeyScript("Esc n 1 s Enter wait~1000*36 q b wait~1000*36 Enter")
   const run = runBuildPlaytest({ steps, at: playtestOpening({ at: "skirmish?seed=1" }).at })
   const texts = run.frames.map((frame) => frameToText(frame.frame))
   const menu = texts.findIndex((text, index) => index > 0 && /\[b\] Replay last battle/u.test(text) && /round 2 of 8/u.test(text))
