@@ -32,6 +32,14 @@ prototype behind the Battle banner Experiment:
 - [x] **A banner** placed in the Build Phase, aggressive or defensive; by default on the enemy Nexus, aggressive.
       Aggressive elsewhere: the army goes there first, then on to the enemy Nexus. Defensive: it holds the line there.
       Battles carry it: a plan names a banner, and the brief says where each side's stood last round.
+- [ ] **The rally point, simpler** (the owner's playtest of the banner,
+      [his words](../history/feedback/2026-11-25-rally-point.md)): no stance to choose (what the troops do there is the
+      Rally point Experiment); Start Battle Round puts the cursor on it, Enter starts the battle; a label beside it on
+      the map and a movement that draws the eye there; one arrow, from the Nexus; it shows on a building.
+- [ ] **The rally points in the Battle Round**: every few seconds a few arrows run from the Nexus to it; as the battle
+      begins, the enemy's is shown the same way.
+- [ ] **Straight back to the Build Phase** when a battle ends, the survivors seen regrouping; the last battle can be
+      replayed from the game menu.
 - [ ] The battle scripts place a banner, so a kept front has an answer: a script whose front is beaten holds or falls
       back.
 - [ ] **Strategic, measured**: over seeds, a script that plants well beats the same script planting at the default, and
