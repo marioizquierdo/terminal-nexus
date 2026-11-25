@@ -154,8 +154,9 @@ this round; it stays until the pull request that removes the old popup, since th
 > The text that says where the banner is being placed also should be at the bottom, so there's basically nothing in
 > the middle that is covering the line, because that makes it a little more confusing.
 
-**Scheduled.** The words beside the rally point go; the bottom line says it all: the flag, "Rally point", where it
-stands, and Enter to place it and begin the battle.
+**Built.** Nothing is written on the map: the bottom line opens with the flag and says "Rally point on open ground.
+[enter] place it and begin the battle."; a refusal says why on the same line. For a long spot name the fixed words
+shorten first.
 
 ### F320 — the arrows once, for both sides
 
@@ -165,8 +166,8 @@ stands, and Enter to place it and begin the battle.
 > showing the banner at the very end when the arrows arrive, and only once. And do the same for the enemy as well. So
 > you can see both rally points going at the beginning of the battle.
 
-**Scheduled.** Once, five seconds in (`rallyArrowsAtMs`), for both sides together; the flag only as the arrows
-arrive; no building lit during the battle.
+**Built.** Once, five seconds in (`rallyArrowsAtMs`), both sides together, each in its colour; each flag shows for a
+second and a half as its arrows arrive, then nothing more; nothing is drawn on a building or a unit.
 
 ### F321 — the line goes straight through buildings
 
@@ -177,7 +178,8 @@ arrive; no building lit during the battle.
 > needs to go skip buildings, because usually what's going to happen is when the units get there, they're not going to
 > work around. They're going to destroy the building.
 
-**Scheduled.** In the Build Phase and in the battle, the line goes round rock only, through every building.
+**Built.** In the Build Phase and in the battle, the line goes round rock only, through every building, either
+side's; whether a spot can be reached is read on the terrain alone too.
 
 ### F322 — the rally point starts in front of the base
 

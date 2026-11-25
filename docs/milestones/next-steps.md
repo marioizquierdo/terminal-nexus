@@ -15,12 +15,12 @@ A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and
   to start. Play a round or two, then Esc, Esc, `v` to Save game. Quit, start again, `1`, `2` Load game, open your save
   and carry on; or change p1 to a script (`1` on its row) and watch both scripts play. Press `!` wherever something
   confuses you: the note saves that very moment. Then ask me to play your save on with scripts on both sides.
-- **Play, about fifteen minutes: the rally point, simpler** (from your playtest of the banner). `./bin/terminal-nexus.ts
+- **Play, about fifteen minutes: the rally point, quieter** (from your two playtests of it). `./bin/terminal-nexus.ts
   --map crossing --p1-commander vasse --p2-commander vasse --p2 script:steady`, Esc skips the opening lines. Build, press
-  `s`: the cursor is on the rally point; move it, Enter starts the round. Watch the arrows run to it every few seconds,
-  and the enemy's at the start. When the fight stops the next Build Phase opens at once; `Esc Esc b` replays the last
-  battle. Try it on a building, too. Then in Settings, under Experiments, flip **Rally point** to push on (they gather
-  there, then march on the enemy Nexus) and say which you want; export the settings and paste them with your notes.
+  `s`: the rally point starts in front of your base; move it or not, Enter starts the round. Five seconds in, both
+  sides' arrows run once to their rally points. When the fight stops the next Build Phase opens at once; the game
+  menu's `b` replays the last battle. In Settings, under Experiments, try **Rally point** (hold or push on) and **Rally
+  point start** (10, 20, 30% or the enemy Nexus); export the settings and paste them with your notes.
 - **Watch, five minutes: troops at a narrow door.** `npm run skirmish -- --load sandboxes/engage/engage-gap2-melee-vs-mix.save.json --play-to next --show 0,60,120,240,end`,
   then the same with `engage-gap2-airmix-vs-mix`: twelve troopers lose at a door two rows wide, and the same
   number with half of them in the air win. Does that read as good ground (a choice that matters) or as air too strong

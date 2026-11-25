@@ -40,7 +40,7 @@ prototype behind the Battle banner Experiment:
       begins, the enemy's is shown the same way.
 - [x] **Straight back to the Build Phase** when a battle ends, the survivors seen regrouping; the last battle can be
       replayed from the game menu.
-- [ ] **The rally point, quieter** (the owner's second playtest,
+- [x] **The rally point, quieter** (the owner's second playtest,
       [his words](../history/feedback/2026-11-25-rally-point.md)): the bottom line says it all, nothing on the map but
       the line; the line goes through buildings, round rock only; the arrows once, five seconds in, for both sides, the
       flag as they arrive; it starts in front of the base (Rally point start).
