@@ -168,14 +168,17 @@ export class PulsePresenter {
   constructor(
     resolved: ResolvedPulse,
     presentation: PresentationOptions = DEFAULT_PRESENTATION,
-    options: Readonly<{ autoNextMs?: number | null; straight?: boolean; barksOf?: BarksOf }> = {},
+    options: Readonly<{ autoNextMs?: number | null; straight?: boolean; replay?: boolean; barksOf?: BarksOf }> = {},
   ) {
     this.resolved = resolved
     this.autoNextMs = options.autoNextMs ?? null
     this.straight = options.straight === true && resolved.mission?.verdict.kind === "continue"
     this.view = createView(resolved.timeline, presentation)
     this.times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, TUNING)
-    this.result = missionResultOf(watchedResult(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), outcomeOf(resolved.timeline), resolved.watched), resolved.mission)
+    const result = missionResultOf(watchedResult(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), outcomeOf(resolved.timeline), resolved.watched), resolved.mission)
+    // A replay (the game menu's Replay last battle) goes nowhere but back to the Build Phase it was opened from.
+    this.result = options.replay === true ? replayResult(result, resolved.mission?.round) : result
+    if (options.replay === true) this.straight = false
     this.strain = nexusStrain(resolved.timeline)
     this.home = resolved.regroup.state.entities.filter(
       (entity) => entity.player === "A" && isMobile(resolved.timeline, entity.contentId),
@@ -486,6 +489,13 @@ function bearerOf(timeline: PulseTimeline): Bearer | null {
   if (commander === null) return null
   const aura = auraOf(timeline.registry.get(commander.contentId))?.radius ?? null
   return { ordinal: commander.ordinal, contentId: commander.contentId, player: commander.player, aura }
+}
+
+/** The result of a replayed round: what happened, and Enter back to the Build Phase it was replayed from. */
+function replayResult(result: PulseResult, round: number | undefined): PulseResult {
+  const { alternative: _alternative, setup: _setup, commander: _commander, ...rest } = result
+  const which = round === undefined ? "the last round" : `round ${round}`
+  return { ...rest, mission: `A replay of ${which}.`, goOn: "Back to the Build Phase", line: `${result.headline} - a replay of ${which}. Enter: back to the Build Phase.` }
 }
 
 /** A result as a watched battle says it: who won, by name, rather than VICTORY or DEFEAT, which are a player's words. */

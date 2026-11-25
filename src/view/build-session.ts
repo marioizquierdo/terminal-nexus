@@ -199,6 +199,10 @@ export class BuildSession {
   private readonly nextRound: (context: BuildContext, state: BuildState, resolved: ResolvedPulse, alternative?: boolean) => BuildContext | null
   /** The Battle Round on screen, from the moment the plan is committed until the Build Phase starts over. */
   private presenter: PulsePresenter | null = null
+  /** The last Battle Round played, as it resolved: what the game menu's Replay last battle plays again. */
+  private lastBattle: ResolvedPulse | null = null
+  /** Whether the Battle Round on screen is a replay: its result goes back to the Build Phase it was opened from. */
+  private replaying = false
   /** The screen's clock at the last thing the session heard of it, so a Pulse begun by a key press is at
    *  zero when that key arrived. `undefined` for a driver that never says. */
   private now: number | undefined
@@ -542,6 +546,13 @@ export class BuildSession {
   private moveOn(alternative: boolean): void {
     const presenter = this.presenter
     if (presenter === null || !presenter.canMoveOn()) return
+    // A replay's result goes back to the Build Phase it was opened from, as it stood.
+    if (this.replaying) {
+      this.presenter = null
+      this.replaying = false
+      return
+    }
+    this.lastBattle = presenter.resolved
     // The result's other way on is only there when the round that ended offers one.
     if (alternative && presenter.resolved.mission?.ending?.alternative === undefined) return
     const next = this.nextRound(this.context, this.buildState, presenter.resolved, alternative)
@@ -653,6 +664,24 @@ export class BuildSession {
     } catch {
       // A log that could break the game would not be worth having.
     }
+  }
+
+  /** Whether there is a battle to replay: a Battle Round played since the screen opened, and none on screen now. */
+  canReplay(): boolean {
+    return this.lastBattle !== null && this.presenter === null && !this.buildState.committed
+  }
+
+  /** **Replay last battle** (the game menu): the last Battle Round again, from its start, with its result going back
+   *  to this Build Phase, its plan as it stands. Nothing about the round changes. */
+  replayLastBattle(): boolean {
+    const last = this.lastBattle
+    if (last === null || !this.canReplay()) return false
+    this.presenter = new PulsePresenter(last, undefined, { autoNextMs: null, replay: true, ...(this.barksOf === undefined ? {} : { barksOf: this.barksOf }) })
+    this.replaying = true
+    this.resultLogged = true
+    this.voiced = new Set()
+    if (this.now !== undefined) this.presenter.advance(this.now)
+    return true
   }
 
   /** Resolve the committed plan and put its Pulse on screen. A Pulse that cannot start — a plan that
