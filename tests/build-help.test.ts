@@ -171,9 +171,8 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
   // a Skirmish: tests/skirmish-play.test.ts).
   "save-game": [[(side) => ({ ...side.build.state, popup: "save-game" }), /^Type a name, \[enter\] saves\. \[esc\] back to the menu\.$/]],
   note: [[(side) => keys(side, "!"), /^Type what you noticed, \[enter\] saves the note with this moment\. \[esc\] back\.$/]],
-  // The battle banner's two panels, put up by hand as the dialog is: these sessions play with its Experiment off.
-  "banner-place": [[(side) => ({ ...side.build.state, popup: "banner-place", cursor: { x: 30, y: 12 } }), /^\[enter\] Place Target on .+\. Arrows move it, \[esc\] back\.$/]],
-  "banner-stance": [[(side) => ({ ...side.build.state, popup: "banner-stance", bannerDraft: { x: 30, y: 12 } }), /^\[a\] aggressive, \[d\] defensive, up\/down and \[enter\]\. \[esc\] moves it again\.$/]],
+  // Moving the rally point, put up by hand as the dialog is: these sessions play with its Experiment off.
+  "banner-place": [[(side) => ({ ...side.build.state, popup: "banner-place", cursor: { x: 30, y: 12 } }), /^Arrows move the rally point, \[enter\] starts the round, \[esc\] back\.$/]],
   committed: [[(side) => keys(side, "n", "1", "s", "s"), /^The plan is locked in\. \[esc\] opens the menu\.$/]],
   "menu-mouse": [
     [
@@ -349,7 +348,7 @@ test("the page is one table: every situation, every line fits at the floor, and 
   const sections = controlsPage()
   assert.deepEqual(
     sections.map((section) => section.heading),
-    ["THE MENU", "THE MAP", "THE GROUND", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "THE DIALOG", "SAVE GAME", "ANY LIST", "THE MOUSE", "THE BATTLE ROUND", "ANYWHERE"],
+    ["THE MENU", "THE MAP", "THE GROUND", "PLACING A BUILDING", "EXPLORE MAP", "THE RALLY POINT", "POPUPS", "THE DIALOG", "SAVE GAME", "ANY LIST", "THE MOUSE", "THE BATTLE ROUND", "ANYWHERE"],
   )
   for (const size of SIZES) {
     const side = buildSide({ terminal: size })

@@ -1,6 +1,7 @@
-// **The battle banner** on the Build Phase (the challenge runs, step 11G; the owner's idea, 2026-10-31): where the
-// player's troops head when the Battle Round starts, and whether they push on from there or hold it. Behind the
-// Battle banner Experiment.
+// **The rally point** on the Build Phase (the challenge runs, step 11G; the owner's idea, 2026-10-31, named on
+// 2026-11-25): where the player's troops head when the Battle Round starts; the banner is the flag drawn there. What
+// they do once there — hold it, or push on — is the Rally point Experiment's, never asked on screen. Behind the Battle
+// banner Experiment. (The code keeps the word banner for both.)
 //
 // Everything here is read from the context and the plan, never from the match: the spot under a tile in a player's
 // words ("the enemy Nexus", "ground near resources"), whether troops could get there, the march lines drawn to it, and
@@ -8,7 +9,7 @@
 //
 // **The lines are the march route, walked on the Build Phase's own map**: a distance field toward the banner's area
 // over the terrain and every structure standing or planned (`src/engine/routing/`, the battle engine's own routing), walked downhill
-// from the side of the player's Nexus nearest the banner and from the Commander, a tile a step — the way a lone trooper
+// from the side of the player's Nexus nearest the banner, a tile a step — the way a lone trooper
 // with the road clear would walk it. Not the battle engine's march itself: that is walked by every unit at once, round each
 // other, fighting what comes in reach; this is the line it keeps to with nobody in the way.
 
@@ -32,7 +33,7 @@ export type BannerView = Readonly<{ tile: Coord; name: string; stance: BannerSta
 export type BannerSpot = Readonly<{ tile: Coord; name: string; area: BannerArea; refusal: string | null }>
 
 /** What the context and plan say of the map the banner is planted on. */
-type Ctx = Pick<BuildContext, "terrain" | "registry" | "standing" | "field" | "incoming" | "commander" | "bannerDefault" | "landmarks" | "catalog">
+type Ctx = Pick<BuildContext, "terrain" | "registry" | "standing" | "field" | "incoming" | "bannerDefault" | "landmarks" | "catalog">
 type Plan = Pick<BuildState, "planned" | "banner">
 
 const ONE_TILE: readonly Coord[] = [{ x: 0, y: 0 }]
@@ -52,6 +53,13 @@ function structureAt(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coor
   return structuresOf(context, plan).find((structure) =>
     tilesOf(structure.anchor, context.registry.get(structure.contentId).footprint).some((each) => each.x === tile.x && each.y === tile.y),
   )
+}
+
+/** The tiles of the structure — standing, planned, or a scripted side's — a rally point on `tile` stands on, or `null`
+ *  on open ground: what the screen lights so a rally point on a building is seen. */
+export function structureTilesAt(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord): readonly Coord[] | null {
+  const structure = structureAt(context, plan, tile)
+  return structure === undefined ? null : tilesOf(structure.anchor, context.registry.get(structure.contentId).footprint)
 }
 
 const centreOf = (context: Ctx, structure: Structure): Coord => {
@@ -218,19 +226,10 @@ function walkDown(field: DistanceField, from: Coord, limit: number): Coord[] {
   return path
 }
 
-/** The march lines a banner on `tile` draws: from the player's Nexus, from the Commander, and — aggressive — on from
- *  the banner to the enemy. Each a list of tiles, empty when there is no such line. */
-export type BannerLines = Readonly<{ fromNexus: readonly Coord[]; fromCommander: readonly Coord[]; onward: readonly Coord[] }>
-
-/** Where the player's Commander stands this round: on the field, or where she arrives. */
-function commanderTile(context: Ctx): Coord | null {
-  const id = context.commander?.contentId
-  if (id === undefined) return null
-  const standing = (context.field ?? []).find((entity) => entity.player === "A" && entity.contentId === id)
-  if (standing !== undefined) return standing.anchor
-  const arriving = (context.incoming ?? []).find((entity) => entity.player === "A" && entity.contentId === id)
-  return arriving?.anchor ?? null
-}
+/** The march lines a rally point on `tile` draws: one from the player's Nexus (the owner, 2026-11-25: "a single arrow
+ *  would be better", none from the Commander) and — aggressive, the Rally point Experiment's push on — on from the
+ *  rally point to the enemy. Each a list of tiles, empty when there is no such line. */
+export type BannerLines = Readonly<{ fromNexus: readonly Coord[]; onward: readonly Coord[] }>
 
 /** What an aggressive banner's troops go on to: the enemy's Nexus, or — with none — the nearest enemy on the map or
  *  arriving as the round starts. */
@@ -248,7 +247,7 @@ function onwardGoal(context: Ctx, from: Coord): BannerArea | null {
 
 export function bannerLines(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord, stance: BannerStance): BannerLines {
   const spot = bannerSpot(context, plan, tile)
-  if (spot.refusal !== null) return { fromNexus: [], fromCommander: [], onward: [] }
+  if (spot.refusal !== null) return { fromNexus: [], onward: [] }
   const ground = groundOf(context, plan)
   const field = fieldToward(context, ground, spot.area)
   const limit = context.terrain.width * context.terrain.height
@@ -259,8 +258,6 @@ export function bannerLines(context: Ctx, plan: Pick<BuildState, "planned">, til
     const start = [...starts].sort((a, b) => field.distanceAt(a) - field.distanceAt(b) || a.y - b.y || a.x - b.x)[0]
     if (start !== undefined) fromNexus = walkDown(field, start, limit)
   }
-  const commander = commanderTile(context)
-  const fromCommander = commander === null ? [] : walkDown(field, commander, limit)
   let onward: Coord[] = []
   if (stance === "aggressive") {
     const goal = onwardGoal(context, tile)
@@ -270,7 +267,7 @@ export function bannerLines(context: Ctx, plan: Pick<BuildState, "planned">, til
       onward = walkDown(beyond, from, limit)
     }
   }
-  return { fromNexus, fromCommander, onward }
+  return { fromNexus, onward }
 }
 
 /** The order the Battle Round is handed for the banner: its area, its words and its stance — or `null` while it is

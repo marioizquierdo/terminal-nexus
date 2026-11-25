@@ -35,7 +35,7 @@ import {
   structureAtTile,
 } from "./state.ts"
 import { WHEEL_TILES } from "./mouse.ts"
-import { bannerSpot, capitalised } from "./banner.ts"
+import { bannerSpot } from "./banner.ts"
 import { defaultValue, setting } from "./all-settings.ts"
 import type { ConstructItem } from "./types.ts"
 
@@ -61,7 +61,6 @@ export type HintSituation =
   | "save-game"
   | "note"
   | "banner-place"
-  | "banner-stance"
   | "committed"
   | "menu-mouse"
   | "menu-explore"
@@ -87,7 +86,6 @@ export function hintSituation(context: BuildContext, state: BuildState): HintSit
     case "save-game":
     case "note":
     case "banner-place":
-    case "banner-stance":
       return state.popup
     default:
       break
@@ -140,16 +138,13 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
     nexusPowers(context, state).pending.length > 0
       ? "Pick one: up/down and [enter], or its number. [esc] closes without a pick."
       : "The Nexus powers you have. [esc] closes.",
-  "battle-round": (_context, state) =>
-    setting(state, "battleBanner") === "on"
-      ? `Battle Round ${state.pulseNumber}: [s] starts it, [t] moves the banner, [esc] back to the plan.`
-      : `Battle Round ${state.pulseNumber}: [enter] or [s] starts it, [esc] goes back to the plan.`,
-  // The owner: "when hovering targets the action says '[enter] Place Target on Xxx'".
+  "battle-round": (_context, state) => `Battle Round ${state.pulseNumber}: [enter] or [s] starts it, [esc] goes back to the plan.`,
+  // The words beside the rally point say what Enter does there (`src/view/banner-marks.ts`); the line says how to move
+  // it and leave, or, where troops could not get, why — as the words beside it do.
   "banner-place": (context, state) => {
     const spot = bannerSpot(context, state, state.cursor)
-    return spot.refusal === null ? `[enter] Place Target on ${spot.name}. Arrows move it, [esc] back.` : `${capitalised(spot.name)}: ${spot.refusal}`
+    return spot.refusal === null ? "Arrows move the rally point, [enter] starts the round, [esc] back." : `${spot.refusal} Arrows move it, [esc] back.`
   },
-  "banner-stance": () => "[a] aggressive, [d] defensive, up/down and [enter]. [esc] moves it again.",
   "game-menu": () => "Up/down and [enter] choose, or press a row's key. [esc] back to the game.",
   settings: (_context, state) => `Left/right change a value, [e] exports them all. ${escBack(state)}`,
   export: (_context, state) => `Paste this into the pull request. Up/down scroll. ${escBack(state)}`,
@@ -202,6 +197,8 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
       ? setting(state, "powerPick") === "required"
         ? `Start Battle Round ${state.pulseNumber}: pick a Nexus power first, [n] opens them.`
         : `Start Battle Round ${state.pulseNumber} without a Nexus power? [n] picks one, [enter] begins.`
+      : setting(state, "battleBanner") === "on"
+      ? `Start Battle Round ${state.pulseNumber}: place the rally point, then fight. [enter] to begin.`
       : `Start Battle Round ${state.pulseNumber}: lock in your plan and fight. [enter] to begin.`,
 
   // --- The map ---
@@ -365,6 +362,16 @@ export function controlsPage(numbers: MoveNumbers = defaultMoveNumbers()): reado
         { keys: "bksp/delete", text: "remove what is planned here" },
         { keys: "u", text: "undo the last building" },
         { keys: "e/esc/x", text: "go back" },
+      ],
+    },
+    {
+      // Start Battle Round makes the cursor the rally point: where the troops head.
+      heading: "THE RALLY POINT",
+      lines: [
+        { keys: "arrows", text: "move the rally point" },
+        { keys: "enter/space/s", text: "place it and start the round" },
+        { keys: "click", text: "move it; again to place it" },
+        { keys: "esc/x", text: "back to the plan" },
       ],
     },
     {

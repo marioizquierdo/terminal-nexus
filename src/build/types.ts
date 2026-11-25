@@ -146,17 +146,13 @@ export type BuildCommand =
    *  while a building is armed. */
   | Readonly<{ kind: "open-battle-round" }>
   /** `[s] Start` — the confirmation's one row, by Enter, Space, `s` or a click: the Battle Round starts.
-   *  Going back is the cancel every popup has. */
+   *  Going back is the cancel every popup has. With the cursor as the rally point it is `banner-place`: placed where it
+   *  stands, and the round starts. */
   | Readonly<{ kind: "start-pulse" }>
-  /** **The battle banner** (the Battle banner Experiment). `[t] Change Target` on the Battle Round panel: the cursor
-   *  becomes the banner, on the map, to move as the cursor moves. */
-  | Readonly<{ kind: "banner-target" }>
-  /** Enter (or Space) while the banner is the cursor, its `[enter] Place Target` row, or a second click on the tile it
-   *  stands on: plant it there, and ask its stance. Refused, saying why, where troops could not get. */
+  /** **The rally point** (the Battle banner Experiment), while Start Battle Round has made the cursor the rally point:
+   *  Enter, Space, `s`, a click on the menu's Start row, or a second click on the tile it stands on. It is placed there
+   *  and the Battle Round starts at once — or, where troops could not get, refused, saying why beside it. */
   | Readonly<{ kind: "banner-place" }>
-  /** The stance for the banner just planted — `[a] Aggressive` or `[d] Defensive`, Enter on its row or a click: the
-   *  banner stands, and the Battle Round panel shows it again. */
-  | Readonly<{ kind: "banner-stance"; stance: BannerStance }>
   /** Tab: move keyboard focus. To the battlefield it arrives in plain navigation; to the menu
    *  it disarms (a building is armed only while the battlefield has focus). */
   | Readonly<{ kind: "focus"; target: Focus }>
@@ -294,7 +290,9 @@ export type Focus = "menu" | "map"
 /** A battle banner's stance: aggressive — go to the banner, then on to the enemy's Nexus — or defensive, hold it. */
 export type BannerStance = "aggressive" | "defensive"
 
-/** The banner the player planted this Build Phase: the tile it stands on, and its stance. */
+/** The rally point the player placed this Build Phase: the tile it stands on, and its stance. The screen asks no
+ *  stance (the owner, 2026-11-25: "Don't think we need any options to do aggressive or defensive"): it is the Rally
+ *  point Experiment's, hold (defensive) or push on (aggressive), taken when the rally point is placed. */
 export type PlantedBanner = Readonly<{ tile: Coord; stance: BannerStance }>
 
 /**
@@ -312,7 +310,8 @@ export type MenuEntry =
  *  Quit), Settings, the export, a message — `BuildState.message`, a title and text with nothing to
  *  choose — the Controls and hotkeys page, the Activity logs window, and **the dialog**: a round's scene,
  *  a line at a time, docked at the bottom of the map — the one popup the player does not open
- *  (`BuildState.dialog`) — and **Save game**, a name to type over the game menu. */
+ *  (`BuildState.dialog`) — **Save game**, a name to type over the game menu, the note, and **the rally point**
+ *  being moved (`banner-place`), which draws no popup: the cursor is the rally point, its words beside it on the map. */
 export type Popup =
   | "nexus-powers"
   | "battle-round"
@@ -326,7 +325,6 @@ export type Popup =
   | "save-game"
   | "note"
   | "banner-place"
-  | "banner-stance"
 
 /**
  * Where a line of dialog looks, on this round's map: the tile the camera centres on, and the focus's own

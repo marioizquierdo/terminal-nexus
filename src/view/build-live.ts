@@ -95,7 +95,7 @@ import { scheduleTrack, trackBusyAt } from "./animation.ts"
 import type { Point, Tween } from "./tween.ts"
 import { retarget, samePoint, still, tileAt, tweenActive, tweenEnd } from "./tween.ts"
 import { nextTrailChange } from "./build-map.ts"
-import { DROP_MS } from "./banner-marks.ts"
+import { CALL_MS } from "./banner-marks.ts"
 import { setting } from "../build/all-settings.ts"
 
 /**
@@ -631,11 +631,11 @@ export class BuildAnimation {
     // The raid's trail, timed from the first frame that drew it moving. It never settles either, so it asks for
     // a frame only when it next looks different — never every frame — and none at all while it holds still.
     const raidTrail = this.trail.at(state, now, options)
-    // The banner: its pulse never settles, so it asks for frames at the breath's pace; its planting until it ends.
+    // The rally point: its call every frame until it ends; then its pulse, which never settles, at the breath's pace.
     const bannerNow = this.bannerClock.at(state, now, options.reducedMotion === true)
     if (bannerNow.until !== null) ends.push(bannerNow.until)
     if (bannerNow.pulseMs !== undefined && setting(state, "battleBanner") === "on") breathing = true
-    const banner = bannerNow.pulseMs === undefined && bannerNow.dropMs === undefined ? undefined : { ...(bannerNow.pulseMs === undefined ? {} : { pulseMs: bannerNow.pulseMs }), ...(bannerNow.dropMs === undefined ? {} : { dropMs: bannerNow.dropMs }) }
+    const banner = bannerNow.pulseMs === undefined ? undefined : { pulseMs: bannerNow.pulseMs }
     // The slow things moving — a breath, the trail — and the first frame either needs: the timer's pace while
     // nothing faster is moving, whose own ends keep it at every frame until they pass.
     let slowUntil: number | null = breathing ? now + BREATH_FRAME_MS : null
@@ -670,27 +670,19 @@ export class BuildAnimation {
 }
 
 /**
- * **The battle banner's clock**: from the first frame that showed one of its panels (the pulse while the banner is the
- * cursor, and its march lines moving), and from the first frame that saw a new planting (`BuildState.bannerDrop`),
- * while it plays. Under reduced motion neither runs: the banner holds still, lit, and planting it shows nothing more.
+ * **The rally point's clock**: from the first frame that showed the cursor as the rally point (Start Battle Round) —
+ * the call that brings the eye to it for its first `CALL_MS`, every frame, then its pulse and its march line moving.
+ * Under reduced motion it does not run: no call, and the rally point holds still, lit.
  */
 export class BannerClock {
   private shownAt: number | null = null
-  private drop: Readonly<{ seq: number; at: number }> | null = null
 
-  at(state: BuildState, now: number, reducedMotion: boolean): Readonly<{ pulseMs?: number; dropMs?: number; until: number | null }> {
-    const open = state.popup === "battle-round" || state.popup === "banner-place" || state.popup === "banner-stance"
-    if (!open || reducedMotion) this.shownAt = null
+  at(state: BuildState, now: number, reducedMotion: boolean): Readonly<{ pulseMs?: number; until: number | null }> {
+    if (state.popup !== "banner-place" || reducedMotion) this.shownAt = null
     else if (this.shownAt === null) this.shownAt = now
-    const seq = state.bannerDrop?.seq
-    if (seq !== undefined && this.drop?.seq !== seq) this.drop = { seq, at: now }
-    const dropMs = this.drop === null || reducedMotion ? undefined : now - this.drop.at
-    const dropping = dropMs !== undefined && dropMs < DROP_MS
-    return {
-      ...(this.shownAt === null ? {} : { pulseMs: now - this.shownAt }),
-      ...(dropping ? { dropMs } : {}),
-      until: dropping && this.drop !== null ? this.drop.at + DROP_MS : null,
-    }
+    if (this.shownAt === null) return { until: null }
+    const pulseMs = now - this.shownAt
+    return { pulseMs, until: pulseMs < CALL_MS ? this.shownAt + CALL_MS : null }
   }
 }
 

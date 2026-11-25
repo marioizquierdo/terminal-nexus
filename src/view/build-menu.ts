@@ -153,7 +153,6 @@ const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
   "save-game": null,
   note: null,
   "banner-place": "start",
-  "banner-stance": "start",
 }
 
 /**

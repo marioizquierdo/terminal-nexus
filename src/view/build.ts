@@ -156,11 +156,11 @@ export type BuildCompositionInput = Readonly<{
    */
   room?: readonly Readonly<{ ordinal: number; elapsedMs: number }>[]
   /**
-   * **The battle banner's clock** (`BannerClock`, `src/view/build-live.ts`): how long ago its panels opened — its
-   * pulse while it is the cursor, and its march lines' arrows moving — and how long ago it was last planted, while
-   * its planting plays. Absent — every still frame — the banner is drawn on the beat, its lines still.
+   * **The rally point's clock** (`BannerClock`, `src/view/build-live.ts`): how long ago it became the cursor — the
+   * call that brings the eye to it, then its pulse, and its march line's arrows moving. Absent — every still frame,
+   * and under reduced motion — it is drawn settled and on the beat, its line still.
    */
-  banner?: Readonly<{ pulseMs?: number; dropMs?: number }>
+  banner?: Readonly<{ pulseMs?: number }>
   /** Draw no Commander on the map this frame: she is still to appear (`commanderHidden`). Set by the composer. */
   commanderHidden?: boolean
 }>
