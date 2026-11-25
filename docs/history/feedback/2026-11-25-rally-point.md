@@ -139,3 +139,62 @@ it: "Place rally point on your Barracks".
 
 Noted. The Battle banner Experiment that the rally point sits behind (off: the old start popup) is answered "on" by
 this round; it stays until the pull request that removes the old popup, since the Story missions read it too.
+
+## The second playtest, 2026-11-25
+
+### F319 — nothing on the map but the line
+
+> However, it seems like the banner text is getting in the way of the lines that show where the troops are going. So
+> I think to make it better, we should not have the text that says enter to place the banner. We should use the bottom
+> of the screen that is already reserved for showing what to do with these actions.
+
+> That contextual part could also have the same icon for the flag or the ASCII that represents the flag, and then says
+> rally point, and simply say enter, place the rally point, and begin the battle. That's really all is needed.
+
+> The text that says where the banner is being placed also should be at the bottom, so there's basically nothing in
+> the middle that is covering the line, because that makes it a little more confusing.
+
+**Scheduled.** The words beside the rally point go; the bottom line says it all: the flag, "Rally point", where it
+stands, and Enter to place it and begin the battle.
+
+### F320 — the arrows once, for both sides
+
+> Then during the battle, the constant arrows that go out every 5 seconds actually is a little bit too noisy. So let's
+> do that only once. You place it, the units are moving. 5 seconds later, you can see those lines. And when they do,
+> you don't need to show the banner on the building. There's those lines going over to the destination and only
+> showing the banner at the very end when the arrows arrive, and only once. And do the same for the enemy as well. So
+> you can see both rally points going at the beginning of the battle.
+
+**Scheduled.** Once, five seconds in (`rallyArrowsAtMs`), for both sides together; the flag only as the arrows
+arrive; no building lit during the battle.
+
+### F321 — the line goes straight through buildings
+
+> The banner line goes around your own buildings, which is interesting. It seems that the units coming out of the
+> Nexus need to work around. However, it's not true. The units usually come out of the barracks or of the other
+> things. So for the line that connects the Nexus to the destination, I will ignore your own buildings. Just skip
+> your buildings, go straight. Only go around obstacles and enemy buildings. No, just obstacles. Like the line just
+> needs to go skip buildings, because usually what's going to happen is when the units get there, they're not going to
+> work around. They're going to destroy the building.
+
+**Scheduled.** In the Build Phase and in the battle, the line goes round rock only, through every building.
+
+### F322 — the rally point starts in front of the base
+
+> The other thing, instead of by default having the rally at the enemy nexus, I think it would be better to have it
+> 10% of the distance or 30% of the distance. So basically in front of your base, because I notice for now that's how
+> I am playing. I always start by leaving the units in front of the base so I can form an army. And that takes usually
+> 2 or 3 pulses, which is interesting, and I hope this dynamic changes once we have resources around the map. But right
+> now, it's better for me to be there until I put enough units that I feel confident that I can attack. And this AI
+> that I am, this script that I am playing against seems to be doing the same, and it's better that I start being
+> aggressive because the initial units are not so different.
+
+**Built.** The **Rally point start** Experiment: 20% of the way from your Nexus to the enemy's by default (between
+his 10 and 30, both offered), on open ground; 100 is the enemy Nexus as before. On the Crossing, 20% is 18,14, a
+dozen tiles ahead of the Nexus and short of the ridge.
+
+### F323 — the placement is good
+
+> Besides that, I think the whole banner placement is looking good.
+
+> Yeah, let's try those changes for now.
