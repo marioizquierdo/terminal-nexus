@@ -470,10 +470,7 @@ export const ALL_SETTINGS = {
     names: { hold: "hold", "push-on": "push on" },
     default: "hold",
   },
-  /** How often, during a Battle Round, a few arrows run from the Nexus to the rally point to say where it stands; a
-   *  first guess from the owner's "maybe every 5 seconds". */
-  rallyArrowsEveryMs: { tier: "tuned", default: 5000 },
-  /** How many arrows run each time: the owner's "like 2 or 3 arrows". */
+  /** How many arrows run along each side's route: the owner's "like 2 or 3 arrows". */
   rallyArrowsCount: { tier: "tuned", default: 3 },
   /** When, into a Battle Round, the arrows run once for both sides, the flag showing as they arrive: the owner,
    *  2026-11-25, "every 5 seconds ... is a little bit too noisy. So let's do that only once ... 5 seconds later". */

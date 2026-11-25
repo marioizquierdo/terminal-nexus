@@ -197,8 +197,8 @@ export function drawPulseEffects(
  * flag there, bold in its side's colour, so they read in monochrome by glyph and weight. On the ground-items band, under
  * everything that stands and every effect. An arrow goes on open plain ground only, never over a glyph that stands (a
  * unit, a building, a corpse still falling) nor over rock or a deposit, which are information too: there it is
- * simply not drawn, passing under. The flag is the same: on open ground its glyph, on a tile something stands on only
- * a restyle of that tile (bold and underlined in the side's colour), its glyph kept.
+ * simply not drawn, passing under. The flag is the same: its glyph on open ground, and on a tile something stands on
+ * nothing at all — no restyle of a building or a unit during the battle (the owner, 2026-11-25).
  */
 export function drawRallyMarks(cells: BandCell[], view: SceneView, pulse: PulseFrame, occupied: ReadonlySet<number>, pack: GlyphPack = "ascii"): void {
   const marks = pulse.rally
@@ -207,15 +207,14 @@ export function drawRallyMarks(cells: BandCell[], view: SceneView, pulse: PulseF
   for (const mark of marks) {
     const { tile } = mark
     if (!inBounds(view.terrain, tile) || !inView(range, tile)) continue
-    const standing = occupied.has(tileIndex(view.terrain, tile))
+    if (occupied.has(tileIndex(view.terrain, tile))) continue
     const cell = cellForTile(view.layout, view.camera, tile)
     const role = playerRole(mark.player)
     if (mark.kind === "flag") {
-      if (standing) cells.push({ band: BANDS.highlights, x: cell.x, y: cell.y, style: { fgRole: role, bold: true, underline: true } })
-      else put(cells, BANDS.groundItems, cell.x, cell.y, chromeGlyph(pack, "banner"), role, { bold: true })
+      put(cells, BANDS.groundItems, cell.x, cell.y, chromeGlyph(pack, "banner"), role, { bold: true })
       continue
     }
-    if (standing || view.terrain.tiles[tileIndex(view.terrain, tile)] !== "terrain.plain") continue
+    if (view.terrain.tiles[tileIndex(view.terrain, tile)] !== "terrain.plain") continue
     put(cells, BANDS.groundItems, cell.x, cell.y, trailGlyph(pack, mark.dx, mark.dy), role, { bold: true })
   }
 }

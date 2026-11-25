@@ -191,7 +191,7 @@ export class PulsePresenter {
     this.voice = this.planLines(options.barksOf ?? shippedBarks, presentation.cosmeticSeed)
     this.fall = this.fallOf()
     const opening = resolved.timeline.states[0]
-    this.rally = opening === undefined ? null : rallyPlan(opening, resolved.timeline.registry, { everyMs: TUNING.rallyArrowsEveryMs, count: TUNING.rallyArrowsCount, stopMs: this.times.stopMs })
+    this.rally = opening === undefined ? null : rallyPlan(opening, resolved.timeline.registry, { atMs: TUNING.rallyArrowsAtMs, count: TUNING.rallyArrowsCount, stopMs: this.times.stopMs })
   }
 
   /** Where and when the player's Commander fell, in presentation time: her death's tick, at the Pulse's own pace. */
