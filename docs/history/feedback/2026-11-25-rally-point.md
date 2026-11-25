@@ -58,8 +58,10 @@ on the enemy Nexus that is an attack) or push on (they gather, then march on the
 
 > And when you accept, then the battle begins.
 
-**Scheduled.**
-
+**Built.** Start Battle Round puts the cursor straight on the rally point and the camera on it; the arrows and the
+mouse move it; Enter (or Space, `s`, the Start row, a second click) places it and starts the round at once; Esc goes
+back with nothing changed. No panel opens. From the menu to a running battle with the rally point moved ten tiles
+takes 12 keys, from 14.
 ### F309 — the words on the map, beside the rally point
 
 > After pressing Enter, there should be a little text next to the banner. No need to be on the left side menu. It can
@@ -67,16 +69,14 @@ on the enemy Nexus that is an attack) or push on (they gather, then march on the
 
 > And that text next to the banner will say place rally point.
 
-**Scheduled.** Read as: while it is being moved, a short label beside it says "Place rally point" with its key, and
-nothing opens in the side panel.
-
+**Built.** While it is being moved, `[enter] Place rally point` stands beside it on the map, to its right, or left at
+the view's edge, never over the flag; a refusal says why in the same place.
 ### F310 — a movement that draws the eye there
 
 > It will also be nice to have a movement effect similar to when building that draws your eyes towards the place where
 > the banner is.
 
-**Scheduled.**
-
+**Built.** As it becomes the cursor, rings close in on it for about half a second; reduced motion skips them.
 ### F311 — call it the rally point
 
 > The rally point, which I think is the best name for this, is a rally point rather than banner. We call it banner,
@@ -89,23 +89,24 @@ nothing opens in the side panel.
 > The rally point arrows that go from the nexus to the rally point look good. The double arrow, having one from the
 > nexus, another one from the commander, does not look that good. So a single arrow would be better.
 
-**Scheduled.**
-
+**Built.** One line, from the Nexus; the Commander's is gone. With the Rally point Experiment on push on, a fainter
+line runs on to the enemy.
 ### F313 — arrows during the battle
 
 > During the battle, there can be an effect, the same arrows that move all the way to the banner, but maybe every 5
 > seconds, there will be like 2 or 3 arrows that go, kind of that remind the player that the banner is in there.
 
-**Scheduled.** The pace and the count are tuned values (`rallyArrowsEveryMs`, `rallyArrowsCount`).
-
+**Built.** Every five seconds, three arrows run from your Nexus along the troops' way to the rally point, its flag
+showing while they run; they stop once the troops are released from it. The pace and the count are tuned values
+(`rallyArrowsEveryMs`, `rallyArrowsCount`).
 ### F314 — the enemy's rally point at the start
 
 > And when the battle begins, I would like to see the enemy banner as well, with the same, a single effect that shows
 > a couple of arrows that go to the banner, and at least you know what it is, and then you will see the units moving
 > over there. It will be enough.
 
-**Scheduled.**
-
+**Built.** As the battle begins, two arrows run once from the enemy's Nexus to its rally point, and its flag shows
+for four seconds. The scripts plant none yet, so it is their default: your Nexus, or their own holding ground.
 ### F315 — straight back to the Build Phase
 
 > When the battle ends, it will be nice that it goes directly to build mode.
@@ -113,24 +114,28 @@ nothing opens in the side panel.
 > Whenever it's over, it just goes into build mode again, which means you immediately see the units retreating and all
 > of that.
 
-**Scheduled.**
-
+**Built.** The Next round Experiment gains `straight`, its new default: when a fight stops and the battle goes on,
+the next Build Phase opens at once, its opening showing the survivors regroup. A battle won or lost still shows its
+result.
 ### F316 — replay the last battle from the menu
 
 > But when you're in build mode, you should be able to replay the previous battle if you want to. I'm not so sure
 > where to put that menu to replay. It would probably be in the menu, in the general menu, replay previous battle.
 > But generally, you don't need to replay it.
 
-**Scheduled.**
-
+**Built.** The game menu's `[b] Replay last battle` plays the last Battle Round again; its result says it is a
+replay, and Enter comes back to the Build Phase as it stood. Dimmed, saying why, until a round has ended.
 ### F317 — on a building
 
 > Another thing, the banner is, it doesn't seem like I can place it on a building, but it should be able to place on
 > top of a building. Perhaps not in a rock, but in a building is okay.
 
-**Scheduled.** It could already be placed on any building, by keys or mouse, but nothing showed it there: a building's
-glyphs are drawn over the banner, so it seemed refused. It needs to be seen on a building.
-
+**Built.** It could already be placed on any building, by keys or mouse, but a building's glyphs are drawn over the
+flag, so nothing showed it. Now the whole building takes the rally point's look, its glyphs kept, and the words name
+it: "Place rally point on your Barracks".
 ### F318 — it was fun
 
 > So yeah, this will be great feedback to implement for now. It was actually fun to play.
+
+Noted. The Battle banner Experiment that the rally point sits behind (off: the old start popup) is answered "on" by
+this round; it stays until the pull request that removes the old popup, since the Story missions read it too.

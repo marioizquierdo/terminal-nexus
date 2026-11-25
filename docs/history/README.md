@@ -129,6 +129,7 @@ _The dated record of the project, oldest first; never required reading. The pull
 | 2026-11-14 | The cleanup round: the sandbox described as a slice of the Grid, like a unit test's context, in the Battle Round or the Build Phase, every unit spawned in one by a test; one reader of a round's events; one opening of a save and of a round; a writing-for-agents pass over every document agents read; the Commander Armies kept as drafts until the gameplay is solid | [feedback](feedback/2026-11-14-cleanup.md) |
 | 2026-11-15 | The battle engine round: the `grid` command removed and a sandbox played and drawn by the `skirmish` command; the kernel named the battle engine, in `src/engine/`; the architecture page organised around four layers; unit tests and verifiers told apart | [feedback](feedback/2026-11-15-battle-engine.md) |
 | 2026-11-15 | No Grid: the ground is the battlefield, the screen's region the map, each side's pyramid the Nexus; a sandbox sets up the battlefield by hand; the design page is `battlefield.md` and the repository check refuses the old word ([feedback](feedback/2026-11-15-battle-engine.md)) |
+| 2026-11-25 | The rally point: the troops follow it in a Skirmish; no stance to choose (the Rally point Experiment: hold or push on); Start goes straight to it and Enter starts the round; one line, words beside it, shown on a building; arrows during the Battle Round for both sides; straight back to the Build Phase when a fight stops; Replay last battle in the game menu | [feedback](feedback/2026-11-25-rally-point.md) |
 
 ## Where the detail is
 
