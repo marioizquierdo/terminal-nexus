@@ -57,7 +57,7 @@ import {
 } from "./activity.ts"
 // A cycle, and a harmless one: help.ts reads this module's helpers only when a hint is asked for, and
 // this module reads help.ts's page length only when a command runs — neither at load time.
-import { controlsLineCount } from "./help.ts"
+import { controlsLineCount, rallyPointLine } from "./help.ts"
 import type {
   Ack,
   BuildCommand,
@@ -1443,7 +1443,8 @@ function openBattleRound(context: BuildContext, state: BuildState): BuildState {
 // can move the banner around and press Enter ... And when you accept, then the battle begins"). Start Battle Round
 // makes the cursor the rally point (the `banner-place` popup, which draws no box: the menu stays as it is, its Start
 // row lit, and the map is left clear), on the rally point where it stood last, or the round's default. The arrows and
-// the mouse move it; the words beside it on the map say what Enter does, or why troops could not get there. Enter,
+// the mouse move it; the bottom line, after the banner's flag, says where it stands and what Enter does, or why troops
+// could not get there — nothing is written beside it on the map (`rallyPointLine`, `src/build/help.ts`). Enter,
 // Space, `s`, the menu's Start row or a second click on the tile it stands on places it there and starts the Battle
 // Round at once. Esc gives back the cursor, the camera and the keyboard as they were, the plan untouched. No stance
 // is asked: what the troops do there is the Rally point Experiment's.
@@ -1499,7 +1500,7 @@ function bannerPlace(context: BuildContext, state: BuildState): BuildState {
   if (spot.refusal !== null) {
     return {
       ...state,
-      status: status(`Cannot place the rally point there. ${spot.refusal}`, "danger", tile),
+      status: status(rallyPointLine(spot), "danger", tile),
       refusedTry: { seq: (state.refusedTry?.seq ?? 0) + 1, tile },
     }
   }

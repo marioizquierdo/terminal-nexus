@@ -1,6 +1,7 @@
 // The rally point (the challenge runs, step 11G; the Battle banner Experiment; made simpler after the owner played it,
-// 2026-11-25): Start Battle Round makes the cursor the rally point at once, with no panel and no stance; the words
-// beside it say what Enter does; Enter places it and starts the Battle Round; Esc gives the Build Phase back as it was.
+// 2026-11-25): Start Battle Round makes the cursor the rally point at once, with no panel and no stance; the bottom
+// line, after the flag, says where it stands and what Enter does, and nothing is written on the map (the second
+// playtest, 2026-11-25); Enter places it and starts the Battle Round; Esc gives the Build Phase back as it was.
 // And the Battle Round sends the troops there — holding it, or going on to the enemy once they reach it.
 
 import { test } from "node:test"
@@ -23,7 +24,9 @@ import { cellForTile } from "../src/build/layout.ts"
 import { visibleRange } from "../src/build/camera.ts"
 import { frameToText, cellAt } from "../src/view/frame.ts"
 import { BannerClock } from "../src/view/build-live.ts"
-import { CALL_MS, labelStart } from "../src/view/banner-marks.ts"
+import { CALL_MS } from "../src/view/banner-marks.ts"
+import { RALLY_LINE_ROOM, bottomLine, rallyPointLine } from "../src/build/help.ts"
+import { chromeGlyph } from "../src/view/theme.ts"
 
 const ENTER = "\r"
 const RIGHT = "\u001b[C"
@@ -42,7 +45,7 @@ function rock(context: BuildContext): Coord {
   return { x: index % context.terrain.width, y: Math.floor(index / context.terrain.width) }
 }
 
-test("Start Battle Round makes the cursor the rally point at once: no panel, no stance, the menu kept, its words beside it", () => {
+test("Start Battle Round makes the cursor the rally point at once: no panel, no stance, the menu kept, the bottom line saying it all", () => {
   const side = bannerSide()
   keys(side, "s")
   const { state } = side.build
@@ -53,10 +56,12 @@ test("Start Battle Round makes the cursor the rally point at once: no panel, no 
   assert.equal(banner.name, "the line")
   assert.deepEqual(state.cursor, banner.tile, "the cursor did not go to the rally point")
   const text = screenText(side)
-  assert.match(text, /\[enter\] Place rally point/)
   assert.match(text, /\[s\] Start Battle Round/, "the menu is not kept")
   for (const gone of ["Change Target", "Stance", "Aggressive", "Defensive"]) assert.ok(!text.includes(gone), gone)
-  assert.equal(bottomLineText(side), "Arrows move the rally point, [enter] starts the round, [esc] back.")
+  // The second playtest's premise: no words on the map; the bottom line opens with the flag the map draws.
+  assert.equal(bottomLineText(side), "! Rally point on the line. [enter] place it and begin the battle.")
+  const above = text.split("\n").slice(0, side.layout.footerRow).join("\n")
+  assert.doesNotMatch(above, /rally point|\[enter\]/i, "words are drawn on the map")
 })
 
 test("Enter places it and starts the Battle Round, holding it by default", () => {
@@ -91,19 +96,23 @@ test("Esc goes back with nothing changed: the cursor, the camera and the keyboar
   assert.equal(after.focus, before.focus)
 })
 
-test("the rally point cannot go where troops cannot: rock is refused, beside it and on the bottom line, and nothing starts", () => {
+test("the rally point cannot go where troops cannot: rock is refused on the bottom line, and nothing starts", () => {
   const side = bannerSide()
   const at = rock(side.build.round)
   const refusal = bannerSpot(side.build.round, side.build.state, at).refusal
   assert.ok(refusal !== null)
   keys(side, "s")
   side.build.dispatch({ kind: "click-tile", x: at.x, y: at.y })
-  assert.ok(screenText(side).includes(refusal), "the words beside it do not say why")
+  // Looking at it, the bottom line says why, as a warning; trying it says it again, in red.
+  // The spot is said once: the refusal's "Rock:" is the line's "on rock:".
+  assert.equal(refusal, "Rock: no troops can stand there.")
+  assert.equal(bottomLineText(side), "! Rally point on rock: no troops can stand there.")
+  assert.equal(bottomLine(side.build.round, side.build.state, null).tone, "warning")
   side.build.dispatch({ kind: "click-tile", x: at.x, y: at.y })
   assert.equal(side.build.state.popup, "banner-place", "placed on rock")
   assert.equal(side.build.state.committed, false)
   assert.equal(side.build.state.status.tone, "danger")
-  assert.equal(side.build.state.status.text, `Cannot place the rally point there. ${refusal}`)
+  assert.equal(side.build.state.status.text, "Rally point on rock: no troops can stand there.")
 })
 
 test("keys, clicks, the menu's Start row and a driver place the same rally point and start the round", () => {
@@ -160,7 +169,28 @@ test("one march line, from the Nexus: none from the Commander, and the onward li
   assert.ok(onward({ rallyPoint: "push-on" }) > 0, "push on draws no onward line")
 })
 
-test("a rally point on a building is seen: the building lit, its glyphs kept, and the words naming it", () => {
+// The second playtest (2026-11-25): the line went round the player's own buildings; the owner: "Like the line just needs
+// to go skip buildings ... just obstacles". It walks round rock only, and whether a spot is reachable reads the same.
+test("the march line goes round rock only: buildings planned across its way change neither the line nor the reach", () => {
+  const side = bannerSide()
+  keys(side, "s", RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, UP, UP)
+  const { round, state } = side.build
+  const tile = state.cursor
+  const before = bannerLines(round, state, tile, "defensive").fromNexus
+  assert.ok(before.length > 4, "no line to plan across")
+  // A Barracks on every few tiles of the line's middle, each where the line runs.
+  const barracks = round.catalog.find((item) => item.label === "Barracks")
+  assert.ok(barracks !== undefined)
+  const planned = before.slice(2, -2).filter((_, index) => index % 3 === 0).map((anchor, ordinal) => ({ ordinal, contentId: barracks.contentId, anchor }))
+  const walled = { ...state, planned }
+  for (const each of planned) assert.ok(structureTilesAt(round, walled, each.anchor) !== null, `no building on ${each.anchor.x},${each.anchor.y}`)
+  assert.deepEqual(bannerLines(round, walled, tile, "defensive").fromNexus, before, "the line went round a building")
+  assert.equal(bannerSpot(round, walled, tile).refusal, null)
+  // Rock still turns it: no line onto rock, and none through it.
+  assert.ok(bannerSpot(round, state, rock(round)).refusal !== null)
+})
+
+test("a rally point on a building is seen: the building lit, its glyphs kept, and the bottom line naming it", () => {
   const side = bannerSide()
   keys(side, "s")
   const nexus = side.build.round.standing.find((structure) => side.build.round.registry.get(structure.contentId).nexus === true)
@@ -171,7 +201,7 @@ test("a rally point on a building is seen: the building lit, its glyphs kept, an
   const name = bannerSpot(side.build.round, side.build.state, nexus.anchor).name
   assert.equal(name, "your Nexus")
   const frame = compose(side, {}, "truecolor")
-  assert.match(frameToText(frame), /\[enter\] Place rally point on your Nexus/)
+  assert.match(bottomLineText(side), /^! Rally point on your Nexus\. \[enter\] place it/)
   // The same frame with the rally point elsewhere: the building's glyphs are the same, and now unlit.
   const away = compose(side, { state: { ...side.build.state, popup: null } }, "truecolor")
   const range = visibleRange(side.build.state.camera, side.build.state.viewport)
@@ -196,21 +226,22 @@ test("the call closes in on the rally point as it becomes the cursor, then settl
   assert.ok(lit(CALL_MS / 2) > lit(CALL_MS), "no rings halfway")
 })
 
-test("the words beside it go right of the flag, left of it at the view's edge, under it when neither fits, never on it", () => {
-  const range = { firstX: 0, lastX: 49, firstY: 0, lastY: 19 }
-  const none = new Set<string>()
-  const at = (x: number, y: number) => ({ left: x, right: x, top: y, bottom: y })
-  assert.deepEqual(labelStart({ x: 10, y: 5 }, at(10, 5), 27, range, none), { x: 11, y: 5 })
-  assert.deepEqual(labelStart({ x: 45, y: 5 }, at(45, 5), 27, range, none), { x: 18, y: 5 })
-  const under = labelStart({ x: 25, y: 5 }, at(25, 5), 46, range, none)
-  assert.equal(under.y, 6)
-  assert.ok(under.x >= 0 && under.x + 46 - 1 <= 49, "it runs out of the view")
-  // Something standing to its right: the left, which is clear.
-  assert.deepEqual(labelStart({ x: 30, y: 5 }, at(30, 5), 10, range, new Set(["33,5"])), { x: 20, y: 5 })
-  // On a building, beside the whole building, and under its last row, never over it.
-  const building = { left: 20, right: 23, top: 5, bottom: 6 }
-  assert.deepEqual(labelStart({ x: 21, y: 5 }, building, 10, range, none), { x: 24, y: 5 })
-  assert.equal(labelStart({ x: 21, y: 5 }, building, 46, range, none).y, 7)
+// The words used to stand beside the rally point on the map, placed round it (`labelStart`); the second playtest took
+// them off (the owner: "basically nothing in the middle that is covering the line"). Their test is now the bottom
+// line's: every spot the game names fits the 80-column floor whole, the fixed words shortened first.
+test("the rally point's bottom line fits the 80-column floor for every spot name, its words shortened before a name is cut", () => {
+  assert.equal(RALLY_LINE_ROOM + 2, 76, "the bottom bar's room at the 80-column floor, less the flag and its blank")
+  const names = ["open ground", "the line", "your Barracks", "your Supply Depot", "the enemy Supply Depot", "ground near resources", "ground near your base", "ground near the enemy base", "ground near the enemy Nexus", "ground in front of your base"]
+  for (const name of names) {
+    const line = rallyPointLine({ name, refusal: null })
+    assert.ok(line.length <= RALLY_LINE_ROOM, `"${line}" is ${line.length} long`)
+    assert.ok(line.startsWith(`Rally point on ${name}. [enter] `), line)
+  }
+  assert.equal(rallyPointLine({ name: "open ground", refusal: null }), "Rally point on open ground. [enter] place it and begin the battle.")
+  assert.equal(rallyPointLine({ name: "ground in front of your base", refusal: null }), "Rally point on ground in front of your base. [enter] place, begin battle.")
+  assert.equal(rallyPointLine({ name: "x".repeat(80), refusal: null }).length, RALLY_LINE_ROOM)
+  // The flag is the map's: Unicode symbols draw it as the map does.
+  assert.equal(chromeGlyph("unicode", "banner"), "⚑")
 })
 
 test("the Battle Round with the Experiment off is the old confirmation, and moves no camera", () => {
@@ -220,7 +251,7 @@ test("the Battle Round with the Experiment off is the old confirmation, and move
   keys(side, "s")
   assert.deepEqual(side.build.state.cursor, before)
   assert.match(screenText(side), /\[s\] Start\b/)
-  assert.doesNotMatch(screenText(side), /Place rally point/)
+  assert.doesNotMatch(screenText(side), /Rally point on/)
 })
 
 // --- The match: the banner drives the battle ----------------------------------------------------------

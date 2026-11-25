@@ -3,7 +3,7 @@
 // player is, what Esc does) and the bottom line.
 
 import { edgeMarkers } from "../build/camera.ts"
-import { bottomLine } from "../build/help.ts"
+import { RALLY_MARK_WIDTH, bottomLine } from "../build/help.ts"
 import { ESC_KEY, escLabelSpan, escLabel } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import type { ArmedPreview } from "../build/state.ts"
@@ -11,7 +11,7 @@ import type { BandCell } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import { put, text } from "./draw.ts"
 import { pulseStatus, pulseSubtitle } from "./pulse-scene.ts"
-import { chromeGlyph } from "./theme.ts"
+import { chromeGlyph, playerRole } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import { statusStyle } from "./status.ts"
 import type { ArmWeight, Arms, EdgePlace } from "./edge.ts"
@@ -172,9 +172,10 @@ export function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack
  * line: **the contextual line**, the last command's answer while it has one and
  * otherwise a hint for where the keyboard is (`bottomLine`, `src/build/help.ts`), or, while a Nexus
  * Pulse plays with no popup over it, what the Pulse is doing. Every key is on the Controls and hotkeys
- * page, not here.
+ * page, not here. While the cursor is the rally point the line opens with the banner's flag, as the pack draws it on
+ * the map, in the player's colour (`rallyPointLine`, `src/build/help.ts`, writes the words for the room left).
  */
-export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
+export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null, pack: GlyphPack): void {
   const { context, state, layout } = input
   const band = BANDS.chrome
   const left = layout.offset.column + 2
@@ -213,11 +214,15 @@ export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositi
   const pulse = state.popup !== null ? undefined : input.pulse
   const shown = pulse === undefined ? bottomLine(context, state, preview) : pulseStatus(pulse)
   const style = statusStyle(shown.tone)
+  const flag = pulse === undefined && state.popup === "banner-place"
+  if (flag) put(cells, band, left, layout.footerRow, chromeGlyph(pack, "banner"), playerRole("A"), { bold: true })
+  const from = flag ? left + RALLY_MARK_WIDTH : left
+  const lineRoom = flag ? layout.footerLimit - RALLY_MARK_WIDTH : layout.footerLimit
   // Whole words only: on a bar narrower than the line (a battlefield smaller than the view) the words that do
   // not fit are left off, never cut in half.
-  const line = shown.text.length <= layout.footerLimit ? shown.text : (wrapWords(shown.text, layout.footerLimit)[0] ?? "")
-  text(cells, band, left, layout.footerRow, line, style.role, {
+  const line = shown.text.length <= lineRoom ? shown.text : (wrapWords(shown.text, lineRoom)[0] ?? "")
+  text(cells, band, from, layout.footerRow, line, style.role, {
     ...(style.bold === undefined ? {} : { bold: style.bold }),
-    limit: layout.footerLimit,
+    limit: lineRoom,
   })
 }

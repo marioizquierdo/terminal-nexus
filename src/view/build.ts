@@ -213,7 +213,7 @@ export function composeBuildFrame(
     drawCursor(cells, input)
     drawChrome(cells, input, pack)
     drawFrameLight(cells, input.layout, input.pulse)
-    drawTopBarAndBottomLine(cells, input, null)
+    drawTopBarAndBottomLine(cells, input, null, pack)
     const panel: BandCell[] = []
     drawPulsePanel(panel, input.layout, input.pulse, input.state.pulseNumber)
     for (const cell of panel) if (cell.y <= input.layout.panelLastRow) cells.push(cell)
@@ -236,7 +236,7 @@ export function composeBuildFrame(
   drawCursor(cells, input)
   drawRefusedTry(cells, input, preview)
   drawChrome(cells, input, pack)
-  drawTopBarAndBottomLine(cells, input, preview)
+  drawTopBarAndBottomLine(cells, input, preview, pack)
 
   // The panel shows the menu, or a card — Explore Map's, or the armed building's — or the committed
   // summary. Clipped to the panel's own rows: on a terminal too short for the whole menu, a row that

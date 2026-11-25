@@ -139,12 +139,9 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
       ? "Pick one: up/down and [enter], or its number. [esc] closes without a pick."
       : "The Nexus powers you have. [esc] closes.",
   "battle-round": (_context, state) => `Battle Round ${state.pulseNumber}: [enter] or [s] starts it, [esc] goes back to the plan.`,
-  // The words beside the rally point say what Enter does there (`src/view/banner-marks.ts`); the line says how to move
-  // it and leave, or, where troops could not get, why — as the words beside it do.
-  "banner-place": (context, state) => {
-    const spot = bannerSpot(context, state, state.cursor)
-    return spot.refusal === null ? "Arrows move the rally point, [enter] starts the round, [esc] back." : `${spot.refusal} Arrows move it, [esc] back.`
-  },
+  // Nothing is drawn beside the rally point on the map (the owner, 2026-11-25: "basically nothing in the middle that
+  // is covering the line"): this line says it all, after the flag the view draws before it (`RALLY_MARK_WIDTH`).
+  "banner-place": (context, state) => rallyPointLine(bannerSpot(context, state, state.cursor)),
   "game-menu": () => "Up/down and [enter] choose, or press a row's key. [esc] back to the game.",
   settings: (_context, state) => `Left/right change a value, [e] exports them all. ${escBack(state)}`,
   export: (_context, state) => `Paste this into the pull request. Up/down scroll. ${escBack(state)}`,
@@ -217,10 +214,51 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   map: () => "Arrows move the cursor, [enter] explores here, a number selects a building.",
 }
 
+/** How many columns the banner's flag and the blank after it take at the start of the bottom line while the cursor
+ *  is the rally point (`drawTopBarAndBottomLine`, `src/view/build-frame.ts`): the rally point's line is written for
+ *  the room left. */
+export const RALLY_MARK_WIDTH = 2
+
+/** The room the rally point's line has at the 80-column floor: the bottom bar's 76 columns, less the flag. */
+export const RALLY_LINE_ROOM = 76 - RALLY_MARK_WIDTH
+
+/**
+ * **The rally point's bottom line** (the owner, 2026-11-25: "the same icon for the flag ... and then says rally point,
+ * and simply say enter, place the rally point, and begin the battle"): where it stands and what Enter does — or,
+ * where troops could not get, why not. The longest way that fits `room` with the spot's whole name: the fixed words
+ * shorten first, the name is cut only past the shortest of them. The flag before it is the view's.
+ */
+export function rallyPointLine(spot: Readonly<{ name: string; refusal: string | null }>, room: number = RALLY_LINE_ROOM): string {
+  const where = `Rally point on ${spot.name}.`
+  if (spot.refusal !== null) {
+    // "Rock: no troops can stand there." on rock says the spot once: "Rally point on rock: no troops can stand there."
+    const named = `${spot.name.charAt(0).toUpperCase()}${spot.name.slice(1)}: `
+    const line = spot.refusal.startsWith(named) ? `Rally point on ${spot.name}: ${spot.refusal.slice(named.length)}` : `${where} ${spot.refusal}`
+    return line.length <= room ? line : spot.refusal
+  }
+  const ways = [
+    `${where} [enter] place it and begin the battle, [esc] back.`,
+    `${where} [enter] place it and begin the battle.`,
+    `${where} [enter] place it, begin the battle.`,
+    `${where} [enter] place, begin the battle.`,
+    `${where} [enter] place, begin battle.`,
+    `${where} [enter] begins.`,
+  ]
+  const fitted = ways.find((line) => line.length <= room)
+  if (fitted !== undefined) return fitted
+  const tail = ". [enter] begins."
+  return `Rally point on ${spot.name.slice(0, Math.max(0, room - tail.length - "Rally point on ".length - 3))}...${tail}`
+}
+
 /** What can be done where the keyboard is, in the quiet `hint` tone — never about a tile, so it never
- *  lapses on its own: the bottom line shows it whenever no command has anything to say. */
+ *  lapses on its own: the bottom line shows it whenever no command has anything to say. A rally point where troops
+ *  could not get is the one hint in the `warning` tone. */
 export function hint(context: BuildContext, state: BuildState): StatusMessage {
-  return status(HINTS[hintSituation(context, state)](context, state), "hint")
+  const situation = hintSituation(context, state)
+  // Where the rally point could not go, why reads as a warning, not a quiet hint — as the words beside it on the map
+  // did before they went; Enter there says it again in red (`bannerPlace`).
+  const refused = situation === "banner-place" && bannerSpot(context, state, state.cursor).refusal !== null
+  return status(HINTS[situation](context, state), refused ? "warning" : "hint")
 }
 
 /**

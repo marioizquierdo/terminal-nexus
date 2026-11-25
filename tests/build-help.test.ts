@@ -172,7 +172,7 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
   "save-game": [[(side) => ({ ...side.build.state, popup: "save-game" }), /^Type a name, \[enter\] saves\. \[esc\] back to the menu\.$/]],
   note: [[(side) => keys(side, "!"), /^Type what you noticed, \[enter\] saves the note with this moment\. \[esc\] back\.$/]],
   // Moving the rally point, put up by hand as the dialog is: these sessions play with its Experiment off.
-  "banner-place": [[(side) => ({ ...side.build.state, popup: "banner-place", cursor: { x: 30, y: 12 } }), /^Arrows move the rally point, \[enter\] starts the round, \[esc\] back\.$/]],
+  "banner-place": [[(side) => ({ ...side.build.state, popup: "banner-place", cursor: { x: 30, y: 12 } }), /^Rally point on [a-z ]+\. \[enter\] place it/]],
   committed: [[(side) => keys(side, "n", "1", "s", "s"), /^The plan is locked in\. \[esc\] opens the menu\.$/]],
   "menu-mouse": [
     [

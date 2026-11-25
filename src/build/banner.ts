@@ -8,10 +8,13 @@
 // the order the Battle Round is handed (`bannerOrder`, which the shell turns into the match layer's `BannerOrder`).
 //
 // **The lines are the march route, walked on the Build Phase's own map**: a distance field toward the banner's area
-// over the terrain and every structure standing or planned (`src/engine/routing/`, the battle engine's own routing), walked downhill
-// from the side of the player's Nexus nearest the banner, a tile a step — the way a lone trooper
-// with the road clear would walk it. Not the battle engine's march itself: that is walked by every unit at once, round each
-// other, fighting what comes in reach; this is the line it keeps to with nobody in the way.
+// over the terrain alone (`src/engine/routing/`, the battle engine's own routing), walked downhill from the side of the
+// player's Nexus nearest the banner, a tile a step. Round rock, straight through every building, the player's and the
+// enemy's, standing or planned (the owner, 2026-11-25: "Like the line just needs to go skip buildings, because usually
+// what's going to happen is when the units get there, they're not going to work around. They're going to destroy the
+// building"); whether troops could get to a spot at all is read on the same ground. Not the battle engine's march
+// itself: that is walked by every unit at once, round each other and the buildings, fighting what comes in reach; this
+// is the way the line shows, the buildings on it to be broken through.
 
 import { footprintBox, footprintCentre, tileDistance, inBounds, tilesOf } from "../engine/geometry/coords.ts"
 import type { Coord, Direction } from "../engine/geometry/types.ts"
@@ -138,6 +141,8 @@ function describe(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord):
   const landmarks = context.landmarks ?? []
   const named = landmarks.find((landmark) => inside(landmark, tile))
   if (named !== undefined) return named.name
+  // The round's own default tile is called what the round calls it.
+  if (fallback !== undefined && fallback.tile.x === tile.x && fallback.tile.y === tile.y) return fallback.name
   const structures = structuresOf(context, plan)
   const tilesOfSide = (player: "A" | "B"): Coord[] =>
     structures.filter((each) => each.player === player).flatMap((each) => tilesOf(each.anchor, context.registry.get(each.contentId).footprint))
@@ -152,7 +157,9 @@ function describe(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord):
   const landmark = [...landmarks].sort((a, b) => nearest(tile, areaTiles(a)) - nearest(tile, areaTiles(b)))[0]
   if (landmark !== undefined && nearest(tile, areaTiles(landmark)) <= NEAR_LANDMARK) return `ground near ${landmark.name}`
   if (nearest(tile, tilesOfSide("A")) <= NEAR_OWN_BASE) return "ground near your base"
-  if (fallback !== undefined && tileDistance(tile, fallback.tile) <= NEAR_LANDMARK) return `ground near ${fallback.name}`
+  // A default that is itself ground ("ground in front of your base") names the ground near it too, never "ground near
+  // ground in front of your base".
+  if (fallback !== undefined && tileDistance(tile, fallback.tile) <= NEAR_LANDMARK) return fallback.name.startsWith("ground ") ? fallback.name : `ground near ${fallback.name}`
   return "open ground"
 }
 
@@ -174,10 +181,17 @@ function areaFor(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord): 
   return { x: left, y: top, width: right - left + 1, height: bottom - top + 1 }
 }
 
-/** The ground a lone trooper walks: the terrain, and every structure standing or planned as a wall. */
-function groundOf(context: Ctx, plan: Pick<BuildState, "planned">): Ground {
+/** The ground troops stand on: the terrain, and every structure standing or planned as a wall — where a rally
+ *  point's area has room for them. */
+function standingGroundOf(context: Ctx, plan: Pick<BuildState, "planned">): Ground {
   const blocked = structuresOf(context, plan).flatMap((structure) => tilesOf(structure.anchor, context.registry.get(structure.contentId).footprint))
   return groundFor(wallsOf(context.terrain, "impassable", blocked), ONE_TILE)
+}
+
+/** The ground the march line walks, and whether a spot can be reached is read on: the terrain alone, every building
+ *  passed through (the owner, 2026-11-25: "Only go around obstacles ... just obstacles"). */
+function routeGroundOf(context: Ctx): Ground {
+  return groundFor(wallsOf(context.terrain, "impassable", []), ONE_TILE)
 }
 
 /** A field toward an area over that ground, the terrain's weights counted as a route counts them. */
@@ -191,14 +205,14 @@ function ringOf(context: Ctx, ground: Ground, structure: Structure): Coord[] {
 }
 
 /** Whether a spot is somewhere the troops could get to: not rock, with ground to stand on in its area, and — with a
- *  Nexus of the player's on the map — a way to it from the Nexus. */
+ *  Nexus of the player's on the map — a way to it from the Nexus round the rock, through any building. */
 export function bannerSpot(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord): BannerSpot {
   const name = describe(context, plan, tile)
   const area = areaFor(context, plan, tile)
   if (!inBounds(context.terrain, tile)) return { tile, name, area, refusal: "Off the map." }
   if (terrainAt(context, tile) === "terrain.rock") return { tile, name, area, refusal: "Rock: no troops can stand there." }
-  const ground = groundOf(context, plan)
-  if (goalsInside(ground, ONE_TILE, area).length === 0) return { tile, name, area, refusal: "No ground to stand on there." }
+  if (goalsInside(standingGroundOf(context, plan), ONE_TILE, area).length === 0) return { tile, name, area, refusal: "No ground to stand on there." }
+  const ground = routeGroundOf(context)
   const home = ownNexus(context)
   if (home !== undefined) {
     const field = fieldToward(context, ground, area)
@@ -248,7 +262,7 @@ function onwardGoal(context: Ctx, from: Coord): BannerArea | null {
 export function bannerLines(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord, stance: BannerStance): BannerLines {
   const spot = bannerSpot(context, plan, tile)
   if (spot.refusal !== null) return { fromNexus: [], onward: [] }
-  const ground = groundOf(context, plan)
+  const ground = routeGroundOf(context)
   const field = fieldToward(context, ground, spot.area)
   const limit = context.terrain.width * context.terrain.height
   const home = ownNexus(context)
