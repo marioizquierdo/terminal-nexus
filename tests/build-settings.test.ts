@@ -565,7 +565,7 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
   const byDriver = session()
   byDriver.build.run(script)
 
-  const roundNow = stepExperiment(defaultExperiments(), "nextRound", 1).flags.nextRound
+  const roundNow = stepExperiment({ ...defaultExperiments(), nextRound: "key" as const }, "nextRound", 1).flags.nextRound
   for (const side of [byKeyboard, byMouse, byDriver]) {
     assert.equal(side.build.state.popup, "export")
     assert.equal(side.build.state.settings.theme, "light")

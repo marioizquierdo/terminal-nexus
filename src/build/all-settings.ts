@@ -86,7 +86,7 @@ type Description = Readonly<{
 type SettingSpec = Readonly<{ default: Value; unit?: Unit }> &
   (Readonly<{ tier: "tuned" } & Partial<Description>> | (Readonly<{ tier: "player" | "experiment" }> & Description))
 
-const NEXT_ROUND = ["key", "auto"] as const
+const NEXT_ROUND = ["straight", "key", "auto"] as const
 const POWER_PICK = ["optional", "required"] as const
 
 /** How a building's units leave its roof (`roofExit`): along their route, or to the nearest open ground. */
@@ -347,10 +347,11 @@ export const ALL_SETTINGS = {
     tier: "experiment",
     section: "mission",
     label: "Next round",
-    question: "After a round's result: wait for Enter, or begin the next Build Phase on its own a few seconds later.",
+    question: "When a fight stops: straight to the next Build Phase, or the result until Enter, or for a few seconds.",
     values: NEXT_ROUND,
-    names: { key: "manual", auto: "auto" },
-    default: "key",
+    names: { straight: "straight", key: "manual", auto: "auto" },
+    // The owner, 2026-11-25: "When the battle ends, it will be nice that it goes directly to build mode."
+    default: "straight",
   },
   /** How long a round's result stays before the next Build Phase begins on its own, when Next round is
    *  auto; a first guess. */

@@ -91,7 +91,9 @@ function sceneSide(
   options: Readonly<{ context?: BuildContext; mission?: Pick<MissionPlay, "startPulse" | "nextRound">; scenes?: boolean; terminal?: Readonly<{ columns: number; rows: number }> }> = {},
 ): BuildSide {
   const activity = activityLog()
-  const context: BuildContext = { ...(options.context ?? starterContext()), activity }
+  // Next round on manual: these rounds open after their result, which Enter closes (the default goes straight on).
+  const given = options.context ?? starterContext()
+  const context: BuildContext = { ...given, activity, experiments: { ...given.experiments, nextRound: "key" } }
   const layout = buildLayout(options.terminal ?? MINIMUM, context.terrain)
   const play = options.mission ?? STARTER_MISSION
   const build = new BuildSession({

@@ -313,7 +313,7 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
   assert.equal(expected.popup, null)
   assert.equal(expected.planned.length, 0)
   assert.equal(expected.nexusPick, null)
-  assert.equal(expected.experiments.nextRound, stepExperiment(defaultExperiments(), "nextRound", 1).flags.nextRound)
+  assert.equal(expected.experiments.nextRound, stepExperiment({ ...defaultExperiments(), nextRound: "key" as const }, "nextRound", 1).flags.nextRound)
   assert.equal(expected.settings.theme, "light")
   assert.equal(expected.status.text, "Build Phase restarted with these settings.")
   const comparable = (side: Side) => ({ ...side.build.state, ack: null, highlightHidden: false })

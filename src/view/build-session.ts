@@ -541,7 +541,7 @@ export class BuildSession {
 
   private moveOn(alternative: boolean): void {
     const presenter = this.presenter
-    if (presenter === null || presenter.phase() !== "home") return
+    if (presenter === null || !presenter.canMoveOn()) return
     // The result's other way on is only there when the round that ended offers one.
     if (alternative && presenter.resolved.mission?.ending?.alternative === undefined) return
     const next = this.nextRound(this.context, this.buildState, presenter.resolved, alternative)
@@ -668,6 +668,7 @@ export class BuildSession {
     if (resolved === null) return
     this.presenter = new PulsePresenter(resolved, undefined, {
       autoNextMs: setting(this.buildState, "nextRound") === "auto" ? TUNING.autoNextRoundMs : null,
+      straight: setting(this.buildState, "nextRound") === "straight",
       ...(this.barksOf === undefined ? {} : { barksOf: this.barksOf }),
     })
     this.resultLogged = false

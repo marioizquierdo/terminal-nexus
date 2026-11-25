@@ -150,6 +150,9 @@ export class PulsePresenter {
   /** How long after the result appears the next round begins on its own, or `null`: it waits for the
    *  player (the Next round Experiment). */
   private readonly autoNextMs: number | null
+  /** Whether the next round begins the moment the fight stops, with no result shown, when the battle goes on (the Next
+   *  round Experiment's `straight`). A battle won or lost still shows its result. */
+  private readonly straight: boolean
 
   /** The player's Commander in this Pulse, or `null` when she is not on the battlefield in it. */
   private readonly bearer: Bearer | null
@@ -165,10 +168,11 @@ export class PulsePresenter {
   constructor(
     resolved: ResolvedPulse,
     presentation: PresentationOptions = DEFAULT_PRESENTATION,
-    options: Readonly<{ autoNextMs?: number | null; barksOf?: BarksOf }> = {},
+    options: Readonly<{ autoNextMs?: number | null; straight?: boolean; barksOf?: BarksOf }> = {},
   ) {
     this.resolved = resolved
     this.autoNextMs = options.autoNextMs ?? null
+    this.straight = options.straight === true && resolved.mission?.verdict.kind === "continue"
     this.view = createView(resolved.timeline, presentation)
     this.times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, TUNING)
     this.result = missionResultOf(watchedResult(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), outcomeOf(resolved.timeline), resolved.watched), resolved.mission)
@@ -280,6 +284,12 @@ export class PulsePresenter {
    */
   due(): BuildCommand[] {
     const commands: BuildCommand[] = []
+    // Straight on: the next Build Phase begins as the fight stops, its opening showing the survivors regroup.
+    if (this.straight && !this.fired.has("next") && this.timeMs >= this.times.stopMs) {
+      this.fired.add("next")
+      commands.push({ kind: "next-round" })
+      return commands
+    }
     // The next round begins on its own a moment after the result, when the Next round Experiment says so.
     // Sent once; a paused Pulse's clock does not move, so it waits with it.
     if (this.autoNextMs !== null && !this.fired.has("next") && this.timeMs >= this.times.homeMs + this.autoNextMs) {
@@ -300,6 +310,12 @@ export class PulsePresenter {
     return commands
   }
 
+  /** Whether the screen may go on to the next round now: once the result is up, or, going straight on, once the fight
+   *  has stopped. */
+  canMoveOn(): boolean {
+    return this.phase() === "home" || (this.straight && this.timeMs >= this.times.stopMs)
+  }
+
   /** Where the Pulse is in its ending right now. */
   phase(): EndingPhase {
     return phaseAt(this.times, this.timeMs)
@@ -315,6 +331,7 @@ export class PulsePresenter {
     // Her vignette still open over the result.
     if (this.fall !== null && this.timeMs < this.fall.atMs + vignetteLengthMs(commanderArt(this.fall.contentId)?.falls.length ?? 0)) return now + FRAME_MS
     // The result stands still; the timer runs on only to begin the next round on its own, when it will.
+    if (this.straight && !this.fired.has("next")) return now + Math.max(FRAME_MS, this.times.stopMs - this.timeMs)
     if (this.autoNextMs === null || this.fired.has("next")) return null
     return now + Math.max(FRAME_MS, this.times.homeMs + this.autoNextMs - this.timeMs)
   }

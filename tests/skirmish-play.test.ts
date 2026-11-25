@@ -215,7 +215,8 @@ test("a Skirmish plays on the Build Phase screen: place a building, start the Ba
   // From the route, as the game, the page and `scripts/playtest.mjs --at 'skirmish?seed=1'` open it: its words skipped,
   // the first power picked, the menu's first building armed and placed, the Battle Round started and watched to its end.
   const steps = parseKeyScript("Esc n 1 1 Enter s s wait~1000*32 Enter")
-  const run = runBuildPlaytest({ steps, at: playtestOpening({ at: "skirmish?seed=1" }).at })
+  // Next round on manual: the round's result, then Enter (the default goes straight on).
+  const run = runBuildPlaytest({ steps, at: playtestOpening({ at: "skirmish?seed=1" }).at, experiments: { nextRound: "key" } })
   const opening = frameToText(run.frames[0]!.frame)
   assert.match(opening, /build phase - round 1 of 8/u)
   assert.match(opening, /A Skirmish on The Crossing, seed 1/u)

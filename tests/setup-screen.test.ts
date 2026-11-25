@@ -250,6 +250,8 @@ test("a battle's result offers the setup screen beside the same battle again and
   const run = runGamePlaytest({
     start: { kind: "title", place: "load-game" },
     saves: () => shippedSaves(SHIPPED_PROFILES),
+    // Next round on manual, so each round's result is there for Enter (the default goes straight on).
+    experiments: { nextRound: "key" },
     steps: parseKeyScript("4 1 s Esc s wait~1000*40 Enter Esc s wait~1000*40 m"),
   })
   const result = run.frames[run.frames.length - 2]
