@@ -39,6 +39,8 @@ import type { AuraFrame, PulseFrame, VoiceFrame } from "./pulse-scene.ts"
 import type { Speaker, SpokenLine } from "./pulse-voice.ts"
 import { VOICE, commanderOf, labelPlace, planVoice, shippedBarks, speakerOf, voiceAt, voiceLight, voiceMoments } from "./pulse-voice.ts"
 import { DEFAULT_PRESENTATION, createView } from "./snapshot.ts"
+import type { RallyPlan } from "./rally-arrows.ts"
+import { rallyMarksAt, rallyPlan } from "./rally-arrows.ts"
 import type { PresentationOptions, PulseTimeline, PulseView } from "./snapshot.ts"
 
 /** A Pulse the battle engine has resolved, and the regroup that follows it — everything the screen needs to play it, built by
@@ -156,6 +158,9 @@ export class PulsePresenter {
   /** Where and when she fell in this Pulse, or `null` when she did not: her vignette and her dim glyph beside the
    *  Nexus are drawn from it (`commander-moments.ts`). */
   private readonly fall: FallFrame | null
+  /** Where each side's troops head and the way there, walked once from the round's opening: the rally arrows
+   *  (`rally-arrows.ts`). `null` for a timeline with no opening state. */
+  private readonly rally: RallyPlan | null
 
   constructor(
     resolved: ResolvedPulse,
@@ -178,6 +183,8 @@ export class PulsePresenter {
     this.bearer = bearerOf(resolved.timeline)
     this.voice = this.planLines(options.barksOf ?? shippedBarks, presentation.cosmeticSeed)
     this.fall = this.fallOf()
+    const opening = resolved.timeline.states[0]
+    this.rally = opening === undefined ? null : rallyPlan(opening, resolved.timeline.registry, { everyMs: TUNING.rallyArrowsEveryMs, count: TUNING.rallyArrowsCount, stopMs: this.times.stopMs })
   }
 
   /** Where and when the player's Commander fell, in presentation time: her death's tick, at the Pulse's own pace. */
@@ -333,7 +340,9 @@ export class PulsePresenter {
     // The light on her as she starts to speak, painted with every other effect, under the corruption law.
     const light = voice === null ? null : this.lightOn(voice, options)
     const sample = light === null ? drawn : { ...drawn, effects: [...drawn.effects, light] }
+    const rally = this.rally === null ? [] : rallyMarksAt(this.rally, timeMs, drawn.state.targets, reducedMotion)
     return {
+      ...(rally.length === 0 ? {} : { rally }),
       ...(aura === null ? {} : { aura }),
       ...(voice === null ? {} : { voice: voice.frame }),
       ...(this.fall === null ? {} : { fall: this.fall }),

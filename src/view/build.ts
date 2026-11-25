@@ -206,7 +206,7 @@ export function composeBuildFrame(
     drawTerrain(cells, view, pack)
     const occupied = drawPulseEntities(cells, view, input.pulse)
     drawPulseFire(cells, view, input.pulse, occupied, pack)
-    drawPulseEffects(cells, view, input.pulse, occupied)
+    drawPulseEffects(cells, view, input.pulse, occupied, pack)
     // When she falls: her dim glyph beside the Nexus, and the vignette over the battle.
     drawOutInBattle(cells, view, input.pulse.fall, input.pulse.timeMs, nexusIn(input.pulse), occupied)
     drawVignette(cells, view, input.pulse.fall, input.pulse.timeMs, input.pulse.reducedMotion, pack, occupied, input.pulse.voice)

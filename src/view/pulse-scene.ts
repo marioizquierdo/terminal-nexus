@@ -39,7 +39,9 @@ import { put, text } from "./draw.ts"
 import type { StyleRole } from "./roles.ts"
 import type { PulseSample } from "./snapshot.ts"
 import type { GlyphPack } from "./theme.ts"
-import { entityGlyph, playerRole } from "./theme.ts"
+import { chromeGlyph, entityGlyph, playerRole } from "./theme.ts"
+import { trailGlyph } from "./build-map.ts"
+import type { RallyMark } from "./rally-arrows.ts"
 
 /** What the Pulse's scene needs for one presentation instant. Built by `PulsePresenter.frame`. */
 export type PulseFrame = Readonly<{
@@ -78,6 +80,8 @@ export type PulseFrame = Readonly<{
   /** Where and when the player's Commander fell in this Pulse, for her vignette and her dim glyph beside the Nexus
    *  (`commander-moments.ts`). Absent: she did not fall. */
   fall?: FallFrame
+  /** The rally arrows and flags showing at this instant (`rally-arrows.ts`). Absent: none. */
+  rally?: readonly RallyMark[]
 }>
 
 /** A Commander's aura as the scene draws it: the tile she is drawn on, how far it reaches in tiles — measured
@@ -165,8 +169,10 @@ export function drawPulseEffects(
   view: SceneView,
   pulse: PulseFrame,
   occupied: ReadonlySet<number>,
+  pack: GlyphPack = "ascii",
 ): void {
   drawAura(cells, view, pulse)
+  drawRallyMarks(cells, view, pulse, occupied, pack)
   const range = visibleRange(view.camera, view.viewport)
   const sources: EffectCellSource[] = []
   for (const painted of pulse.sample.effects) {
@@ -184,6 +190,34 @@ export function drawPulseEffects(
     (tile) => occupied.has(tileIndex(view.terrain, tile)),
   )
   drawVoiceOnMap(cells, view, pulse, occupied)
+}
+
+/**
+ * ***The rally arrows*** (`rally-arrows.ts`): a side's arrows running from its Nexus to where its troops head, and its
+ * flag there, bold in its side's colour, so they read in monochrome by glyph and weight. On the ground-items band, under
+ * everything that stands and every effect. An arrow goes on open plain ground only, never over a glyph that stands (a
+ * unit, a building, a corpse still falling) nor over rock or a deposit, which are information too: there it is
+ * simply not drawn, passing under. The flag is the same: on open ground its glyph, on a tile something stands on only
+ * a restyle of that tile (bold and underlined in the side's colour), its glyph kept.
+ */
+export function drawRallyMarks(cells: BandCell[], view: SceneView, pulse: PulseFrame, occupied: ReadonlySet<number>, pack: GlyphPack = "ascii"): void {
+  const marks = pulse.rally
+  if (marks === undefined) return
+  const range = visibleRange(view.camera, view.viewport)
+  for (const mark of marks) {
+    const { tile } = mark
+    if (!inBounds(view.terrain, tile) || !inView(range, tile)) continue
+    const standing = occupied.has(tileIndex(view.terrain, tile))
+    const cell = cellForTile(view.layout, view.camera, tile)
+    const role = playerRole(mark.player)
+    if (mark.kind === "flag") {
+      if (standing) cells.push({ band: BANDS.highlights, x: cell.x, y: cell.y, style: { fgRole: role, bold: true, underline: true } })
+      else put(cells, BANDS.groundItems, cell.x, cell.y, chromeGlyph(pack, "banner"), role, { bold: true })
+      continue
+    }
+    if (standing || view.terrain.tiles[tileIndex(view.terrain, tile)] !== "terrain.plain") continue
+    put(cells, BANDS.groundItems, cell.x, cell.y, trailGlyph(pack, mark.dx, mark.dy), role, { bold: true })
+  }
 }
 
 /**
