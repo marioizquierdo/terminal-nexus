@@ -54,7 +54,7 @@ export function adjustSetting(settings: Settings, field: PlayerField, step: -1 |
  * and a click outside close it, as they close every popup. `popupHighlight` indexes this list while the
  * game menu is open.
  */
-export const GAME_MENU_ROWS = ["settings", "controls", "activity", "save", "restart", "quit"] as const
+export const GAME_MENU_ROWS = ["settings", "controls", "activity", "save", "replay", "restart", "quit"] as const
 export type GameMenuRow = (typeof GAME_MENU_ROWS)[number]
 
 /** What the game menu's `[c] Controls and hotkeys` row says under its name. */

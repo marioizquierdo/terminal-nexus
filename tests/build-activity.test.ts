@@ -102,11 +102,11 @@ function noteText(side: BuildSide): string {
 // --- The game menu's row ----------------------------------------------------------------------------
 
 test("the game menu has [a] Activity logs between Controls and Save game, saying what it is for", () => {
-  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "save", "restart", "quit"])
+  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "save", "replay", "restart", "quit"])
   const side = session()
   keys(side, ESC)
   const text = screenText(side)
-  assert.match(text, /\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[v\] Save game[\s\S]*\[r\] Restart/)
+  assert.match(text, /\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[v\] Save game[\s\S]*\[b\] Replay last battle[\s\S]*\[r\] Restart/)
   assert.ok(text.includes(ACTIVITY_DESCRIPTION), "the row does not say what it is for")
 })
 

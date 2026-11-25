@@ -421,6 +421,12 @@ export type BuildState = Readonly<{
   /** How many times Save game has been asked to write, counting up: the session hands the round, the plan and the name
    *  to the shell each time it goes up, as it does an export (`activityExports`). */
   saveRequests: number
+  /** Whether a Battle Round has been played since the screen opened, so the game menu's Replay last battle has one to
+   *  play: set by the session as each round opens. */
+  canReplay: boolean
+  /** How many times Replay last battle has been asked for, counting up: the session plays the last Battle Round again
+   *  each time it goes up, as it writes a save (`saveRequests`). */
+  replayRequests: number
   /** The note's line as typed so far (the note popup, `!`). */
   noteField: string
   /** How many times a note has been asked to be saved, counting up: the session hands the moment to the shell each
@@ -520,6 +526,8 @@ export function createBuildState(
     activityExports: 0,
     saveField: context.saveName ?? "",
     saveRequests: 0,
+    canReplay: false,
+    replayRequests: 0,
     noteField: "",
     noteRequests: 0,
     banner: context.placedBanner ?? null,
@@ -1820,6 +1828,9 @@ function adjustShownSetting(state: BuildState, field: ShownName, step: -1 | 1): 
 /** Starts the Build Phase over, keeping the settings and the experiments — how an experiment marked
  *  "restart" takes effect. The last acknowledgement is carried over so its sequence keeps counting up
  *  and the live loop never mistakes a new one for one it has already shown. */
+/** Why Replay last battle has nothing to play: no round has ended since the screen opened. */
+export const NO_REPLAY = "No battle to replay yet: one is kept when a round ends."
+
 function restartBuildPhase(context: BuildContext, state: BuildState): BuildState {
   const fresh = createBuildState(context, state.startCursor, state.viewport, state.experiments, state.settings)
   return {
@@ -1829,6 +1840,8 @@ function restartBuildPhase(context: BuildContext, state: BuildState): BuildState
     handoff: state.handoff,
     activityFilter: state.activityFilter,
     activityExports: state.activityExports,
+    canReplay: state.canReplay,
+    replayRequests: state.replayRequests,
     status: status("Build Phase restarted with these settings."),
   }
 }
@@ -2174,6 +2187,10 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
 
     case "restart":
       return restartBuildPhase(context, state)
+
+    case "replay-battle":
+      if (!state.canReplay) return { ...state, status: status(NO_REPLAY, "warning") }
+      return { ...closePopups(state), replayRequests: state.replayRequests + 1 }
 
     case "export-settings":
       return exportSettings(state)

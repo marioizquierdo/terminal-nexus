@@ -91,7 +91,8 @@ test("a scripted playtest plays a Battle Round on the script's own clock and sho
   // A Nexus power, two Turrets and a Hatchery, the commit and its confirmation; then the script lets it play.
   const plan = `${DEFENCE_KEYS} s s`
   // Quarter-second frames, so the half-second cease fire is never stepped over.
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`${plan} wait~250*104`) })
+  // Next round on manual, so the ending's last phase, the result, stays to be seen (the default goes straight on).
+  const run = runBuildPlaytest({ scenes: false, experiments: { nextRound: "key" }, steps: parseKeyScript(`${plan} wait~250*104`) })
   const texts = run.frames.map((frame) => frameToText(frame.frame))
   const started = texts.findIndex((text) => text.includes("battle round"))
   assert.ok(started > 0, "the script never reached the Pulse")

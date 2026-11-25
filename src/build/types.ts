@@ -203,6 +203,9 @@ export type BuildCommand =
    *  the Build Phase over, keeping every setting and experiment — how one that applies only after a
    *  restart takes effect. */
   | Readonly<{ kind: "restart" }>
+  /** The game menu's `[b] Replay last battle`: the last Battle Round again, its result going back to this Build Phase
+   *  (`BuildState.replayRequests`, which the session plays). Refused, with the reason, before any battle was played. */
+  | Readonly<{ kind: "replay-battle" }>
   /**
    * `e` in the Settings popup, or its export row: show the settings and experiments as text to paste
    * into a pull request comment. The reducer only opens the popup that shows it; copying the text to

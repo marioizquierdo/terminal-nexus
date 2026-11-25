@@ -495,7 +495,7 @@ function bearerOf(timeline: PulseTimeline): Bearer | null {
 function replayResult(result: PulseResult, round: number | undefined): PulseResult {
   const { alternative: _alternative, setup: _setup, commander: _commander, ...rest } = result
   const which = round === undefined ? "the last round" : `round ${round}`
-  return { ...rest, mission: `A replay of ${which}.`, goOn: "Back to the Build Phase", line: `${result.headline} - a replay of ${which}. Enter: back to the Build Phase.` }
+  return { ...rest, mission: `A replay of ${which}.`, goOn: "Build Phase", line: `${result.headline} - a replay of ${which}. Enter: back to the Build Phase.` }
 }
 
 /** A result as a watched battle says it: who won, by name, rather than VICTORY or DEFEAT, which are a player's words. */

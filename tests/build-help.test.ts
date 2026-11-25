@@ -221,11 +221,11 @@ test("a hint for every situation the hint list names, each one line that fits th
 
 test("the game menu lists [c] Controls and hotkeys right after Settings", () => {
   // Activity logs and Save game sit between Controls and Restart.
-  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "save", "restart", "quit"])
+  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "save", "replay", "restart", "quit"])
   const side = buildSide()
   keys(side, ESC)
   const text = screenText(side)
-  assert.match(text, /\[s\] Settings[\s\S]*\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[v\] Save game[\s\S]*\[r\] Restart/)
+  assert.match(text, /\[s\] Settings[\s\S]*\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[v\] Save game[\s\S]*\[b\] Replay last battle[\s\S]*\[r\] Restart/)
   assert.match(text, new RegExp(CONTROLS_DESCRIPTION))
 })
 

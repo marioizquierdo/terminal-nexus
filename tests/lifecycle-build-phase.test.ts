@@ -280,6 +280,8 @@ test("the live loop plays a Battle Round on its own clock: timer, last seconds, 
   const exits: number[] = []
   void runBuildPhase({
     settings: TEST_SETTINGS,
+    // Next round on manual: the result stays until a key (the default goes straight on).
+    experiments: { nextRound: "key" },
     scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,

@@ -371,6 +371,8 @@ export class BuildSession {
     else if (before.committed && !this.buildState.committed) this.presenter = null
     // Save game asked to write: the shell writes it and says how it went, which the bottom line says.
     if (this.buildState.saveRequests > before.saveRequests) this.save()
+    // Replay last battle: the last Battle Round on screen again.
+    if (this.buildState.replayRequests > before.replayRequests && this.replayLastBattle()) this.log.log("build.command", { command: "replay-battle" })
     // The note opened: the screen as it stood is what the note shows. Saved: the shell writes the moment.
     if (this.buildState.popup === "note" && before.popup !== "note") this.beforeNote = { context: this.context, state: before, at: this.sinceOpened(), ...(screenBefore === undefined ? {} : { text: screenBefore }) }
     if (this.buildState.noteRequests > before.noteRequests) this.note()
@@ -591,7 +593,7 @@ export class BuildSession {
     const cursor = nexusTile(this.context) ?? before.startCursor
     const fresh = createBuildState(this.context, cursor, before.viewport, before.experiments, before.settings)
     // The sequences keep counting up, so the live loop never mistakes a new one for one it has shown.
-    this.buildState = { ...fresh, ack: before.ack, refusedTry: before.refusedTry, handoff: before.handoff }
+    this.buildState = { ...fresh, ack: before.ack, refusedTry: before.refusedTry, handoff: before.handoff, canReplay: this.lastBattle !== null, replayRequests: before.replayRequests }
     this.presenter = null
     this.recordDialog(null)
     // A new round: a note from here on replays from its opening.

@@ -54,7 +54,8 @@ function problemsWith(change: object): readonly string[] {
 
 /** The cadence level, from its first round, as a player who builds nothing, with the keys given. */
 function cadence(keys: string): BuildPlaytest {
-  return runBuildPlaytest({ steps: parseKeyScript(keys), at: { kind: "level", level: levelById("vasse-test-2") as PlayableLevel, round: 1 } })
+  // Next round on manual: these walks read the result before Enter (the default goes straight on).
+  return runBuildPlaytest({ steps: parseKeyScript(keys), experiments: { nextRound: "key" }, at: { kind: "level", level: levelById("vasse-test-2") as PlayableLevel, round: 1 } })
 }
 
 /** Two rounds of the cadence level played through, nothing built and no power picked: the Battle Round's result

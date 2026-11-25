@@ -65,3 +65,26 @@ test("straight on moves on once, as the fight stops; a battle won or lost waits 
   const manual = new PulsePresenter(resolvedWith("continue"), undefined, { straight: false })
   assert.deepEqual(movesOn(manual), [], "manual moved on by itself")
 })
+
+// --- Replay last battle (the owner: "when you're in build mode, you should be able to replay the previous battle if
+// you want to ... in the general menu") ------------------------------------------------------------------------------
+
+test("Replay last battle: refused before any battle; after one, the game menu plays it again and Enter comes back", { timeout: 120_000 }, () => {
+  const before = runBuildPlaytest({ steps: parseKeyScript("Esc Esc b"), at: playtestOpening({ at: "skirmish?seed=1" }).at })
+  const first = before.frames[before.frames.length - 1]!
+  assert.equal(first.state.replayRequests, 0)
+  assert.match(first.state.status.text, /No battle to replay yet/u)
+
+  const steps = parseKeyScript("Esc n 1 s Enter wait~1000*36 Esc Esc b wait~1000*36 Enter")
+  const run = runBuildPlaytest({ steps, at: playtestOpening({ at: "skirmish?seed=1" }).at })
+  const texts = run.frames.map((frame) => frameToText(frame.frame))
+  const menu = texts.findIndex((text, index) => index > 0 && /\[b\] Replay last battle/u.test(text) && /round 2 of 8/u.test(text))
+  assert.ok(menu > 0, "the game menu in round 2 did not offer the replay")
+  const replay = texts.slice(menu + 1)
+  assert.ok(replay.some((text) => /battle round/u.test(text)), "b did not play a Battle Round")
+  assert.ok(replay.some((text) => /A replay of round 1\./u.test(text) && /\[enter\] Build Phase/u.test(text)), "the replay's result did not say what it was")
+  const last = run.frames[run.frames.length - 1]!
+  assert.match(texts[texts.length - 1] as string, /build phase - round 2 of 8/u)
+  assert.equal(last.state.pulseNumber, 2, "the replay moved the battle on")
+  assert.equal(last.state.canReplay, true, "the replay was forgotten")
+})

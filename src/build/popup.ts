@@ -39,7 +39,7 @@ import {
   shownEntries,
 } from "./activity.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { exportText, nexusPowers, pendingPicks, saveRefusal } from "./state.ts"
+import { NO_REPLAY, exportText, nexusPowers, pendingPicks, saveRefusal } from "./state.ts"
 import type { BuildCommand, DialogLine, PopupMessage } from "./types.ts"
 
 export type PopupRow =
@@ -217,7 +217,7 @@ function settingsSpec(state: BuildState): PopupSpec {
   }
 }
 
-/** The game menu: Settings, Controls and hotkeys, Activity logs, Save game, Restart, Quit. Every row is an option, and the
+/** The game menu: Settings, Controls and hotkeys, Activity logs, Save game, Replay last battle, Restart, Quit. Every row is an option, and the
  *  highlight is `GAME_MENU_ROWS`'s index. Save game is dimmed where nothing can be saved, its description saying why. No row
  *  goes back to the game: Esc, `x`, the top bar's `close [esc]` and a click outside do, as for every popup. */
 function menuSpec(context: BuildContext, state: BuildState): PopupSpec {
@@ -259,6 +259,15 @@ function menuSpec(context: BuildContext, state: BuildState): PopupSpec {
         highlighted: on("save"),
         description: unsaved ?? SAVE_DESCRIPTION,
         ...(unsaved === null ? {} : { muted: true }),
+      },
+      {
+        kind: "option",
+        hotkey: "b",
+        label: "Replay last battle",
+        command: { kind: "replay-battle" },
+        highlighted: on("replay"),
+        description: state.canReplay ? "The last Battle Round again; Enter at its end comes back here." : NO_REPLAY,
+        ...(state.canReplay ? {} : { muted: true }),
       },
       {
         kind: "option",
