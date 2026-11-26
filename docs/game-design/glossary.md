@@ -101,6 +101,8 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   `ENEMY_NEXUS`; later a map's hotspots); in a plan, `rally`. Placed in the Build Phase as Start Battle Round opens, by
   default in front of the base (the Rally point start Experiment). The banner is only its flag
   ([`movement.md`](../system-design/movement.md), [`ui-patterns.md`](../system-design/ui-patterns.md)).
+- **prelude** — the moment between Enter and a Battle Round's first tick: both sides' rally arrows, and the enemy's new
+  buildings and units revealed one by one; the round's timer starts after it ([`ui-patterns.md`](../system-design/ui-patterns.md)).
 - **raid** — a group a mission's opponent sends, with its **intention**: one line saying what it means to do, shown in
   the panel ([`scripted-opponent.md`](scripted-opponent.md)).
 - **regroup** — what happens when a Battle Round ends: survivors step back and form up across their march line, so the

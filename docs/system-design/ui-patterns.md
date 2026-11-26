@@ -597,22 +597,42 @@ A popup may dock over the side panel instead of the map, when what it is about i
 
 ### The rally point
 
-Behind the **Battle banner** Experiment (on by default; off keeps the centred start popup). The rally point is where the troops head; the banner is the flag drawn there (`!`, `⚑` with Unicode symbols). Starting the Battle Round (`s`, or the menu's Start row) puts the cursor straight on the rally point, where it stood last or on the round's default, and centres the camera on it. No panel opens: the menu stays, its Start row lit.
-- **The default** in a Skirmish is in front of your base: the **Rally point start** Experiment's share of the way from your Nexus to the enemy's (20% by default; 100 is the enemy Nexus, and no order), on open ground. In a mission, the level's own target (PERIMETER's line). Placing it back on the default tile keeps the default.
-- **Moving it**: the arrows and the mouse move it; it pulses on 500 ms beats. Nothing is written on the map, so nothing covers the line. The bottom line opens with the banner's flag and says the rest: "Rally point on open ground. [enter] place it and begin the battle." For a long spot name the fixed words shorten first; the name is cut last.
-- **Placing it** (Enter, Space, `s`, the Start row, or a second click on the same tile) starts the Battle Round at once. No stance is asked: what the troops do there is the **Rally point** Experiment's (hold, the default, or push on to the enemy Nexus once half the army has arrived). Esc goes back to the Build Phase exactly as it was.
-- **Refused**: rock, ground with no footing, or anywhere troops could not get from your Nexus round the rock. The bottom line says why after the flag ("Rally point on rock: no troops can stand there."), as a warning, and in red once Enter tries it. Nothing starts.
-- **On a building** its glyphs hide the flag, so the whole building takes the rally point's look, its glyphs kept, and the bottom line names it: "Rally point on your Barracks".
-- **One line** runs to it from the player's Nexus, in the player's colour. It goes round rock only, straight through every building, the player's and the enemy's, standing or planned: troops that meet a building on the way destroy it. With push on, a fainter line runs on to the enemy.
-- **Drawing the eye**: as it becomes the cursor, rings close in on it for about half a second. Reduced motion skips them, and the rally point holds still, lit.
-- The area the screen reads for a spot is a preview of the round's (`bannerAreaAt`, `src/match/banner.ts`): the round reads the battlefield as it opens, so a planned building the round refuses, or one the enemy places that round, can change it.
-- The rally point carries to the next round until moved; outside Start, a moved one stays as a dim mark, or an underlined building. (GUIDANCE — `tests/battle-banner.test.ts`)
-- **In the Battle Round**, five seconds in, a few arrows run once from each Nexus to its rally point, yours and the enemy's together, each in its side's colour; each flag shows briefly as its arrows arrive, then nothing more. The line goes round rock only, straight through buildings (`src/view/rally-arrows.ts`; GUIDANCE — `tests/rally-arrows.test.ts`).
+The rally point is where the troops head and hold; the banner is the flag drawn there (`!`, `⚑` with Unicode symbols).
+Start Battle Round (`s`, or the menu's Start row) sends the focus arrow from its row to the rally point, where it stood
+last or on the round's default, and centres the camera on it. No panel opens.
+- **The default** in a Skirmish is in front of your base: the **Rally point start** Experiment's share of the way from
+  your Nexus to the enemy's (20% by default; 100 is the enemy Nexus), on open ground. Placing it back there keeps it.
+- **The call**: as the focus arrow lands, four thin arrows stand round the flag, or round the building it is on, half
+  faded and pointing at it, and they and the flag flash three times (the Battle Round flash's beat). Reduced motion:
+  no flight, the arrows stand still, nothing flashes.
+- **The bottom line** says `[arrows] Set Rally Point. [enter] Start battle.` and names no place. A refused spot (rock,
+  ground with no footing, no way there from your Nexus round the rock) says only why, and Enter does nothing there.
+- **The reminder**: left unmoved for a second, the arrows flash again, then the line's keys flash (`[      ]` on the off
+  beats), every five seconds, never while the player moves it.
+- **Placing it**: Enter, Space, `s`, the Start row or a second click places it and starts the round. Esc, `x`,
+  Backspace or a right click goes back with nothing changed; the top bar says `back [esc]`. The troops hold it.
+- **On a building** its glyphs hide the flag, so the whole building takes the rally point's look, its glyphs kept.
+- **One line** runs to it from the player's Nexus, in the player's colour, round rock only and straight through every
+  building, the player's and the enemy's, standing or planned (`src/match/rally.ts`, shared with the Battle Round's
+  arrows).
+- The rally point carries to the next round until moved. (GUIDANCE — `tests/battle-banner.test.ts`)
 
 ### Between rounds
 
-- **Straight on** (the **Next round** Experiment, `straight` by default): when a round's fight stops and the battle goes on, the next Build Phase opens at once, its opening showing the survivors regroup; no result to close. A battle won or lost always stops on its result. `manual` shows every round's result until Enter; `auto` for a few seconds. (GUIDANCE — `tests/next-round-straight.test.ts`)
-- **Replay last battle** (`b` in the game menu) plays the last Battle Round again from its start; its result says it is a replay and `[enter] Build Phase` comes back to the Build Phase as it stood. Dimmed, saying why, until a round has ended. (GUIDANCE — `tests/next-round-straight.test.ts`)
+- **Enter begins the Battle Round with its prelude**: the cursor is hidden, both sides' arrows run at once from each
+  Nexus to its rally point, each flag showing for a second; the enemy's new buildings and units come in one by one with
+  the placement animation, nearest their Nexus first, 200 ms apart (`src/view/prelude.ts`), and a clash (both sides on
+  the same ground) plays first, thrown down with the removal sparks. The round's timer starts after it: from Enter to
+  the fight's first tick takes at most 2.7 seconds, none with nothing new. (GUIDANCE — `tests/prelude.test.ts`)
+- **The fight's first seconds** take the same light round the map's border and timer flash as its last.
+- **Straight on** (the **Next round** Experiment, `straight` by default): when a round's fight stops and the battle goes
+  on, the next Build Phase opens at once, its opening showing the survivors regroup; no result to close. A battle won or
+  lost always stops on its result. `manual` shows every round's result until Enter; `auto` for a few seconds. The next
+  round opens on what the last one took away: "Lost in the battle: a Barracks, 2 Turret." and, for a clash, one line
+  with the refund. (GUIDANCE — `tests/next-round-straight.test.ts`, `tests/round-losses.test.ts`)
+- **Watch last battle** (`w` in the game menu) plays the last Battle Round again from its start, prelude included; its
+  result says it is a replay and `[enter] Build Phase` comes back to the Build Phase as it stood. Dimmed, saying why,
+  until a round has ended.
 
 ## The bottom line
 
