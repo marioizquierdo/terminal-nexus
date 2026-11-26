@@ -301,7 +301,7 @@ test("from where the field does not reach, every step onto it is downhill", () =
 
 // --- What they cost ------------------------------------------------------------------------------------------------
 
-test("a tick's worth of fields over the starter map fits well inside a frame", () => {
+test("a tick's worth of fields over the starter map fits well inside a frame", (t) => {
   const terrain = starterTerrain()
   const bodies = [ONE, WIDE, BLOCK]
   const run = (): number => {
@@ -320,6 +320,9 @@ test("a tick's worth of fields over the starter map fits well inside a frame", (
   run()
   const samples = [run(), run(), run(), run(), run()].sort((a, b) => a - b)
   const median = samples[2] as number
+  // Every run says its samples, passing or not, so the spread on a CI runner can be read from its log before anyone
+  // judges the threshold (it failed once on a slow GitHub runner at 16.55 ms; docs/milestones/next-steps.md).
+  t.diagnostic?.(`twelve whole fields: ${samples.map((sample) => sample.toFixed(2)).join(", ")} ms (median ${median.toFixed(2)})`)
   // The browser page's frame is 33 ms; a tick's routes should take a third of it at most, on a machine also running
   // the rest of the suite.
   assert.ok(median < 33 / 3, `twelve whole fields took ${median.toFixed(2)} ms`)
