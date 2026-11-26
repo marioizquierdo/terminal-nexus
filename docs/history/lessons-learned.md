@@ -718,6 +718,23 @@ stance). Mario found it in his first battle. A test of a control that changes th
 not what the panel says; and when a screen is reused by a new mode, list every choice it offers and follow each one to
 the round.
 
+### The screen and the round must agree on what is allowed
+
+Twice in one session the Build Phase accepted something the round then treated differently: a rally point the round
+refused when the enemy built round it that same round (the troops stayed home), and buildings that looked cancelled
+but had been destroyed with nothing said. Each time the round was right by its own rules and the player saw a broken
+promise. When the screen offers a choice, the round honours it or says, at the next opening, exactly what happened.
+
+### Run the whole suite after changing a default, not only its own tests
+
+Moving the rally point's default in front of the base passed its own tests, and three others that leaned on the old
+default failed only when an agent ran the whole suite. A default is read in more places than its name suggests.
+
+### Cap a headless tally's rounds
+
+A tally on the Crossing with no `--rounds` ran for over a day: one mirror battle went on to round 100. Give every
+measurement `--rounds` and a time limit, and kill a run that passes it.
+
 ### `git checkout <file>` undoes everything uncommitted in it
 
 Undoing a probe edit (a bad line put in to test the validator) with `git checkout` also threw away a whole uncommitted
