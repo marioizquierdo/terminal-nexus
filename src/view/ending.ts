@@ -86,12 +86,34 @@ export function formatTimer(seconds: number): string {
 }
 
 /**
- * Whether the timer is lit at this instant: in the last seconds, on and off from the moment they
- * begin. Reduced motion holds it lit rather than flashing — a steady cue, never an absent one.
+ * **The first seconds** (the owner, 2026-11-26: "During the first few seconds of the battle, the UI could use the same
+ * effect as during the last few seconds"): from the fight's first tick, for as long as the last seconds last, the timer
+ * flashes and the light sweeps the border as they do at the end — `null` with no last seconds (a warning of 0). It gives
+ * way to the last seconds if a short fight reaches them first.
+ */
+export function openingEndMs(times: EndingTimes): number | null {
+  if (times.warnMs === null) return null
+  return Math.min(times.stopMs - times.warnMs, times.warnMs)
+}
+
+/** Where the light and the timer's flash are timed from at this instant — the first seconds' start (0) or the last
+ *  seconds' (`warnMs`) — and when that window ends, or `null` outside both. */
+function markedWindow(times: EndingTimes, timeMs: number, tailMs: number): Readonly<{ fromMs: number; endMs: number }> | null {
+  if (times.warnMs === null) return null
+  const opening = openingEndMs(times) ?? 0
+  if (timeMs >= 0 && timeMs < opening) return { fromMs: 0, endMs: opening }
+  if (timeMs >= times.warnMs && timeMs < times.stopMs + tailMs) return { fromMs: times.warnMs, endMs: times.stopMs + tailMs }
+  return null
+}
+
+/**
+ * Whether the timer is lit at this instant: in the first seconds and in the last seconds, on and off from the moment
+ * each begins. Reduced motion holds it lit rather than flashing — a steady cue, never an absent one.
  */
 export function timerLit(times: EndingTimes, timeMs: number, reducedMotion: boolean): boolean {
-  if (times.warnMs === null || timeMs < times.warnMs || timeMs >= times.stopMs) return false
-  return reducedMotion || Math.floor((timeMs - times.warnMs) / TIMER_HALF_PERIOD_MS) % 2 === 0
+  const window = markedWindow(times, timeMs, 0)
+  if (window === null) return false
+  return reducedMotion || Math.floor((timeMs - window.fromMs) / TIMER_HALF_PERIOD_MS) % 2 === 0
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -117,18 +139,18 @@ export const BEAM_BOLD = 0.4
 export type BeamFrame = Readonly<{ steady: boolean; envelope: number; head: number; length: number }>
 
 /**
- * The light at this instant, for a border of `length` cells, or `null` when it is off: it is on from the
- * start of the last seconds until a moment after the shooting stops. Reduced motion is one steady glow
- * rather than a turning beam.
+ * The light at this instant, for a border of `length` cells, or `null` when it is off: it is on through the first
+ * seconds (`openingEndMs`), coming up and going out, and again from the start of the last seconds until a moment after
+ * the shooting stops. Reduced motion is one steady glow rather than a turning beam.
  */
 export function beamFrame(times: EndingTimes, timeMs: number, length: number, reducedMotion: boolean): BeamFrame | null {
-  if (times.warnMs === null) return null
-  const end = times.stopMs + BEAM_FADE_MS
-  if (timeMs < times.warnMs || timeMs >= end) return null
+  const window = markedWindow(times, timeMs, BEAM_FADE_MS)
+  if (window === null) return null
+  const { fromMs, endMs } = window
   return {
     steady: reducedMotion,
-    envelope: Math.min(1, (timeMs - times.warnMs) / BEAM_FADE_MS, (end - timeMs) / BEAM_FADE_MS),
-    head: (((timeMs - times.warnMs) % BEAM_PERIOD_MS) / BEAM_PERIOD_MS) * length,
+    envelope: Math.min(1, (timeMs - fromMs) / BEAM_FADE_MS, (endMs - timeMs) / BEAM_FADE_MS),
+    head: (((timeMs - fromMs) % BEAM_PERIOD_MS) / BEAM_PERIOD_MS) * length,
     length,
   }
 }

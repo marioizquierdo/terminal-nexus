@@ -164,7 +164,7 @@ test("the shell's foresee is what the round's real Pulse does on its first tick,
     const pulse = side.build.pulse
     assert.ok(pulse !== null)
     side.build.advance(0)
-    side.build.advance(pulse.times.homeMs + 100)
+    side.build.advance(pulse.prelude.lengthMs + pulse.times.homeMs + 100)
     keys(side, "\r")
     assert.equal(side.build.state.pulseNumber, number + 1)
   }

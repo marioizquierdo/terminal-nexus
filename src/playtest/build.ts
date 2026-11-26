@@ -260,7 +260,7 @@ export class BuildDriver {
     const trail = new TrailClock()
     const regrouping = new RegroupClock()
     const rooming = new RoomClock()
-    // The rally point's call and pulse, on the script's clock too: `wait~MS` steps show the call closing in.
+    // The rally point's call, its reminder and its pulse, on the script's clock too: `wait~MS` steps show them.
     const bannering = new BannerClock()
     // Drawn with the settings the script has reached: a step that changes the colour depth or the
     // symbols in Settings shows the change, as the live screen does.
@@ -290,7 +290,9 @@ export class BuildDriver {
           ...(raidTrail === null ? {} : { raidTrail }),
           ...(regroup === null ? {} : { regroup }),
           ...(room.length === 0 ? {} : { room }),
-          ...(banner.pulseMs === undefined ? {} : { banner }),
+          ...(banner.call === undefined ? {} : { banner }),
+          // Start's focus arrow flying to the rally point, timed by the same clock.
+          ...(banner.call?.flight === null || banner.call?.flight === undefined ? {} : { handoffFlight: { progress: banner.call.flight } }),
         },
         build.state.settings.colors,
       )

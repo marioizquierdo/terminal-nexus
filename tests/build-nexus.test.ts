@@ -2,11 +2,12 @@
 // be left unpicked (the owner, round 5: "Nexus Powers should be optional for now, it's easier for testing if I
 // can just start a round"): nothing refuses for want of a pick, the commit included, and an optional popup must
 // not nag like a forced screen. Committing asks once — docs/system-design/input.md: "the one action that must not
-// fire by accident."
+// fire by accident." — by Start making the cursor the rally point, and Enter placing it.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { NEXUS_ROW, buildLayout, cellForTile, escLabelSpan, escLabel } from "../src/build/layout.ts"
+import { NEXUS_ROW, buildLayout, cellForTile, escLabelSpan, escLabel, menuEntryRow } from "../src/build/layout.ts"
+import { menuEntries } from "../src/build/state.ts"
 import { popupSpec } from "../src/build/popup.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, formatMouseEvent } from "../src/build/mouse.ts"
@@ -40,10 +41,9 @@ test("a waiting Nexus power refuses nothing: the round starts without it, and no
   build.dispatch({ kind: "undo" })
   assert.equal(build.state.planned.length, 0, "undo was refused while a pick was waiting")
 
-  // The Battle Round screen opens, says the power is waiting, and starts the round without it.
+  // Start makes the cursor the rally point, and placing it starts the round without the power.
   build.dispatch({ kind: "open-battle-round" })
-  assert.equal(build.state.popup, "battle-round")
-  assert.match(build.state.status.text, /^Battle Round 1: Enter starts it/)
+  assert.equal(build.state.popup, "banner-place")
   build.dispatch({ kind: "start-pulse" })
   assert.equal(build.state.committed, true)
   assert.ok(build.pulse !== null, "the round did not start")
@@ -183,24 +183,18 @@ test("once picked, the build menu and every other command work exactly as they d
   assert.equal(build.state.planned.length, 1)
 })
 
-test("the confirmation opens before a pick and after one, and only before it says a power is waiting", () => {
-  const { build, layout } = session()
+test("Start makes the cursor the rally point before a pick and after one", () => {
+  const { build } = session()
   build.dispatch({ kind: "open-battle-round" })
-  assert.equal(build.state.popup, "battle-round", "the confirmation was refused for want of a pick")
-  assert.match(build.state.status.text, /Battle Round 1/)
-  const waiting = frameToText(composeBuildFrame({ context: starterContext(), state: build.state, layout }, "monochrome"))
-  assert.match(waiting, /A Nexus power is still waiting\./)
+  assert.equal(build.state.popup, "banner-place", "Start was refused for want of a pick")
   build.dispatch({ kind: "cancel" })
 
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "open-battle-round" })
-  assert.equal(build.state.popup, "battle-round")
-  assert.match(build.state.status.text, /Battle Round 1/)
-  const picked = frameToText(composeBuildFrame({ context: starterContext(), state: build.state, layout }, "monochrome"))
-  assert.doesNotMatch(picked, /still waiting/)
+  assert.equal(build.state.popup, "banner-place")
 })
 
-test("nothing but the confirmation itself changes state while it is open", () => {
+test("nothing but the rally point changes state while it is placed", () => {
   const { build } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "arm", index: 0 })
@@ -218,12 +212,12 @@ test("nothing but the confirmation itself changes state while it is open", () =>
     { kind: "open-nexus-powers" },
   ] as const) {
     build.dispatch(command)
-    assert.equal(build.state.popup, "battle-round", `${command.kind} closed the prompt`)
+    assert.equal(build.state.popup, "banner-place", `${command.kind} stopped placing the rally point`)
     assert.deepEqual(build.state.planned, beforeCommit.planned, `${command.kind} changed the plan`)
   }
 })
 
-test("going back from the confirmation (Esc) cancels it and changes nothing else", () => {
+test("going back from the rally point (Esc) changes nothing", () => {
   const { build } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "arm", index: 0 })
@@ -232,10 +226,10 @@ test("going back from the confirmation (Esc) cancels it and changes nothing else
   build.dispatch({ kind: "open-battle-round" })
   build.dispatch({ kind: "cancel" })
 
-  assert.equal(build.state.popup === "battle-round", false)
+  assert.equal(build.state.popup, null)
   assert.equal(build.state.committed, false)
   assert.deepEqual(build.state.planned, beforeCommit.planned)
-  assert.match(build.state.status.text, /Cancelled/)
+  assert.deepEqual([build.state.cursor, build.state.camera, build.state.focus], [beforeCommit.cursor, beforeCommit.camera, beforeCommit.focus])
 
   // And building can continue exactly as if nothing happened.
   build.dispatch({ kind: "arm", index: 1 })
@@ -251,7 +245,7 @@ test("accepting the confirmation commits, and locks every state-changing command
   build.dispatch({ kind: "start-pulse" })
 
   assert.equal(build.state.committed, true)
-  assert.equal(build.state.popup === "battle-round", false)
+  assert.equal(build.state.popup, null)
   assert.match(build.state.status.text, /Build committed/)
   assert.match(build.state.status.text, /1 planned/)
 
@@ -297,20 +291,23 @@ test("keyboard: a digit picks from the Nexus Pulse popup while it is open, and a
   assert.deepEqual(buildKeyboardCommand("1", { ...builtContext, focus: "menu" as const }), { kind: "arm", index: 0 })
 })
 
-test("keyboard: n opens the Nexus Pulse popup, and means nothing on the Battle Round confirmation", () => {
+test("keyboard: n opens the Nexus Pulse popup, and means nothing while the rally point is placed", () => {
   const idle = { itemCount: 3, armed: false }
   assert.equal(buildKeyboardCommand("y", idle), null)
   assert.deepEqual(buildKeyboardCommand("n", idle), { kind: "open-nexus-powers" })
   assert.deepEqual(buildKeyboardCommand("p", idle), { kind: "open-battle-round" })
   assert.deepEqual(buildKeyboardCommand("n", { ...idle, popup: "nexus-powers" as const }), { kind: "cancel" })
 
-  const confirming = { itemCount: 3, armed: false, popup: "battle-round" as const }
-  assert.deepEqual(buildKeyboardCommand("y", confirming), { kind: "start-pulse" })
-  // Only [s] Start is a row there: `n` is not "keep building", Esc is the way back.
-  assert.equal(buildKeyboardCommand("n", confirming), null)
-  assert.deepEqual(buildKeyboardCommand("\u001b", confirming), { kind: "cancel" })
-  // The question is modal: the arrows do not reach the battlefield behind it.
-  assert.equal(buildKeyboardCommand(`${ESC}[C`, confirming), null)
+  const placing = { itemCount: 3, armed: false, popup: "banner-place" as const }
+  // `y`, the old confirmation's key, means nothing; `n` is not "keep building".
+  assert.equal(buildKeyboardCommand("y", placing), null)
+  assert.equal(buildKeyboardCommand("n", placing), null)
+  // Enter, Space and `s` place it; Esc, `x` and Backspace go back; the arrows move it.
+  for (const key of ["\r", " ", "s"]) assert.deepEqual(buildKeyboardCommand(key, placing), { kind: "banner-place" }, JSON.stringify(key))
+  assert.deepEqual(buildKeyboardCommand("\u001b", placing), { kind: "cancel" })
+  assert.deepEqual(buildKeyboardCommand("x", placing), { kind: "back" })
+  assert.deepEqual(buildKeyboardCommand("\u007f", placing), { kind: "cancel" })
+  assert.deepEqual(buildKeyboardCommand(`${ESC}[C`, placing), { kind: "move-cursor", dx: 1, dy: 0 })
 })
 
 /** The click bytes for the popup option whose command matches, or for the top bar's "close [esc]". */
@@ -376,26 +373,45 @@ test("a Nexus power is picked only in its own popup, or with none open: every ot
   assert.equal(bare.build.state.nexusPick, 0)
 })
 
-test("a click outside the Battle Round screen says Cancelled, on the map as on the menu", () => {
-  for (const where of ["map", "menu"] as const) {
-    const side = session()
-    side.build.dispatch({ kind: "pick-nexus", index: 0 })
-    side.build.handleData("s", side.layout)
-    assert.equal(side.build.state.popup, "battle-round")
-    const cell = cellForTile(side.layout, side.build.state.camera, { x: side.build.state.camera.x + 2, y: side.build.state.camera.y + 1 })
-    side.build.handleData(where === "map" ? formatMouseEvent(MOUSE_LEFT, cell.x + 1, cell.y + 1) : clickNexusEntryBytes(side.layout), side.layout)
-    assert.equal(side.build.state.popup, null, where)
-    assert.equal(side.build.state.committed, false)
-    assert.equal(side.build.state.status.text, "Cancelled.", where)
-  }
+/** The click bytes for the menu's Start Battle Round row. */
+function clickStartEntryBytes(layout: ReturnType<typeof buildLayout>): string {
+  const context = starterContext()
+  const start = menuEntries(context).find((entry) => entry.kind === "start")
+  assert.ok(start !== undefined)
+  const row = menuEntryRow(layout, context.catalog, start)
+  assert.ok(row !== null)
+  return formatMouseEvent(MOUSE_LEFT, layout.panelColumn + 5, row + 1)
+}
+
+test("while the rally point is placed, a click on the map moves it and a click on another menu row goes back", () => {
+  const side = session()
+  side.build.dispatch({ kind: "pick-nexus", index: 0 })
+  const before = side.build.state
+  side.build.handleData("s", side.layout)
+  assert.equal(side.build.state.popup, "banner-place")
+  const tile = { x: side.build.state.camera.x + 2, y: side.build.state.camera.y + 1 }
+  const cell = cellForTile(side.layout, side.build.state.camera, tile)
+  side.build.handleData(formatMouseEvent(MOUSE_LEFT, cell.x + 1, cell.y + 1), side.layout)
+  assert.equal(side.build.state.popup, "banner-place", "a click on the map stopped placing it")
+  assert.deepEqual(side.build.state.cursor, tile)
+  side.build.handleData(clickNexusEntryBytes(side.layout), side.layout)
+  assert.equal(side.build.state.popup, null)
+  assert.equal(side.build.state.committed, false)
+  assert.deepEqual([side.build.state.cursor, side.build.state.camera], [before.cursor, before.camera])
 })
 
-test("mouse: the Battle Round confirmation starts by click on [s] Start, and a click outside it cancels", () => {
+test("mouse: the rally point is placed and the round starts by a click on the Start row, or a second click on its tile", () => {
   const yes = session()
   yes.build.dispatch({ kind: "pick-nexus", index: 0 })
   yes.build.handleData("p", yes.layout)
-  yes.build.handleData(clickPopupBytes(yes, (c) => c.kind === "start-pulse"), yes.layout)
+  yes.build.handleData(clickStartEntryBytes(yes.layout), yes.layout)
   assert.equal(yes.build.state.committed, true)
+
+  const again = session()
+  again.build.dispatch({ kind: "pick-nexus", index: 0 })
+  again.build.handleData("p", again.layout)
+  again.build.handleData(clickTileBytes(again.layout, again.build, again.build.state.cursor), again.layout)
+  assert.equal(again.build.state.committed, true)
 
   const outside = session()
   outside.build.dispatch({ kind: "pick-nexus", index: 0 })
@@ -433,7 +449,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   assert.deepEqual(byKeyboard.build.state.cursor, { x: 30, y: 13 })
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   byKeyboard.build.handleData("p", byKeyboard.layout)
-  byKeyboard.build.handleData("y", byKeyboard.layout)
+  byKeyboard.build.handleData("\r", byKeyboard.layout)
 
   const byMouse = session()
   // The screen opens with the keyboard on the menu, so one click on Nexus opens it.
@@ -452,7 +468,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   // Arming already put the cursor on 30,13, so one click there is the confirming second click.
   clickTile({ x: 30, y: 13 })
   byMouse.build.handleData("p", byMouse.layout)
-  byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "start-pulse"), byMouse.layout)
+  byMouse.build.handleData(clickStartEntryBytes(byMouse.layout), byMouse.layout)
 
   const script: readonly BuildCommand[] = [
     { kind: "open-nexus-powers" },

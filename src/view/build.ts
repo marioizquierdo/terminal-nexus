@@ -38,6 +38,7 @@ import type { PopupBorder } from "./build-popup.ts"
 import { drawPopup } from "./build-popup.ts"
 import { drawDialog } from "./build-dialog.ts"
 import { drawBanner } from "./banner-marks.ts"
+import type { RallyCall } from "./banner-marks.ts"
 
 // What tests and scripts import from here, wherever it now lives.
 export { ACTIVE_VALUE } from "./build-menu.ts"
@@ -156,11 +157,12 @@ export type BuildCompositionInput = Readonly<{
    */
   room?: readonly Readonly<{ ordinal: number; elapsedMs: number }>[]
   /**
-   * **The rally point's clock** (`BannerClock`, `src/view/build-live.ts`): how long ago it became the cursor — the
-   * call that brings the eye to it, then its pulse, and its march line's arrows moving. Absent — every still frame,
-   * and under reduced motion — it is drawn settled and on the beat, its line still.
+   * **The rally point's clock** (`BannerClock`, `src/view/build-live.ts`): how long ago it became the cursor — its pulse
+   * and its march line's arrows moving — and what its call shows now (`rallyCallAt`, `src/view/banner-marks.ts`): the
+   * four arrows, a flash, the bottom line's keys blanked. Absent — every still frame — it is drawn on the beat, its four
+   * arrows standing, its line still; under reduced motion `pulseMs` is absent and the call is the arrows alone.
    */
-  banner?: Readonly<{ pulseMs?: number }>
+  banner?: Readonly<{ pulseMs?: number; call?: RallyCall }>
   /** Draw no Commander on the map this frame: she is still to appear (`commanderHidden`). Set by the composer. */
   commanderHidden?: boolean
 }>

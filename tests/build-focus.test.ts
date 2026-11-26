@@ -566,7 +566,7 @@ test("the focus flow by keyboard bytes and the same commands from a driver are t
   keys(byKeyboard, DOWN, SPACE, DOWN, SPACE) // highlight Nexus, open it, pick the second, which closes it
   keys(byKeyboard, DOWN, SPACE, SPACE) // highlight Barracks, arm, place
   keys(byKeyboard, DOWN, DOWN, SPACE, SPACE) // highlight Turret, arm, place
-  keys(byKeyboard, "p", "y")
+  keys(byKeyboard, "p", "s")
 
   const script: readonly BuildCommand[] = [
     { kind: "highlight", delta: 1 },
@@ -606,7 +606,7 @@ test("the focus flow by keyboard bytes and the same commands from a driver are t
     if (byMouse.build.state.cursor.x !== centre.x || byMouse.build.state.cursor.y !== centre.y) clickTile(byMouse, centre)
     clickTile(byMouse, centre)
   }
-  keys(byMouse, "p", "y")
+  keys(byMouse, "p", "s")
   assert.deepEqual(byMouse.build.state.planned, byKeyboard.build.state.planned)
   assert.equal(byMouse.build.state.nexusPick, byKeyboard.build.state.nexusPick)
   assert.equal(byMouse.build.state.committed, true)

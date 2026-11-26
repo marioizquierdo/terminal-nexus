@@ -435,33 +435,12 @@ export const ALL_SETTINGS = {
     default: "route",
   },
 
-  // --- The battle banner (the challenge runs, step 11G) ----------------------------------------------------
-  // The owner, 2026-10-31: "I would actually like to test placing the banner on the map first, because the UX to do
-  // it is the big question ... if we can't, we will fallback to the stance." Start Battle Round shows the banner and
-  // its stance in the side panel, the camera on it; Change Target turns the cursor into the banner, with the march
-  // lines drawn to it; placing it asks aggressive or defensive. Off: the Battle Round confirmation as it was, and the
-  // troops head where the level sends them.
-
-  /** Whether Start Battle Round goes through the banner — where the troops head, and whether they push on from
-   *  there or hold it — or straight to the old confirmation. First guess: on, so the owner feels it. */
-  battleBanner: {
-    tier: "experiment",
-    section: "mission",
-    label: "Battle banner",
-    question: "On: Start Battle Round shows the banner; move it, then choose aggressive or defensive. Off: the old popup.",
-    values: ["on", "off"],
-    default: "on",
-  },
-
   // --- The rally point (the owner, 2026-11-25, after playing the banner in a Skirmish) -------------------------
   // The troops gather at the rally point and hold it (the owner settled it, 2026-11-26, with the stance folded into
   // the rally point): nothing to choose. Owner's playtest feedback: docs/history/feedback/2026-11-25-rally-point.md.
 
   /** How many arrows run along each side's route: the owner's "like 2 or 3 arrows". */
   rallyArrowsCount: { tier: "tuned", default: 3 },
-  /** When, into a Battle Round, the arrows run once for both sides, the flag showing as they arrive: the owner,
-   *  2026-11-25, "every 5 seconds ... is a little bit too noisy. So let's do that only once ... 5 seconds later". */
-  rallyArrowsAtMs: { tier: "tuned", default: 5000 },
 
   // --- Where the rally point starts (the owner, 2026-11-25, second playtest) ----------------------------------
   // "Instead of by default having the rally at the enemy nexus, I think it would be better to have it 10% of the

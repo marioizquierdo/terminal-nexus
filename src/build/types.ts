@@ -141,15 +141,13 @@ export type BuildCommand =
   | Readonly<{ kind: "save-note" }>
   /** What the shell answers once the note is written, or not: the bottom line's words. Sent by the session. */
   | Readonly<{ kind: "note-result"; ok: boolean; text: string }>
-  /** `s` (or `p`), or the menu's last row, `[s] Start Battle Round` — open the Battle Round confirmation.
-   *  Refused while a Nexus power is still waiting to be picked — the one thing that pick refuses — and
-   *  while a building is armed. */
+  /** `s` (or `p`), or the menu's last row, `[s] Start Battle Round` — the cursor becomes the rally point
+   *  (`banner-place`). Refused while a Nexus power must be picked first, and while a building is armed. */
   | Readonly<{ kind: "open-battle-round" }>
-  /** `[s] Start` — the confirmation's one row, by Enter, Space, `s` or a click: the Battle Round starts.
-   *  Going back is the cancel every popup has. With the cursor as the rally point it is `banner-place`: placed where it
-   *  stands, and the round starts. */
+  /** A driver's start: with the cursor as the rally point it is `banner-place` — placed where it stands, and the round
+   *  starts. Nothing anywhere else. */
   | Readonly<{ kind: "start-pulse" }>
-  /** **The rally point** (the Battle banner Experiment), while Start Battle Round has made the cursor the rally point:
+  /** **The rally point**, while Start Battle Round has made the cursor the rally point:
    *  Enter, Space, `s`, a click on the menu's Start row, or a second click on the tile it stands on. It is placed there
    *  and the Battle Round starts at once — or, where troops could not get, refused, saying why beside it. */
   | Readonly<{ kind: "banner-place" }>
@@ -203,7 +201,7 @@ export type BuildCommand =
    *  the Build Phase over, keeping every setting and experiment — how one that applies only after a
    *  restart takes effect. */
   | Readonly<{ kind: "restart" }>
-  /** The game menu's `[b] Replay last battle`: the last Battle Round again, its result going back to this Build Phase
+  /** The game menu's `[w] Watch last battle`: the last Battle Round again, its result going back to this Build Phase
    *  (`BuildState.replayRequests`, which the session plays). Refused, with the reason, before any battle was played. */
   | Readonly<{ kind: "replay-battle" }>
   /**
@@ -309,7 +307,7 @@ export type MenuEntry =
   | Readonly<{ kind: "start" }>
 
 /** The popups this screen has — one popup shape for all of them (`src/build/popup.ts`): the Nexus
- *  powers, the Battle Round confirmation, the game menu (Settings, Controls, Activity logs, Restart,
+ *  powers, the game menu (Settings, Controls, Activity logs, Restart,
  *  Quit), Settings, the export, a message — `BuildState.message`, a title and text with nothing to
  *  choose — the Controls and hotkeys page, the Activity logs window, and **the dialog**: a round's scene,
  *  a line at a time, docked at the bottom of the map — the one popup the player does not open
@@ -317,7 +315,6 @@ export type MenuEntry =
  *  being moved (`banner-place`), which draws no popup: the cursor is the rally point, its words beside it on the map. */
 export type Popup =
   | "nexus-powers"
-  | "battle-round"
   | "game-menu"
   | "settings"
   | "export"

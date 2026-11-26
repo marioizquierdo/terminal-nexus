@@ -126,7 +126,7 @@ function playRound(side: BuildSide): void {
   const pulse = side.build.pulse
   assert.ok(pulse !== null, "the round's Pulse did not start")
   side.build.advance(0)
-  side.build.advance(pulse.times.homeMs + 100)
+  side.build.advance(pulse.prelude.lengthMs + pulse.times.homeMs + 100)
   assert.equal(pulse.phase(), "home")
 }
 

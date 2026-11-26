@@ -42,6 +42,7 @@ import type { GlyphPack } from "./theme.ts"
 import { chromeGlyph, entityGlyph, playerRole } from "./theme.ts"
 import { trailGlyph } from "./build-map.ts"
 import type { RallyMark } from "./rally-arrows.ts"
+import type { PreludeFrame } from "./prelude.ts"
 
 /** What the Pulse's scene needs for one presentation instant. Built by `PulsePresenter.frame`. */
 export type PulseFrame = Readonly<{
@@ -82,6 +83,11 @@ export type PulseFrame = Readonly<{
   fall?: FallFrame
   /** The rally arrows and flags showing at this instant (`rally-arrows.ts`). Absent: none. */
   rally?: readonly RallyMark[]
+  /** The prelude at this instant (`prelude.ts`): the enemy's new things not yet revealed, those rising, the clashed
+   *  buildings still standing. Absent: the fight is on. */
+  prelude?: PreludeFrame
+  /** Draw no map cursor this frame: the round has just begun, its prelude and rally arrows playing. */
+  cursorHidden?: boolean
 }>
 
 /** A Commander's aura as the scene draws it: the tile she is drawn on, how far it reaches in tiles — measured
@@ -122,7 +128,11 @@ type SceneView = Readonly<{ camera: Camera; viewport: Viewport; layout: BuildLay
 export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: PulseFrame): ReadonlySet<number> {
   const range = visibleRange(view.camera, view.viewport)
   const occupied = new Set<number>()
+  const prelude = pulse.prelude
   const draw = (entity: Readonly<{ ordinal: number; contentId: string; player: PlayerId; anchor: Coord }>): void => {
+    // The prelude: what is still to be revealed is not there yet; what rises is drawn as its going-up frame.
+    if (prelude?.hidden.has(entity.ordinal) === true) return
+    const rising = prelude?.rising.get(entity.ordinal)
     const definition = pulse.registry.get(entity.contentId)
     const at = pulse.positions.get(entity.ordinal) ?? entity.anchor
     const band = definition.layer === "obstacles" ? BANDS.structures : definition.layer === "air" ? BANDS.air : BANDS.units
@@ -130,13 +140,16 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
       const tile = { x: at.x + offset.x, y: at.y + offset.y }
       if (!inBounds(view.terrain, tile)) continue
       if (!inView(range, tile)) continue
+      const look = rising?.(offset) ?? null
+      if (look !== null && look.glyph === null) continue
       occupied.add(tileIndex(view.terrain, tile))
       const cell = cellForTile(view.layout, view.camera, tile)
-      put(cells, band, cell.x, cell.y, entityGlyph(entity.contentId, entity.player, offset), playerRole(entity.player), {
-        bold: drawnBold(definition),
-      })
+      const glyph = look?.glyph ?? entityGlyph(entity.contentId, entity.player, offset)
+      put(cells, band, cell.x, cell.y, glyph, playerRole(entity.player), { bold: look === null ? drawnBold(definition) : look.bold })
     }
   }
+  // A clashed building still stands until its turn in the prelude, then is thrown down (`prelude.ts`).
+  prelude?.clashing.forEach((step) => draw({ ...step, ordinal: Number.NaN }))
   pulse.sample.state.entities.forEach(draw)
   pulse.sample.heldCorpses.forEach(draw)
   return occupied

@@ -39,7 +39,7 @@ function toResult(side: BuildSide): void {
   const pulse = side.build.pulse
   assert.ok(pulse !== null)
   side.build.advance(0)
-  side.build.advance(pulse.times.homeMs + 100)
+  side.build.advance(pulse.prelude.lengthMs + pulse.times.homeMs + 100)
   assert.equal(pulse.phase(), "home")
 }
 
@@ -174,15 +174,13 @@ test("the whole mission, round by round, to its end; Play again and Restart both
   assert.match(screenText(again), /round 1 of 3/)
 })
 
-test("round 2's Battle Round screen is Battle Round 2, in the mission's own words", () => {
+test("round 2's Battle Round screen is Battle Round 2", () => {
   const side = perimeter()
   startRound(side, DEFENCE)
   toResult(side)
   keys(side, ENTER)
   side.build.run([{ kind: "pick-nexus", index: 0 }, { kind: "open-battle-round" }])
-  const text = screenText(side)
-  assert.match(text, /Battle Round 2/)
-  assert.match(text, /They are back, and there are more\./)
+  assert.equal(side.build.state.popup, "banner-place")
   side.build.dispatch({ kind: "start-pulse" })
   assert.match(screenText(side), /BATTLE ROUND 2/)
 })
@@ -194,10 +192,10 @@ test("Next round on auto: the next Build Phase begins on its own a moment after 
   startRound(side, DEFENCE)
   const pulse = side.build.pulse!
   side.build.advance(0)
-  side.build.advance(pulse.times.homeMs + 100)
+  side.build.advance(pulse.prelude.lengthMs + pulse.times.homeMs + 100)
   assert.equal(side.build.state.pulseNumber, 1, "it moved on before the result had been shown")
-  assert.ok(pulse.busyUntil(pulse.times.homeMs + 100) !== null, "nothing keeps the clock running to move on")
-  side.build.advance(pulse.times.homeMs + TUNING.autoNextRoundMs + 10)
+  assert.ok(pulse.busyUntil(pulse.prelude.lengthMs + pulse.times.homeMs + 100) !== null, "nothing keeps the clock running to move on")
+  side.build.advance(pulse.prelude.lengthMs + pulse.times.homeMs + TUNING.autoNextRoundMs + 10)
   assert.equal(side.build.state.pulseNumber, 2, "it did not move on by itself")
   assert.equal(side.build.state.experiments.nextRound, "auto", "the Experiment did not carry into the next round")
 
@@ -206,9 +204,9 @@ test("Next round on auto: the next Build Phase begins on its own a moment after 
   startRound(waits, DEFENCE)
   const standing = waits.build.pulse!
   waits.build.advance(0)
-  waits.build.advance(standing.times.homeMs + TUNING.autoNextRoundMs + 5000)
+  waits.build.advance(standing.prelude.lengthMs + standing.times.homeMs + TUNING.autoNextRoundMs + 5000)
   assert.equal(waits.build.state.pulseNumber, 1)
-  assert.equal(standing.busyUntil(standing.times.homeMs + 10_000), null)
+  assert.equal(standing.busyUntil(standing.prelude.lengthMs + standing.times.homeMs + 10_000), null)
 })
 
 test("the incoming raid: drawn where it will arrive, its intention on the card, and always shown", () => {

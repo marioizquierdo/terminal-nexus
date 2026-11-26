@@ -1,7 +1,7 @@
-// The rally arrows (the owner's playtests, 2026-11-25, docs/history/feedback/2026-11-25-rally-point.md): once only,
-// `rallyArrowsAtMs` into a Battle Round, a few arrows run along each side's route to its rally point, both sides at
-// once; each side's flag shows briefly as its arrows arrive, and never on a tile something stands on. Nothing before,
-// nothing after. The route goes round impassable terrain only, through every building. `src/view/rally-arrows.ts`,
+// The rally arrows (the owner's playtests, 2026-11-25 and 2026-11-26, docs/history/feedback/2026-11-25-rally-point.md):
+// once only, at once as a Battle Round begins, a few arrows run along each side's route to its rally point, both sides
+// at once; each side's flag shows for a second as its arrows arrive, and never on a tile something stands on. Nothing
+// after. The route goes round impassable terrain only, through every building. `src/view/rally-arrows.ts`,
 // drawn by `drawRallyMarks` (`src/view/pulse-scene.ts`).
 
 import { test } from "node:test"
@@ -27,7 +27,8 @@ import { battleRoundScreen } from "./battle-round-frame.ts"
 
 /** The Crossing's top flank, far off the march line. */
 const FLANK = { x: 25, y: 3 }
-const AT = TUNING.rallyArrowsAtMs
+/** When the run starts: the round's first instant ("it should happen right away"). */
+const AT = 0
 
 type Round = Readonly<{ timeline: PulseTimeline }>
 
@@ -74,7 +75,7 @@ const flags = (marks: readonly RallyMark[] | undefined, player: "A" | "B"): Rall
 
 /** The plan the presenter makes for `timeline`, made again here: when each side's arrows arrive. */
 function planOf(timeline: PulseTimeline): RallyPlan {
-  return rallyPlan(timeline.states[0] as MatchState, timeline.registry, { atMs: AT, count: TUNING.rallyArrowsCount, stopMs: Number.POSITIVE_INFINITY })
+  return rallyPlan(timeline.states[0] as MatchState, timeline.registry, { count: TUNING.rallyArrowsCount, stopMs: Number.POSITIVE_INFINITY })
 }
 
 test("the player's route runs from beside its Nexus to the rally point", { timeout: 60_000 }, () => {
@@ -112,10 +113,12 @@ test("the route goes straight through buildings, round impassable terrain only",
   assert.deepEqual(rallyRoute(bare, registry, "A")?.path, route.path, "the Barracks bent the route")
 })
 
-test("nothing shows before the run, for either side", { timeout: 60_000 }, () => {
+test("the run starts at once: both sides' arrows are out on the round's first frames, and the flag stays a second", { timeout: 60_000 }, () => {
   const { timeline } = roundWith(FLANK)
   const presenter = presenterOf(timeline)
-  for (let timeMs = 0; timeMs < AT; timeMs += 100) assert.equal(frameAt(presenter, timeMs).rally, undefined, `a rally mark at ${timeMs} ms, before the run`)
+  const first = frameAt(presenter, 50).rally
+  assert.ok(arrows(first, "A").length > 0 && arrows(first, "B").length > 0, "the arrows waited")
+  assert.equal(FLAG_MS, 1000)
 })
 
 test("both sides' arrows run together from the moment, toward their rally points, with no flag while they run", { timeout: 60_000 }, () => {
@@ -214,7 +217,6 @@ test("reduced motion: the arrows stand still along the route, then the flag", { 
   const plan = planOf(timeline)
   const route = plan.routes.A
   assert.ok(route !== undefined)
-  assert.equal(frameAt(presenter, AT - 100, true).rally, undefined)
   const first = arrows(frameAt(presenter, AT + 100, true).rally, "A")
   assert.equal(first.length, TUNING.rallyArrowsCount)
   const arrives = AT + runLengthMs(route, plan.count, true)

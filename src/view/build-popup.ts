@@ -84,7 +84,7 @@ export type PopupOpening = "double-flash"
  * Which popup opens with what — data, so a new popup or a new opening is a line here. A popup not
  * named opens straight into the breath.
  */
-export const POPUP_OPENINGS: Readonly<Partial<Record<Popup, PopupOpening>>> = { "battle-round": "double-flash" }
+export const POPUP_OPENINGS: Readonly<Partial<Record<Popup, PopupOpening>>> = {}
 
 /** How long a flash opening lasts, from the popup opening to its last pulse back at rest. */
 export function flashLengthMs(flash: PopupFlash): number {

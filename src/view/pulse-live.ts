@@ -40,7 +40,9 @@ import type { Speaker, SpokenLine } from "./pulse-voice.ts"
 import { VOICE, commanderOf, labelPlace, planVoice, shippedBarks, speakerOf, voiceAt, voiceLight, voiceMoments } from "./pulse-voice.ts"
 import { DEFAULT_PRESENTATION, createView } from "./snapshot.ts"
 import type { RallyPlan } from "./rally-arrows.ts"
-import { rallyMarksAt, rallyPlan } from "./rally-arrows.ts"
+import { rallyEndMs, rallyMarksAt, rallyPlan } from "./rally-arrows.ts"
+import type { Clash, KnownMap, PreludePlan } from "./prelude.ts"
+import { NO_PRELUDE, preludeAt, preludePlan } from "./prelude.ts"
 import type { PresentationOptions, PulseTimeline, PulseView } from "./snapshot.ts"
 
 /** A Pulse the battle engine has resolved, and the regroup that follows it — everything the screen needs to play it, built by
@@ -63,6 +65,9 @@ export type ResolvedPulse = Readonly<{
   /** Both sides' names when nobody at the screen plays either (a Skirmish watched, two scripts): the Battle Round then
    *  says "Vasse" and "Averno" where it would say "yours" and "the enemy", and who won rather than VICTORY. */
   watched?: Readonly<Record<PlayerId, string>>
+  /** HOOK for the building clashes of the round (`RoundReport.clashes`: both sides built on the same ground, so neither
+   *  stands): each is thrown down, with the removal's sparks, at the start of the prelude. Nothing passes them yet. */
+  clashes?: readonly Clash[]
 }>
 
 /** A mission's round, as the result reads it. */
@@ -164,11 +169,24 @@ export class PulsePresenter {
   /** Where each side's troops head and the way there, walked once from the round's opening: the rally arrows
    *  (`rally-arrows.ts`). `null` for a timeline with no opening state. */
   private readonly rally: RallyPlan | null
+  /** The enemy's new buildings and units revealed before the fight's first tick, and how long that takes
+   *  (`prelude.ts`): the fight's own clock (`timeMs`) starts at its end. */
+  readonly prelude: PreludePlan
+  /** What the Build Phase's map showed as the round began, kept so watching it again reveals the same. */
+  readonly known: KnownMap | undefined
 
   constructor(
     resolved: ResolvedPulse,
     presentation: PresentationOptions = DEFAULT_PRESENTATION,
-    options: Readonly<{ autoNextMs?: number | null; straight?: boolean; replay?: boolean; barksOf?: BarksOf }> = {},
+    options: Readonly<{
+      autoNextMs?: number | null
+      straight?: boolean
+      replay?: boolean
+      barksOf?: BarksOf
+      /** What the Build Phase's map showed when the round began: the enemy's entities in the opening that were not on
+       *  it are revealed one by one before the fight (`prelude.ts`). Absent: no reveal. */
+      known?: KnownMap
+    }> = {},
   ) {
     this.resolved = resolved
     this.autoNextMs = options.autoNextMs ?? null
@@ -176,7 +194,7 @@ export class PulsePresenter {
     this.view = createView(resolved.timeline, presentation)
     this.times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, TUNING)
     const result = missionResultOf(watchedResult(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), outcomeOf(resolved.timeline), resolved.watched), resolved.mission)
-    // A replay (the game menu's Replay last battle) goes nowhere but back to the Build Phase it was opened from.
+    // A replay (the game menu's Watch last battle) goes nowhere but back to the Build Phase it was opened from.
     this.result = options.replay === true ? replayResult(result, resolved.mission?.round) : result
     if (options.replay === true) this.straight = false
     this.strain = nexusStrain(resolved.timeline)
@@ -191,7 +209,10 @@ export class PulsePresenter {
     this.voice = this.planLines(options.barksOf ?? shippedBarks, presentation.cosmeticSeed)
     this.fall = this.fallOf()
     const opening = resolved.timeline.states[0]
-    this.rally = opening === undefined ? null : rallyPlan(opening, resolved.timeline.registry, { atMs: TUNING.rallyArrowsAtMs, count: TUNING.rallyArrowsCount, stopMs: this.times.stopMs })
+    this.known = options.known
+    this.prelude = opening === undefined || options.known === undefined ? NO_PRELUDE : preludePlan(opening, resolved.timeline.registry, options.known, resolved.clashes ?? [])
+    // The arrows run from the round's first instant, the prelude included: on the presentation clock (`elapsedMs`).
+    this.rally = opening === undefined ? null : rallyPlan(opening, resolved.timeline.registry, { count: TUNING.rallyArrowsCount, stopMs: this.times.stopMs + this.prelude.lengthMs })
   }
 
   /** Where and when the player's Commander fell, in presentation time: her death's tick, at the Pulse's own pace. */
@@ -244,9 +265,16 @@ export class PulsePresenter {
     return states[Math.max(0, Math.min(this.view.lastTick, Math.floor(timeMs / this.view.tickDurationMs)))] ?? this.resolved.regroup.state
   }
 
-  /** Where in the Pulse the screen is, in presentation milliseconds. */
-  get timeMs(): number {
+  /** How long the round has been on screen, in presentation milliseconds: from the moment Enter placed the rally
+   *  point, the prelude included. */
+  get elapsedMs(): number {
     return this.playback.presentationTimeMs
+  }
+
+  /** Where in the fight the screen is, in presentation milliseconds: 0 through the prelude, then the fight's own
+   *  clock — what the timer, the ending, the voice and every effect read. */
+  get timeMs(): number {
+    return Math.max(0, this.playback.presentationTimeMs - this.prelude.lengthMs)
   }
 
   get paused(): boolean {
@@ -346,7 +374,12 @@ export class PulsePresenter {
     const { colors, reducedMotion } = options
     const timeMs = this.timeMs
     const times = this.times
-    const drawn = this.view.sampleAt(timeMs, colors, reducedMotion)
+    const elapsedMs = this.elapsedMs
+    const opening = this.view.sampleAt(timeMs, colors, reducedMotion)
+    // The prelude: the enemy's new things rising one by one over the fight's first tick, their light and sparks
+    // painted with every other effect.
+    const prelude = preludeAt(this.prelude, elapsedMs, this.resolved.timeline.registry, reducedMotion, colors)
+    const drawn = prelude === null ? opening : { ...opening, effects: [...opening.effects, ...prelude.effects] }
     const positions = drawn.positions
     const forces = { A: { units: 0, hp: 0 }, B: { units: 0, hp: 0 } }
     for (const entity of drawn.state.entities) {
@@ -360,9 +393,14 @@ export class PulsePresenter {
     // The light on her as she starts to speak, painted with every other effect, under the corruption law.
     const light = voice === null ? null : this.lightOn(voice, options)
     const sample = light === null ? drawn : { ...drawn, effects: [...drawn.effects, light] }
-    const rally = this.rally === null ? [] : rallyMarksAt(this.rally, timeMs, drawn.state.targets, reducedMotion)
+    const rally = this.rally === null ? [] : rallyMarksAt(this.rally, elapsedMs, drawn.state.targets, reducedMotion)
+    // On Enter the cursor goes (the owner: "The lines are removed, the cursor goes away"): not drawn while the prelude
+    // and the rally arrows play, then back for looking round.
+    const cursorHidden = elapsedMs < Math.max(this.prelude.lengthMs, this.rally === null ? 0 : rallyEndMs(this.rally, reducedMotion))
     return {
       ...(rally.length === 0 ? {} : { rally }),
+      ...(prelude === null ? {} : { prelude }),
+      ...(cursorHidden ? { cursorHidden } : {}),
       ...(aura === null ? {} : { aura }),
       ...(voice === null ? {} : { voice: voice.frame }),
       ...(this.fall === null ? {} : { fall: this.fall }),

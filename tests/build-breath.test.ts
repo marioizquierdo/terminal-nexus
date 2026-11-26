@@ -1,8 +1,9 @@
 // Every popup's border is alive (owner, 2026-09-30): it **breathes** ("just relaxing turning
 // a bit lighter and darker to create dynamism"; "This subtle version works well for all popups
-// because it is very unobtrusive"), and the Battle Round screen first **opens with a double flash**:
-// "an initial double flash pulse, with more contrast range, that works as a highlight, then it stays on
-// the default pulse animation"). An opening, from a table, then the breath: presentation alone, a pure
+// because it is very unobtrusive"), and a popup may first **open with a double flash** (the Battle Round screen did,
+// until the rally point replaced it: "an initial double flash pulse, with more contrast range, that works as a
+// highlight, then it stays on the default pulse animation"; no popup opens with one today, and the flash's timing now
+// paces the rally point's call). An opening, from a table, then the breath: presentation alone, a pure
 // function of the time since the popup opened, drawn at rest in every still frame, still under reduced
 // motion and in monochrome, and the frame timer runs for it only while a popup is open.
 
@@ -43,16 +44,16 @@ import type { Side } from "./build-helpers.ts"
 const LENGTH = 2000
 const OPENING = flashLengthMs(POPUP_FLASH)
 
-/** A Build Phase with a Nexus power picked and the Battle Round screen open, as `n 1 s` leaves it. */
-function battleRound(experiments: Readonly<{ popupPulseMs?: number }> = {}): Side {
+/** A Build Phase with the game menu open, as `q` leaves it: a popup that breathes. */
+function gameMenu(experiments: Readonly<{ popupPulseMs?: number }> = {}): Side {
   const side = buildSide({ context: { ...starterContext(), experiments } })
-  keys(side, "n", "1", "s")
-  assert.equal(side.build.state.popup, "battle-round")
+  keys(side, "q")
+  assert.equal(side.build.state.popup, "game-menu")
   return side
 }
 
 /** Every popup there is, and the state that shows it — a message needs its words. */
-const EVERY_POPUP: readonly Popup[] = ["nexus-powers", "battle-round", "game-menu", "settings", "export", "message", "controls", "activity-logs"]
+const EVERY_POPUP: readonly Popup[] = ["nexus-powers", "game-menu", "settings", "export", "message", "controls", "activity-logs"]
 const showing = (state: BuildState, popup: Popup): BuildState => ({
   ...state,
   popup,
@@ -80,7 +81,7 @@ function borderCells(side: Side, frame: ReadonlyCellFrame, state: BuildState = s
 const breath = (elapsedMs: number, lengthMs = LENGTH): PopupBreath => ({ elapsedMs, lengthMs })
 /** A border that only breathes, as every popup's does. */
 const breathing = (elapsedMs: number, breathMs = LENGTH): PopupBorder => ({ elapsedMs, opening: null, breathMs })
-/** The Battle Round screen's border: the flash, then the breath. */
+/** A border that opens with the flash, then breathes. */
 const opening = (elapsedMs: number, flash: PopupFlash = POPUP_FLASH): PopupBorder => ({ elapsedMs, opening: flash, breathMs: LENGTH })
 
 /** A resolved colour's brightness, the three channels summed. */
@@ -113,7 +114,7 @@ test("a still frame draws every popup's border at rest: inverse, in the frame's 
 })
 
 test("the same border clock draws the same cells, however the frame was reached", () => {
-  const side = battleRound()
+  const side = gameMenu()
   for (const elapsed of [0, 40, OPENING / 2, OPENING + 333, 5000]) {
     assert.deepEqual(compose(side, { popupBorder: opening(elapsed) }, "truecolor"), compose(side, { popupBorder: opening(elapsed) }, "truecolor"))
   }
@@ -127,7 +128,7 @@ test("the same border clock draws the same cells, however the frame was reached"
 })
 
 test("over one breath the border turns lighter, back to rest, darker, and back to rest — and nothing else changes", () => {
-  const side = battleRound()
+  const side = gameMenu()
   const rest = compose(side, {}, "truecolor")
   const border = new Set(borderCells(side, rest).map(({ x, y }) => `${x},${y}`))
   const at = (elapsedMs: number) => compose(side, { popupBorder: breathing(elapsedMs) }, "truecolor")
@@ -156,7 +157,7 @@ test("over one breath the border turns lighter, back to rest, darker, and back t
 })
 
 test("lighter and darker are against the ground on both themes, at 256 colours and millions", () => {
-  const side = battleRound()
+  const side = gameMenu()
   for (const colors of ["truecolor", "color256"] as const) {
     for (const theme of ["dark", "light"] as const) {
       const rest = strength(side, undefined, colors, theme)
@@ -169,7 +170,7 @@ test("lighter and darker are against the ground on both themes, at 256 colours a
 })
 
 test("in monochrome a breath cannot show, so the border does not flicker at all", () => {
-  const side = battleRound()
+  const side = gameMenu()
   for (const theme of ["dark", "light"] as const) {
     const rest = resolveCell((borderCells(side, compose(side, {}, "monochrome"))[3] as { cell: Cell }).cell, "monochrome", theme)
     for (let elapsed = 0; elapsed <= LENGTH; elapsed += 25) {
@@ -181,7 +182,7 @@ test("in monochrome a breath cannot show, so the border does not flicker at all"
   }
 })
 
-// --- The Battle Round screen's opening: a double flash -------------------------------------------------
+// --- A popup's opening: a double flash -----------------------------------------------------------------
 
 test("the opening is two flashes, each far stronger than the breath ever gets, with rest between them", () => {
   // Two peaks: count the rises through half height, frame by frame.
@@ -201,7 +202,7 @@ test("the opening is two flashes, each far stronger than the breath ever gets, w
   assert.ok(POPUP_FLASH.peak >= 1.5 * BREATH_DEPTH.lighter, "the flash's height is not well past the breath's")
   // On screen, against the ground: each flash's height is stronger than the breath's lightest by a clear
   // margin, on both themes, at 256 colours and millions.
-  const side = battleRound()
+  const side = gameMenu()
   const heights = [0, 1].map((flash) => {
     const start = flash * (POPUP_FLASH.flashMs + POPUP_FLASH.gapMs)
     let best = start
@@ -246,14 +247,14 @@ test("the flash hands over to the breath without a jump: both at rest where they
   assert.ok(jumps <= 4, `${jumps} big steps: the flash flickers`)
 })
 
-test("which popup opens with what is a table: the Battle Round screen's double flash, and nothing else's", () => {
-  assert.deepEqual(POPUP_OPENINGS, { "battle-round": "double-flash" })
+test("which popup opens with what is a table: none opens with a flash since the Battle Round screen went", () => {
+  assert.deepEqual(POPUP_OPENINGS, {})
   const side = buildSide()
   for (const popup of EVERY_POPUP) {
     const effect = popupBorderEffect(showing(side.build.state, popup), false)
     assert.ok(effect !== null, `${popup}: still`)
     assert.equal(effect.breathMs, LENGTH, `${popup}: does not breathe`)
-    assert.deepEqual(effect.opening, popup === "battle-round" ? POPUP_FLASH : null, `${popup}: the wrong opening`)
+    assert.equal(effect.opening, null, `${popup}: the wrong opening`)
   }
   assert.equal(popupBorderEffect(side.build.state, false), null, "a border without a popup")
 })
@@ -266,12 +267,12 @@ test("every popup breathes in the live loop, from the frame that first shows it,
     const state = showing(side.build.state, popup)
     const animation = new BuildAnimation()
     animation.frame(side.build.state, -10_000)
-    const openingMs = popup === "battle-round" ? OPENING : 0
+    const openingMs = 0
     const first = animation.frame(state, 0)
     assert.deepEqual(first.popupBorder?.elapsedMs, 0, `${popup}: the first frame showing it does not start its border`)
     const at = openingMs + LENGTH / 4
     const later = animation.frame(state, at)
-    assert.deepEqual(later.popupBorder, { elapsedMs: at, opening: popup === "battle-round" ? POPUP_FLASH : null, breathMs: LENGTH })
+    assert.deepEqual(later.popupBorder, { elapsedMs: at, opening: null, breathMs: LENGTH })
     assert.equal(later.frameMs, BREATH_FRAME_MS, `${popup}: the breath redraws every frame`)
     assert.equal(later.busyUntil, at + BREATH_FRAME_MS, `${popup}: the frame timer stopped while it breathes`)
     // What it hands the view is what the view draws, and it moves the border.
@@ -281,30 +282,8 @@ test("every popup breathes in the live loop, from the frame that first shows it,
   }
 })
 
-test("the Battle Round screen's flash is drawn every frame, then the breath at its slower rate", () => {
-  const side = battleRound()
-  const animation = new BuildAnimation()
-  const first = animation.frame(side.build.state, 0)
-  assert.deepEqual(first.popupBorder, opening(0))
-  for (const now of [FRAME_MS, OPENING / 2, OPENING - 1]) {
-    const live = animation.frame(side.build.state, now)
-    assert.deepEqual(livePresentation(live).popupBorder, opening(now), `${now} ms: the view is not handed the flash`)
-    assert.equal(live.frameMs, undefined, `${now} ms: the flash was drawn at the breath's slower rate`)
-    assert.equal(nextFrameDelay(live.busyUntil, now, live.frameMs), Math.min(FRAME_MS, OPENING - now), `${now} ms`)
-  }
-  const settled = animation.frame(side.build.state, OPENING + 100)
-  assert.equal(settled.frameMs, BREATH_FRAME_MS)
-  assert.ok(BREATH_FRAME_MS > FRAME_MS, "the breath redraws as often as a fast animation")
-  // Someone else's flash times: handed in with the rest of the live loop's tuning.
-  const quick: PopupFlash = { count: 2, flashMs: 100, gapMs: 50, peak: 1 }
-  const tuned = new BuildAnimation({ ...TUNING, popupFlash: quick })
-  tuned.frame(side.build.state, 0)
-  assert.deepEqual(tuned.frame(side.build.state, 120).popupBorder, opening(120, quick))
-  assert.equal(tuned.frame(side.build.state, 400).frameMs, BREATH_FRAME_MS, "the tuned flash did not end when it should")
-})
-
 test("the frame timer stops the frame the last popup closes; a popup opened again, or another over it, starts again", () => {
-  const side = battleRound()
+  const side = gameMenu()
   const animation = new BuildAnimation()
   animation.frame(side.build.state, 0)
   assert.notEqual(animation.frame(side.build.state, 1000).busyUntil, null)
@@ -316,13 +295,13 @@ test("the frame timer stops the frame the last popup closes; a popup opened agai
   const settled = animation.frame(side.build.state, 3000)
   assert.equal(settled.busyUntil, null, "the frame timer kept running after the popup closed")
   assert.equal(nextFrameDelay(settled.busyUntil, 3000, settled.frameMs), null)
-  // Opened again: the flash again, from the start.
-  keys(side, "s")
-  assert.equal(side.build.state.popup, "battle-round")
-  assert.deepEqual(animation.frame(side.build.state, 5000).popupBorder, opening(0))
-  assert.deepEqual(animation.frame(side.build.state, 5100).popupBorder, opening(100))
-  // Another popup in its place — the game menu, then Settings over it — is its own border, from rest.
-  const menu = showing(side.build.state, "game-menu")
+  // Opened again: the breath again, from rest.
+  keys(side, "q")
+  assert.equal(side.build.state.popup, "game-menu")
+  assert.deepEqual(animation.frame(side.build.state, 5000).popupBorder, breathing(0))
+  assert.deepEqual(animation.frame(side.build.state, 5100).popupBorder, breathing(100))
+  // Another popup in its place — the Nexus powers, then Settings — is its own border, from rest.
+  const menu = showing(side.build.state, "nexus-powers")
   assert.deepEqual(animation.frame(menu, 6000).popupBorder, breathing(0))
   assert.deepEqual(animation.frame(menu, 6400).popupBorder, breathing(400))
   const settings = showing(side.build.state, "settings")
@@ -330,7 +309,7 @@ test("the frame timer stops the frame the last popup closes; a popup opened agai
 })
 
 test("reduced motion and monochrome keep every border still and the timer quiet", () => {
-  const side = battleRound()
+  const side = gameMenu()
   for (const options of [{ reducedMotion: true }, { colors: "monochrome" as const }]) {
     for (const popup of EVERY_POPUP) {
       const state = showing(side.build.state, popup)
@@ -346,20 +325,20 @@ test("reduced motion and monochrome keep every border still and the timer quiet"
   }
 })
 
-test("the breath's Experiment at 0 stops the breath but not the flash; a shorter breath is a shorter breath", () => {
-  const off = battleRound({ popupPulseMs: 0 })
+test("the breath's Experiment at 0 stops the breath; a shorter breath is a shorter breath", () => {
+  const off = gameMenu({ popupPulseMs: 0 })
   const animation = new BuildAnimation()
-  assert.deepEqual(animation.frame(off.build.state, 0).popupBorder, { elapsedMs: 0, opening: POPUP_FLASH, breathMs: null })
+  assert.equal(animation.frame(off.build.state, 0).popupBorder, undefined)
   const after = animation.frame(off.build.state, OPENING + 10)
   assert.equal(after.popupBorder, undefined)
   assert.equal(after.busyUntil, null)
   assert.equal(popupBorderEffect(showing(off.build.state, "settings"), false), null, "another popup moves with the breath off")
-  const quick = battleRound({ popupPulseMs: 1200 })
+  const quick = gameMenu({ popupPulseMs: 1200 })
   const live = new BuildAnimation()
   live.frame(quick.build.state, 0, { colors: "color256" })
   assert.deepEqual(live.frame(quick.build.state, OPENING + 300, { colors: "color256" }).popupBorder, {
     elapsedMs: OPENING + 300,
-    opening: POPUP_FLASH,
+    opening: null,
     breathMs: 1200,
   })
 })

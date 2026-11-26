@@ -217,7 +217,7 @@ function settingsSpec(state: BuildState): PopupSpec {
   }
 }
 
-/** The game menu: Settings, Controls and hotkeys, Activity logs, Save game, Replay last battle, Restart, Quit. Every row is an option, and the
+/** The game menu: Settings, Controls and hotkeys, Activity logs, Save game, Watch last battle, Restart, Quit. Every row is an option, and the
  *  highlight is `GAME_MENU_ROWS`'s index. Save game is dimmed where nothing can be saved, its description saying why. No row
  *  goes back to the game: Esc, `x`, the top bar's `close [esc]` and a click outside do, as for every popup. */
 function menuSpec(context: BuildContext, state: BuildState): PopupSpec {
@@ -262,8 +262,8 @@ function menuSpec(context: BuildContext, state: BuildState): PopupSpec {
       },
       {
         kind: "option",
-        hotkey: "b",
-        label: "Replay last battle",
+        hotkey: "w",
+        label: "Watch last battle",
         command: { kind: "replay-battle" },
         highlighted: on("replay"),
         description: state.canReplay ? "The last Battle Round again; Enter at its end comes back here." : NO_REPLAY,
@@ -493,24 +493,6 @@ function noteSpec(context: BuildContext, state: BuildState): PopupSpec {
   }
 }
 
-/** What the Battle Round confirmation announces when a mission has nothing of its own to say. */
-export const DEFAULT_ROUND_TEXT = "Activate Nexus. Collect Resources. Spawn Units."
-
-/** The Battle Round confirmation's quiet line while a dealt Nexus power is left unpicked. */
-export const UNPICKED_POWER = "A Nexus power is still waiting."
-
-/** What the confirmation says for round `round`: the mission's own text for it, or the default. */
-export function roundAnnouncement(context: BuildContext, round: number): string {
-  return context.roundText?.[round] ?? DEFAULT_ROUND_TEXT
-}
-
-/** "Vasse is out this round." for each of the player's Commanders sitting this round out. */
-function absentCommanders(context: BuildContext): string[] {
-  return (context.absent ?? [])
-    .filter((absence) => absence.player === "A")
-    .map((absence) => `${commanderName(absence.contentId)} is out this round.`)
-}
-
 /** What this Nexus Pulse did for the player's Commander, at the top of its popup: restored her beside the Nexus, or
  *  could not yet — she is out, and the round she is back for. Nothing when she stands. */
 function commanderRows(context: BuildContext): PopupRow[] {
@@ -535,12 +517,6 @@ function commanderRows(context: BuildContext): PopupRow[] {
     ),
   ]
   return rows.length === 0 ? [] : [{ kind: "heading", text: "COMMANDER" }, ...rows, { kind: "blank" }]
-}
-
-/** An announcement's sentences, each its own line on the screen: short orders read as a list, and the
- *  popup is only 40 glyphs wide at the floor, where a sentence that wrapped would leave one word alone. */
-function sentences(text: string): readonly string[] {
-  return text.split(/(?<=[.!?])\s+/u).filter((sentence) => sentence !== "")
 }
 
 /** The popup the state has open, as data, or `null`. */
@@ -578,22 +554,6 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       }
       return { title: "NEXUS PULSE", rows }
     }
-    case "battle-round":
-      // A confirmation screen, not a question: the round's title,
-      // what it announces (and that the Commander is out, when she is), and the one row, `[s] Start`,
-      // highlighted because it is what Enter, Space and `s` do. Esc goes back, as from every popup. A Nexus
-      // power left unpicked is said in one quiet line, and starts nothing and stops nothing.
-      return {
-        title: `Battle Round ${state.pulseNumber}`,
-        rows: [
-          { kind: "blank" },
-          ...sentences(roundAnnouncement(context, state.pulseNumber)).map((text): PopupRow => ({ kind: "note", text })),
-          ...absentCommanders(context).map((text): PopupRow => ({ kind: "note", text })),
-          ...(pendingPicks(context, state) > 0 ? [{ kind: "text", text: UNPICKED_POWER, muted: true } as const] : []),
-          { kind: "blank" },
-          { kind: "option", hotkey: START_KEY, label: "Start", command: { kind: "start-pulse" }, highlighted: true },
-        ],
-      }
     case "game-menu":
       return menuSpec(context, state)
     case "settings":

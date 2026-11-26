@@ -192,5 +192,5 @@ export function atHome(played: Pick<Played, "build">): void {
   const pulse = played.build.pulse
   assert.ok(pulse !== null, "there is no Pulse on screen")
   played.build.advance(0)
-  played.build.advance(pulse.times.homeMs + 100)
+  played.build.advance(pulse.prelude.lengthMs + pulse.times.homeMs + 100)
 }

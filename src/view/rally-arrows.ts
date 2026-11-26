@@ -1,9 +1,10 @@
-// **The rally arrows** (the owner's playtests, 2026-11-25): during the Battle Round, a few arrows run from a side's
-// Nexus to where its troops head — its rally point, the enemy's Nexus by default — like a pulse travelling along the
-// line, then vanish, and the side's flag shows briefly where they arrive. Once only, for both sides together,
-// `rallyArrowsAtMs` into the round ("let's do that only once ... 5 seconds later, you can see those lines ... only
-// showing the banner at the very end when the arrows arrive, and only once. And do the same for the enemy as well"):
-// nothing before, nothing after, and no flag while they run.
+// **The rally arrows** (the owner's playtests, 2026-11-25 and 2026-11-26): as the Battle Round begins, a few arrows run
+// from a side's Nexus to where its troops head — its rally point, the enemy's Nexus by default — like a pulse travelling
+// along the line, then vanish, and the side's flag shows for a second where they arrive. Once only, for both sides
+// together, **at once** — from the first instant of the round's presentation, the moment Enter placed the rally point,
+// before the fight's first tick when the enemy's new buildings are revealed first ("The line effect should not wait 5
+// seconds, it should happen right away ... for both players. The banner can stay for a second like it does now, then
+// goes away"): nothing before, nothing after, and no flag while they run.
 //
 // A map mark, as the raid's intent trail is, not an effect recipe: the scene draws it (`drawRallyMarks`,
 // `pulse-scene.ts`), on open plain ground only, never over a glyph that stands (the corruption law); a flag whose tile
@@ -37,22 +38,21 @@ const SHORTEST_RUN_MS = 1200
 const LONGEST_RUN_MS = 3000
 /** How long the run holds under reduced motion, its arrows standing still along the route before the flag shows. */
 export const STILL_MS = 1500
-/** How long the flag shows once the arrows arrive: a glance's worth, long enough to find the `!` the arrows pointed
- *  at, short enough to stay the "very end" of the run rather than a mark that stands ("only once"). */
-export const FLAG_MS = 1500
+/** How long the flag shows once the arrows arrive: the owner's "for a second" — long enough to find the `!` the arrows
+ *  pointed at, short enough to stay the "very end" of the run rather than a mark that stands ("only once"). */
+export const FLAG_MS = 1000
 
 /** One side's route: where its troops head, the tiles from beside its Nexus to there, how far along each tile is by
  *  the battlefield's own distance, and the tile the flag is drawn on (the area's middle: the rally point's own tile). */
 export type RallyRoute = Readonly<{ player: PlayerId; area: TargetArea; path: readonly Coord[]; along: readonly number[]; flag: Coord }>
 
-/** What the round shows of each side's route, worked out once: the routes, when the run starts, how many arrows run,
- *  and when the shooting stops. */
+/** What the round shows of each side's route, worked out once: the routes, how many arrows run, and when the shooting
+ *  stops. The run starts at 0: the round's presentation clock (`PulsePresenter.elapsedMs`), which starts as Enter
+ *  places the rally point. */
 export type RallyPlan = Readonly<{
   routes: Readonly<Partial<Record<PlayerId, RallyRoute>>>
-  /** When, into the round, both sides' arrows set off together. */
-  atMs: number
   count: number
-  /** When the fight stops: nothing from then on. */
+  /** When the fight stops, on the same clock: nothing from then on. */
   stopMs: number
 }>
 
@@ -78,14 +78,14 @@ export function rallyRoute(opening: MatchState, registry: ContentRegistry, playe
   return { player, area, path, along, flag: inBounds(terrain, flag) ? flag : (path[path.length - 1] as Coord) }
 }
 
-/** Both sides' routes, from the round's opening state, with the moment and the count the tuned values give. */
-export function rallyPlan(opening: MatchState, registry: ContentRegistry, pace: Readonly<{ atMs: number; count: number; stopMs: number }>): RallyPlan {
+/** Both sides' routes, from the round's opening state, with the count the tuned value gives. */
+export function rallyPlan(opening: MatchState, registry: ContentRegistry, pace: Readonly<{ count: number; stopMs: number }>): RallyPlan {
   const routes: Partial<Record<PlayerId, RallyRoute>> = {}
   for (const player of ["A", "B"] as const) {
     const route = rallyRoute(opening, registry, player)
     if (route !== null) routes[player] = route
   }
-  return { routes, atMs: Math.max(0, pace.atMs), count: Math.max(0, Math.round(pace.count)), stopMs: pace.stopMs }
+  return { routes, count: Math.max(0, Math.round(pace.count)), stopMs: pace.stopMs }
 }
 
 /** How far the run goes on `route`: its length, the trailing arrows' spacing, and a step past the end. */
@@ -139,14 +139,14 @@ function runArrows(route: RallyRoute, count: number, localMs: number, reducedMot
 }
 
 /**
- * What shows of the rally points at `timeMs`, given the targets the state holds at that instant: from `plan.atMs`,
- * each side's `plan.count` arrows run along its route, both sides at once, each in its side's colour; as a side's last
- * arrow arrives its flag shows, for `FLAG_MS`, and then nothing more. A side whose target is no longer the one its
- * route was walked to (released, or changed by the level) shows nothing; nothing at all once the shooting stops.
- * Pure: the same plan, time, targets and motion give the same marks.
+ * What shows of the rally points `timeMs` into the round's presentation, given the targets the state holds at that
+ * instant: from 0, each side's `plan.count` arrows run along its route, both sides at once, each in its side's colour;
+ * as a side's last arrow arrives its flag shows, for `FLAG_MS`, and then nothing more. A side whose target is no longer
+ * the one its route was walked to (released, or changed by the level) shows nothing; nothing at all once the shooting
+ * stops. Pure: the same plan, time, targets and motion give the same marks.
  */
 export function rallyMarksAt(plan: RallyPlan, timeMs: number, targets: MatchState["targets"], reducedMotion: boolean): RallyMark[] {
-  const localMs = timeMs - plan.atMs
+  const localMs = timeMs
   if (localMs < 0 || timeMs >= plan.stopMs || plan.count <= 0) return []
   const marks: RallyMark[] = []
   for (const player of ["A", "B"] as const) {
@@ -157,4 +157,14 @@ export function rallyMarksAt(plan: RallyPlan, timeMs: number, targets: MatchStat
     else if (localMs < arrives + FLAG_MS) marks.push({ kind: "flag", tile: route.flag, player })
   }
   return marks
+}
+
+/** When the last of the plan's marks is gone, on its clock: the longer side's run and its flag. 0 with nothing to run. */
+export function rallyEndMs(plan: RallyPlan, reducedMotion: boolean): number {
+  if (plan.count <= 0) return 0
+  let end = 0
+  for (const route of Object.values(plan.routes)) {
+    if (route !== undefined && route.path.length >= 2) end = Math.max(end, runLengthMs(route, plan.count, reducedMotion) + FLAG_MS)
+  }
+  return Math.min(end, plan.stopMs)
 }

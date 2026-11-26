@@ -22,6 +22,7 @@ import { decodeKeyEvent } from "../terminal/key-events.ts"
 import type { KeyPhase } from "../terminal/key-events.ts"
 import { keysFromChunk } from "../terminal/playback.ts"
 import { PulsePresenter, outcomeOf } from "./pulse-live.ts"
+import type { KnownMap } from "./prelude.ts"
 import type { BarksOf, ResolvedPulse } from "./pulse-live.ts"
 import type { PulseFrame } from "./pulse-scene.ts"
 import type { SpokenLine } from "./pulse-voice.ts"
@@ -199,8 +200,10 @@ export class BuildSession {
   private readonly nextRound: (context: BuildContext, state: BuildState, resolved: ResolvedPulse, alternative?: boolean) => BuildContext | null
   /** The Battle Round on screen, from the moment the plan is committed until the Build Phase starts over. */
   private presenter: PulsePresenter | null = null
-  /** The last Battle Round played, as it resolved: what the game menu's Replay last battle plays again. */
+  /** The last Battle Round played, as it resolved: what the game menu's Watch last battle plays again. */
   private lastBattle: ResolvedPulse | null = null
+  /** What the Build Phase's map showed as the last Battle Round began, so watching it again plays its reveal again. */
+  private lastKnown: KnownMap | undefined = undefined
   /** Whether the Battle Round on screen is a replay: its result goes back to the Build Phase it was opened from. */
   private replaying = false
   /** The screen's clock at the last thing the session heard of it, so a Pulse begun by a key press is at
@@ -371,7 +374,7 @@ export class BuildSession {
     else if (before.committed && !this.buildState.committed) this.presenter = null
     // Save game asked to write: the shell writes it and says how it went, which the bottom line says.
     if (this.buildState.saveRequests > before.saveRequests) this.save()
-    // Replay last battle: the last Battle Round on screen again.
+    // Watch last battle: the last Battle Round on screen again.
     if (this.buildState.replayRequests > before.replayRequests && this.replayLastBattle()) this.log.log("build.command", { command: "replay-battle" })
     // The note opened: the screen as it stood is what the note shows. Saved: the shell writes the moment.
     if (this.buildState.popup === "note" && before.popup !== "note") this.beforeNote = { context: this.context, state: before, at: this.sinceOpened(), ...(screenBefore === undefined ? {} : { text: screenBefore }) }
@@ -555,6 +558,7 @@ export class BuildSession {
       return
     }
     this.lastBattle = presenter.resolved
+    this.lastKnown = presenter.known
     // The result's other way on is only there when the round that ended offers one.
     if (alternative && presenter.resolved.mission?.ending?.alternative === undefined) return
     const next = this.nextRound(this.context, this.buildState, presenter.resolved, alternative)
@@ -673,12 +677,17 @@ export class BuildSession {
     return this.lastBattle !== null && this.presenter === null && !this.buildState.committed
   }
 
-  /** **Replay last battle** (the game menu): the last Battle Round again, from its start, with its result going back
+  /** **Watch last battle** (the game menu): the last Battle Round again, from its start, with its result going back
    *  to this Build Phase, its plan as it stands. Nothing about the round changes. */
   replayLastBattle(): boolean {
     const last = this.lastBattle
     if (last === null || !this.canReplay()) return false
-    this.presenter = new PulsePresenter(last, undefined, { autoNextMs: null, replay: true, ...(this.barksOf === undefined ? {} : { barksOf: this.barksOf }) })
+    this.presenter = new PulsePresenter(last, undefined, {
+      autoNextMs: null,
+      replay: true,
+      ...(this.lastKnown === undefined ? {} : { known: this.lastKnown }),
+      ...(this.barksOf === undefined ? {} : { barksOf: this.barksOf }),
+    })
     this.replaying = true
     this.resultLogged = true
     this.voiced = new Set()
@@ -698,6 +707,9 @@ export class BuildSession {
     }
     if (resolved === null) return
     this.presenter = new PulsePresenter(resolved, undefined, {
+      // What this Build Phase's map showed: the enemy's entities in the round's opening that were not on it are
+      // revealed before the fight (`prelude.ts`).
+      known: { standing: this.context.standing, field: this.context.field ?? [], incoming: this.context.incoming ?? [] },
       autoNextMs: setting(this.buildState, "nextRound") === "auto" ? TUNING.autoNextRoundMs : null,
       straight: setting(this.buildState, "nextRound") === "straight",
       ...(this.barksOf === undefined ? {} : { barksOf: this.barksOf }),

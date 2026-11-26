@@ -95,8 +95,8 @@ import { scheduleTrack, trackBusyAt } from "./animation.ts"
 import type { Point, Tween } from "./tween.ts"
 import { retarget, samePoint, still, tileAt, tweenActive, tweenEnd } from "./tween.ts"
 import { nextTrailChange } from "./build-map.ts"
-import { CALL_MS } from "./banner-marks.ts"
-import { setting } from "../build/all-settings.ts"
+import type { RallyCall } from "./banner-marks.ts"
+import { rallyCallAt, rallyCallTiming } from "./banner-marks.ts"
 
 /**
  * What a live frame hands the composer — the fields of `BuildCompositionInput` that depend on time, and
@@ -631,11 +631,13 @@ export class BuildAnimation {
     // The raid's trail, timed from the first frame that drew it moving. It never settles either, so it asks for
     // a frame only when it next looks different — never every frame — and none at all while it holds still.
     const raidTrail = this.trail.at(state, now, options)
-    // The rally point: its call every frame until it ends; then its pulse, which never settles, at the breath's pace.
-    const bannerNow = this.bannerClock.at(state, now, options.reducedMotion === true)
+    // The rally point: the focus arrow's flight to it and each group of flashes every frame until they end; between
+    // them its pulse, which never settles, at the breath's pace — which also catches the reminder's start.
+    const bannerNow = this.bannerClock.at(state, now, options.reducedMotion === true, this.tuning.focusArrowMs)
     if (bannerNow.until !== null) ends.push(bannerNow.until)
-    if (bannerNow.pulseMs !== undefined && setting(state, "battleBanner") === "on") breathing = true
-    const banner = bannerNow.pulseMs === undefined ? undefined : { pulseMs: bannerNow.pulseMs }
+    if (bannerNow.pulseMs !== undefined) breathing = true
+    const { until: _bannerUntil, ...banner } = bannerNow
+    if (bannerNow.call?.flight !== null && bannerNow.call?.flight !== undefined) handoffFlight = { progress: bannerNow.call.flight }
     // The slow things moving — a breath, the trail — and the first frame either needs: the timer's pace while
     // nothing faster is moving, whose own ends keep it at every frame until they pass.
     let slowUntil: number | null = breathing ? now + BREATH_FRAME_MS : null
@@ -659,7 +661,7 @@ export class BuildAnimation {
       ...(popupBorder === undefined ? {} : { popupBorder }),
       ...(dialogLight === undefined ? {} : { dialogLight }),
       ...(raidTrail === null ? {} : { raidTrail }),
-      ...(banner === undefined ? {} : { banner }),
+      ...(banner.call === undefined ? {} : { banner }),
       ...(roundElapsed === undefined ? {} : { roundElapsed }),
       ...(regroup === null ? {} : { regroup }),
       ...(room.length === 0 ? {} : { room }),
@@ -670,19 +672,38 @@ export class BuildAnimation {
 }
 
 /**
- * **The rally point's clock**: from the first frame that showed the cursor as the rally point (Start Battle Round) —
- * the call that brings the eye to it for its first `CALL_MS`, every frame, then its pulse and its march line moving.
- * Under reduced motion it does not run: no call, and the rally point holds still, lit.
+ * **The rally point's clock**: from the first frame that showed the cursor as the rally point (Start Battle Round), and
+ * from the last frame its tile changed — the two times the call and the reminder are a pure function of
+ * (`rallyCallAt`, `src/view/banner-marks.ts`): the focus arrow's flight to it, the four arrows and three flashes as it
+ * lands, the reminder a second after it last moved and every five seconds; its pulse and its march line moving
+ * between them. `until` is when the flight or the flash group under way ends, for the frame timer. Under reduced motion
+ * the call is the arrows standing still, and nothing else runs: no pulse, nothing to time.
  */
 export class BannerClock {
   private shownAt: number | null = null
+  private moved: Readonly<{ at: number; tile: Coord }> | null = null
 
-  at(state: BuildState, now: number, reducedMotion: boolean): Readonly<{ pulseMs?: number; until: number | null }> {
-    if (state.popup !== "banner-place" || reducedMotion) this.shownAt = null
-    else if (this.shownAt === null) this.shownAt = now
-    if (this.shownAt === null) return { until: null }
-    const pulseMs = now - this.shownAt
-    return { pulseMs, until: pulseMs < CALL_MS ? this.shownAt + CALL_MS : null }
+  at(
+    state: BuildState,
+    now: number,
+    reducedMotion: boolean,
+    focusArrowMs: number = TUNING.focusArrowMs,
+  ): Readonly<{ pulseMs?: number; call?: RallyCall; until: number | null }> {
+    if (state.popup !== "banner-place") {
+      this.shownAt = null
+      this.moved = null
+      return { until: null }
+    }
+    if (this.shownAt === null) this.shownAt = now
+    if (this.moved === null || this.moved.tile.x !== state.cursor.x || this.moved.tile.y !== state.cursor.y) {
+      // The first frame is no move: the rally point arrived there, the player did not move it.
+      this.moved = { at: this.moved === null ? this.shownAt : now, tile: state.cursor }
+    }
+    const timing = rallyCallTiming(focusArrowMs, state.experiments.popupFlashMs, reducedMotion)
+    const call = rallyCallAt(timing, now - this.shownAt, now - this.moved.at)
+    if (reducedMotion) return { call, until: null }
+    const until = call.flight !== null ? this.shownAt + timing.flightMs : call.groupEndsMs === null ? null : this.shownAt + call.groupEndsMs
+    return { pulseMs: now - this.shownAt, call, until }
   }
 }
 

@@ -50,7 +50,6 @@ import type { ConstructItem } from "./types.ts"
  */
 export type HintSituation =
   | "nexus-powers"
-  | "battle-round"
   | "game-menu"
   | "settings"
   | "export"
@@ -75,7 +74,6 @@ export type HintSituation =
 export function hintSituation(context: BuildContext, state: BuildState): HintSituation {
   switch (state.popup) {
     case "nexus-powers":
-    case "battle-round":
     case "settings":
     case "export":
     case "message":
@@ -138,9 +136,8 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
     nexusPowers(context, state).pending.length > 0
       ? "Pick one: up/down and [enter], or its number. [esc] closes without a pick."
       : "The Nexus powers you have. [esc] closes.",
-  "battle-round": (_context, state) => `Battle Round ${state.pulseNumber}: [enter] or [s] starts it, [esc] goes back to the plan.`,
   // Nothing is drawn beside the rally point on the map (the owner, 2026-11-25: "basically nothing in the middle that
-  // is covering the line"): this line says it all, after the flag the view draws before it (`RALLY_MARK_WIDTH`).
+  // is covering the line"): this line says it all.
   "banner-place": (context, state) => rallyPointLine(bannerSpot(context, state, state.cursor)),
   "game-menu": () => "Up/down and [enter] choose, or press a row's key. [esc] back to the game.",
   settings: (_context, state) => `Left/right change a value, [e] exports them all. ${escBack(state)}`,
@@ -194,9 +191,7 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
       ? setting(state, "powerPick") === "required"
         ? `Start Battle Round ${state.pulseNumber}: pick a Nexus power first, [n] opens them.`
         : `Start Battle Round ${state.pulseNumber} without a Nexus power? [n] picks one, [enter] begins.`
-      : setting(state, "battleBanner") === "on"
-      ? `Start Battle Round ${state.pulseNumber}: place the rally point, then fight. [enter] to begin.`
-      : `Start Battle Round ${state.pulseNumber}: lock in your plan and fight. [enter] to begin.`,
+      : `Start Battle Round ${state.pulseNumber}: place the rally point, then fight. [enter] to begin.`,
 
   // --- The map ---
   // Its own key cancels it, as Esc does; another building waits until it is placed or
@@ -214,40 +209,21 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   map: () => "Arrows move the cursor, [enter] explores here, a number selects a building.",
 }
 
-/** How many columns the banner's flag and the blank after it take at the start of the bottom line while the cursor
- *  is the rally point (`drawTopBarAndBottomLine`, `src/view/build-frame.ts`): the rally point's line is written for
- *  the room left. */
-export const RALLY_MARK_WIDTH = 2
+/** The keys part of the rally point's line: what the reminder blanks on its off beats (`[      ]`,
+ *  `src/view/build-frame.ts`). */
+export const RALLY_KEYS = "[arrows]"
 
-/** The room the rally point's line has at the 80-column floor: the bottom bar's 76 columns, less the flag. */
-export const RALLY_LINE_ROOM = 76 - RALLY_MARK_WIDTH
+/** The rally point's line while it may go where the cursor is (the owner, 2026-11-26: "The status bar at the bottom
+ *  should show the available acctions: "[arrows] Set Rally Point. [enter] Start battle." There's no need to label
+ *  every location"). */
+export const RALLY_POINT_LINE = `${RALLY_KEYS} Set Rally Point. [enter] Start battle.`
 
 /**
- * **The rally point's bottom line** (the owner, 2026-11-25: "the same icon for the flag ... and then says rally point,
- * and simply say enter, place the rally point, and begin the battle"): where it stands and what Enter does — or,
- * where troops could not get, why not. The longest way that fits `room` with the spot's whole name: the fixed words
- * shorten first, the name is cut only past the shortest of them. The flag before it is the view's.
+ * **The rally point's bottom line**: the two actions — or, where troops could not stand or get, why not, and
+ * nothing more: Enter does nothing there (`bannerPlace`). No spot is named.
  */
-export function rallyPointLine(spot: Readonly<{ name: string; refusal: string | null }>, room: number = RALLY_LINE_ROOM): string {
-  const where = `Rally point on ${spot.name}.`
-  if (spot.refusal !== null) {
-    // "Rock: no troops can stand there." on rock says the spot once: "Rally point on rock: no troops can stand there."
-    const named = `${spot.name.charAt(0).toUpperCase()}${spot.name.slice(1)}: `
-    const line = spot.refusal.startsWith(named) ? `Rally point on ${spot.name}: ${spot.refusal.slice(named.length)}` : `${where} ${spot.refusal}`
-    return line.length <= room ? line : spot.refusal
-  }
-  const ways = [
-    `${where} [enter] place it and begin the battle, [esc] back.`,
-    `${where} [enter] place it and begin the battle.`,
-    `${where} [enter] place it, begin the battle.`,
-    `${where} [enter] place, begin the battle.`,
-    `${where} [enter] place, begin battle.`,
-    `${where} [enter] begins.`,
-  ]
-  const fitted = ways.find((line) => line.length <= room)
-  if (fitted !== undefined) return fitted
-  const tail = ". [enter] begins."
-  return `Rally point on ${spot.name.slice(0, Math.max(0, room - tail.length - "Rally point on ".length - 3))}...${tail}`
+export function rallyPointLine(spot: Readonly<{ refusal: string | null }>): string {
+  return spot.refusal ?? RALLY_POINT_LINE
 }
 
 /** What can be done where the keyboard is, in the quiet `hint` tone — never about a tile, so it never

@@ -73,7 +73,7 @@ function toResult(side: BuildSide): void {
   const pulse = side.build.pulse
   assert.ok(pulse !== null)
   side.build.advance(0)
-  side.build.advance(pulse.times.homeMs + 100)
+  side.build.advance(pulse.prelude.lengthMs + pulse.times.homeMs + 100)
   assert.equal(pulse.phase(), "home")
 }
 
@@ -137,7 +137,7 @@ test("she falls: the feed says so, the result says she is back next round, and r
   assert.ok(death !== undefined, "she did not fall")
   // The feed, the moment after she falls: by name, as falling, not as a unit dying.
   side.build.advance(0)
-  side.build.advance(Math.ceil(((death.tick + 1) * 1000) / 12))
+  side.build.advance(pulse.prelude.lengthMs + Math.ceil(((death.tick + 1) * 1000) / 12))
   assert.match(panelText(side), /\d+\.\ds Vasse falls/)
   // Her name everywhere in the feed, never the id's lower-case one.
   assert.doesNotMatch(panelText(side), /\bvasse\b/)
@@ -179,7 +179,7 @@ test("a Commander who sits a round out: the result says the round she is out for
   assert.ok(death !== undefined, "she did not fall")
   // The feed, the moment after she falls: by name, as falling, not as a unit dying.
   side.build.advance(0)
-  side.build.advance(Math.ceil(((death.tick + 1) * 1000) / 12))
+  side.build.advance(pulse.prelude.lengthMs + Math.ceil(((death.tick + 1) * 1000) / 12))
   assert.match(panelText(side), /\d+\.\ds Vasse falls/)
   // Her name everywhere in the feed, never the id's lower-case one.
   assert.doesNotMatch(panelText(side), /\bvasse\b/)
@@ -191,9 +191,11 @@ test("a Commander who sits a round out: the result says the round she is out for
   assert.equal(side.build.state.pulseNumber, 2)
   assert.equal(statusLine(side), "Round 1: victory. Vasse is out this round, back for round 3.")
   assert.doesNotMatch(mapText(side), /@/, "she is on round 2's map")
+  // Her absence is said as the round opens (the line above); Start goes straight to the rally point, no screen
+  // between to say it again.
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
   side.build.dispatch({ kind: "open-battle-round" })
-  assert.match(screenText(side), /Vasse is out this round\./)
+  assert.equal(side.build.state.popup, "banner-place")
 })
 
 test("a Commander who sits a round out: round 3 opens with her back beside the Nexus, at full health, and her card says so", () => {
@@ -229,7 +231,5 @@ test("a Commander who sits a round out falls with one round to go: the result sa
   keys(side, ENTER)
   assert.equal(side.build.state.pulseNumber, 2)
   assert.match(statusLine(side), /^Round 1: \w[\w' ]*\. Vasse is out this round\.$/)
-  side.build.dispatch({ kind: "pick-nexus", index: 0 })
-  side.build.dispatch({ kind: "open-battle-round" })
-  assert.match(screenText(side), /Vasse is out this round\./)
+  assert.doesNotMatch(mapText(side), /@/, "she is on the last round's map")
 })

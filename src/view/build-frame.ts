@@ -3,7 +3,7 @@
 // player is, what Esc does) and the bottom line.
 
 import { edgeMarkers } from "../build/camera.ts"
-import { RALLY_MARK_WIDTH, bottomLine } from "../build/help.ts"
+import { RALLY_KEYS, RALLY_POINT_LINE, bottomLine } from "../build/help.ts"
 import { ESC_KEY, escLabelSpan, escLabel } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import type { ArmedPreview } from "../build/state.ts"
@@ -11,12 +11,14 @@ import type { BandCell } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import { put, text } from "./draw.ts"
 import { pulseStatus, pulseSubtitle } from "./pulse-scene.ts"
-import { chromeGlyph, playerRole } from "./theme.ts"
+import { chromeGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import { statusStyle } from "./status.ts"
 import type { ArmWeight, Arms, EdgePlace } from "./edge.ts"
 import { edgeCell } from "./edge.ts"
 import type { BuildCompositionInput } from "./build.ts"
+import type { RallyCall } from "./banner-marks.ts"
+import type { StyleRole } from "./roles.ts"
 
 /** Which of a frame cell's four neighbours a line continues into. */
 type Joins = { n: boolean; s: boolean; e: boolean; w: boolean }
@@ -172,8 +174,8 @@ export function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack
  * line: **the contextual line**, the last command's answer while it has one and
  * otherwise a hint for where the keyboard is (`bottomLine`, `src/build/help.ts`), or, while a Nexus
  * Pulse plays with no popup over it, what the Pulse is doing. Every key is on the Controls and hotkeys
- * page, not here. While the cursor is the rally point the line opens with the banner's flag, as the pack draws it on
- * the map, in the player's colour (`rallyPointLine`, `src/build/help.ts`, writes the words for the room left).
+ * page, not here. While the cursor is the rally point the line is its two actions (`RALLY_POINT_LINE`), the keys in
+ * the hotkey look, `[arrows]` blanked on the reminder's off beats (`drawRallyLine`).
  */
 export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null, pack: GlyphPack): void {
   const { context, state, layout } = input
@@ -214,15 +216,36 @@ export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositi
   const pulse = state.popup !== null ? undefined : input.pulse
   const shown = pulse === undefined ? bottomLine(context, state, preview) : pulseStatus(pulse)
   const style = statusStyle(shown.tone)
-  const flag = pulse === undefined && state.popup === "banner-place"
-  if (flag) put(cells, band, left, layout.footerRow, chromeGlyph(pack, "banner"), playerRole("A"), { bold: true })
-  const from = flag ? left + RALLY_MARK_WIDTH : left
-  const lineRoom = flag ? layout.footerLimit - RALLY_MARK_WIDTH : layout.footerLimit
+  const lineRoom = layout.footerLimit
   // Whole words only: on a bar narrower than the line (a battlefield smaller than the view) the words that do
   // not fit are left off, never cut in half.
   const line = shown.text.length <= lineRoom ? shown.text : (wrapWords(shown.text, lineRoom)[0] ?? "")
-  text(cells, band, from, layout.footerRow, line, style.role, {
+  if (pulse === undefined && state.popup === "banner-place" && shown.text === RALLY_POINT_LINE) {
+    drawRallyLine(cells, left, layout.footerRow, line, lineRoom, style.role, input.banner?.call)
+    return
+  }
+  text(cells, band, left, layout.footerRow, line, style.role, {
     ...(style.bold === undefined ? {} : { bold: style.bold }),
     limit: lineRoom,
   })
+}
+
+/**
+ * **The rally point's line** (the owner, 2026-11-26: "[arrows] Set Rally Point. [enter] Start battle."): its words in
+ * the line's own look and each bracketed key in the hotkey look, as a menu row writes its key. The reminder flashes the
+ * keys part three times (F330: "[arrows] Set Rally Point." => "[      ] Set Rally Point."): inverse on its beats,
+ * blank between the brackets off them (`RallyCall`, `src/view/banner-marks.ts`).
+ */
+function drawRallyLine(cells: BandCell[], left: number, row: number, line: string, room: number, role: StyleRole, call: RallyCall | undefined): void {
+  let column = left
+  for (const part of line.split(/(\[[^\]]*\])/u)) {
+    if (part === "") continue
+    const limit = left + room - column
+    if (limit <= 0) return
+    const key = part.startsWith("[") && part.endsWith("]")
+    if (!key) text(cells, BANDS.chrome, column, row, part, role, { limit })
+    else if (part === RALLY_KEYS && call?.keysBlank === true) text(cells, BANDS.chrome, column, row, `[${" ".repeat(part.length - 2)}]`, "chrome.hotkey", { bold: true, limit })
+    else text(cells, BANDS.chrome, column, row, part, "chrome.hotkey", { bold: true, ...(part === RALLY_KEYS && call?.keysLit === true ? { inverse: true } : {}), limit })
+    column += part.length
+  }
 }

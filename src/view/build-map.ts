@@ -560,7 +560,7 @@ export function drawCursor(cells: BandCell[], input: BuildCompositionInput): voi
   // screen never shows two "you are here"s at once.
   // A committed plan hides the cursor, except while a Pulse is on screen: there it is how the player looks
   // around the map, the arrows moving it and the view following.
-  if (state.focus !== "map" || state.popup !== null || (state.committed && input.pulse === undefined)) return
+  if (state.focus !== "map" || state.popup !== null || (state.committed && input.pulse === undefined) || input.pulse?.cursorHidden === true) return
   const range = visibleRange(state.camera, state.viewport)
   // Where the cursor is drawn: mid-glide, a tile on its way (and what stands there decides its style).
   const cursor = input.cursor ?? state.cursor

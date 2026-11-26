@@ -54,8 +54,7 @@ function screenAt(
   terminal: { columns: number; rows: number },
   drive: (build: BuildSession, layout: ReturnType<typeof buildLayout>) => void = () => {},
 ) {
-  // The Battle Round confirmation these tests read is the one the Battle banner Experiment, off, keeps.
-  const context: BuildContext = { ...neutralContext(), experiments: { battleBanner: "off" } }
+  const context: BuildContext = neutralContext()
   const layout = buildLayout(terminal, context.terrain)
   const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   drive(build, layout)
@@ -404,12 +403,11 @@ test("looking at an illegal tile reads quietly, trying to build there reads in r
   assert.equal(tried.build.state.planned.length, 0)
 })
 
-test("while the commit question is open, the status line asks it, whatever the ghost would say", () => {
-  // A refusal is about what Enter would do right now; with the confirmation open, Enter does
-  // nothing to the battlefield, so the ghost and its refusal both step aside for the question.
-  // The question does not open over an armed building at all: `s` is
+test("while the rally point is placed, the status line says its two actions, whatever the ghost would say", () => {
+  // A refusal is about what Enter would do right now; with the rally point being placed, Enter places it, so the
+  // ghost and its refusal both step aside. Start does not go there over an armed building at all: `s` is
   // refused, and the bottom line says so rather than what the ghost on rock would say — a command's
-  // answer comes first. Cancelled, the question opens.
+  // answer comes first. Cancelled, Start makes the cursor the rally point.
   const armed = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "open-battle-round" }])
@@ -420,9 +418,9 @@ test("while the commit question is open, the status line asks it, whatever the g
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "cancel" }, { kind: "open-battle-round" }])
   })
-  assert.match(statusRow(asking), /^Battle Round 1: Enter starts it, Esc goes back\.$/)
+  assert.equal(statusRow(asking), "[arrows] Set Rally Point. [enter] Start battle.")
   const ghost = cellForTile(asking.layout, asking.build.state.camera, { x: 8, y: 5 })
-  assert.notEqual(cellAt(asking.frame, ghost.x, ghost.y).glyph, "x", "no ghost behind the question")
+  assert.notEqual(cellAt(asking.frame, ghost.x, ghost.y).glyph, "x", "no ghost behind the rally point")
 })
 
 test("the budget on screen is the budget the reducer is enforcing", () => {
@@ -745,19 +743,15 @@ test("after the pick, the Nexus row says how many powers are active", () => {
   assert.match(built.text, /\[n\] Nexus Pulse {2,}1 active/)
 })
 
-test("the commit confirmation is a screen over the battlefield: Battle Round 1, what it announces, and [s] Start", () => {
+test("Start makes the cursor the rally point on the battlefield: no popup, the flag and its four arrows, the two actions below", () => {
   const built = screenAt(MINIMUM, (build) => {
     build.dispatch({ kind: "open-battle-round" })
   })
-  assert.match(built.text, /Battle Round 1/)
-  // PERIMETER's own words for its first round, one sentence to a line.
-  for (const order of ["A hostile force is inbound from the ridge.", "Hold the perimeter."]) assert.match(built.text, new RegExp(order.replace(".", "\\.")))
-  assert.match(built.text, /\[s\] Start\b/)
-  assert.doesNotMatch(built.text, /Keep building|\?\s*\|/, "one row, and no question")
-  assert.match(built.text, /close \[esc\]/)
-  // The bottom line answers the key that opened it; once that lapses, the hint says the same keys.
-  assert.match(built.text, /Battle Round 1: Enter starts it, Esc goes back\./)
-  assert.equal(hint(built.context, built.build.state).text, "Battle Round 1: [enter] or [s] starts it, [esc] goes back to the plan.")
+  assert.equal(built.build.state.popup, "banner-place")
+  assert.doesNotMatch(built.text, /Battle Round 1|\[s\] Start\b(?! Battle)/, "a confirmation popup")
+  assert.match(built.text, />!</, "the flag between its two side arrows")
+  assert.match(built.text, /back \[esc\]/)
+  assert.equal(hint(built.context, built.build.state).text, "[arrows] Set Rally Point. [enter] Start battle.")
 })
 
 test("the committed screen names the pick and the count, and the footer carries the full sentence", () => {

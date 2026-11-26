@@ -187,9 +187,9 @@ export type BuildContext = Readonly<{
    */
   scene?: readonly DialogLine[]
   /**
-   * What the Battle Round confirmation announces for round *n*, keyed by its number ("story missions may
-   * inject pulse-n text here", the owner). A round with no entry says
-   * `DEFAULT_ROUND_TEXT` (`popup.ts`). Nothing supplies one yet; a mission's own data will.
+   * A mission's text for round *n*, keyed by its number ("story missions may inject pulse-n text here", the owner).
+   * The Battle Round confirmation that said it is gone (the rally point starts the round); nothing on screen reads it
+   * now, and nothing supplies one.
    */
   roundText?: Readonly<Record<number, string>>
   /** Where the adapter puts an export besides the screen, said in the export popup — "Copied to the
@@ -421,10 +421,10 @@ export type BuildState = Readonly<{
   /** How many times Save game has been asked to write, counting up: the session hands the round, the plan and the name
    *  to the shell each time it goes up, as it does an export (`activityExports`). */
   saveRequests: number
-  /** Whether a Battle Round has been played since the screen opened, so the game menu's Replay last battle has one to
+  /** Whether a Battle Round has been played since the screen opened, so the game menu's Watch last battle has one to
    *  play: set by the session as each round opens. */
   canReplay: boolean
-  /** How many times Replay last battle has been asked for, counting up: the session plays the last Battle Round again
+  /** How many times Watch last battle has been asked for, counting up: the session plays the last Battle Round again
    *  each time it goes up, as it writes a save (`saveRequests`). */
   replayRequests: number
   /** The note's line as typed so far (the note popup, `!`). */
@@ -603,7 +603,6 @@ function nextLine(context: BuildContext, state: BuildState): BuildState {
  */
 function editLock(state: BuildState): StatusMessage | null {
   if (state.committed) return status("The plan is locked in.", "warning")
-  if (state.popup === "battle-round") return status("Start or go back first: [s] start, [esc] back.", "warning")
   if (state.popup !== null) return status("Close the popup first: [esc].", "warning")
   return null
 }
@@ -1427,18 +1426,12 @@ function openBattleRound(context: BuildContext, state: BuildState): BuildState {
   if (setting(state, "powerPick") === "required" && pendingPicks(context, state) > 0) {
     return { ...state, status: status("Pick a Nexus power first: [n].", "warning"), ack: acknowledge(state, "refused", entry) }
   }
-  if (bannerOn(state)) return moveRallyPoint(context, state, entry)
-  return {
-    ...pushPopup(toMenu(state), "battle-round", 0),
-    menuHighlight: entry,
-    ack: acknowledge(state, "pressed", entry),
-    status: status(`Battle Round ${state.pulseNumber}: Enter starts it, Esc goes back.`),
-  }
+  return moveRallyPoint(context, state, entry)
 }
 
 // --- The rally point ---------------------------------------------------------------------------------
 //
-// **The rally point** (the Battle banner Experiment; the owner's idea, 2026-10-31, made simpler after he played it,
+// **The rally point** (the owner's idea, 2026-10-31, made simpler after he played it,
 // 2026-11-25: "as soon as the user clicks on Start Battle, the cursor should go straight into the banner and the user
 // can move the banner around and press Enter ... And when you accept, then the battle begins"). Start Battle Round
 // makes the cursor the rally point (the `banner-place` popup, which draws no box: the menu stays as it is, its Start
@@ -1446,16 +1439,15 @@ function openBattleRound(context: BuildContext, state: BuildState): BuildState {
 // the mouse move it; the bottom line, after the banner's flag, says where it stands and what Enter does, or why troops
 // could not get there — nothing is written beside it on the map (`rallyPointLine`, `src/build/help.ts`). Enter,
 // Space, `s`, the menu's Start row or a second click on the tile it stands on places it there and starts the Battle
-// Round at once. Esc gives back the cursor, the camera and the keyboard as they were, the plan untouched. No stance
-// is asked: what the troops do there is the Rally point Experiment's.
+// Round at once. Esc, Backspace, `x` and a right click give back the cursor, the camera and the keyboard as they were,
+// the plan untouched (the owner, 2026-11-26: "Canceling (esc/backspace) in the middle of the banner placement should
+// go back to the build mode, pressing enter begins the battle"). No stance is asked: the troops hold it.
 
-/** Whether Start Battle Round goes through the rally point. */
-function bannerOn(state: BuildState): boolean {
-  return setting(state, "battleBanner") === "on"
-}
-
-/** Start Battle Round with the rally point: the cursor becomes the rally point, the camera on it, and what was there
- *  before is kept for Esc to give back. Its row flashes "pressed", as every way of reaching it does. */
+/** Start Battle Round: the cursor becomes the rally point, the camera on it, and what was there before is kept for
+ *  Esc to give back. Its row flashes "pressed", as every way of reaching it does, and **hands the keyboard to the map**
+ *  (`BuildState.handoff`), whichever half had it: the menu's Start row is where the rally point is sent from, so the
+ *  view flies the focus arrow from that row to the rally point, as it does for a building armed, and then calls the eye
+ *  there (`src/view/banner-marks.ts`). */
 function moveRallyPoint(context: BuildContext, state: BuildState, entry: number): BuildState {
   const bannerFrom = { cursor: state.cursor, camera: state.camera, focus: state.focus, exploreMap: state.exploreMap }
   const looked = lookAt(context, toMenu(state), currentBanner(context, state).tile)
@@ -1463,6 +1455,7 @@ function moveRallyPoint(context: BuildContext, state: BuildState, entry: number)
     ...pushPopup(looked, "banner-place", 0),
     menuHighlight: entry,
     ack: acknowledge(state, "pressed", entry),
+    handoff: handOff(state, "menu", entry),
     bannerFrom,
   }
 }
@@ -1473,12 +1466,6 @@ function cancelRallyPoint(state: BuildState): BuildState {
   const from = state.bannerFrom
   const closed: BuildState = { ...closePopups(state), bannerFrom: null }
   return from === null ? closed : { ...closed, cursor: from.cursor, camera: from.camera, focus: from.focus, exploreMap: from.exploreMap }
-}
-
-/** The stance a placed rally point carries: the Rally point Experiment's — push on is aggressive, hold defensive. */
-function rallyStance(state: BuildState): BannerStance {
-  void state
-  return "defensive"
 }
 
 /** The plan committed: the Battle Round starts. The keyboard goes to the battlefield, where the arrows look around it
@@ -1506,7 +1493,7 @@ function bannerPlace(context: BuildContext, state: BuildState): BuildState {
     }
   }
   const fallback = defaultBanner(context)
-  const banner: PlantedBanner | null = fallback.tile.x === tile.x && fallback.tile.y === tile.y ? null : { tile, stance: rallyStance(state) }
+  const banner: PlantedBanner | null = fallback.tile.x === tile.x && fallback.tile.y === tile.y ? null : { tile, stance: "defensive" }
   return commitPlan({ ...state, banner })
 }
 
@@ -1598,11 +1585,11 @@ function closePopups(state: BuildState): BuildState {
 /** A popup that belongs to no other — the Nexus powers, the game menu — opened alone, over whatever
  *  was open. Over the dialog it opens on top, and going back from it comes back to the line. */
 function openPopup(state: BuildState, popup: Popup): BuildState {
-  // The start-the-Pulse question and a committed Build Phase each own the whole screen; a popup over
+  // Placing the rally point and a committed Build Phase each own the whole screen; a popup over
   // either would be a second question on top of one. The game menu is the one exception: leaving can
   // always be asked about.
   if (popup !== "game-menu") {
-    const lock = state.committed || state.popup === "battle-round" ? editLock(state) : null
+    const lock = state.committed || state.popup === "banner-place" ? editLock(state) : null
     if (lock !== null) return { ...state, status: lock }
   }
   if (state.popup === "dialog") return pushPopup(state, popup, 0)
@@ -1671,7 +1658,6 @@ function place(context: BuildContext, state: BuildState): BuildState {
  *  Settings), or closes; placing or Explore Map goes back to where it began; the map to the menu; and
  *  on the menu, the game menu opens. */
 function cancel(state: BuildState): BuildState {
-  if (state.popup === "battle-round") return { ...closePopups(state), status: status("Cancelled.") }
   // The rally point: back to the Build Phase as it was before Start, nothing changed.
   if (state.popup === "banner-place") return cancelRallyPoint(state)
   // The dialog: the rest of the scene skipped, and the round as it opened.
@@ -1830,8 +1816,8 @@ function adjustShownSetting(state: BuildState, field: ShownName, step: -1 | 1): 
 /** Starts the Build Phase over, keeping the settings and the experiments — how an experiment marked
  *  "restart" takes effect. The last acknowledgement is carried over so its sequence keeps counting up
  *  and the live loop never mistakes a new one for one it has already shown. */
-/** Why Replay last battle has nothing to play: no round has ended since the screen opened. */
-export const NO_REPLAY = "No battle to replay yet: one is kept when a round ends."
+/** Why Watch last battle has nothing to play: no round has ended since the screen opened. */
+export const NO_REPLAY = "No battle to watch yet: one is kept when a round ends."
 
 function restartBuildPhase(context: BuildContext, state: BuildState): BuildState {
   const fresh = createBuildState(context, state.startCursor, state.viewport, state.experiments, state.settings)
@@ -1884,8 +1870,6 @@ function popupRowCount(context: BuildContext, state: BuildState): number {
       return controlsLineCount()
     case "activity-logs":
       return activityRowCount(state)
-    case "battle-round":
-      return 1
     default:
       return 0
   }
@@ -1961,7 +1945,7 @@ function lapseStatus(before: BuildState, after: BuildState): BuildState {
  * focus, never a placement or a pick — is the caller's.
  */
 function dismissPopup(state: BuildState): BuildState {
-  return { ...closePopups(state), ...(state.popup === "battle-round" ? { status: status("Cancelled.") } : {}) }
+  return closePopups(state)
 }
 
 function applyCommand(context: BuildContext, state: BuildState, command: BuildCommand): BuildState {
@@ -1992,7 +1976,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // nothing else, so a click meant to dismiss never also places or picks.
       if (state.popup !== null) {
         const dismissed = dismissPopup(state)
-        if (state.popup === "battle-round" || state.committed) return dismissed
+        if (state.committed) return dismissed
         return withClickedCursor(context, { ...dismissed, focus: "map" }, target)
       }
       // A committed plan locks every edit but not looking: a click on the map moves the cursor there and
@@ -2029,7 +2013,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
         // Over a card the menu is not drawn, so the click chooses nothing (a click can only choose what
         // it could see): it closes the popup and hands the card back — the building still armed, the
         // menu's highlight where it was.
-        if (state.popup === "battle-round" || cardShowing(state)) return dismissed
+        if (cardShowing(state)) return dismissed
         return { ...toMenu(dismissed), menuHighlight: command.entry, highlightHidden: true }
       }
       // A card — Explore Map's, or the armed building's — covers the menu below its
@@ -2113,12 +2097,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return bannerPlace(context, state)
 
     case "start-pulse":
-      // Meaningless outside the one moment it answers — a stray "y" is not a command here any more
-      // than a stray "3" is one before anything is armed. With the cursor as the rally point, Start is placing it where
-      // it stands, so a driver's open-then-start still starts the round.
-      if (state.popup === "banner-place") return bannerPlace(context, state)
-      if (state.popup !== "battle-round") return state
-      return commitPlan(state)
+      // A driver's open-then-start: with the cursor as the rally point, Start is placing it where it stands.
+      // Meaningless anywhere else, as a stray "3" is before anything is armed.
+      return state.popup === "banner-place" ? bannerPlace(context, state) : state
 
     case "look-at":
       return lookAt(context, state, { x: command.x, y: command.y })

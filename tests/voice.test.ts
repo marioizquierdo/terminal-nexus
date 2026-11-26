@@ -448,7 +448,7 @@ test("her voice changes nothing that resolves: the same round, the same states, 
   assert.deepEqual(silent, heard)
   assert.ok(spokenIn((sides[0] as BuildSide).build).length > 0, "she says nothing, so nothing is compared")
   // And played to its end, the round goes on to the same next round either way.
-  for (const side of sides) side.build.advance((side.build.pulse?.times.homeMs ?? 0) + 4000)
+  for (const side of sides) side.build.advance((side.build.pulse?.prelude.lengthMs ?? 0) + (side.build.pulse?.times.homeMs ?? 0) + 4000)
   const next = sides.map((side) => {
     side.build.dispatch({ kind: "next-round" })
     return JSON.stringify(side.build.round.field ?? [])
@@ -532,7 +532,8 @@ test("at 80 x 24, her line in the panel stops above the controls, and beside her
 test("her aura's reach: a diamond of the content's radius around her, washed on the ground under everything, while the fight is on", () => {
   // Silent, so no line of hers is drawn over the ground her aura reaches.
   const side = perimeter({}, true)
-  side.build.advance(2000)
+  // Past the rally arrows, which run as the round begins and are drawn on the ground too.
+  side.build.advance(5000)
   const pulse = pulseFrameOf(side)
   const aura = pulse.aura
   assert.ok(aura !== undefined, "no aura while the fight is on")
@@ -582,7 +583,7 @@ test("her aura's reach: a diamond of the content's radius around her, washed on 
     assert.equal(frameToText(compose(side, {}, colors)), frameToText(compose(side, { pulse: withoutAura }, colors)))
   }
   // Gone at cease fire: it guards a fight, and the walk home is not one.
-  side.build.advance((side.build.pulse?.times.stopMs ?? 0) + 10)
+  side.build.advance((side.build.pulse?.prelude.lengthMs ?? 0) + (side.build.pulse?.times.stopMs ?? 0) + 10)
   assert.equal(pulseFrameOf(side).aura, undefined)
 })
 
