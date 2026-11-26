@@ -8,6 +8,10 @@
 //   credit, and attacks every round;
 // - **turtle**: builds two Turrets forward and its strongest producers behind them, and holds until the last two rounds.
 //
+// A script says where its troops go by its rally point, as a player does (the owner, 2026-11-26: "instead of
+// defensive, the script places the banner at the home nexus. Instead of offensive, they place the banner on the enemy
+// nexus"): to hold is to rally at its own Nexus (`HOME_NEXUS`), to attack to rally at the enemy's (`ENEMY_NEXUS`).
+//
 // Each also plays with area damage (`rush-area`): one building whose units hit an area bought first each round
 // (`withArea`); and upgrading its buildings (`balanced-upgrade`): what its plan leaves spent on its standing
 // buildings' upgrades, the Barracks's production line first (`withUpgrades`).
@@ -19,12 +23,16 @@
 // Pure: a plan is a function of the brief.
 
 import type { BriefBuilding, BriefCard, BriefData } from "./brief.ts"
-import type { BuildingOrder, Formation, Placement, BuildActions, Stance, Zone } from "./types.ts"
+import type { BuildingOrder, Formation, Placement, BuildActions, RallyPlace, Zone } from "./types.ts"
 import { FORMATIONS } from "./types.ts"
 import { dealtOf } from "./reading/index.ts"
 
 /** A player: a plan from a brief. */
 export type Player = (brief: BriefData) => BuildActions
+
+/** To hold: rally at its own Nexus. To attack: rally at the enemy's. */
+const HOLD: RallyPlace = "HOME_NEXUS"
+const ATTACK: RallyPlace = "ENEMY_NEXUS"
 
 const RARITY = ["common", "uncommon", "rare", "legendary"]
 
@@ -72,7 +80,7 @@ export const balanced: Player = (brief) => {
     },
     (building, index) => (building.supply !== undefined ? "back" : (SPREAD[index % SPREAD.length] as Zone)),
   )
-  return { power, build, stance: brief.round >= 3 ? "attack" : "hold", note: "balanced: strongest producers, room before the army fills, attack from round 3" }
+  return { power, build, rally: brief.round >= 3 ? ATTACK : HOLD, note: "balanced: strongest producers, room before the army fills, attack from round 3" }
 }
 
 export const rush: Player = (brief) => {
@@ -82,7 +90,7 @@ export const rush: Player = (brief) => {
       .filter((building) => building.spawns !== undefined)
       .sort((a, b) => a.cost - b.cost)[0]
   const build = spend(brief.credits, (left) => cheapest(left), () => "forward")
-  return { power, build, stance: "attack", note: "rush: cheapest producers, all forward, attack every round" }
+  return { power, build, rally: ATTACK, note: "rush: cheapest producers, all forward, attack every round" }
 }
 
 export const turtle: Player = (brief) => {
@@ -98,17 +106,18 @@ export const turtle: Player = (brief) => {
     },
     (building) => (building === turret ? "forward" : "back"),
   )
-  return { power, build, stance: brief.round >= brief.rounds - 1 ? "attack" : "hold", note: "turtle: turrets forward, producers behind, attack in the last two rounds" }
+  return { power, build, rally: brief.round >= brief.rounds - 1 ? ATTACK : HOLD, note: "turtle: turrets forward, producers behind, attack in the last two rounds" }
 }
 
 /**
  * **reactive**: a player that reacts to what the battle said (`src/battle/reading/`) before it plans, where the others follow a fixed
  * idea. It builds as `balanced` does, and then:
  *
- * - **the stance from the battle's trades**: it plays the stance that has traded better over the battle (what it dealt for
- *   each point it took, in the rounds it played that stance), trying each once; it attacks when both sides held (a
- *   round that trades nothing says nothing), attacks a Nexus brought under half, holds a lead on Nexus health in the
- *   last round, and attacks when behind on it;
+ * - **attack or hold from the battle's trades**: it rallies where it has traded better over the battle — on the enemy's
+ *   Nexus (attacking) or its own (holding) — by what it dealt for each point it took in the rounds it rallied there,
+ *   trying each once; it attacks when both sides held (a round that trades nothing says nothing), attacks a Nexus
+ *   brought under half, holds a lead on Nexus health in the last round, and attacks when behind on it. A side whose
+ *   rally point was anywhere but the enemy's Nexus held;
  * - **a Turret when the enemy reached its Nexus** (it is hurt, or an enemy came within 8 tiles), placed by the Nexus, first;
  * - **apart against area damage**: its buildings that train units set apart once the enemy has a building standing
  *   whose units aim at the thickest knot; otherwise each where `balanced` puts it (a block was tried, and on the
@@ -122,13 +131,14 @@ export const reactive: Player = (brief) => {
   const read = last?.reading.sides[brief.side]
   const enemyShare = brief.enemy.nexus.most === 0 ? 1 : brief.enemy.nexus.health / brief.enemy.nexus.most
   const lastRound = brief.round >= brief.rounds
-  // How each stance has traded over the battle: what it dealt for each point it took, in the rounds it was played and
-  // something was traded (a round both sides held trades next to nothing, and says nothing).
-  const trade = (stance: Stance): number | null => {
+  const attacked = (rally: BuildActions["rally"]): boolean => rally === ATTACK
+  // How attacking and holding have traded over the battle: what it dealt for each point it took, in the rounds it
+  // played them and something was traded (a round both sides held trades next to nothing, and says nothing).
+  const trade = (attacking: boolean): number | null => {
     let dealt = 0
     let taken = 0
     for (const report of brief.reports) {
-      if (report.sides[brief.side].stance !== stance) continue
+      if (attacked(report.sides[brief.side].rally) !== attacking) continue
       const d = dealtOf(report.reading.sides[brief.side])
       const t = dealtOf(report.reading.sides[enemy])
       if (d + t < 50) continue
@@ -137,22 +147,21 @@ export const reactive: Player = (brief) => {
     }
     return dealt + taken === 0 ? null : dealt / Math.max(1, taken)
   }
-  const decided = ((): Readonly<{ stance: Stance; because: string }> => {
-    if (enemyShare <= 0.5) return { stance: "attack", because: "their Nexus is under half" }
-    if (lastRound && brief.score.leader === brief.side && brief.score.by === "health") return { stance: "hold", because: "the last round, ahead on Nexus health" }
-    if (brief.score.leader === enemy && brief.score.by === "health") return { stance: "attack", because: "behind on Nexus health" }
-    if (last === null) return { stance: "hold", because: "round 1: gathering" }
-    if (last.sides[brief.side].stance === "hold" && last.sides[enemy].stance === "hold") return { stance: "attack", because: "both held: someone has to move" }
-    const attack = trade("attack")
-    const hold = trade("hold")
-    if (attack === null) return { stance: "attack", because: "attacking has not been tried" }
-    if (hold === null) return attack >= 1 ? { stance: "attack", because: "its attacks have won the trade" } : { stance: "hold", because: "its attacks lost the trade, and holding has not been tried" }
+  const decided = ((): Readonly<{ rally: RallyPlace; because: string }> => {
+    if (enemyShare <= 0.5) return { rally: ATTACK, because: "their Nexus is under half" }
+    if (lastRound && brief.score.leader === brief.side && brief.score.by === "health") return { rally: HOLD, because: "the last round, ahead on Nexus health" }
+    if (brief.score.leader === enemy && brief.score.by === "health") return { rally: ATTACK, because: "behind on Nexus health" }
+    if (last === null) return { rally: HOLD, because: "round 1: gathering" }
+    if (!attacked(last.sides[brief.side].rally) && !attacked(last.sides[enemy].rally)) return { rally: ATTACK, because: "both held: someone has to move" }
+    const attack = trade(true)
+    const hold = trade(false)
+    if (attack === null) return { rally: ATTACK, because: "attacking has not been tried" }
+    if (hold === null) return attack >= 1 ? { rally: ATTACK, because: "its attacks have won the trade" } : { rally: HOLD, because: "its attacks lost the trade, and holding has not been tried" }
     const pct = (ratio: number): string => `${Math.round(ratio * 100)}%`
     return attack >= hold
-      ? { stance: "attack", because: `attacking has traded better (${pct(attack)} of what it took, holding ${pct(hold)})` }
-      : { stance: "hold", because: `holding has traded better (${pct(hold)} of what it took, attacking ${pct(attack)})` }
+      ? { rally: ATTACK, because: `attacking has traded better (${pct(attack)} of what it took, holding ${pct(hold)})` }
+      : { rally: HOLD, because: `holding has traded better (${pct(hold)} of what it took, attacking ${pct(attack)})` }
   })()
-  const stance = decided.stance
   const why: string[] = [decided.because]
 
   const threatened = brief.nexus.health < brief.nexus.most || (read !== undefined && read.advance.closest !== null && read.advance.closest <= 8)
@@ -168,7 +177,7 @@ export const reactive: Player = (brief) => {
     ...plan,
     build: first === undefined ? plan.build : [{ building: first.id, at: "nexus" }, ...plan.build],
     ...(facesArea ? { formation: "apart" as const } : {}),
-    stance,
+    rally: decided.rally,
     note: `reactive: ${why.join("; ")}`,
   }
 }

@@ -15,14 +15,12 @@
 //
 // **The route goes round impassable terrain only** (the owner: "the line just needs to go skip buildings, because
 // usually what's going to happen is when the units get there, they're not going to work around. They're going to
-// destroy the building"): a distance field toward the target's area over the battlefield's terrain, every building of
-// either side ignored, walked downhill a tile a step from the tile beside the side's Nexus nearest the target, the
-// best step first and, of two as good, the one that turns least.
+// destroy the building"): the rules layer's route walk (`rallyRoute`, `src/match/rally.ts`), the same the Build
+// Phase's march line walks, from the side's Nexus to its target's area.
 
-import { inBounds, tileDistance } from "../engine/geometry/coords.ts"
-import type { Coord, Direction } from "../engine/geometry/types.ts"
-import { DistanceField, UNREACHABLE, goalsInside, goalsNear, groundFor, rankSteps, wallsOf, weightsFor } from "../engine/routing/index.ts"
-import type { RankedStep } from "../engine/routing/index.ts"
+import { inBounds } from "../engine/geometry/coords.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import { alongRoute, rallyRoute as routeTo } from "../match/rally.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { MatchState, PlayerId, TargetArea } from "../engine/state/types.ts"
 import { LOOK_AHEAD } from "./build-map.ts"
@@ -61,8 +59,6 @@ export type RallyPlan = Readonly<{
 /** What shows at an instant: an arrow on a tile pointing `dx`, `dy`, or a side's flag. */
 export type RallyMark = Readonly<{ kind: "arrow"; tile: Coord; dx: number; dy: number; player: PlayerId }> | Readonly<{ kind: "flag"; tile: Coord; player: PlayerId }>
 
-const ONE_TILE: readonly Coord[] = [{ x: 0, y: 0 }]
-
 /** Whether two areas are the same: the side still heads where the route was walked to. */
 export const sameArea = (a: TargetArea | undefined, b: TargetArea): boolean =>
   a !== undefined && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
@@ -75,26 +71,9 @@ export function rallyRoute(opening: MatchState, registry: ContentRegistry, playe
   const { terrain } = opening
   const nexus = opening.entities.find((entity) => entity.player === player && registry.get(entity.contentId).nexus === true)
   if (nexus === undefined) return null
-  const ground = groundFor(wallsOf(terrain, "impassable", []), ONE_TILE)
-  const field = new DistanceField(ground, goalsInside(ground, ONE_TILE, area), weightsFor(terrain, ONE_TILE, "impassable") ?? undefined)
-  const starts = goalsNear(ground, ONE_TILE, nexus.anchor, registry.get(nexus.contentId).footprint, { kind: "touch", steps: 1 })
-    .filter((start) => field.distanceAt(start) !== UNREACHABLE)
-    .sort((a, b) => field.distanceAt(a) - field.distanceAt(b) || a.y - b.y || a.x - b.x)
-  const start = starts[0]
-  if (start === undefined) return null
-  const path: Coord[] = [start]
-  let at = start
-  let facing: Direction = "e"
-  const limit = terrain.width * terrain.height
-  while (field.distanceAt(at) > 0 && path.length < limit) {
-    const next: RankedStep | undefined = rankSteps(field, at, facing).flat().find((choice) => choice.downhill)
-    if (next === undefined) break
-    at = next.to
-    facing = next.direction
-    path.push(at)
-  }
-  const along: number[] = [0]
-  for (let index = 1; index < path.length; index += 1) along.push((along[index - 1] as number) + tileDistance(path[index - 1] as Coord, path[index] as Coord))
+  const path = routeTo(terrain, { anchor: nexus.anchor, footprint: registry.get(nexus.contentId).footprint }, area)
+  if (path.length === 0) return null
+  const along = alongRoute(path)
   const flag = { x: area.x + Math.floor(area.width / 2), y: area.y + Math.floor(area.height / 2) }
   return { player, area, path, along, flag: inBounds(terrain, flag) ? flag : (path[path.length - 1] as Coord) }
 }

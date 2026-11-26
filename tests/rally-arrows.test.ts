@@ -29,30 +29,29 @@ import { battleRoundScreen } from "./battle-round-frame.ts"
 const FLANK = { x: 25, y: 3 }
 const AT = TUNING.rallyArrowsAtMs
 
-type Round = Readonly<{ timeline: PulseTimeline; released: number | null }>
+type Round = Readonly<{ timeline: PulseTimeline }>
 
 const ROUNDS = new Map<string, Round>()
 
-/** Round 1 on the Crossing, Vasse against Vasse: side A builds two Barracks forward under `banner`, side B holds. */
-function roundWith(banner: BuildActions["banner"]): Round {
-  const key = JSON.stringify(banner ?? null)
+/** Round 1 on the Crossing, Vasse against Vasse: side A builds two Barracks forward and rallies at `rally`, side B
+ *  rallies at its default in front of its base (one at its own Nexus would have no route to draw). */
+function roundWith(rally: BuildActions["rally"]): Round {
+  const key = JSON.stringify(rally ?? null)
   const known = ROUNDS.get(key)
   if (known !== undefined) return known
   const state: BattleState = beginBattle({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 360, commanders: { A: "vasse", B: "vasse" } })
-  const A: BuildActions = { power: 0, build: [{ building: "barracks", at: "forward" }, { building: "barracks", at: "forward" }], stance: "attack", ...(banner === undefined ? {} : { banner }) }
-  const B: BuildActions = { power: 0, build: [], stance: "hold" }
+  const A: BuildActions = { power: 0, build: [{ building: "barracks", at: "forward" }, { building: "barracks", at: "forward" }], ...(rally === undefined ? {} : { rally }) }
+  const B: BuildActions = { power: 0, build: [] }
   const states: MatchState[] = []
   const events: DomainEvent[] = []
   let registry: ContentRegistry | null = null
-  let released: number | null = null
   playRound(state, { A, B }, (battle, happened, sideA) => {
     registry ??= sideA
     states.push(battle)
     events.push(...happened)
-    if (banner !== undefined && released === null && battle.targets?.A === undefined) released = battle.tick
   })
   const timeline = timelineOf({ id: "rally", name: "rally" }, states, events, 360, 1, registry as unknown as ContentRegistry)
-  const round = { timeline, released }
+  const round = { timeline }
   ROUNDS.set(key, round)
   return round
 }
@@ -79,7 +78,7 @@ function planOf(timeline: PulseTimeline): RallyPlan {
 }
 
 test("the player's route runs from beside its Nexus to the rally point", { timeout: 60_000 }, () => {
-  const { timeline } = roundWith({ ...FLANK, stance: "defensive" })
+  const { timeline } = roundWith(FLANK)
   const opening = timeline.states[0] as MatchState
   const route = rallyRoute(opening, timeline.registry, "A")
   assert.ok(route !== null, "no route for side A")
@@ -94,7 +93,7 @@ test("the player's route runs from beside its Nexus to the rally point", { timeo
 })
 
 test("the route goes straight through buildings, round impassable terrain only", { timeout: 60_000 }, () => {
-  const { timeline } = roundWith({ ...FLANK, stance: "defensive" })
+  const { timeline } = roundWith(FLANK)
   const opening = timeline.states[0] as MatchState
   const { registry, terrain } = timeline
   const route = rallyRoute(opening, registry, "A")
@@ -114,13 +113,13 @@ test("the route goes straight through buildings, round impassable terrain only",
 })
 
 test("nothing shows before the run, for either side", { timeout: 60_000 }, () => {
-  const { timeline } = roundWith({ ...FLANK, stance: "defensive" })
+  const { timeline } = roundWith(FLANK)
   const presenter = presenterOf(timeline)
   for (let timeMs = 0; timeMs < AT; timeMs += 100) assert.equal(frameAt(presenter, timeMs).rally, undefined, `a rally mark at ${timeMs} ms, before the run`)
 })
 
 test("both sides' arrows run together from the moment, toward their rally points, with no flag while they run", { timeout: 60_000 }, () => {
-  const { timeline } = roundWith({ ...FLANK, stance: "defensive" })
+  const { timeline } = roundWith(FLANK)
   const presenter = presenterOf(timeline)
   const plan = planOf(timeline)
   const early = frameAt(presenter, AT + 100).rally
@@ -141,7 +140,7 @@ test("both sides' arrows run together from the moment, toward their rally points
 })
 
 test("each side's flag shows once, as its arrows arrive, briefly; then nothing more", { timeout: 60_000 }, () => {
-  const { timeline } = roundWith({ ...FLANK, stance: "defensive" })
+  const { timeline } = roundWith(FLANK)
   const presenter = presenterOf(timeline)
   const plan = planOf(timeline)
   let last = 0
@@ -161,7 +160,7 @@ test("each side's flag shows once, as its arrows arrive, briefly; then nothing m
 })
 
 test("nothing is drawn on a tile something stands on: no arrow, no flag, no restyle; arrows on open plain ground only", { timeout: 60_000 }, () => {
-  const { timeline } = roundWith({ ...FLANK, stance: "defensive" })
+  const { timeline } = roundWith(FLANK)
   const screen = battleRoundScreen(timeline, { terminal: { columns: 110, rows: 36 } })
   const presenter = screen.presenter
   const view = { camera: screen.camera, viewport: screen.layout.viewport, layout: screen.layout, terrain: timeline.terrain }
@@ -200,7 +199,7 @@ test("nothing is drawn on a tile something stands on: no arrow, no flag, no rest
 })
 
 test("a side released before the run shows nothing; the other side still runs", { timeout: 60_000 }, () => {
-  const { timeline } = roundWith({ ...FLANK, stance: "defensive" })
+  const { timeline } = roundWith(FLANK)
   const plan = planOf(timeline)
   const targets = (timeline.states[0] as MatchState).targets
   assert.ok(targets?.B !== undefined)
@@ -209,18 +208,8 @@ test("a side released before the run shows nothing; the other side still runs", 
   assert.ok(arrows(rallyMarksAt(plan, AT + 100, withoutA, false), "B").length > 0, "the enemy's arrows stopped with the player's release")
 })
 
-test("an aggressive rally point's arrows stop once it is released", { timeout: 60_000 }, () => {
-  const { timeline, released } = roundWith({ ...FLANK, stance: "aggressive" })
-  assert.ok(released !== null, "the rally point was never released")
-  const presenter = presenterOf(timeline)
-  const releasedMs = (released * 1000) / timeline.ticksPerSecond
-  for (let timeMs = Math.max(releasedMs, AT); timeMs < releasedMs + 10_000; timeMs += 100) {
-    assert.equal(frameAt(presenter, timeMs).rally?.filter((mark) => mark.player === "A").length ?? 0, 0, `a mark at ${timeMs} ms, after the release`)
-  }
-})
-
 test("reduced motion: the arrows stand still along the route, then the flag", { timeout: 60_000 }, () => {
-  const { timeline } = roundWith({ ...FLANK, stance: "defensive" })
+  const { timeline } = roundWith(FLANK)
   const presenter = presenterOf(timeline)
   const plan = planOf(timeline)
   const route = plan.routes.A
@@ -237,7 +226,7 @@ test("reduced motion: the arrows stand still along the route, then the flag", { 
 })
 
 test("the marks are a pure function of time, and drawing them changes no state", { timeout: 60_000 }, () => {
-  const { timeline } = roundWith({ ...FLANK, stance: "defensive" })
+  const { timeline } = roundWith(FLANK)
   const hashes = timeline.states.map((state) => hashState(state))
   const plan = planOf(timeline)
   const targets = (timeline.states[0] as MatchState).targets

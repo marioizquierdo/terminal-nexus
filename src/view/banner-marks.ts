@@ -64,7 +64,7 @@ export function drawBanner(cells: BandCell[], input: BuildCompositionInput, pack
   const player = playerRole("A")
   const taken = takenTiles(context, state.planned)
   if (shown.moving) {
-    const lines = bannerLines(context, state, shown.tile, setting(state, "rallyPoint") === "push-on" ? "aggressive" : "defensive")
+    const lines = bannerLines(context, state, shown.tile)
     const elapsedMs = input.banner?.pulseMs ?? null
     const draw = (path: readonly Coord[], fade: number): void => {
       if (path.length < 2) return
@@ -80,7 +80,6 @@ export function drawBanner(cells: BandCell[], input: BuildCompositionInput, pack
         cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: trailGlyph(pack, mark.dx, mark.dy), style } })
       }
     }
-    draw(lines.onward, ONWARD_FADE)
     draw(lines.fromNexus, LINE_FADE)
   }
 

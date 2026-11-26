@@ -54,7 +54,7 @@ import { PERIMETER } from "../armies/index.ts"
 import type { MissionDefinition, SceneLine } from "../mission/index.ts"
 import { regionCentre, regionOf, regionTiles, sceneOf, validateMission } from "../mission/index.ts"
 import { targetRegionsAt } from "../match/index.ts"
-import type { BannerOrder } from "../match/index.ts"
+import type { RallyOrder } from "../match/index.ts"
 import { bannerOrder } from "../build/banner.ts"
 import type { MatchState } from "../engine/state/types.ts"
 import { TICKS_PER_SECOND } from "../engine/state/types.ts"
@@ -371,9 +371,8 @@ function dealtDraft(mission: MissionDefinition, context: BuildContext, round: nu
 
 /**
  * **The battle banner's default and the places it can name**, for round `pulse` of a mission: where the level sends the
- * player's troops as the round starts — its target region, held, so defensive — when it names one; and the regions
- * with a name the player reads. With no target the default is the build side's own (`defaultBanner`): the enemy's
- * Nexus, aggressive.
+ * player's troops as the round starts — its target region, held — when it names one; and the regions with a name the
+ * player reads. With no target the default is the build side's own (`defaultBanner`): the enemy's Nexus.
  */
 function bannerFieldsOf(mission: MissionDefinition, pulse: number): Pick<BuildContext, "bannerDefault" | "landmarks"> {
   const target = targetRegionsAt(mission, pulse, 0).A
@@ -386,13 +385,13 @@ function bannerFieldsOf(mission: MissionDefinition, pulse: number): Pick<BuildCo
   }
 }
 
-/** The banner the player planted, as the match layer's order — only with the Battle banner Experiment on, and only
- *  when it is not the round's own default (`bannerOrder`). */
+/** The rally point the player placed, as the match layer's order: its side heads there and holds it. Nothing while it
+ *  is the round's own default (`bannerOrder`). */
 function bannerOf(context: BuildContext, state: BuildState | undefined): Pick<MissionPulseInput, "banner"> {
-  if (state === undefined || setting(state, "battleBanner") !== "on") return {}
+  if (state === undefined) return {}
   const order = bannerOrder(context, state)
   if (order === null) return {}
-  const banner: BannerOrder = { side: "A", area: order.area, name: order.name, stance: order.stance }
+  const banner: RallyOrder = { side: "A", area: order.area, name: order.name }
   return { banner }
 }
 

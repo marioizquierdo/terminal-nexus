@@ -243,10 +243,11 @@ test("the regroup of a played battle round is pinned, on Node and on Bun", { tim
   // Pinned: the same end of round regroups into the same walks and the same state on every runtime; a change to the
   // regroup, the battle engine, the scripts or the armies moves it, and says so. (Moved when an army came to sort itself on the
   // march by half speed, the Commander a regular troop, and the regroup's ranks went by the same priority list; and again when a unit came to keep the target it holds
-  // until it falls: commitment.)
-  assert.equal(pathsHash(result), "cc39d0c293e7f412")
+  // until it falls: commitment; and when the stance gave way to the rally point: balanced holds round its own Nexus.)
+  assert.equal(pathsHash(result), "3f0aca1f71110b8c")
   // Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
-  assert.equal(hashState(result.state), "0d113f57de5e2e60a19cba09ce8fae8cf3186316627f02e98e4a6f26435cf27e")
+  // And again when the stance gave way to the rally point (the paths hash above says why).
+  assert.equal(hashState(result.state), "6ba943ac2b9ad2c9aa543780c206b54f873726af6c18e83c00fdf103579fe04b")
 })
 
 test("the round's end settled where everyone stands: the regroup's first frame, what a match that is over keeps", () => {

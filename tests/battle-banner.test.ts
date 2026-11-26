@@ -2,7 +2,7 @@
 // 2026-11-25): Start Battle Round makes the cursor the rally point at once, with no panel and no stance; the bottom
 // line, after the flag, says where it stands and what Enter does, and nothing is written on the map (the second
 // playtest, 2026-11-25); Enter places it and starts the Battle Round; Esc gives the Build Phase back as it was.
-// And the Battle Round sends the troops there — holding it, or going on to the enemy once they reach it.
+// And the Battle Round sends the troops there, and they hold it.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -14,8 +14,8 @@ import type { Coord } from "../src/engine/geometry/types.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { startPulse } from "../src/cli/pulse-run.ts"
 import { PERIMETER } from "../src/armies/index.ts"
-import { bannerReached, resolveMissionPulse, withBannerTargets } from "../src/match/index.ts"
-import type { BannerOrder } from "../src/match/index.ts"
+import { resolveMissionPulse, withRallyTarget } from "../src/match/index.ts"
+import type { RallyOrder } from "../src/match/index.ts"
 import { bottomLineText, buildSide, clickPanelRow, clickTile, compose, keys, screenText } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
 import { popupSpec } from "../src/build/popup.ts"
@@ -73,12 +73,6 @@ test("Enter places it and starts the Battle Round, holding it by default", () =>
   assert.equal(state.committed, true, "the round did not start")
   assert.equal(state.popup, null)
   assert.deepEqual(state.banner, { tile, stance: "defensive" })
-})
-
-test("with the Rally point Experiment at push on, the rally point placed is pushed on from", () => {
-  const side = bannerSide({ rallyPoint: "push-on" })
-  keys(side, "s", RIGHT, RIGHT, RIGHT, ENTER)
-  assert.equal(side.build.state.banner?.stance, "aggressive")
 })
 
 test("Esc goes back with nothing changed: the cursor, the camera and the keyboard as they were", () => {
@@ -155,18 +149,12 @@ test("placing it back on the round's own default, whatever the stance, makes no 
   assert.equal(bannerOrder(side.build.round, side.build.state), null)
 })
 
-test("one march line, from the Nexus: none from the Commander, and the onward line only with push on", () => {
-  const onward = (experiments: BuildContext["experiments"]): number => {
-    const side = bannerSide(experiments)
-    keys(side, "s", RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, UP, UP)
-    const lines = bannerLines(side.build.round, side.build.state, side.build.state.cursor, "aggressive")
-    assert.ok(lines.fromNexus.length > 1 && lines.onward.length > 1)
-    assert.deepEqual(Object.keys(lines).sort(), ["fromNexus", "onward"])
-    // The onward line is the fainter one.
-    return compose(side, {}, "truecolor").cells.filter((cell) => cell.style.fade === 0.45).length
-  }
-  assert.equal(onward({}), 0, "hold draws an onward line")
-  assert.ok(onward({ rallyPoint: "push-on" }) > 0, "push on draws no onward line")
+test("one march line, from the Nexus: none from the Commander, none onward", () => {
+  const side = bannerSide()
+  keys(side, "s", RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, UP, UP)
+  const lines = bannerLines(side.build.round, side.build.state, side.build.state.cursor)
+  assert.ok(lines.fromNexus.length > 1)
+  assert.deepEqual(Object.keys(lines), ["fromNexus"])
 })
 
 // The second playtest (2026-11-25): the line went round the player's own buildings; the owner: "Like the line just needs
@@ -176,7 +164,7 @@ test("the march line goes round rock only: buildings planned across its way chan
   keys(side, "s", RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, UP, UP)
   const { round, state } = side.build
   const tile = state.cursor
-  const before = bannerLines(round, state, tile, "defensive").fromNexus
+  const before = bannerLines(round, state, tile).fromNexus
   assert.ok(before.length > 4, "no line to plan across")
   // A Barracks on every few tiles of the line's middle, each where the line runs.
   const barracks = round.catalog.find((item) => item.label === "Barracks")
@@ -184,7 +172,7 @@ test("the march line goes round rock only: buildings planned across its way chan
   const planned = before.slice(2, -2).filter((_, index) => index % 3 === 0).map((anchor, ordinal) => ({ ordinal, contentId: barracks.contentId, anchor }))
   const walled = { ...state, planned }
   for (const each of planned) assert.ok(structureTilesAt(round, walled, each.anchor) !== null, `no building on ${each.anchor.x},${each.anchor.y}`)
-  assert.deepEqual(bannerLines(round, walled, tile, "defensive").fromNexus, before, "the line went round a building")
+  assert.deepEqual(bannerLines(round, walled, tile).fromNexus, before, "the line went round a building")
   assert.equal(bannerSpot(round, walled, tile).refusal, null)
   // Rock still turns it: no line onto rock, and none through it.
   assert.ok(bannerSpot(round, state, rock(round)).refusal !== null)
@@ -257,7 +245,7 @@ test("the Battle Round with the Experiment off is the old confirmation, and move
 // --- The match: the banner drives the battle ----------------------------------------------------------
 
 /** PERIMETER's first Pulse, on its own map with nothing built, with `banner` or none. */
-function perimeterPulse(banner?: BannerOrder) {
+function perimeterPulse(banner?: RallyOrder) {
   const context = starterContext()
   return resolveMissionPulse({
     mission: PERIMETER,
@@ -270,34 +258,21 @@ function perimeterPulse(banner?: BannerOrder) {
   })
 }
 
-const NORTH_EAST: BannerOrder = { side: "A", area: { x: 29, y: 4, width: 3, height: 3 }, name: "ground near the line", stance: "defensive" }
+const NORTH_EAST: RallyOrder = { side: "A", area: { x: 29, y: 4, width: 3, height: 3 }, name: "ground near the line" }
 
-test("a defensive banner is the side's target for the whole round, in place of the level's", () => {
+test("a rally point is the side's target for the whole round, in place of the level's: nothing releases it", () => {
   const without = perimeterPulse()
   const held = perimeterPulse(NORTH_EAST)
   assert.deepEqual(held.states[0]?.targets?.A, NORTH_EAST.area)
   assert.deepEqual(held.final.targets?.A, NORTH_EAST.area)
+  assert.ok(held.states.every((state) => state.targets?.A !== undefined && state.targets.A.x === NORTH_EAST.area.x && state.targets.A.y === NORTH_EAST.area.y), "the rally point was let go mid-round")
   assert.notDeepEqual(without.states[0]?.targets?.A, NORTH_EAST.area)
   // Twice the same: deterministic.
   assert.deepEqual(perimeterPulse(NORTH_EAST).final, held.final)
 })
 
-test("an aggressive banner lets its side go on once half its fighters reach it, and not before", () => {
-  const run = perimeterPulse({ ...NORTH_EAST, stance: "aggressive" })
-  const context = starterContext()
-  const order = { ...NORTH_EAST, stance: "aggressive" as const }
-  const released = run.states.findIndex((state) => state.targets?.A === undefined)
-  assert.ok(released > 0, "the side never went on")
-  // The tick it went on is the first the army stood there.
-  const before = run.states[released - 1]
-  const at = run.states[released]
-  assert.ok(before !== undefined && at !== undefined)
-  assert.equal(bannerReached(at, context.registry, order), true)
-  assert.ok(run.states.slice(0, released).every((state) => state.targets?.A !== undefined), "it went on before it got there")
-})
-
 test("no banner leaves the targets as the mission set them", () => {
   const targets = { A: { x: 1, y: 2, width: 3, height: 4 } }
-  assert.equal(withBannerTargets(targets, undefined, false), targets)
-  assert.deepEqual(withBannerTargets(targets, NORTH_EAST, true), undefined)
+  assert.equal(withRallyTarget(targets, undefined), targets)
+  assert.deepEqual(withRallyTarget(targets, NORTH_EAST), { A: NORTH_EAST.area })
 })

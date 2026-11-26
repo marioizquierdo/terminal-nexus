@@ -16,13 +16,13 @@ import { SCRIPTED, briefOf, beginBattle, placementsOf, playToEnd, playRound, rea
 const BARRACKS = "structure.citizen.barracks"
 const BASE_TROOPER = "unit.citizen.trooper"
 const setup = (extra: Partial<BattleSetup> = {}): BattleSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
-const hold: BuildActions = { build: [], stance: "hold" }
+const hold: BuildActions = { build: [], rally: "HOME_NEXUS" }
 
 /** A battle after its first round, side A having built one Barracks by its Nexus and a Supply Depot: the battle, and where
  *  the Barracks stands. */
 function withBarracks(): Readonly<{ battle: BattleState; at: Readonly<{ x: number; y: number }> }> {
   // A Supply Depot beside it, so the army has room for whole waves.
-  const plan: BuildActions = { build: [{ building: "barracks", at: "nexus" }, { building: "depot", at: "back" }], stance: "hold" }
+  const plan: BuildActions = { build: [{ building: "barracks", at: "nexus" }, { building: "depot", at: "back" }], rally: "HOME_NEXUS" }
   const at = placementsOf(beginBattle(setup()), "A", plan)[0]?.anchor
   assert.ok(at !== undefined, "the Barracks found no spot")
   return { battle: playRound(beginBattle(setup()), { A: plan, B: hold }).state, at }
@@ -81,10 +81,10 @@ test("a plan's building actions are held to the rules: a building of its own, an
 })
 
 test("a plan reads its actions leniently: each a building by x and y and an action by id, a broken one said and dropped", () => {
-  const read = readBuildActions('{ "build": [], "stance": "attack", "actions": [ { "x": 9, "y": 5, "action": "production-line" }, { "x": "9", "action": 3 } ] }')
+  const read = readBuildActions('{ "build": [], "rally": "ENEMY_NEXUS", "actions": [ { "x": 9, "y": 5, "action": "production-line" }, { "x": "9", "action": 3 } ] }')
   assert.deepEqual(read.actions.actions, [{ x: 9, y: 5, action: "production-line" }])
   assert.deepEqual(read.problems, ['action 2 should be { "x", "y", "action" }: a building of yours by its anchor, and one of its actions by id'])
-  assert.equal(readBuildActions('{ "build": [], "stance": "attack" }').actions.actions, undefined)
+  assert.equal(readBuildActions('{ "build": [], "rally": "ENEMY_NEXUS" }').actions.actions, undefined)
 })
 
 test("the balanced script with upgrades spends what its plan leaves on its Barracks's production line, and the battle plays it", { timeout: 120_000 }, () => {
@@ -104,7 +104,7 @@ test("a Skirmish hands the screen's actions to its battle: a production line bou
   const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
   const opened = createBuildState(context, nexusTile(context) ?? { x: 0, y: 0 }, viewport)
   const { battle } = (context.mode as { battle: BattleState })
-  const spot = placementsOf(battle, "A", { build: [{ building: "barracks", at: "nexus" }], stance: "attack" })[0]
+  const spot = placementsOf(battle, "A", { build: [{ building: "barracks", at: "nexus" }], rally: "ENEMY_NEXUS" })[0]
   assert.ok(spot !== undefined)
   const key = `${spot.anchor.x},${spot.anchor.y}`
   const state: BuildState = { ...opened, planned: [{ ordinal: 0, contentId: BARRACKS, anchor: spot.anchor }], nextOrdinal: 1, fitted: [{ anchor: key, action: "production-line" }] }

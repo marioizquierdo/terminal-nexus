@@ -21,8 +21,8 @@ import type { DomainEvent } from "../engine/events/types.ts"
 import { footprintDistance, footprintExtent, footprintSteps, tilesOf } from "../engine/geometry/coords.ts"
 import { TERRAIN } from "../engine/geometry/types.ts"
 import type { Coord, Footprint, MapTerrain } from "../engine/geometry/types.ts"
-import { bannerAreaAt, bannerRetarget } from "../match/banner.ts"
-import type { BannerOrder } from "../match/banner.ts"
+import { rallyOf } from "./rally.ts"
+import type { RallyRead } from "./rally.ts"
 import { centreTile, creditsEarned, fallen, regroup, spawningRegistry, standDown } from "../match/index.ts"
 import type { RegroupResult, StructurePlacement } from "../match/index.ts"
 import { roundOpening } from "./round-opening.ts"
@@ -34,7 +34,7 @@ import { BATTLE_MAPS, battleTerrain } from "./maps.ts"
 import type { BattleArmy } from "./sides.ts"
 import { armyOf, battleArmy, loadoutOf, powerOf } from "./sides.ts"
 import { nameOf, roundReader, scoreOf } from "./reading/index.ts"
-import type { BattleResult, BattleSetup, BattleState, Formation, Placement, RoundReport, Side, BuildActions, SideReport, SideState, Zone } from "./types.ts"
+import type { BattleResult, BattleSetup, BattleState, BuildActions, Clash, Formation, Placement, RoundReport, Side, SideReport, SideState, Zone } from "./types.ts"
 import { APART_GAP, SIDES } from "./types.ts"
 
 /** The other side. */
@@ -453,7 +453,7 @@ export function checkBuildActions(state: BattleState, side: Side, plan: BuildAct
 
 /**
  * **One round of the battle.** Each side keeps the card its plan names from its hand, builds what its plan asks for that
- * the rules allow, and its troops take its stance; the Battle Round runs until a Nexus falls or time runs out; the
+ * the rules allow, and its troops head for its rally point and hold it; the Battle Round runs until a Nexus falls or time runs out; the
  * survivors stay on the battlefield and regroup (`regroup`, `src/match/regroup.ts`): a step back, then a formation across each
  * side's march line, which the next round opens from; a Commander who fell is out by her own rule; credits carry over,
  * the next round adds the curve's and each side's battle earnings. Returns the battle after the round, what happened in
@@ -474,7 +474,7 @@ export function playRound(
   // Each side's Build Phase, blind to the other's.
   const planned = { A: buildPhase(state, "A", plans.A), B: buildPhase(state, "B", plans.B) }
   const sides = { A: planned.A.registry, B: planned.B.registry }
-  const phases = clashesSettled(planned, sides)
+  const { phases, clashes } = clashesSettled(planned, sides)
 
   // The Battle Round's opening: what the regroup left, with every Commander due back set down beside her Nexus; both
   // plans revealed together; the first round's Nexuses, Commanders and starting packages; this round's call-ups.
@@ -489,15 +489,10 @@ export function playRound(
     }
   }
   const { state: opened, restored } = roundOpening(state, { sides, callups: { A: phases.A.callups, B: phases.B.callups }, built, ...heldBy(state, plans, phases), ...refitsOf(phases) })
-  // Each side's banner, read on the battlefield as it opens (a banner on a building just placed takes its footprint);
-  // where a side planted none, or one its troops cannot stand on, its stance decides.
-  const banners = { A: bannerOf(opened, "A", plans.A, sides), B: bannerOf(opened, "B", plans.B, sides) }
-  const targets: Record<Side, TargetArea> = {
-    A: banners.A.order?.area ?? targetOf(state, "A", plans.A.stance, sides),
-    B: banners.B.order?.area ?? targetOf(state, "B", plans.B.stance, sides),
-  }
-  const start: MatchState = { ...opened, targets }
-  const planted = SIDES.flatMap((side) => (banners[side].order === undefined ? [] : [banners[side].order]))
+  // Each side's rally point, read on the battlefield as it opens (one on a building just placed takes its footprint);
+  // where a side named none, or one its troops cannot stand on, the default in front of its base.
+  const rallies = { A: rallyOf(state, opened, "A", plans.A, sides), B: rallyOf(state, opened, "B", plans.B, sides) }
+  const start: MatchState = { ...opened, targets: { A: rallies.A.area, B: rallies.B.area } }
 
   // The Battle Round, each side on its own content: the battle engine run from the opening until a Nexus falls or the
   // round's ticks run out, read as it goes. The same engine entry a sandbox, a measurement and a test run one by.
@@ -509,8 +504,6 @@ export function playRound(
     pulseTicks: state.setup.pulseTicks,
     seed: state.setup.seed,
     openingSpawns: false,
-    // An aggressive banner releases its side once half its army stands there: it marches on from the next tick.
-    ...(planted.some((order) => order.stance === "aggressive") ? { retarget: bannerRetarget(planted, (player) => sides[player]) } : {}),
     watch: (battle, happened) => {
       // The opening is shown first, with no events; the reader starts from it already.
       if (battle.tick > start.tick) reader.step(battle, happened)
@@ -532,10 +525,10 @@ export function playRound(
       credits: next[side].credits + incomeOf(state.setup, side, round + 1) + earned,
       absent: [...stillOut, ...fell.filter((absence) => absence.player === side)],
     }
-    reports[side] = sideReport(phases[side], plans[side], state.sides[side].credits, earned, banners[side])
+    reports[side] = sideReport(phases[side], plans[side], state.sides[side].credits, earned, rallies[side])
   }
   const ended = current.outcome?.reason === "nexus-destroyed" ? "nexus" : "time"
-  const report: RoundReport = { round, sides: reports, ticks: current.tick, ended, reading: reader.reading(current) }
+  const report: RoundReport = { round, sides: reports, clashes, ticks: current.tick, ended, reading: reader.reading(current) }
   const result: BattleResult | null =
     ended === "nexus" && current.outcome !== null
       ? { winner: current.outcome.winner, by: current.outcome.winner === null ? "draw" : "nexus", round }
@@ -555,12 +548,12 @@ export function playRound(
 /**
  * Two plans revealed together may put buildings on the same ground: the sides plan blind, and where their build ranges
  * meet both may claim a tile. Neither is built there — it would favour one side by a rule of order — and each is paid
- * back, the refusal said in both reports.
+ * back, the refusal said in both reports and each building in the round's `clashes`, for the screen to show.
  */
 function clashesSettled<P extends Readonly<{ placed: ReturnType<typeof placeAll>; acted: Acted; side: SideState; catalog: readonly ConstructItem[] }>>(
   phases: Readonly<Record<Side, P>>,
   sides: Readonly<Record<Side, ContentRegistry>>,
-): Record<Side, P> {
+): Readonly<{ phases: Record<Side, P>; clashes: readonly Clash[] }> {
   const tilesOfPlaced = (side: Side, placed: PlannedPlacement): Set<string> =>
     new Set(tilesOf(placed.anchor, sides[side].get(placed.contentId).footprint).map((tile) => `${tile.x},${tile.y}`))
   const clashing = { A: new Set<PlannedPlacement>(), B: new Set<PlannedPlacement>() }
@@ -588,7 +581,10 @@ function clashesSettled<P extends Readonly<{ placed: ReturnType<typeof placeAll>
       side: { ...phase.side, credits: phase.side.credits + refund },
     }
   }
-  return { A: settled("A"), B: settled("B") }
+  const clashes: Clash[] = SIDES.flatMap((side) =>
+    phases[side].placed.planned.filter((placed) => clashing[side].has(placed)).map((placed) => ({ side, contentId: placed.contentId, anchor: { x: placed.anchor.x, y: placed.anchor.y } })),
+  )
+  return { phases: { A: settled("A"), B: settled("B") }, clashes }
 }
 
 /** The buildings both plans hold this round (Hold production), each a building of its own side standing as the round
@@ -617,41 +613,6 @@ export function musterOf(state: BattleState, side: Side, registry: ContentRegist
   return { x: centre.x + facing(map, side) * 4, y: centre.y }
 }
 
-/** A plan's banner as the round reads it: the match layer's order, or why it was not planted. Neither: no banner. */
-type PlantedBannerOf = Readonly<{ order?: BannerOrder; refusal?: string }>
-
-/** A side's banner on the battlefield as the round opens: refused off the battlefield and on rock with nothing built
- *  there, where no unit can stand; otherwise the area round its tile (`bannerAreaAt`). */
-function bannerOf(state: MatchState, side: Side, plan: BuildActions, sides: Readonly<Record<Side, ContentRegistry>>): PlantedBannerOf {
-  const banner = plan.banner
-  if (banner === undefined) return {}
-  const tile = { x: banner.x, y: banner.y }
-  const where = `banner at ${tile.x},${tile.y}`
-  const { terrain } = state
-  if (tile.x >= terrain.width || tile.y >= terrain.height) return { refusal: `${where}: off the battlefield (${terrain.width} by ${terrain.height}), so the stance decided` }
-  const area = bannerAreaAt(state, (player) => sides[player], tile)
-  const ground = terrain.tiles[tile.y * terrain.width + tile.x]
-  const built = state.entities.some((entity) => {
-    const definition = sides[entity.player].get(entity.contentId)
-    return definition.layer === "obstacles" && tilesOf(entity.anchor, definition.footprint).some((each) => each.x === tile.x && each.y === tile.y)
-  })
-  if (ground !== undefined && TERRAIN[ground].impassable && !built) return { refusal: `${where}: rock, where no troops can stand, so the stance decided` }
-  return { order: { side, area, name: where, stance: banner.stance } }
-}
-
-/** Where a side's troops head: the enemy's Nexus when it attacks, its own holding ground when it holds. */
-function targetOf(state: BattleState, side: Side, stance: BuildActions["stance"], sides: Readonly<Record<Side, ContentRegistry>>): TargetArea {
-  const map = mapOf(state)
-  if (stance === "hold") return map.hold[side]
-  const enemy = other(side)
-  const anchor = map.nexus[enemy]
-  const footprint = sides[enemy].get(armyOf(state, enemy).nexus).footprint
-  const tiles = tilesOf(anchor, footprint)
-  const xs = tiles.map((tile) => tile.x)
-  const ys = tiles.map((tile) => tile.y)
-  return { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs) + 1, height: Math.max(...ys) - Math.min(...ys) + 1 }
-}
-
 /** What one side planned and spent in the round, from its phase: the Build Phase's private record. What the Battle Round
  *  did to it is the round's reading (`RoundReport.reading`). */
 function sideReport(
@@ -659,7 +620,7 @@ function sideReport(
   plan: BuildActions,
   credits: number,
   earned: number,
-  banner: PlantedBannerOf,
+  rally: RallyRead,
 ): SideReport {
   return {
     commander: phase.army.commander.id,
@@ -670,9 +631,8 @@ function sideReport(
     hand: phase.hand.map((card) => card.name),
     built: phase.placed.built,
     ...(phase.acted.took.length === 0 ? {} : { actions: phase.acted.took }),
-    refused: banner.refusal === undefined ? phase.placed.refused : [...phase.placed.refused, banner.refusal],
-    stance: plan.stance,
-    ...(banner.order === undefined ? {} : { banner: `${banner.order.stance} at ${plan.banner?.x},${plan.banner?.y}` }),
+    refused: rally.refusal === undefined ? phase.placed.refused : [...phase.placed.refused, rally.refusal],
+    rally: rally.spot,
     ...(plan.formation === undefined ? {} : { formation: plan.formation }),
     ...(plan.note === undefined ? {} : { note: plan.note }),
   }

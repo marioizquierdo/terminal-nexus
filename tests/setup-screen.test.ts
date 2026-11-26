@@ -195,7 +195,7 @@ test("the screen plays a round exactly as playNext plays it headless: the same s
   const save: SaveFile = { format: SAVE_FORMAT, setup: RICH }
   const level = skirmishLevel(save, {}, { profiles: SHIPPED_PROFILES })
   const context = withoutScene(level.firstRound())
-  const plan: BuildActions = { power: 1, build: [{ building: "turret", x: 10, y: 11 }], stance: "attack" }
+  const plan: BuildActions = { power: 1, build: [{ building: "turret", x: 10, y: 11 }] }
   const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
   const opened = createBuildState(context, nexusTile(context) ?? { x: 0, y: 0 }, viewport)
   const planned = planOnRound(context, opened, plan, level.play.keep as NonNullable<typeof level.play.keep>)
@@ -203,9 +203,10 @@ test("the screen plays a round exactly as playNext plays it headless: the same s
   assert.ok(resolved !== null)
   const onScreen = playedOf(resolved)
   assert.ok(onScreen !== undefined)
-  // The plan the screen hands the round: the one laid on it, with the rally point it starts with in front of the base.
+  // The plan the screen hands the round: the one laid on it. The rally point it starts with in front of the base is the
+  // battle's own default, so the plan names none, and the headless round rallies on the same tile.
   const screenPlan = buildActionsOf(planned.context, planned.state)
-  assert.equal(screenPlan.banner?.stance, "defensive", "the screen handed no rally point")
+  assert.equal(screenPlan.rally, undefined, "the screen's default rally point is not the battle's")
   const headless = playNext(RICH, battleOf(save, SHIPPED_PROFILES), { p1: screenPlan }, SHIPPED_PROFILES)
   assert.deepEqual(onScreen.battle, headless.state)
   // The share and the modifiers acted: p2 earns more than the curve, p1 less, and the round was half as long.

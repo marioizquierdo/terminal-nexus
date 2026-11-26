@@ -20,7 +20,8 @@ import type { Score } from "./reading/index.ts"
 import type { SideReading } from "./reading/index.ts"
 import { dealtOf, lostCount, lostOf, namedCounts, readingLines, scoreLine, scoreOf } from "./reading/index.ts"
 import type { BattleState, RoundReport, Side, SideReport } from "./types.ts"
-import { APART_GAP, FORMATIONS, STANCES, ZONES } from "./types.ts"
+import { APART_GAP, FORMATIONS, RALLY_PLACES, ZONES } from "./types.ts"
+import { rallyWords } from "../match/rally.ts"
 
 /** A building the side can build: its card id, name, cost, what it needs standing, and what it does. */
 export type BriefBuilding = Readonly<{
@@ -155,7 +156,7 @@ function reportLine(label: string, report: SeenReport["sides"][Side], read: Side
   const { dealt } = read.damage
   const { nexus } = read.buildings
   return [
-    `${label} (${report.commander}): kept ${report.kept ?? "nothing"}; built ${report.built.length === 0 ? "nothing" : report.built.join(", ")}${report.formation === undefined ? "" : ` (formation ${report.formation})`}${report.actions === undefined ? "" : `; took ${report.actions.join(", ")}`}${(report.refused ?? []).length === 0 ? "" : `; refused ${(report.refused ?? []).join("; ")}`}; ${report.banner === undefined ? `stance ${report.stance}` : `banner ${report.banner}`}.`,
+    `${label} (${report.commander}): kept ${report.kept ?? "nothing"}; built ${report.built.length === 0 ? "nothing" : report.built.join(", ")}${report.formation === undefined ? "" : ` (formation ${report.formation})`}${report.actions === undefined ? "" : `; took ${report.actions.join(", ")}`}${(report.refused ?? []).length === 0 ? "" : `; refused ${(report.refused ?? []).join("; ")}`}; rally point ${rallyWords(report.rally)}.`,
     `  fielded ${counts(read.army.start.counts)}; trained ${counts(read.army.trained.counts)}; lost ${counts(lostOf(read))}.`,
     `  dealt ${dealt.units} to units, ${dealt.buildings} to buildings, ${dealt.nexus} to the Nexus; Nexus ${nexus.before} -> ${nexus.after} of ${nexus.most}${read.army.commanderFell ? "; the Commander fell" : ""}${(report.earned ?? 0) > 0 ? `; earned ${report.earned} credits` : ""}${Object.keys(read.army.abilities).length === 0 ? "" : `; abilities ${counts(read.army.abilities)}`}.`,
   ].join("\n")
@@ -369,7 +370,7 @@ export function briefText(data: BriefData, strategies?: string): string {
   lines.push("## Your build actions")
   lines.push("Both sides make their build actions from this same moment, blind, and the round plays them together: there are no turns. Answer with one JSON object and nothing else:")
   lines.push("```json")
-  lines.push(`{ "power": 1, "build": [ { "building": "${data.buildings[0]?.id ?? "barracks"}", "at": "forward" } ], "formation": "block", "stance": "attack", "note": "one sentence on why" }`)
+  lines.push(`{ "power": 1, "build": [ { "building": "${data.buildings[0]?.id ?? "barracks"}", "at": "forward" } ], "formation": "block", "rally": "ENEMY_NEXUS", "note": "one sentence on why" }`)
   lines.push("```")
   lines.push(`- "power": the number of the card you keep, or 0 for none.`)
   lines.push(`- "build": buildings in the order you want them, while credits last; "at" is one of ${ZONES.map((zone) => `"${zone}"`).join(", ")}, or give "x" and "y". What you cannot afford or place is refused and said in the next brief.`)
@@ -377,7 +378,8 @@ export function briefText(data: BriefData, strategies?: string): string {
     `- "formation" (you may leave it out): "block" sets every building you build this round that trains units touching another, round where you ask for the first of them; "apart" sets each at least ${APART_GAP} from the others (a row counting two columns), as near there as that allows; "zones", or none, puts each where its own "at" or "x" and "y" says. Buildings that train nothing always go where they say. One of ${FORMATIONS.map((name) => `"${name}"`).join(", ")}.`,
   )
   lines.push(`- "actions" (you may leave it out): what your buildings do this round, each { "x", "y", "action" } naming a building of yours by its anchor and one of its actions by id, as listed above; taken after your buildings are placed, from the credits they leave.`)
-  lines.push(`- "stance": ${STANCES.map((stance) => `"${stance}"`).join(" or ")}: your troops march on their Nexus, or hold the ground in front of yours. Units that survive stay where the round left them, step back and form up across the line between the Nexuses, and fight again next round from there. A building may go where units stand, yours or theirs: they walk out from under it as the round begins.`)
-  lines.push(`- "banner" (you may leave it out): { "x", "y", "stance" }, a tile your troops head for in place of the stance. "defensive": they go there and hold it; "aggressive" (the default): they go there and, once half of them have reached it, march on their Nexus. A banner on a building covers it and a ring of one round it; on open ground, the 3 by 3 round the tile. Off the battlefield, or on rock with nothing built there, it is refused and the stance decides. It is for this round: a build file names it for every round it covers.`)
+  lines.push(
+    `- "rally" (you may leave it out): where your troops head this round, and hold: ${RALLY_PLACES.map((place) => `"${place}"`).join(" or ")} (your own Nexus, or theirs), or a tile { "x", "y" }. A rally point on a building covers it and a ring of one round it; on open ground, the 3 by 3 round the tile; on a Nexus, its footprint and a ring of one. Left out, or off the battlefield, on rock with nothing built there, or where your troops cannot get to, they rally in front of your base. Units that survive stay where the round left them, step back and form up across the line between the Nexuses, and fight again next round from there. A building may go where units stand, yours or theirs: they walk out from under it as the round begins.`,
+  )
   return lines.join("\n")
 }

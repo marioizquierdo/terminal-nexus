@@ -5,7 +5,9 @@
 // Everything here is plain data, serializable as JSON, so a battle can be saved after any round, a plan can come from a
 // script, a file or a language model, and the same setup and plans resolve the same battle on every machine.
 
-import type { BannerStance } from "../match/banner.ts"
+import type { RallySpot } from "../match/rally.ts"
+export type { RallyPlace, RallySpot, RallyTile } from "../match/rally.ts"
+export { RALLY_PLACES } from "../match/rally.ts"
 import type { Absence } from "../match/commander.ts"
 import type { MatchState, PlayerId } from "../engine/state/types.ts"
 import type { BattleMap } from "./maps.ts"
@@ -59,10 +61,6 @@ export type Zone = (typeof ZONES)[number]
 /** A building a plan asks for: its card id, and where. */
 export type Placement = Readonly<{ building: string; at?: Zone; x?: number; y?: number }>
 
-/** What a side's troops do this round: march on the enemy Nexus, or hold in front of their own. */
-export const STANCES = ["attack", "hold"] as const
-export type Stance = (typeof STANCES)[number]
-
 /**
  * How tight a side builds the buildings that train units, and so how tight its army fights: units come out on the
  * roofs of the buildings that made them (pulse.md), so where those buildings stand is where each wave starts.
@@ -86,14 +84,13 @@ export const APART_GAP = 10
 /**
  * A side's plan for one round, the whole of what a player decides: which card of the Nexus Pulse's hand to keep (1 to
  * the hand's size; 0 or absent keeps none), what to build and where (in order, while credits last), how tight to set
- * the buildings that train units (`formation`; absent, each goes where its placement says), and the stance.
+ * the buildings that train units (`formation`; absent, each goes where its placement says), and the rally point.
  * `note` is the player's own words on why, kept in the record and shown to nobody else during the battle.
  */
 export type BuildActions = Readonly<{
   power?: number
   build: readonly Placement[]
   formation?: Formation
-  stance: Stance
   /** The side's buildings standing as the round opens, by anchor, that hold their waves this round (Hold production,
    *  the Build Phase's building action): they send none. Absent: none held, as every script plays. */
   hold?: readonly Readonly<{ x: number; y: number }>[]
@@ -106,18 +103,15 @@ export type BuildActions = Readonly<{
    */
   actions?: readonly BuildingOrder[]
   /**
-   * The battle banner (the Build Phase's, behind the Battle banner Experiment): the tile the side's troops head for
-   * this round, and its stance. Aggressive: there, then on to the enemy's Nexus once half the army has reached it;
-   * defensive: there, and held. The area is the structure standing on the tile and a ring of one, or the 3 × 3 round
-   * it (`bannerAreaAt`, `src/match/banner.ts`). It decides where the troops go in place of `stance`. Absent: the stance
-   * decides, as every script plays.
+   * **The rally point**: where the side's troops head this round, and hold — a tile, or a place named for the side,
+   * its own Nexus (`HOME_NEXUS`) or the enemy's (`ENEMY_NEXUS`) (`RallySpot`, `src/match/rally.ts`). The area is the
+   * structure standing on the tile and a ring of one, or the 3 × 3 round it; a Nexus's footprint and a ring of one.
+   * Absent: the default, in front of the side's base (`defaultRallyTile`, `rally.ts`); refused (off the battlefield,
+   * rock with nothing built, no ground, no way there) the default too, and the refusal said in the side's report.
    */
-  banner?: PlanBanner
+  rally?: RallySpot
   note?: string
 }>
-
-/** A plan's banner: a tile on the battlefield and its stance. */
-export type PlanBanner = Readonly<{ x: number; y: number; stance: BannerStance }>
 
 /** One of a plan's building actions: the building by its anchor, and the action by its id. */
 export type BuildingOrder = Readonly<{ x: number; y: number; action: string }>
@@ -151,9 +145,8 @@ export type SideReport = Readonly<{
   actions?: readonly string[]
   /** What it asked for and could not have, each with the reason. */
   refused: readonly string[]
-  stance: Stance
-  /** Where its banner sent its troops, when its plan planted one (`banner: defensive at 40,9`). */
-  banner?: string
+  /** Where its troops rallied: the spot its plan named, or the default's tile when it named none or one refused. */
+  rally: RallySpot
   /** The formation its plan named, when it named one. */
   formation?: Formation
   note?: string
@@ -163,6 +156,9 @@ export type SideReport = Readonly<{
 export type RoundReport = Readonly<{
   round: number
   sides: Readonly<Record<Side, SideReport>>
+  /** The buildings both plans put on the same ground this round, built by neither (`clashesSettled`, `round.ts`):
+   *  each side's building, by content id and anchor. Empty when none clashed. */
+  clashes: readonly Clash[]
   /** The tick the battle ended on, and why: a Nexus fell, or time ran out. */
   ticks: number
   ended: "nexus" | "time"
@@ -171,6 +167,9 @@ export type RoundReport = Readonly<{
    *  (`src/battle/reading/`). */
   reading: RoundReading
 }>
+
+/** A building a plan placed on ground the other plan placed one on at the same moment: neither was built. */
+export type Clash = Readonly<{ side: Side; contentId: string; anchor: Readonly<{ x: number; y: number }> }>
 
 /** How a battle ended: who won, and how. */
 export type BattleResult = Readonly<{

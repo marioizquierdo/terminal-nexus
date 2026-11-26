@@ -12,11 +12,11 @@ import type { Profiles, SaveSetup, Slot } from "./save.ts"
 import { controllerKind, battleSetupOf, IDLE_SCRIPT, scriptPlayed, SIDE_OF, SLOTS } from "./save.ts"
 import { BATTLE_OVER_REFUSAL } from "./words.ts"
 
-/** The plan an idle slot hands in: nothing kept, nothing built, holding. */
-export const IDLE_ACTIONS: BuildActions = { build: [], stance: "hold" }
+/** The plan an idle slot hands in: nothing kept, nothing built, holding at its own Nexus. */
+export const IDLE_ACTIONS: BuildActions = { build: [], rally: "HOME_NEXUS" }
 
-/** The plan a player's slot hands in when it gives none: nothing built, attacking. */
-export const NO_ACTIONS: BuildActions = { build: [], stance: "attack" }
+/** The plan a player's slot hands in when it gives none: nothing built, rallying at the enemy Nexus. */
+export const NO_ACTIONS: BuildActions = { build: [], rally: "ENEMY_NEXUS" }
 
 /** Whether a person (or a build file) plays the slot, rather than a script. */
 export const isPlayer = (setup: SaveSetup, slot: Slot): boolean => controllerKind(setup.slots[slot].controller) === "player"

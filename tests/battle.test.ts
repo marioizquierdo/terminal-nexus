@@ -13,7 +13,7 @@ import { drawBattleMap } from "../src/cli/battle-map.ts"
 import { hashOf } from "../src/engine/state/canonical.ts"
 
 const setup = (extra: Partial<BattleSetup> = {}): BattleSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
-const hold: BuildActions = { build: [], stance: "hold" }
+const hold: BuildActions = { build: [], rally: "HOME_NEXUS" }
 
 // It plays a whole battle twice over: longer than Bun's five seconds a test, so it says how long it may take.
 test("a battle resolves the same every run: the same setup and plans give the same battle, round by round", { timeout: 60_000 }, () => {
@@ -62,7 +62,7 @@ test("a plan is held to the Build Phase's rules: its menu, its tree, its credits
       { building: "barracks", at: "north" },
       { building: "barracks", at: "south" },
     ],
-    stance: "hold",
+    rally: "HOME_NEXUS",
   }
   const { report } = playRound(beginBattle(setup()), { A: plan, B: hold })
   const { built, refused, spent } = report.sides.A
@@ -83,7 +83,7 @@ test("what a side keeps changes its own content, never the other side's: Unfiled
   assert.deepEqual(a.get("unit.citizen.trooper").detonation, { radius: 2, damage: 8 })
   assert.equal(b.get("unit.citizen.trooper").detonation, undefined)
   // In the battle too: only A's troopers burst.
-  const { report } = playRound(state, { A: { build: [{ building: "barracks", at: "forward" }], stance: "attack" }, B: { build: [{ building: "barracks", at: "forward" }], stance: "attack" } })
+  const { report } = playRound(state, { A: { build: [{ building: "barracks", at: "forward" }], rally: "ENEMY_NEXUS" }, B: { build: [{ building: "barracks", at: "forward" }], rally: "ENEMY_NEXUS" } })
   assert.ok(report.ticks > 0)
 })
 
@@ -91,21 +91,24 @@ test("two buildings planned on one tile, one by each side, are both refused and 
   // On the Pocket the two bases' build ranges meet in the middle from the first round: both sides name the same tile.
   const state = beginBattle(setup({ map: "pocket", commanders: { A: "vasse", B: "averno" } }))
   const tile = { x: 9, y: 5 }
-  const { report } = playRound(state, { A: { build: [{ building: "depot", ...tile }], stance: "hold" }, B: { build: [{ building: "depot", ...tile }], stance: "hold" } })
+  const { report } = playRound(state, { A: { build: [{ building: "depot", ...tile }], rally: "HOME_NEXUS" }, B: { build: [{ building: "depot", ...tile }], rally: "HOME_NEXUS" } })
   for (const side of ["A", "B"] as const) {
     assert.deepEqual(report.sides[side].refused, ["Supply Depot at 9,5: the enemy built there at the same moment, so neither was built"])
     assert.deepEqual([report.sides[side].built, report.sides[side].spent], [[], 0])
   }
   // A tile only one side names is built.
-  const alone = playRound(state, { A: { build: [{ building: "depot", ...tile }], stance: "hold" }, B: hold })
+  const alone = playRound(state, { A: { build: [{ building: "depot", ...tile }], rally: "HOME_NEXUS" }, B: hold })
   assert.deepEqual(alone.report.sides.A.built, ["depot at 9,5"])
 })
 
 test("a plan is read leniently: the first JSON object in the text, a building as a bare name, a bad field dropped and said", () => {
-  const read = readBuildActions('Sure! Here is my plan:\n```json\n{"power": 2, "build": ["barracks", {"building": "depot", "at": "behind"}], "stance": "charge", "note": "go"}\n```')
-  assert.deepEqual(read.actions, { power: 2, build: [{ building: "barracks" }, { building: "depot" }], stance: "hold", note: "go" })
-  assert.deepEqual(read.problems, ['build 2: "at" should be one of nexus, forward, back, north, south; it goes by its Nexus', '"stance" should be attack or hold; it holds'])
-  assert.deepEqual(readBuildActions("no idea").actions, { build: [], stance: "hold" })
+  const read = readBuildActions('Sure! Here is my plan:\n```json\n{"power": 2, "build": ["barracks", {"building": "depot", "at": "behind"}], "rally": "charge", "note": "go"}\n```')
+  assert.deepEqual(read.actions, { power: 2, build: [{ building: "barracks" }, { building: "depot" }], note: "go" })
+  assert.deepEqual(read.problems, [
+    'build 2: "at" should be one of nexus, forward, back, north, south; it goes by its Nexus',
+    '"rally" should be { "x", "y" } (a tile), "HOME_NEXUS" or "ENEMY_NEXUS", not "charge"; the troops rally in front of the base',
+  ])
+  assert.deepEqual(readBuildActions("no idea").actions, { build: [] })
 })
 
 test("the brief says what a player needs: the round, the Commander and her skills, the hand, the buildings, the map, the plan's form", () => {
@@ -117,7 +120,7 @@ test("the brief says what a player needs: the round, the Commander and her skill
   assert.equal(brief.data.hand.length, 3)
   assert.ok(brief.data.buildings.some((building) => building.id === "den" && building.strength > 0))
   assert.ok(brief.data.buildings.some((building) => building.id === "chop-shop" && !building.open))
-  for (const words of ["round 1 of 3", "Dob Hunter", "Bounty:", "Loaded Dice:", "## The Nexus Pulse's hand", "chop-shop", "LOCKED", "## The map", '"stance"']) {
+  for (const words of ["round 1 of 3", "Dob Hunter", "Bounty:", "Loaded Dice:", "## The Nexus Pulse's hand", "chop-shop", "LOCKED", "## The map", '"rally"']) {
     assert.ok(brief.text.includes(words), `the brief does not say ${words}`)
   }
   // The map: his Nexus in lower case on the west, hers in upper case on the east.

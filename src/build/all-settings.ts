@@ -454,22 +454,9 @@ export const ALL_SETTINGS = {
   },
 
   // --- The rally point (the owner, 2026-11-25, after playing the banner in a Skirmish) -------------------------
-  // "Don't think we need any options to do aggressive or defensive ... It's just the direction where it goes." The
-  // rally point no longer asks for a stance; what the troops do once they reach it is this Experiment (an open
-  // question): hold it, or push on to the enemy Nexus. On the enemy Nexus, its default, both attack it.
-  // Owner's playtest feedback: docs/history/feedback/2026-11-25-rally-point.md.
+  // The troops gather at the rally point and hold it (the owner settled it, 2026-11-26, with the stance folded into
+  // the rally point): nothing to choose. Owner's playtest feedback: docs/history/feedback/2026-11-25-rally-point.md.
 
-  /** What the troops do at a rally point the player moved: hold it, or gather there and push on to the enemy Nexus
-   *  once half the army has arrived. First guess: hold, so where it stands is the whole order. */
-  rallyPoint: {
-    tier: "experiment",
-    section: "mission",
-    label: "Rally point",
-    question: "Hold: the troops gather at the rally point and stay. Push on: they gather there, then march on the enemy Nexus.",
-    values: ["hold", "push-on"],
-    names: { hold: "hold", "push-on": "push on" },
-    default: "hold",
-  },
   /** How many arrows run along each side's route: the owner's "like 2 or 3 arrows". */
   rallyArrowsCount: { tier: "tuned", default: 3 },
   /** When, into a Battle Round, the arrows run once for both sides, the flag showing as they arrive: the owner,

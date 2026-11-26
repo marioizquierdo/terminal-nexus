@@ -1477,7 +1477,8 @@ function cancelRallyPoint(state: BuildState): BuildState {
 
 /** The stance a placed rally point carries: the Rally point Experiment's — push on is aggressive, hold defensive. */
 function rallyStance(state: BuildState): BannerStance {
-  return setting(state, "rallyPoint") === "push-on" ? "aggressive" : "defensive"
+  void state
+  return "defensive"
 }
 
 /** The plan committed: the Battle Round starts. The keyboard goes to the battlefield, where the arrows look around it

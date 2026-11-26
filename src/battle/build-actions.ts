@@ -1,18 +1,35 @@
 // A side's build actions for a round as a player hands them in: a JSON object (`BuildActions`: the power it keeps, the
-// buildings and where, the actions taken on its buildings, the formation and the stance), read leniently, because a
+// buildings and where, the actions taken on its buildings, the formation and the rally point), read leniently, because a
 // language model writes it; and a build file, those actions for one round or many, chosen by round. The first `{ ... }`
 // in the text is the build actions, whatever prose or fence surrounds it; a field of the wrong kind is
-// dropped with a problem said, never the whole of them; a stance it does not name holds; a formation it does not name is
-// none, each building where its placement says. What the round then refuses (a
-// building it cannot afford, a card number past the hand) is the round's to say (`playRound`).
+// dropped with a problem said, never the whole of them; a rally point it cannot read is the default, in front of the
+// base; a formation it does not name is none, each building where its placement says. What the round then refuses (a
+// building it cannot afford, a card number past the hand, a rally point on rock) is the round's to say (`playRound`).
+//
+// **Files from before the rally point** (the owner, 2026-11-26: the stance goes, the rally point says where the troops
+// go) still play: their `"stance"` is read as a rally point — `"attack"` the enemy's Nexus, `"hold"` the side's own —
+// and their `"banner"` as a rally point on its tile, each with a problem said (`retired`), never refused.
 
-import { BANNER_STANCES } from "../match/banner.ts"
-import type { BannerStance } from "../match/banner.ts"
-import type { BuildingOrder, Formation, Placement, BuildActions, PlanBanner, Stance, Zone } from "./types.ts"
-import { FORMATIONS, STANCES, ZONES } from "./types.ts"
+import { RALLY_PLACES } from "../match/rally.ts"
+import type { RallyPlace, RallySpot } from "../match/rally.ts"
+import type { BuildingOrder, Formation, Placement, BuildActions, Zone } from "./types.ts"
+import { FORMATIONS, ZONES } from "./types.ts"
 
-/** Build actions read from text, and every problem found reading them. */
-export type ReadBuildActions = Readonly<{ actions: BuildActions; problems: readonly string[] }>
+/** Build actions read from text, every problem found reading them, and which of those problems only say an old field
+ *  was read in its new form (`"stance"`, `"banner"`): the build actions play as they are, and a save is not refused
+ *  for them. */
+export type ReadBuildActions = Readonly<{ actions: BuildActions; problems: readonly string[]; retired: readonly string[] }>
+
+/** The words a problem names the rally point's forms in. */
+const RALLY_FORMS = `{ "x", "y" } (a tile), ${RALLY_PLACES.map((place) => `"${place}"`).join(" or ")}`
+
+/** The rally point in a field's value, or `undefined` when it is not one. */
+function rallyIn(value: unknown): RallySpot | undefined {
+  if (typeof value === "string") return (RALLY_PLACES as readonly string[]).includes(value) ? (value as RallyPlace) : undefined
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined
+  const { x, y } = value as Record<string, unknown>
+  return typeof x === "number" && typeof y === "number" && Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 ? { x, y } : undefined
+}
 
 /** The JSON object in `text`: the whole text, or the first balanced `{ ... }` in it. `null` when there is none. */
 function objectIn(text: string): unknown {
@@ -53,7 +70,7 @@ export function readBuildActions(given: string | unknown): ReadBuildActions {
   const problems: string[] = []
   const value = typeof given === "string" ? objectIn(given) : given
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    return { actions: { build: [], stance: "hold" }, problems: ["no build actions found: keep nothing, build nothing, hold"] }
+    return { actions: { build: [] }, problems: ["no build actions found: keep nothing, build nothing, rally in front of the base"], retired: [] }
   }
   const raw = value as Record<string, unknown>
   let power: number | undefined
@@ -79,9 +96,6 @@ export function readBuildActions(given: string | unknown): ReadBuildActions {
       build.push({ building: fields["building"], ...(zone === undefined ? {} : { at: zone }), ...tile })
     })
   }
-  const stanceGiven = raw["stance"]
-  const stance: Stance = typeof stanceGiven === "string" && (STANCES as readonly string[]).includes(stanceGiven) ? (stanceGiven as Stance) : "hold"
-  if (stanceGiven !== undefined && stance !== stanceGiven) problems.push(`"stance" should be ${STANCES.join(" or ")}; it holds`)
   const formationGiven = raw["formation"]
   const formation = typeof formationGiven === "string" && (FORMATIONS as readonly string[]).includes(formationGiven) ? (formationGiven as Formation) : undefined
   if (formationGiven !== undefined && formationGiven !== null && formation === undefined) {
@@ -100,30 +114,48 @@ export function readBuildActions(given: string | unknown): ReadBuildActions {
       actions.push({ x, y, action })
     })
   }
-  let banner: PlanBanner | undefined
-  const planted = raw["banner"]
-  if (planted !== undefined && planted !== null) {
-    const fields = typeof planted === "object" && !Array.isArray(planted) ? (planted as Record<string, unknown>) : {}
-    const { x, y } = fields
-    const stanceOf = fields["stance"] ?? "aggressive"
-    if (typeof x !== "number" || typeof y !== "number" || !Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0) {
-      problems.push(`"banner" should be { "x", "y", "stance" }: a tile and "aggressive" or "defensive"; the stance decides`)
-    } else if (typeof stanceOf !== "string" || !(BANNER_STANCES as readonly string[]).includes(stanceOf)) {
-      problems.push(`"banner.stance" should be ${BANNER_STANCES.map((name) => `"${name}"`).join(" or ")}; the stance decides`)
-    } else banner = { x, y, stance: stanceOf as BannerStance }
+  // The rally point; or, from a file written before it, the banner's tile, or else the stance's Nexus.
+  const retired: string[] = []
+  let rally: RallySpot | undefined
+  const named = raw["rally"]
+  if (named !== undefined && named !== null) {
+    rally = rallyIn(named)
+    if (rally === undefined) problems.push(`"rally" should be ${RALLY_FORMS}, not ${JSON.stringify(named)}; the troops rally in front of the base`)
   }
+  const banner = raw["banner"]
+  if (banner !== undefined && banner !== null) {
+    const tile = rallyIn(banner)
+    const read = tile === undefined || typeof tile === "string" ? null : tile
+    if (rally !== undefined || named !== undefined) retired.push(`"banner" is no longer read: "rally" says where the troops go`)
+    else if (read === null) retired.push(`"banner" is no longer read, and this one names no tile: write "rally": ${RALLY_FORMS}`)
+    else {
+      rally = read
+      retired.push(`"banner" is read as "rally": { "x": ${read.x}, "y": ${read.y} }, and held: write "rally" instead`)
+    }
+  }
+  const stance = raw["stance"]
+  if (stance !== undefined && stance !== null) {
+    const place: RallyPlace | undefined = stance === "attack" ? "ENEMY_NEXUS" : stance === "hold" ? "HOME_NEXUS" : undefined
+    if (rally !== undefined || named !== undefined || (banner !== undefined && banner !== null)) retired.push(`"stance" is no longer read: the rally point says where the troops go`)
+    else if (place === undefined) retired.push(`"stance" is no longer read, and ${JSON.stringify(stance)} was never one: write "rally": ${RALLY_FORMS}`)
+    else {
+      rally = place
+      retired.push(`"stance": "${String(stance)}" is read as "rally": "${place}": write "rally" instead`)
+    }
+  }
+  problems.push(...retired)
   const note = typeof raw["note"] === "string" ? raw["note"].slice(0, 300) : undefined
   return {
     actions: {
       ...(power === undefined ? {} : { power }),
       build,
       ...(formation === undefined ? {} : { formation }),
-      stance,
       ...(actions.length === 0 ? {} : { actions }),
-      ...(banner === undefined ? {} : { banner }),
+      ...(rally === undefined ? {} : { rally }),
       ...(note === undefined ? {} : { note }),
     },
     problems,
+    retired,
   }
 }
 

@@ -32,13 +32,12 @@ import { buildLayout } from "../build/layout.ts"
 import type { DialogLine, FieldEntity, IncomingEntity, StandingStructure } from "../build/types.ts"
 import { status } from "../build/status.ts"
 import { defaultValue, setting } from "../build/all-settings.ts"
-import { TERRAIN } from "../engine/geometry/types.ts"
 import { bannerOrder } from "../build/banner.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../engine/events/types.ts"
 import { tilesOf } from "../engine/geometry/coords.ts"
 import type { BattleState, Player, RoundReport, Side, BuildActions } from "../battle/index.ts"
-import { SIDES, armyOf, briefOf, battleTerrain, handOf, loadoutOf, mapOf, beginBattle, placementsOf, restoredOf, roundOpening, standingOf } from "../battle/index.ts"
+import { SIDES, armyOf, briefOf, battleTerrain, defaultRallyTile, handOf, loadoutOf, mapOf, beginBattle, nexusOf, placementsOf, restoredOf, roundOpening, standingOf } from "../battle/index.ts"
 import type { RegroupResult } from "../match/index.ts"
 import { centreTile, standDown } from "../match/index.ts"
 import { spawnEvents } from "../engine/pulse/index.ts"
@@ -182,9 +181,10 @@ function roundContext(position: SkirmishPosition, previous: Partial<BuildContext
   }
   // Spectating: nobody builds at the screen, so it offers nothing to build or pick (`BuildContext.spectating`).
   const watching = spectating(position.setup)
-  // Where the rally point starts: in front of the base, the Rally point start Experiment's share of the way.
+  // Where the rally point starts: in front of the base, the Rally point start Experiment's share of the way — the
+  // battle's own default (`defaultRallyTile`) at the Experiment's default.
   const share = (previous.experiments as Readonly<Record<string, unknown>> | undefined)?.["rallyStart"]
-  const front = rallyStartTile(battle, content, typeof share === "number" ? share : defaultValue("rallyStart"))
+  const front = defaultRallyTile(battle, content, "A", typeof share === "number" ? share : defaultValue("rallyStart"))
   const context: BuildContext = {
     ...carriedOver(previous),
     terrain: battleTerrain(map),
@@ -212,40 +212,6 @@ function roundContext(position: SkirmishPosition, previous: Partial<BuildContext
     openingStatus: status(opening, "hint"),
   }
   return scene.length === 0 ? context : { ...context, scene }
-}
-
-/**
- * **Where a Skirmish's rally point starts** (the owner, 2026-11-25: "in front of your base ... so I can form an
- * army"): `share` percent of the way from the middle of side A's Nexus to the middle of side B's, on the nearest tile
- * troops can stand on. `null` at 100 or more: the enemy Nexus, as the default always was, and no order.
- */
-export function rallyStartTile(battle: BattleState, content: Readonly<Record<Side, ContentRegistry>>, share: number): Readonly<{ x: number; y: number }> | null {
-  if (share >= 100) return null
-  const map = mapOf(battle)
-  const terrain = battleTerrain(map)
-  const middle = (side: Side): Readonly<{ x: number; y: number }> => {
-    const footprint = content[side].get(armyOf(battle, side).nexus).footprint
-    const xs = footprint.map((tile) => tile.x)
-    const ys = footprint.map((tile) => tile.y)
-    return { x: map.nexus[side].x + (Math.min(...xs) + Math.max(...xs)) / 2, y: map.nexus[side].y + (Math.min(...ys) + Math.max(...ys)) / 2 }
-  }
-  const from = middle("A")
-  const to = middle("B")
-  const goal = { x: Math.round(from.x + ((to.x - from.x) * share) / 100), y: Math.round(from.y + ((to.y - from.y) * share) / 100) }
-  const open = (x: number, y: number): boolean => {
-    if (x < 0 || y < 0 || x >= terrain.width || y >= terrain.height) return false
-    const ground = terrain.tiles[y * terrain.width + x]
-    return ground === undefined || !TERRAIN[ground].impassable
-  }
-  // The nearest open tile, ring by ring outward; on a ring, the first in reading order.
-  for (let ring = 0; ring < Math.max(terrain.width, terrain.height); ring += 1) {
-    for (let y = goal.y - ring; y <= goal.y + ring; y += 1) {
-      for (let x = goal.x - ring; x <= goal.x + ring; x += 1) {
-        if (Math.max(Math.abs(x - goal.x), Math.abs(y - goal.y)) === ring && open(x, y)) return { x, y }
-      }
-    }
-  }
-  return null
 }
 
 /** A new battle's first round: what it is, then how the other side plays, looking at its Nexus. */
@@ -306,35 +272,32 @@ const tileOf = (key: string): Readonly<{ x: number; y: number }> => {
 /**
  * **Side A's battle plan from a Build Phase**: the power picked (its number in the hand, which is the battle's hand), every
  * building placed at its exact anchor in the order placed, the buildings held this round, the building actions taken,
- * and the banner (with the Battle banner Experiment on): where it was planted and its stance, when it is not the
- * default (the enemy's Nexus, aggressive). The stance follows it — `hold` for a defensive banner, `attack` otherwise —
- * so a report or a script reading the stance reads what the troops were told.
+ * and the rally point: where the player placed it, else the round's default in front of the base. Left out when it is
+ * the tile the battle would rally on by itself (`defaultRallyTile`), so a plan the player did not touch names none; the
+ * enemy's Nexus when the round has no default (Rally point start at 100).
  */
 export function buildActionsOf(context: BuildContext, state: BuildState): BuildActions {
   const { battle } = positionOf(context)
   const hold = state.held.map(tileOf)
   const actions = state.fitted.map((taken) => ({ ...tileOf(taken.anchor), action: taken.action }))
-  // The rally point asks no stance: what the troops do there is the Rally point Experiment's (hold, or push on).
-  const stance: "aggressive" | "defensive" = setting(state, "rallyPoint") === "push-on" ? "aggressive" : "defensive"
-  // Where it stands: where the player placed it, else the round's default in front of the base (Rally point start),
-  // which is an order too. On the enemy Nexus by default (Rally point start at 100) there is none: the march as before.
   const tile = state.banner?.tile ?? context.bannerDefault?.tile ?? null
-  const on = setting(state, "battleBanner") === "on" && tile !== null
-  const order = on ? bannerOrder(context, { planned: state.planned, banner: { tile, stance } }) : null
-  const banner = order === null || tile === null ? undefined : { x: tile.x, y: tile.y, stance }
+  // A spot the troops cannot get to is no order: the round plays its default.
+  const placed = tile !== null && bannerOrder(context, { planned: state.planned, banner: { tile, stance: "defensive" } }) !== null
+  const own = defaultRallyTile(battle, contentOf(battle), "A")
+  const rally: BuildActions["rally"] = tile === null ? "ENEMY_NEXUS" : placed ? { x: tile.x, y: tile.y } : undefined
+  const isOwn = rally !== undefined && typeof rally !== "string" && own !== null && rally.x === own.x && rally.y === own.y
   return {
     ...(state.nexusPick === null ? {} : { power: state.nexusPick + 1 }),
     build: state.planned.map((placement) => ({ building: cardIdOf(battle, placement.contentId), x: placement.anchor.x, y: placement.anchor.y })),
-    stance: banner?.stance === "defensive" ? "hold" : "attack",
     ...(hold.length === 0 ? {} : { hold }),
     ...(actions.length === 0 ? {} : { actions }),
-    ...(banner === undefined ? {} : { banner }),
+    ...(rally === undefined || isOwn ? {} : { rally }),
   }
 }
 
-/** Whether a plan has anything in it: a power, a building, a hold, an action or a banner. */
+/** Whether a plan has anything in it: a power, a building, a hold, an action or a rally point. */
 const planned = (plan: BuildActions): boolean =>
-  plan.power !== undefined || plan.build.length > 0 || (plan.hold?.length ?? 0) > 0 || (plan.actions?.length ?? 0) > 0 || plan.banner !== undefined
+  plan.power !== undefined || plan.build.length > 0 || (plan.hold?.length ?? 0) > 0 || (plan.actions?.length ?? 0) > 0 || plan.rally !== undefined
 
 /**
  * **A round as a save**: its setup, the battle as this Build Phase opened, and the plan so far as p1's draft — what Save
@@ -369,9 +332,17 @@ export function planOnRound(context: BuildContext, state: BuildState, plan: Buil
       bonusAllotment: option?.bonusAllotment ?? 0,
       held: (plan.hold ?? []).map((tile) => `${tile.x},${tile.y}`),
       fitted: (plan.actions ?? []).map((taken) => ({ anchor: `${taken.x},${taken.y}`, action: taken.action })),
-      ...(plan.banner === undefined ? {} : { banner: { tile: { x: plan.banner.x, y: plan.banner.y }, stance: plan.banner.stance } }),
+      ...(plan.rally === undefined ? {} : { banner: { tile: rallyTileOf(battle, plan.rally), stance: "defensive" as const } }),
     },
   }
+}
+
+/** A plan's rally point as a tile side A's Build Phase places its banner on: the tile, or the middle of the Nexus it
+ *  names (its area there is the round's: the Nexus and a ring of one). */
+function rallyTileOf(battle: BattleState, rally: NonNullable<BuildActions["rally"]>): Readonly<{ x: number; y: number }> {
+  if (typeof rally !== "string") return { x: rally.x, y: rally.y }
+  const nexus = nexusOf(battle, contentOf(battle), rally === "HOME_NEXUS" ? "A" : "B")
+  return centreTile(nexus.anchor, nexus.footprint)
 }
 
 /** What a Skirmish needs from the screens: a new battle's seed, chosen by them (from the clock), or a test's own; and
@@ -452,14 +423,14 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
         const back = restoredOf(battle, contentOf(battle))
         const news = back === null ? null : commanderNews(back.restored, back.absent, battle.round, battle.setup.rounds)
         const refusedAll = isPlayer(setup, "p1") ? report.sides.A.refused : []
-        // The banner's refusal is not a building's: it says where the troops went instead.
-        const isBanner = (line: string): boolean => line.startsWith("banner at ")
-        const refused = refusedAll.filter((line) => !isBanner(line))
-        const bannerRefused = refusedAll.filter(isBanner)
+        // The rally point's refusal is not a building's: it says where the troops went instead.
+        const isRally = (line: string): boolean => line.startsWith("rally point at ")
+        const refused = refusedAll.filter((line) => !isRally(line))
+        const rallyRefused = refusedAll.filter(isRally)
         const scene = [
           ...(news === null ? [] : [said(news, nexusFocus(opened))]),
           ...(refused.length === 0 ? [] : [said(`Not built last round: ${refused.join("; ")}.`)]),
-          ...bannerRefused.map((line) => said(`The ${line.replace(/, so the stance decided$/u, "")}: the troops took the stance instead.`)),
+          ...rallyRefused.map((line) => said(`The ${line.replace(/, so the troops went to the default$/u, "")}: the troops rallied in front of the base instead.`)),
         ]
         const next = spectating(setup) ? "[s] starts the next round." : "The Nexus Pulse deals a new hand: [n]."
         // The banner stays where it was planted, round after round, until it is moved.

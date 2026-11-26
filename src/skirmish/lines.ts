@@ -5,6 +5,7 @@
 import type { BattleState, RoundReport } from "../battle/index.ts"
 import { SIDES } from "../battle/index.ts"
 import { lostOf, namedCounts, roundReadingLines } from "../battle/reading/index.ts"
+import { rallyWords } from "../match/rally.ts"
 import type { SaveSetup, Slot } from "./save.ts"
 import { SLOT_OF } from "./save.ts"
 import { mapNameOf } from "./words.ts"
@@ -34,11 +35,12 @@ export function roundLines(report: RoundReport): string[] {
     const own = report.sides[side]
     const read = report.reading.sides[side]
     lines.push(
-      `  ${SLOT_OF[side]} ${own.commander}: ${own.credits} credits, spent ${own.spent}${own.earned > 0 ? `, earned ${own.earned}` : ""}; kept ${own.kept ?? "nothing"}; built ${own.built.length}${own.formation === undefined ? "" : ` (${own.formation})`}${own.actions === undefined ? "" : `; ${own.actions.join(", ")}`}${own.refused.length > 0 ? `; refused: ${own.refused.join("; ")}` : ""}; ${own.banner === undefined ? own.stance : `banner ${own.banner}`}`,
+      `  ${SLOT_OF[side]} ${own.commander}: ${own.credits} credits, spent ${own.spent}${own.earned > 0 ? `, earned ${own.earned}` : ""}; kept ${own.kept ?? "nothing"}; built ${own.built.length}${own.formation === undefined ? "" : ` (${own.formation})`}${own.actions === undefined ? "" : `; ${own.actions.join(", ")}`}${own.refused.length > 0 ? `; refused: ${own.refused.join("; ")}` : ""}; rally point ${rallyWords(own.rally)}`,
       `     fielded ${counts(read.army.start.counts)}; trained ${counts(read.army.trained.counts)}; lost ${counts(lostOf(read))}`,
       `     dealt ${read.damage.dealt.units}/${read.damage.dealt.buildings}/${read.damage.dealt.nexus} (units/buildings/Nexus); Nexus ${read.buildings.nexus.after}/${read.buildings.nexus.most}${read.army.commanderFell ? "; Commander fell" : ""}${Object.keys(read.army.abilities).length > 0 ? `; ${counts(read.army.abilities)}` : ""}`,
     )
   }
+  if (report.clashes.length > 0) lines.push(`  clashed, built by neither: ${report.clashes.map((clash) => `${SLOT_OF[clash.side]} ${clash.contentId} at ${clash.anchor.x},${clash.anchor.y}`).join("; ")}`)
   lines.push(...roundReadingLines(report.reading))
   return lines
 }
