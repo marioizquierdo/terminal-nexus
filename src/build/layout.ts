@@ -275,18 +275,22 @@ export function buildLayout(terminal: TerminalSize, terrain: MapTerrain): BuildL
   // the divider, because the solid "the map ends here" bar sat against the menu text and read as a
   // heavy menu border; the quieter edge colour and the map's own edge styles fixed that, and the
   // owner chose the shared column after trying both, so the battlefield has it back.
-  const dividerColumn = offset.column + PANEL_COLUMNS
-  const mapLeft = dividerColumn
+  // Map-first (docs/milestones/map-first-controls.md): the map on the left, taking the width, and the
+  // side panel on the right — the eye reads from left to right, and the map comes first. The frame's
+  // left border is the map rectangle's west side; the divider, the map's east side, is shared with
+  // the panel.
+  const mapLeft = offset.column
   const origin = { column: mapLeft + 1, row: offset.row + 1 + HEADER_ROWS }
+  const dividerColumn = origin.column + viewport.width
   const right = offset.column + composition.width - 1
   const mapBox = {
     top: origin.row - 1,
     bottom: origin.row + viewport.height,
     left: mapLeft,
-    right,
+    right: dividerColumn,
   }
   const paneBottom = origin.row + paneHeight
-  const panelColumn = offset.column + 2
+  const panelColumn = dividerColumn + 2
   const headerLimit = composition.width - 4
   const hintTo = offset.column + 2 + headerLimit - 1
   return {
@@ -299,7 +303,7 @@ export function buildLayout(terminal: TerminalSize, terrain: MapTerrain): BuildL
     paneBottom,
     dividerColumn,
     panelColumn,
-    panelLimit: dividerColumn - panelColumn,
+    panelLimit: right - panelColumn,
     headerLimit,
     escLabelEnd: { row: offset.row + 1, to: hintTo },
     footerLimit: composition.width - 4,

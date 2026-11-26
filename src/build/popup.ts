@@ -783,7 +783,7 @@ export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
   const paneHeight = layout.paneBottom - layout.mapBox.top - 1
   // Over the side panel: the frame's left border to the divider, from the rule under the top bar down.
   const overPanel = spec.dock === "panel"
-  const width = overPanel ? layout.dividerColumn - layout.offset.column + 1 : Math.min(POPUP_WIDTH, Math.max(24, paneWidth - 3))
+  const width = overPanel ? layout.offset.column + layout.composition.width - layout.dividerColumn : Math.min(POPUP_WIDTH, Math.max(24, paneWidth - 3))
   const textLimit = width - 4
   const allLines = spec.rows.reduce((count, row) => count + linesOf(row, textLimit).length, 0)
   // The border, the rows, a blank row of padding, the border, and a row of shadow must fit the battlefield
@@ -807,7 +807,7 @@ export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
   // Over the panel it never runs past the rule over the bottom bar, its shadow on that rule: rows that would are left
   // off, so a panel puts what must show first.
   const height = overPanel ? Math.min(lines + fill + 3, layout.paneBottom - layout.mapBox.top) : lines + fill + (docked ? 2 : 3)
-  const left = overPanel ? layout.offset.column : layout.mapBox.left + 1 + Math.floor((paneWidth - width - 1) / 2)
+  const left = overPanel ? layout.dividerColumn : layout.mapBox.left + 1 + Math.floor((paneWidth - width - 1) / 2)
   // Docked at the bottom of the map, its shadow on the map's last row and the bottom line clear below it.
   const top = overPanel
     ? layout.mapBox.top
