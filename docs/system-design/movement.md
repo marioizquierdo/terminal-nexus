@@ -68,7 +68,10 @@ same battle every time. **Then the Nexus calls a pause.** Nothing fights or trai
 Phase the survivors regroup on the map while the player builds:
 
 - **2 seconds stepping back**: a unit in a fight walks toward its own Nexus.
-- **6 seconds forming up** across its side's march line, in ranks by the formation's order (below).
+- **6 seconds forming up** on its side's rally point, or falling back to it if it fought past it, in ranks by the
+  formation's order (below), the front rank facing the enemy: the middle of the enemy's fighting units nearest the
+  rally point (those within 5 tiles of the nearest), else the enemy's Nexus. A side short of its rally point forms where
+  it stands and marches on next round.
 - **2 seconds standing formed**, while the slowest walk in.
 
 The regroup is worked out from how the round ended alone, never from what the player does, so a scripted battle plays
@@ -110,7 +113,10 @@ stance, and nothing releases it mid-round. The banner is only its flag on screen
 are one each, in `src/match/rally.ts`: on a building, the building and a ring of one; on open ground, the 3 × 3 round
 the tile; on a Nexus, its footprint and a ring of one. The route goes round rock only, through every building, and is
 shared by the Build Phase's line and the Battle Round's arrows. A plan that names none rallies in front of its base
-(`src/battle/rally.ts`, the Rally point start share of the way, 20% by default). How it is placed is
+(`src/battle/rally.ts`, the Rally point start share of the way, 30% by default). **If the Build Phase lets you place
+it, the troops march toward it** (the owner, 2026-11-26): the round refuses only a spot off the battlefield; a rock tile
+becomes its nearest open ground; a spot the enemy builds shut that round, or one rock closes off, stays the target, and
+the troops walk as near as they can, round what is in the way, and breach. How it is placed is
 [`ui-patterns.md`](ui-patterns.md), "The rally point".
 
 The owner, 2026-10-26, in the core loop ([`core-loop.md`](../milestones/core-loop.md)): orders grow from none, to a
@@ -197,8 +203,9 @@ Averno, melee) and slows and is slowed like anyone. She does not lead the march.
 pace, and an ally already in battle slows no one; so as the front stops to fight, the ranged behind it walk up into
 range at full speed, and the line forms on its own as melee closes and guns stop at their reach.
 
-**Between rounds the regroup forms the same order** (`src/match/regroup.ts`): ranks across the march line, the
-priority list front to back.
+**Between rounds the regroup forms the same order** (`src/match/regroup.ts`): on the rally point, or back to it, in
+ranks across the line from the rally point to the nearest enemy army, the priority list front to back. Army groups will
+make that each group's nearest enemy army group.
 
 **Flankers go behind the enemy's line.** A flanker chooses first among the enemies in its vision that are not melee — a
 shooter, another flanker, a building that shoots — the nearest it can walk to; with none, it chooses as every unit

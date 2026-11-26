@@ -51,6 +51,8 @@ prototype behind the Battle banner Experiment:
       Backspace go back; the bottom line names the two actions and reminds the waiting player; Enter sends both sides'
       arrows at once and reveals the enemy's new buildings one by one before the fight; its first seconds are marked.
 - [x] **Buildings cancelled between rounds** found and fixed.
+- [x] **The fourth round** ([his words](../history/feedback/2026-11-25-rally-point.md)): the regroup forms on the rally
+      point facing the enemy; the troops always march to the rally point; fast forward; the key arrows; 30% start.
 - [ ] The battle scripts place a banner, so a kept front has an answer: a script whose front is beaten holds or falls
       back.
 - [ ] **Strategic, measured**: over seeds, a script that plants well beats the same script planting at the default, and

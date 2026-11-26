@@ -121,7 +121,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **engaging** (in combat) — a unit with an enemy in its vision leaves the march and fights; where the sides fight is an
   **engagement**. **Re-targeting** is a unit choosing a new enemy to attack: its target fell, or a better one came within
   reach.
-- **regroup** — what happens when a Battle Round ends: survivors step back and form up across their march line, so the
+- **regroup** — what happens when a Battle Round ends: survivors step back and form up on their rally point (or back to it), facing the enemy, so the
   next round starts from **the kept front** ([`movement.md`](../system-design/movement.md)).
 - **result** — how a battle ends: `BATTLE WON`, `BATTLE LOST`, `BATTLE DRAWN` (`<COMMANDER> WINS` when two scripts
   play); a Battle Round's own end reads `VICTORY`, `DEFEAT`, `DRAW` or `TIME'S UP`.

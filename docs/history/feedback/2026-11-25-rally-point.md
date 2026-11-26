@@ -357,12 +357,14 @@ flag lights, then the arrows half a beat later, three times, so the light runs o
 > properly identified: differentiate tick, frame, and a second (which is a "in-game second"), we should refer to real
 > time durations specifically, usually outside of the simiulation.
 
-**Partly built, partly scheduled.** Cause: between rounds a side formed its ranks across the line from its Commander to
+**Built** (the regroup) **and scheduled** (army groups). Cause: between rounds a side formed its ranks across the line from its Commander to
 its target, and the target is now the rally point, so a Commander beside or past it turned the ranks sideways or
 backwards. Asked (2026-11-26): now, the regroup forms up on the rally point (or falls back to it), facing the enemy,
 and the words go into the glossary and the troop movement page; **army groups** (named so by him; the same 5-tile reach
-as an engagement) are built as the next pull request. Fast-forward speeds up, labelled; an army group forms up on its
-rally point, or back to it.
+as an engagement) are built as the next pull request. Now each side forms its ranks across the line from its rally point toward the
+middle of the enemy's fighting units nearest it (else the enemy Nexus); one that fought past its rally point falls back
+to it, one short of it forms where it stands. Measured (seeds 1-6, 8 rounds): the Crossing 18-18 before and after; the
+Pocket 21-15 before, 18-18 after.
 
 ### F338 — the troops always march to the rally point
 
@@ -374,8 +376,12 @@ rally point, or back to it.
 > formation (which means they don't need to be exactly at the banner location, only the group needs to be close to it)
 > when there are no battle engagement.
 
-**Scheduled.** The arrival and forming up by group waits for army groups.
-
+**Built.** Cause, found by checking every spot the Build Phase accepts against the round: the enemy builds in secret
+the same round, and when its new buildings filled the rally point's area (a ring round its Nexus) the round refused the
+spot and quietly sent the troops to the default in front of the base (424 such spots in rounds 5-8 of 35 battles;
+none after). Now the round refuses only a spot off the battlefield; rock becomes its nearest open ground; anything else
+stays the target, and the troops walk as near as they can and breach. Arriving and forming up by army group waits for
+army groups.
 ### F339 — fast-forward a settled round
 
 > During the first rounds, if I am playing defensive, the unit groups arrive at the rally point, and nothing happens
