@@ -61,7 +61,7 @@ what it does is worked out fresh every tick from what stands on the battlefield.
 
 RULE (`headsForNexus`, `src/engine/pulse/perception.ts`; a side's target, `src/engine/pulse/target.ts`). **An army's goal is the
 enemy's Nexus.** A mission may name a target instead, a region the side heads for and holds; a battle's side
-may hold in front of its own Nexus (the battle's stance), or head for the banner its plan planted (below).
+holds at the rally point its plan places (below).
 
 **How the way is found: a distance field, not a path.** The game does not search a path for each unit. It works out a
 number on every tile saying how far it is, walking, to the goal, shared by every unit going there; a unit takes the step
@@ -81,35 +81,25 @@ Commander, who might also become the army's point to regroup on. Not yet: other 
 for a walker ahead and walks round allies who are stuck (the detour). When the enemy's buildings close it: breaching,
 below.
 
-## Banners — prototype
+## Rally points
 
-On screen this is the **rally point** (the owner, 2026-11-25); the banner is the flag drawn at it. The player places it
-with no stance: what the troops do there is the Rally point Experiment, **hold** (a defensive banner, below) or **push
-on** (an aggressive one). The rules below keep the two stances, which a build file may still name.
+**The rally point** is where a side's troops head for the whole Battle Round, and hold: a tile, `HOME_NEXUS` or
+`ENEMY_NEXUS` (the owner, 2026-11-26: "instead of defensive, the script places the banner at the home nexus. Instead of
+offensive, they place the banner on the enemy nexus"); later a map's hotspots or a player's base. It replaced the
+stance, and nothing releases it mid-round. The banner is only its flag on screen. Its area, its refusal and its route
+are one each, in `src/match/rally.ts`: on a building, the building and a ring of one; on open ground, the 3 × 3 round
+the tile; on a Nexus, its footprint and a ring of one. The route goes round rock only, through every building, and is
+shared by the Build Phase's line and the Battle Round's arrows. A plan that names none rallies in front of its base
+(`src/battle/rally.ts`, the Rally point start share of the way, 20% by default). How it is placed is
+[`ui-patterns.md`](ui-patterns.md), "The rally point".
 
 The owner, 2026-10-26, in the core loop ([`core-loop.md`](../milestones/core-loop.md)): orders grow from none, to a
-stance, to a banner, to two banners. **The stance** is whether the army attacks or holds this round (`attack`, `hold`, in a battle's
-build actions); a banner has its own stance, aggressive or defensive. **A banner** is placed on the map, aggressive or defensive; by default on the
-enemy Nexus, aggressive. Aggressive elsewhere, the army goes there first and then on to the enemy Nexus, so it sets a
-route; defensive, it holds the line there. **Two banners**: the Commander follows the main one, and a building can be
-set to send its units after a **secondary banner**.
-
-**The banner is built as a prototype**, behind the Battle banner Experiment (the owner, 2026-10-31: try the banner's
-placement before the stance; the stance row is the fallback). How it is placed is
-[`ui-patterns.md`](ui-patterns.md), "The battle banner". A side's banner is its target for the round. Defensive, the
-side heads there and holds it. Aggressive, it heads there, and from the tick at least half its fighting units stand in
-or beside the banner's area (3 × 3 round a spot, or a structure's footprint and a ring of one) it has no target, so it
-marches on the enemy's Nexus as by default. The rules layer sets this between ticks (`src/match/banner.ts`): a mission's
-trigger runner by hand, a battle's round through the engine's `retarget` (one entry, `resolvePulse`); the tick itself
-is unchanged. In a battle the banner is a plan's (`BuildActions.banner`, a tile and a stance), so the Skirmish screen,
-a save and a build file carry it alike. With no banner, a level's own target and the march on the enemy Nexus are as
-before.
+stance, to a banner, to two banners. **Two banners**: the Commander follows the main one, and a building can be set to
+send its units after a **secondary banner**; not built.
 
 | Order | What the troops do | In the machinery |
 | --- | --- | --- |
-| None, or aggressive | March on the enemy Nexus | As today |
-| Hold the line, or a defensive banner | Gather at the place and hold it; fight what comes into vision; come back to it after | A side's target, as a mission's is (built) |
-| An aggressive banner | March to the banner, then on to the enemy Nexus | The side's target until half its fighting units reach it, then none (built, in the rules layer, for missions and battles) |
+| A rally point | Gather at it and hold it; fight what comes into vision; come back to it after | The side's target for the round (built) |
 | A secondary banner (a building's) | That building's waves follow its banner instead | The same rules, the goal read from the unit's building (`EntityState.home`) |
 
 The banner is built, for missions and battles; two banners and the secondary banner wait

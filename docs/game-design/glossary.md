@@ -97,10 +97,10 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   choosing from the hand ([`commander-armies.md`](commander-armies.md)).
 - **Nexus Pulse** — the moment each round opens, when the Nexus deals its Commander a hand of Nexus powers.
 - **PERIMETER**, **RIGHT OF SALVAGE** — Vasse's first mission, the tutorial, and her first technology mission.
-- **rally point** — where a side's troops head in the Battle Round, placed in the Build Phase as Start Battle Round
-  opens (by default the enemy Nexus); carried by a side's build actions and deciding in place of its stance. What the
-  troops do once there is the Rally point Experiment: hold it, or push on to the enemy Nexus
-  ([`ui-patterns.md`](../system-design/ui-patterns.md), [`movement.md`](../system-design/movement.md)).
+- **rally point** — where a side's troops head and hold for a Battle Round: a tile, or a named place (`HOME_NEXUS`,
+  `ENEMY_NEXUS`; later a map's hotspots); in a plan, `rally`. Placed in the Build Phase as Start Battle Round opens, by
+  default in front of the base (the Rally point start Experiment). The banner is only its flag
+  ([`movement.md`](../system-design/movement.md), [`ui-patterns.md`](../system-design/ui-patterns.md)).
 - **raid** — a group a mission's opponent sends, with its **intention**: one line saying what it means to do, shown in
   the panel ([`scripted-opponent.md`](scripted-opponent.md)).
 - **regroup** — what happens when a Battle Round ends: survivors step back and form up across their march line, so the
@@ -117,13 +117,13 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   battle; a battle reading (`scoreOf`).
 - **Skirmish** — one battle against a scripted Commander Army, set up by the player: the centre of the game and of its
   testing ([`game-modes.md`](game-modes.md)).
-- **stance** — whether a side's army attacks or holds this round (`attack`, `hold`); a rally point, when placed, decides instead.
+- **stance** — retired with the rally point: what was `hold` is a rally point on `HOME_NEXUS`, `attack` on `ENEMY_NEXUS`.
 - **starter map** — the Build Phase's one disposable map and the few buildings it offers; not a mission.
 - **Story** — a Commander's story: missions in order, with **technologies** carried from one to the next, ending in a
   final battle; its parts are the tutorial, technology missions, the **endless stand** and the final battle
   ([`story.md`](story.md)). A story in progress is a **save slot**.
 - **supply** — the cap on how many units a side may field; supply buildings raise it.
-- **target** — the place a side's troops head for: they engage what comes within reach on the way, and stand there
+- **target** — the area the battle engine sends a side's fighting units to (in a battle, its rally point's area): they engage what comes within reach on the way, and stand there
   ([`pulse.md`](../system-design/pulse.md)).
 - **tech tree**, **blueprint**, **Special**, **research**, **upgrade** — what grows an army between rounds and
   missions ([`commander-armies.md`](commander-armies.md)): a blueprint is what a player may build, a building what they

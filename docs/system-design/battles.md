@@ -22,8 +22,8 @@ sides A and B; a Skirmish calls them slots `p1` (west) and `p2` (east).
 2. **The Build Phase**: each side's build actions place buildings by the Build Phase's own rules (`legalityAt`: build range,
    room round a building that trains, rock, cost; the tech tree as the round opens). The two sides' build actions are blind to each
    other and revealed together; a building both sides put on the same ground is built by neither, and paid back.
-3. **The Battle Round**: each side's troops take its stance — `attack` marches on the enemy Nexus, `hold` gathers in
-   front of its own — or head for its banner when its plan planted one, and the battle engine runs it, **each side on its own content** (`PulseContext.sides`): what one side's
+3. **The Battle Round**: each side's troops head for its rally point and hold it (`HOME_NEXUS`, `ENEMY_NEXUS` or a tile;
+   in front of its base when the plan names none), and the battle engine runs it, **each side on its own content** (`PulseContext.sides`): what one side's
    powers changed is that side's alone, though both may field troopers.
 4. **Between rounds**: survivors stay on the battlefield and regroup across their march line (`src/match/regroup.ts`), a Commander who fell is out by her own rule, credits carry over,
    and each side adds the curve's credits for the round and what its abilities earned (Dob's bounty).
@@ -44,7 +44,7 @@ map leans, and add to them when a battle teaches more):
 
 | Map | Good for testing | Bad for testing |
 | --- | --- | --- |
-| **The Crossing** | A long battle: the kept front, economy and scaling over eight rounds, area damage against a big army, a stance held or pressed; most battles end on time, judged on damage | A quick answer (rounds run to the limit); whether a Nexus can be taken (one rarely falls); round-1 play |
+| **The Crossing** | A long battle: the kept front, economy and scaling over eight rounds, area damage against a big army, a rally point held or pressed; most battles end on time, judged on damage | A quick answer (rounds run to the limit); whether a Nexus can be taken (one rarely falls); round-1 play |
 | **The Pocket** | Round 1 and 2 decisions, a rush and the answer to it, blind building on contested ground (the build ranges meet, so two sides often plan the same tile), a Nexus under fire: units meet at tick 1 and a Nexus falls in two to four rounds | Anything that needs room: formations (a block rarely fits the small build range and leaves credits unspent), the long game, movement round obstacles |
 
 **A side that is not its Commander's whole army** has a **roster** (RULE — `Roster`, `src/battle/types.ts`; `restrictedTo`, `src/battle/sides.ts`; `tests/battle.test.ts`): the building cards on its build menu and the Nexus powers in the pool its Pulse deals from, by id, and the Doctrines it keeps from the first round. Everything else its army could field is left out as if the army never had it; a building a listed power adds still joins the menu when the power is kept. The retired Challenge run played its player on one ([the retired design](../history/challenge-runs-design.md)), and a Skirmish's battle file may name one ([`game-modes.md`](../game-design/game-modes.md)); the opponent, and every battle the measurement commands play, has none and fields the whole army.
@@ -71,18 +71,18 @@ whatever the player wrote. A build file holds them for one round or many, each e
 `"2-4"`, `"*"`), the first that fits winning (the `skirmish` command's manual says how a run plays them).
 
 ```json
-{ "power": 1, "build": [{ "building": "barracks", "at": "forward" }, { "building": "depot", "at": "back" }], "formation": "block", "stance": "attack", "banner": { "x": 25, "y": 3, "stance": "aggressive" }, "note": "why" }
+{ "power": 1, "build": [{ "building": "barracks", "at": "forward" }, { "building": "depot", "at": "back" }], "formation": "block", "rally": "ENEMY_NEXUS", "note": "why" }
 ```
 
 `power` is the hand's card number (0 for none); `build` is in order, while credits last, each `at` one of `nexus`,
 `forward` (ahead of the furthest building, so a base pushed forward builds further forward), `back`, `north`,
 `south`, or an `x` and `y`; `formation`, which may be left out, is `block`, `apart` or `zones` (formations,
-below); `stance` is `attack` or `hold`; `banner`, which may be left out, is a tile and `aggressive` (the default) or
-`defensive`, and decides where the troops go in place of the stance: defensive, they go there and hold it; aggressive,
-they go there and, once half the army has reached it, march on the enemy Nexus (the area is the structure on the tile
-and a ring of one, or the 3 × 3 round it; [`movement.md`](movement.md), banners). A banner off the battlefield, or on
-rock with nothing built there, is refused and the stance decides. Each side's banner is public in the next brief, as
-its stance is. What the rules refuse is said in the next brief, and a field it cannot
+below); `rally` (optional) is where the side's troops head this round, and hold: `"HOME_NEXUS"`, `"ENEMY_NEXUS"`, or a
+tile `{ "x", "y" }`. On a building, the building and a ring of one; on open ground, the 3 by 3 round the tile; on a
+Nexus, its footprint and a ring of one. Left out, or refused (off the battlefield, rock with nothing built, no open
+ground, no way there), the troops rally in front of the base: the Rally point start share of the way toward the enemy
+Nexus, 20% by default. A refusal is said in the side's report. An old `stance` or `banner` is read as a rally point,
+with a problem said. Each side's rally point is public in the next brief. What the rules refuse is said in the next brief, and a field it cannot
 read (a formation it does not know) is dropped with the problem said.
 
 The brief also says, in a section of its own, that where a side builds decides how tight its army fights and what that
@@ -141,10 +141,9 @@ lines say `built 3 (block)`, and a measurement names each side's player with it 
 plan's buildings at their exact anchors, the power picked, the buildings held (`hold`, Hold production), the actions
 taken on its buildings (`actions`: `{x, y, action}`, taken after its buildings are placed, from the credits they leave,
 and said in its report; the `-upgrade` scripts buy them), and the
-banner the player planted, with the Battle banner Experiment on (planting it back on the default, the enemy Nexus,
-aggressive, clears it); its stance follows it, `hold` for a defensive banner and `attack` otherwise. On the screen the
-banner stays planted into the next round, and a saved round keeps it; a build file names it for the rounds it covers,
-so a banner for every round goes under `"round": "*"`. `placementsOf` says where a scripted plan's buildings would
+rally point the player placed, left out when it is the default in front of the base. On the screen it stays placed
+into the next round, and a saved round keeps it; a build file names it for the rounds it covers, so one for every
+round goes under `"round": "*"`. `placementsOf` says where a scripted plan's buildings would
 go, so the screen plays a scripted side through the Build Phase's own functions.
 
 ## 5. No turns, and model against model
@@ -184,7 +183,7 @@ rules: a round plays the same whether or not it is read.
 
 **Public and private.** A round's report (`RoundReport`) has two halves, and the split is the brief's. `reading` is the
 Battle Round: fought in the open, every part of it public, both sides see all of it. `sides` (`SideReport`) is the Build
-Phase: a side's commander, credits, spent, earned, kept power, hand, built, actions, refused, stance, banner, formation and note,
+Phase: a side's commander, credits, spent, earned, kept power, hand, built, actions, refused, rally point, formation and note,
 all its own, and no reading touches them. The brief says so in a line, and keeps to it as data: the other side's part of
 each round's `sides` reaches a brief without its credits, what it spent and earned, its hand, what the rules refused it
 and its note (`seenBy`, `src/battle/brief.ts`), and `reading` reaches it whole. The command's own round report, which a
@@ -226,7 +225,7 @@ from the same view the screen plays (so a unit mid-step stands where the screen 
 save), that is the inspection a test needs: load the round, give its build actions, `--play-to next --show <ticks>`,
 and nothing is saved over. It is not a **screenshot**, which is an image of the screen (PNG: `scripts/playtest.mjs`): an agent reads the one as text and looks at the other.
 
-**A script that reacts** (`reactive`, `src/battle/players.ts`): builds as `balanced`, then plays the stance that has
+**A script that reacts** (`reactive`, `src/battle/players.ts`): builds as `balanced`, then plays the rally point (its own Nexus, or the enemy's) that has
 traded better over the battle, trying each once (every round's report is in the brief's data, `reports`), attacks when
 both sides held, attacks a Nexus under half, holds a lead on Nexus health in the last round and attacks when behind;
 puts a Turret by its Nexus first when its Nexus is hurt or an enemy came within 8 tiles, and sets its producers apart
@@ -243,3 +242,6 @@ battles a row; a record of that day, to be measured again rather than trusted af
 
 Reacting pays on the Pocket; on the Crossing steady pressure from round 3 still wins more, since a hold gives back the
 kept front, which no one round's trade shows.
+
+**The round's clashes** (`RoundReport.clashes`): the buildings both plans put on the same ground, built by neither and
+paid back. The next round opens on one line saying so, and on one line naming what the battle destroyed of the player's.
