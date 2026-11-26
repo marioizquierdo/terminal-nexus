@@ -250,7 +250,7 @@ export function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRo
   const look = { active, ...rowState(input, entry, active) }
   switch (target.kind) {
     case "explore":
-      return { hotkey: "e", label: "Explore Map", ...look }
+      return { hotkey: "e", label: "Map", ...look }
     case "nexus": {
       // Spectating, the Nexus Pulse is the scripts' own: no row.
       if (context.spectating === true) return null

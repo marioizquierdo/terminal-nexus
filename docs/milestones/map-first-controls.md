@@ -119,4 +119,22 @@ not follow the usual rules for a change until a direction is chosen:
 
 ## What was tried
 
-_Nothing yet._
+**First cut, 2026-11-26** (branch `claude/eloquent-bardeen-i6pexc`), waiting for the owner to play it:
+
+- **The panel on the right.** The map on the left from the frame's border; the divider is the map's east side and the
+  panel's west. Popups docked to the panel open over it on the right.
+- **The cursor is the hover.** The Build Phase opens with the keyboard on the map, the cursor on the nearest open ground
+  beside the Nexus. The panel always shows the card under the cursor (there is no plain navigation now), and the bottom
+  line says what Enter does there.
+- **Enter selects.** Open ground: the list of buildings (the old menu, its first row renamed `[e] Map`), on the last
+  building placed or the first. The Nexus: the Nexus Pulse, with a `[s] Start Battle` row under the hand. A building of
+  yours: its actions as rows docked over the panel (Remove while it is only planned). A unit or an enemy: nothing.
+- **Esc goes back one step**: the list to the map, placing to the map, and on the map the game menu. `x` stops on the map.
+- **Placing**: the ghost from the selected tile (the arming spot rule), and once placed the cursor waits on the next
+  spot that fits the same building, so another is Enter, Enter, Enter (list, pick, place).
+- **The mouse**: a click on a tile moves the cursor; a second click on it is Enter; a click on the panel while it shows
+  the card is Enter.
+- **Not yet**: `b` as the list's hotkey (it is a building action's key today), the ground's panel holding the credits
+  and the raid, the hand-off motions, the Battle Round's hover.
+- **Tests failing meanwhile**: the focus and hand-off tests in `tests/` that assume the menu opens the Build Phase
+  (`build-focus`, arming-spot flows, the driver and mouse equivalence frames); rewritten in the cleanup.
