@@ -351,10 +351,32 @@
             "zones"
           ]
         },
-        "stance": {
-          "enum": [
-            "attack",
-            "hold"
+        "rally": {
+          "description": "Where the side's troops head this round, and hold: a tile, its own Nexus or the enemy's. Absent: in front of its base.",
+          "oneOf": [
+            {
+              "enum": [
+                "HOME_NEXUS",
+                "ENEMY_NEXUS"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "x",
+                "y"
+              ],
+              "properties": {
+                "x": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "y": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
           ]
         },
         "hold": {

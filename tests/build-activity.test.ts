@@ -102,11 +102,11 @@ function noteText(side: BuildSide): string {
 // --- The game menu's row ----------------------------------------------------------------------------
 
 test("the game menu has [a] Activity logs between Controls and Save game, saying what it is for", () => {
-  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "save", "restart", "quit"])
+  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "save", "replay", "restart", "quit"])
   const side = session()
   keys(side, ESC)
   const text = screenText(side)
-  assert.match(text, /\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[v\] Save game[\s\S]*\[r\] Restart/)
+  assert.match(text, /\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[v\] Save game[\s\S]*\[w\] Watch last battle[\s\S]*\[r\] Restart/)
   assert.ok(text.includes(ACTIVITY_DESCRIPTION), "the row does not say what it is for")
 })
 
@@ -504,7 +504,7 @@ test("a timed cursor key records how far it moved and why", () => {
 test("the Pulse records its start and, once, its result", () => {
   const side = buildSide({ activity: activityLog(), startPulse })
   keys(side, "n", "2", "s", "s")
-  const home = (side.build.pulse?.times.homeMs ?? 0) + 100
+  const home = (side.build.pulse?.prelude.lengthMs ?? 0) + (side.build.pulse?.times.homeMs ?? 0) + 100
   side.build.advance(0)
   side.build.advance(home)
   side.build.dispatch({ kind: "pulse", control: "restart" })
@@ -542,7 +542,7 @@ test("every entry a scripted run records passes the schema", () => {
     [DOWN, 3000],
   ])
   keys(side, ESC, ESC, "s", RIGHT, ESC, "c", ESC, "a", RIGHT, "e", ESC, ESC, ESC, "d", LEFT, "e", ESC, ESC, "s", "s")
-  const home = (side.build.pulse?.times.homeMs ?? 0) + 100
+  const home = (side.build.pulse?.prelude.lengthMs ?? 0) + (side.build.pulse?.times.homeMs ?? 0) + 100
   side.build.advance(0)
   side.build.advance(home)
   keys(side, ESC, "a", "e")

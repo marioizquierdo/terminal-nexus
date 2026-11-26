@@ -29,9 +29,30 @@ prototype behind the Battle banner Experiment:
 
 - [ ] The owner plays the placement in a Skirmish and says whether it is comfortable and clear, or a stance row
       replaces it (the plan already carries a stance: attack or hold).
-- [ ] **A banner** placed in the Build Phase, aggressive or defensive; by default on the enemy Nexus, aggressive.
+- [x] **A banner** placed in the Build Phase, aggressive or defensive; by default on the enemy Nexus, aggressive.
       Aggressive elsewhere: the army goes there first, then on to the enemy Nexus. Defensive: it holds the line there.
       Battles carry it: a plan names a banner, and the brief says where each side's stood last round.
+- [x] **The rally point, simpler** (the owner's playtest of the banner,
+      [his words](../history/feedback/2026-11-25-rally-point.md)): no stance to choose (what the troops do there is the
+      Rally point Experiment); Start Battle Round puts the cursor on it, Enter starts the battle; a label beside it on
+      the map and a movement that draws the eye there; one arrow, from the Nexus; it shows on a building.
+- [x] **The rally points in the Battle Round**: every few seconds a few arrows run from the Nexus to it; as the battle
+      begins, the enemy's is shown the same way.
+- [x] **Straight back to the Build Phase** when a battle ends, the survivors seen regrouping; the last battle can be
+      replayed from the game menu.
+- [x] **The rally point, quieter** (the owner's second playtest,
+      [his words](../history/feedback/2026-11-25-rally-point.md)): the bottom line says it all, nothing on the map but
+      the line; the line goes through buildings, round rock only; the arrows once, five seconds in, for both sides, the
+      flag as they arrive; it starts in front of the base (Rally point start).
+- [x] **The rally point replaces the stance** (the owner's third round,
+      [his words](../history/feedback/2026-11-25-rally-point.md)): a plan's `rally` is a tile or `HOME_NEXUS` /
+      `ENEMY_NEXUS`, the scripts place theirs, the troops hold it; one area, one route, one default in the battle rules.
+- [x] **Placing it, and the moment before the battle**: the cursor travels there, four arrows flash round it; Esc and
+      Backspace go back; the bottom line names the two actions and reminds the waiting player; Enter sends both sides'
+      arrows at once and reveals the enemy's new buildings one by one before the fight; its first seconds are marked.
+- [x] **Buildings cancelled between rounds** found and fixed.
+- [x] **The fourth round** ([his words](../history/feedback/2026-11-25-rally-point.md)): the regroup forms on the rally
+      point facing the enemy; the troops always march to the rally point; fast forward; the key arrows; 30% start.
 - [ ] The battle scripts place a banner, so a kept front has an answer: a script whose front is beaten holds or falls
       back.
 - [ ] **Strategic, measured**: over seeds, a script that plants well beats the same script planting at the default, and

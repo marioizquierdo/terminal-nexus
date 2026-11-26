@@ -48,7 +48,7 @@ function nextRoundOf(side: BuildSide): void {
   const pulse = side.build.pulse
   assert.ok(pulse !== null)
   side.build.advance(0)
-  side.build.advance(pulse.times.homeMs + 100)
+  side.build.advance(pulse.prelude.lengthMs + pulse.times.homeMs + 100)
   keys(side, "\r")
   assert.equal(side.build.state.pulseNumber, number + 1, `round ${number} did not go on`)
 }

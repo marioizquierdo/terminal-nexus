@@ -380,7 +380,7 @@ test("a power kept lasts: the next round lists it as active, and the round's han
 test("the Nexus pick Experiment: required refuses Start Battle Round until a power is kept; optional starts without one", () => {
   const optional = buildSide()
   keys(optional, "s")
-  assert.equal(optional.build.state.popup, "battle-round", "an optional pick held the round back")
+  assert.equal(optional.build.state.popup, "banner-place", "an optional pick held the round back")
 
   const required = buildSide()
   required.build.dispatch({ kind: "experiment-adjust", field: "powerPick", step: 1 })
@@ -389,5 +389,5 @@ test("the Nexus pick Experiment: required refuses Start Battle Round until a pow
   assert.equal(required.build.state.popup, null, "the round opened with the pick still waiting")
   assert.equal(required.build.state.status.text, "Pick a Nexus power first: [n].")
   keys(required, "n", "1", "s")
-  assert.equal(required.build.state.popup, "battle-round")
+  assert.equal(required.build.state.popup, "banner-place")
 })

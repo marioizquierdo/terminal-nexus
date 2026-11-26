@@ -20,7 +20,7 @@ import type { BuildLayout } from "../src/build/layout.ts"
 import { frameToAnsi, frameToText } from "../src/view/frame.ts"
 import type { CellStyle, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { COLOR_DEPTHS } from "../src/view/index.ts"
-import { BEAM_PERIOD_MS, TIMER_HALF_PERIOD_MS } from "../src/view/ending.ts"
+import { BEAM_PERIOD_MS, TIMER_HALF_PERIOD_MS, openingEndMs } from "../src/view/ending.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { feedNames } from "../src/view/pulse-scene.ts"
 import { ESC } from "./build-helpers.ts"
@@ -324,14 +324,18 @@ test("the timer's blink is slow: lit for 0.3 s, then plain for the next 0.3 s â€
   assert.ok(lit(moments.warnMs! + 20 + 2 * TIMER_HALF_PERIOD_MS) > 0)
 })
 
-test("a light sweeps the map's border in the last seconds, and goes out soon after the shooting stops", () => {
+test("a light sweeps the map's border in the first and the last seconds, and goes out soon after the shooting stops", () => {
   const played = victorious()
   const moments = times(played)
   const lightAt = (ms: number) => {
     at(played, ms)
     return lightCells(frameOf(played, "truecolor"), played.layout)
   }
-  assert.equal(lightAt(500).length, 0, "there was light before the last seconds")
+  // The first seconds are marked as the last are (the owner, 2026-11-26); between them, no light.
+  const opening = openingEndMs(moments)
+  assert.ok(opening !== null && opening + 1000 < moments.warnMs!, "this battle is too short to have seconds between the two")
+  assert.ok(lightAt(800).length > 20, "no light in the first seconds")
+  assert.equal(lightAt(opening + 1000).length, 0, "there was light between the first and the last seconds")
   const one = lightAt(moments.warnMs! + 800)
   assert.ok(one.length > 20, `only ${one.length} border cells were lit`)
   // A turn later it has moved on: the brightest cell is somewhere else.

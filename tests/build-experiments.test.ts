@@ -45,7 +45,7 @@ import {
   keys,
   placed,
   screenText,
-  withDefaultBanner,
+  withDefaultNextRound,
 } from "./build-helpers.ts"
 import type { Side } from "./build-helpers.ts"
 
@@ -81,7 +81,7 @@ function clickValue(side: Side, field: ExperimentField, half: "left" | "right"):
 // --- Opening and closing ---------------------------------------------------------------------------
 
 test("d opens Settings at its Experiments: every flag and its value", () => {
-  const side = buildSide({ context: withDefaultBanner() })
+  const side = buildSide({ context: withDefaultNextRound() })
   keys(side, "d")
   assert.equal(side.build.state.popup, "settings")
   assert.equal(side.build.state.popupHighlight, settingRow(EXPERIMENT_FIELDS[0]?.field as ExperimentField))
@@ -109,7 +109,7 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
       "buildRange",
       "powerPick",
       "roofExit",
-      "battleBanner",
+      "rallyStart",
     ],
   )
   assert.deepEqual(
@@ -234,7 +234,7 @@ test("the restart keeps every flag and starts the plan over, on the menu at Expl
   keys(side, "d")
   goToExperiment(side, "nextRound")
   keys(side, RIGHT)
-  const crew = stepExperiment(defaultExperiments(), "nextRound", 1).flags.nextRound
+  const crew = stepExperiment({ ...defaultExperiments(), nextRound: "key" as const }, "nextRound", 1).flags.nextRound
   assert.equal(side.build.state.experiments.nextRound, crew)
   // A flag that applies at once needs no restart message; the game menu's [r] is the restart.
   keys(side, "q")
@@ -264,7 +264,7 @@ test("the restart keeps every flag and starts the plan over, on the menu at Expl
 
 test("Settings open on a committed Build Phase too, so a playtest can start over from there", () => {
   const side = buildSide()
-  keys(side, "n", "1", "p", "y")
+  keys(side, "n", "1", "p", "s")
   assert.equal(side.build.state.committed, true)
   keys(side, "d")
   assert.equal(side.build.state.popup, "settings")
@@ -334,8 +334,8 @@ test("setting an Experiment by keys, by clicks, and from a driver script is the 
   byDriver.build.run(script)
 
   const expected = byKeyboard.build.state
-  // These sessions play with the Battle banner Experiment off (tests/build-helpers.ts).
-  let experiments: Experiments = { ...defaultExperiments(), battleBanner: "off" }
+  // These sessions play with Next round on manual (tests/build-helpers.ts).
+  let experiments: Experiments = { ...defaultExperiments(), nextRound: "key" }
   for (const [field, step] of [["holdWindowMs", 1], ["holdWindowMs", 1], ["popupPulseMs", -1]] as const) {
     experiments = stepExperiment(experiments, field, step).flags
   }

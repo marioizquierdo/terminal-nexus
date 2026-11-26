@@ -11,6 +11,26 @@ placement is both defensive and offensive. Defensive because it disrupts the ene
 valuable resources. Offensive because it initiates the troop formation which makes the troops more efficient ... Units
 should be smart enough, smooth, but even more important, predictable."
 
+## Its words
+
+The owner, 2026-11-26: "I also need to get used to our vocabulary to describe the intended behavior, that I am myself
+discovering as I playtest." These are the words this page and its tests use, each in the
+[glossary](../game-design/glossary.md) too:
+
+| Word | What it means here |
+| --- | --- |
+| **Army** | Every unit a side has on the battlefield, its Commander included |
+| **Army group** | A side's units each within 5 tiles of another in it, chained: the engagement's reach, so the round's report and the troops' aiming share one rule. Worked out about once an in-game second. Its centre is the Commander when she is in it, else the unit nearest its middle; the Nexus is always one; a building that shoots joins the one within reach. Designed; built in the pull request after the rally point's |
+| **Front, back** | Toward and away from the army group's nearest enemy army group |
+| **Army group formation** | Its ranks across the line to its nearest enemy army group, the priority list front to back (below); the half-speed rule acts within an army group, "ahead" meaning nearer that enemy |
+| **Rally point** | Where a side's troops head and hold for a Battle Round (below); the **banner** is its flag on screen |
+| **Marching** | Walking toward the rally point, keeping the formation, facing the enemy. An army group has **arrived** when its centre is near the rally point and it is not engaged; then it forms up there |
+| **Engaging** | A unit with an enemy in its vision leaves the march and fights; where the sides fight is an **engagement** |
+| **Re-targeting** | A unit choosing a new enemy to attack: its target fell, or a better one came within reach |
+| **Regrouping** | Between rounds: each side steps back out of its fights and forms up on its rally point, or falls back to it if it fought past it, its front rank facing the enemy |
+| **Tick, in-game second** | One simulation step; 12 ticks are an in-game second. Durations inside the battle are said in these |
+| **Frame, real time** | One drawing of the screen; milliseconds on the clock, for what is outside the simulation only (playback speed, effects, key timing) |
+
 The review behind this page, with the games it borrows from, is
 [`2026-10-26-troop-movement-review.md`](../history/reports/2026-10-26-troop-movement-review.md); the owner's answers to
 it are in [`2026-10-26-troop-movement.md`](../history/feedback/2026-10-26-troop-movement.md).
@@ -48,7 +68,10 @@ same battle every time. **Then the Nexus calls a pause.** Nothing fights or trai
 Phase the survivors regroup on the map while the player builds:
 
 - **2 seconds stepping back**: a unit in a fight walks toward its own Nexus.
-- **6 seconds forming up** across its side's march line, in ranks by the formation's order (below).
+- **6 seconds forming up** on its side's rally point, or falling back to it if it fought past it, in ranks by the
+  formation's order (below), the front rank facing the enemy: the middle of the enemy's fighting units nearest the
+  rally point (those within 5 tiles of the nearest), else the enemy's Nexus. A side short of its rally point forms where
+  it stands and marches on next round.
 - **2 seconds standing formed**, while the slowest walk in.
 
 The regroup is worked out from how the round ended alone, never from what the player does, so a scripted battle plays
@@ -61,7 +84,7 @@ what it does is worked out fresh every tick from what stands on the battlefield.
 
 RULE (`headsForNexus`, `src/engine/pulse/perception.ts`; a side's target, `src/engine/pulse/target.ts`). **An army's goal is the
 enemy's Nexus.** A mission may name a target instead, a region the side heads for and holds; a battle's side
-may hold in front of its own Nexus (the battle's stance). The stance and banners in the Build Phase come next (below).
+holds at the rally point its plan places (below).
 
 **How the way is found: a distance field, not a path.** The game does not search a path for each unit. It works out a
 number on every tile saying how far it is, walking, to the goal, shared by every unit going there; a unit takes the step
@@ -81,32 +104,32 @@ Commander, who might also become the army's point to regroup on. Not yet: other 
 for a walker ahead and walks round allies who are stuck (the detour). When the enemy's buildings close it: breaching,
 below.
 
-## Banners — prototype
+## Rally points
+
+**The rally point** is where a side's troops head for the whole Battle Round, and hold: a tile, `HOME_NEXUS` or
+`ENEMY_NEXUS` (the owner, 2026-11-26: "instead of defensive, the script places the banner at the home nexus. Instead of
+offensive, they place the banner on the enemy nexus"); later a map's hotspots or a player's base. It replaced the
+stance, and nothing releases it mid-round. The banner is only its flag on screen. Its area, its refusal and its route
+are one each, in `src/match/rally.ts`: on a building, the building and a ring of one; on open ground, the 3 × 3 round
+the tile; on a Nexus, its footprint and a ring of one. The route goes round rock only, through every building, and is
+shared by the Build Phase's line and the Battle Round's arrows. A plan that names none rallies in front of its base
+(`src/battle/rally.ts`, the Rally point start share of the way, 30% by default). **If the Build Phase lets you place
+it, the troops march toward it** (the owner, 2026-11-26): the round refuses only a spot off the battlefield; a rock tile
+becomes its nearest open ground; a spot the enemy builds shut that round, or one rock closes off, stays the target, and
+the troops walk as near as they can, round what is in the way, and breach. How it is placed is
+[`ui-patterns.md`](ui-patterns.md), "The rally point".
 
 The owner, 2026-10-26, in the core loop ([`core-loop.md`](../milestones/core-loop.md)): orders grow from none, to a
-stance, to a banner, to two banners. **The stance** is whether the army attacks or holds this round (`attack`, `hold`, in a battle's
-build actions); a banner has its own stance, aggressive or defensive. **A banner** is placed on the map, aggressive or defensive; by default on the
-enemy Nexus, aggressive. Aggressive elsewhere, the army goes there first and then on to the enemy Nexus, so it sets a
-route; defensive, it holds the line there. **Two banners**: the Commander follows the main one, and a building can be
-set to send its units after a **secondary banner**.
-
-**The banner is built as a prototype**, behind the Battle banner Experiment (the owner, 2026-10-31: try the banner's
-placement before the stance; the stance row is the fallback). How it is placed is
-[`ui-patterns.md`](ui-patterns.md), "The battle banner". A side's banner is its target for the round. Defensive, the
-side heads there and holds it. Aggressive, it heads there, and from the tick at least half its fighting units stand in
-or beside the banner's area (3 × 3 round a spot, or a structure's footprint and a ring of one) it has no target, so it
-marches on the enemy's Nexus as by default. The rules layer sets this between ticks (`src/match/banner.ts`); the
-engine is unchanged. With no banner, a level's own target and the march on the enemy Nexus are as before.
+stance, to a banner, to two banners. **Two banners**: the Commander follows the main one, and a building can be set to
+send its units after a **secondary banner**; not built.
 
 | Order | What the troops do | In the machinery |
 | --- | --- | --- |
-| None, or aggressive | March on the enemy Nexus | As today |
-| Hold the line, or a defensive banner | Gather at the place and hold it; fight what comes into vision; come back to it after | A side's target, as a mission's is (built) |
-| An aggressive banner | March to the banner, then on to the enemy Nexus | The side's target until half its fighting units reach it, then none (built, in the rules layer) |
+| A rally point | Gather at it and hold it; fight what comes into vision; come back to it after | The side's target for the round (built) |
 | A secondary banner (a building's) | That building's waves follow its banner instead | The same rules, the goal read from the unit's building (`EntityState.home`) |
 
-Two banners and the secondary banner wait; the banner (and the stance, if it replaces the banner) are the Skirmish
-milestone's first steps ([`milestone-17-skirmish.md`](../history/milestones/milestone-17-skirmish.md)).
+The banner is built, for missions and battles; two banners and the secondary banner wait
+([`milestone-20-skirmish-worth-showing.md`](../milestones/milestone-20-skirmish-worth-showing.md), Step 20A).
 
 ## Troop spawning
 
@@ -180,8 +203,9 @@ Averno, melee) and slows and is slowed like anyone. She does not lead the march.
 pace, and an ally already in battle slows no one; so as the front stops to fight, the ranged behind it walk up into
 range at full speed, and the line forms on its own as melee closes and guns stop at their reach.
 
-**Between rounds the regroup forms the same order** (`src/match/regroup.ts`): ranks across the march line, the
-priority list front to back.
+**Between rounds the regroup forms the same order** (`src/match/regroup.ts`): on the rally point, or back to it, in
+ranks across the line from the rally point to the nearest enemy army, the priority list front to back. Army groups will
+make that each group's nearest enemy army group.
 
 **Flankers go behind the enemy's line.** A flanker chooses first among the enemies in its vision that are not melee — a
 shooter, another flanker, a building that shoots — the nearest it can walk to; with none, it chooses as every unit

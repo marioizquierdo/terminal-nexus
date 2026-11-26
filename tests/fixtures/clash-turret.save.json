@@ -1,0 +1,5299 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "F334 repro",
+  "setup": {
+    "map": "crossing",
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 8,
+    "roundTicks": 360,
+    "slots": {
+      "p1": {
+        "commander": "vasse",
+        "controller": "player"
+      },
+      "p2": {
+        "commander": "vasse",
+        "controller": "script:agro"
+      }
+    }
+  },
+  "state": {
+    "round": 7,
+    "sides": {
+      "A": {
+        "commander": "vasse",
+        "credits": 480,
+        "kept": [
+          "reserve-callup",
+          "reserve-callup",
+          "reserve-callup",
+          "reserve-callup",
+          "reserve-callup",
+          "reserve-callup"
+        ],
+        "absent": []
+      },
+      "B": {
+        "commander": "vasse",
+        "credits": 480,
+        "kept": [
+          "reserve-callup",
+          "reserve-callup",
+          "reserve-callup",
+          "reserve-callup",
+          "reserve-callup",
+          "reserve-callup"
+        ],
+        "absent": [
+          {
+            "player": "B",
+            "contentId": "unit.citizen.vasse",
+            "fellInRound": 6,
+            "returnsInRound": 7
+          }
+        ]
+      }
+    },
+    "history": [
+      {
+        "round": 1,
+        "sides": {
+          "A": {
+            "commander": "vasse",
+            "credits": 100,
+            "spent": 90,
+            "earned": 0,
+            "kept": "Reserve Callup",
+            "hand": [
+              "Reserve Callup",
+              "Aid Station Permit",
+              "Standing Order"
+            ],
+            "built": [
+              "hatchery at 13,12",
+              "hatchery at 11,12",
+              "hatchery at 13,14"
+            ],
+            "refused": [],
+            "stance": "hold",
+            "banner": "defensive at 18,14"
+          },
+          "B": {
+            "commander": "vasse",
+            "credits": 100,
+            "spent": 90,
+            "earned": 0,
+            "kept": "Reserve Callup",
+            "hand": [
+              "Reserve Callup",
+              "Standing Order",
+              "Aid Station Permit"
+            ],
+            "built": [
+              "hatchery at 57,12",
+              "hatchery at 59,12",
+              "hatchery at 57,14"
+            ],
+            "refused": [],
+            "stance": "attack",
+            "note": "rush: cheapest producers, all forward, attack every round"
+          }
+        },
+        "ticks": 360,
+        "ended": "time",
+        "reading": {
+          "engagements": [
+            {
+              "start": 134,
+              "end": 359,
+              "at": {
+                "x": 23,
+                "y": 13
+              },
+              "reach": 9,
+              "sides": {
+                "A": {
+                  "dealt": 289,
+                  "engaged": {
+                    "counts": {
+                      "unit.bench.spawnling": 7,
+                      "unit.citizen.marksman": 2,
+                      "unit.citizen.trooper": 5,
+                      "unit.citizen.vasse": 1
+                    },
+                    "count": 15,
+                    "value": 120
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.bench.spawnling": 5,
+                      "unit.citizen.trooper": 3
+                    },
+                    "count": 8,
+                    "value": 80
+                  }
+                },
+                "B": {
+                  "dealt": 221,
+                  "engaged": {
+                    "counts": {
+                      "unit.citizen.trooper": 5,
+                      "unit.bench.spawnling": 9,
+                      "unit.citizen.marksman": 2,
+                      "unit.citizen.vasse": 1
+                    },
+                    "count": 17,
+                    "value": 140
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.citizen.trooper": 5,
+                      "unit.bench.spawnling": 7,
+                      "unit.citizen.marksman": 1
+                    },
+                    "count": 13,
+                    "value": 120
+                  }
+                }
+              }
+            },
+            {
+              "start": 164,
+              "end": 194,
+              "at": {
+                "x": 22,
+                "y": 16
+              },
+              "reach": 4,
+              "sides": {
+                "A": {
+                  "dealt": 31,
+                  "engaged": {
+                    "counts": {
+                      "unit.citizen.vasse": 1,
+                      "unit.citizen.trooper": 2
+                    },
+                    "count": 3,
+                    "value": 20
+                  },
+                  "lost": {
+                    "counts": {},
+                    "count": 0,
+                    "value": 0
+                  }
+                },
+                "B": {
+                  "dealt": 20,
+                  "engaged": {
+                    "counts": {
+                      "unit.citizen.trooper": 2
+                    },
+                    "count": 2,
+                    "value": 20
+                  },
+                  "lost": {
+                    "counts": {},
+                    "count": 0,
+                    "value": 0
+                  }
+                }
+              }
+            }
+          ],
+          "sides": {
+            "A": {
+              "army": {
+                "start": {
+                  "counts": {
+                    "unit.citizen.trooper": 5,
+                    "unit.citizen.marksman": 2,
+                    "unit.citizen.vasse": 1
+                  },
+                  "count": 8,
+                  "value": 50
+                },
+                "end": {
+                  "counts": {
+                    "unit.citizen.marksman": 2,
+                    "unit.citizen.vasse": 1,
+                    "unit.citizen.trooper": 2,
+                    "unit.bench.spawnling": 4
+                  },
+                  "count": 9,
+                  "value": 60
+                },
+                "trained": {
+                  "counts": {
+                    "unit.bench.spawnling": 9
+                  },
+                  "count": 9,
+                  "value": 90
+                },
+                "lost": {
+                  "counts": {
+                    "unit.bench.spawnling": 5,
+                    "unit.citizen.trooper": 3
+                  },
+                  "count": 8,
+                  "value": 80
+                },
+                "commanderFell": false,
+                "abilities": {}
+              },
+              "buildings": {
+                "standing": {
+                  "counts": {
+                    "structure.bench.hatchery": 3,
+                    "structure.citizen.nexus": 1
+                  },
+                  "count": 4,
+                  "value": 90
+                },
+                "damaged": [],
+                "lost": {},
+                "nexus": {
+                  "before": 400,
+                  "after": 400,
+                  "most": 400
+                }
+              },
+              "advance": {
+                "start": 9,
+                "end": 24,
+                "closest": 17
+              },
+              "damage": {
+                "taken": {
+                  "unit.citizen.trooper": 104,
+                  "unit.bench.spawnling": 53,
+                  "unit.citizen.marksman": 43,
+                  "unit.citizen.vasse": 41
+                },
+                "own": 0,
+                "dealt": {
+                  "units": 320,
+                  "buildings": 0,
+                  "nexus": 0
+                }
+              }
+            },
+            "B": {
+              "army": {
+                "start": {
+                  "counts": {
+                    "unit.citizen.trooper": 5,
+                    "unit.citizen.marksman": 2,
+                    "unit.citizen.vasse": 1
+                  },
+                  "count": 8,
+                  "value": 50
+                },
+                "end": {
+                  "counts": {
+                    "unit.citizen.marksman": 1,
+                    "unit.citizen.vasse": 1,
+                    "unit.bench.spawnling": 2
+                  },
+                  "count": 4,
+                  "value": 20
+                },
+                "trained": {
+                  "counts": {
+                    "unit.bench.spawnling": 9
+                  },
+                  "count": 9,
+                  "value": 90
+                },
+                "lost": {
+                  "counts": {
+                    "unit.citizen.trooper": 5,
+                    "unit.bench.spawnling": 7,
+                    "unit.citizen.marksman": 1
+                  },
+                  "count": 13,
+                  "value": 120
+                },
+                "commanderFell": false,
+                "abilities": {}
+              },
+              "buildings": {
+                "standing": {
+                  "counts": {
+                    "structure.bench.hatchery": 3,
+                    "structure.citizen.nexus": 1
+                  },
+                  "count": 4,
+                  "value": 90
+                },
+                "damaged": [],
+                "lost": {},
+                "nexus": {
+                  "before": 400,
+                  "after": 400,
+                  "most": 400
+                }
+              },
+              "advance": {
+                "start": 5,
+                "end": 68,
+                "closest": 39
+              },
+              "damage": {
+                "taken": {
+                  "unit.bench.spawnling": 49,
+                  "unit.citizen.marksman": 30,
+                  "unit.citizen.trooper": 219,
+                  "unit.citizen.vasse": 22
+                },
+                "own": 0,
+                "dealt": {
+                  "units": 241,
+                  "buildings": 0,
+                  "nexus": 0
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "round": 2,
+        "sides": {
+          "A": {
+            "commander": "vasse",
+            "credits": 130,
+            "spent": 120,
+            "earned": 0,
+            "kept": "Reserve Callup",
+            "hand": [
+              "Reserve Callup",
+              "Standing Order",
+              "Aid Station Permit"
+            ],
+            "built": [
+              "hatchery at 19,12",
+              "hatchery at 17,12",
+              "hatchery at 19,14",
+              "hatchery at 17,14"
+            ],
+            "refused": [],
+            "stance": "hold",
+            "banner": "defensive at 18,14"
+          },
+          "B": {
+            "commander": "vasse",
+            "credits": 130,
+            "spent": 120,
+            "earned": 0,
+            "kept": "Reserve Callup",
+            "hand": [
+              "Reserve Callup",
+              "Aid Station Permit",
+              "Standing Order"
+            ],
+            "built": [
+              "hatchery at 51,12",
+              "hatchery at 53,12",
+              "hatchery at 51,14",
+              "hatchery at 53,14"
+            ],
+            "refused": [],
+            "stance": "attack",
+            "note": "rush: cheapest producers, all forward, attack every round"
+          }
+        },
+        "ticks": 360,
+        "ended": "time",
+        "reading": {
+          "engagements": [
+            {
+              "start": 37,
+              "end": 357,
+              "at": {
+                "x": 19,
+                "y": 12
+              },
+              "reach": 14,
+              "sides": {
+                "A": {
+                  "dealt": 251,
+                  "engaged": {
+                    "counts": {
+                      "structure.bench.hatchery": 3,
+                      "unit.bench.spawnling": 9,
+                      "unit.citizen.trooper": 3,
+                      "unit.citizen.marksman": 1,
+                      "unit.citizen.vasse": 1
+                    },
+                    "count": 17,
+                    "value": 210
+                  },
+                  "lost": {
+                    "counts": {
+                      "structure.bench.hatchery": 2,
+                      "unit.bench.spawnling": 4,
+                      "unit.citizen.trooper": 3
+                    },
+                    "count": 9,
+                    "value": 130
+                  }
+                },
+                "B": {
+                  "dealt": 360,
+                  "engaged": {
+                    "counts": {
+                      "unit.bench.spawnling": 14,
+                      "unit.citizen.vasse": 1,
+                      "unit.citizen.marksman": 1,
+                      "unit.citizen.trooper": 2
+                    },
+                    "count": 18,
+                    "value": 160
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.bench.spawnling": 13,
+                      "unit.citizen.trooper": 2,
+                      "unit.citizen.vasse": 1,
+                      "unit.citizen.marksman": 1
+                    },
+                    "count": 17,
+                    "value": 150
+                  }
+                }
+              }
+            },
+            {
+              "start": 172,
+              "end": 175,
+              "at": {
+                "x": 23,
+                "y": 15
+              },
+              "reach": 0,
+              "sides": {
+                "A": {
+                  "dealt": 8,
+                  "engaged": {
+                    "counts": {
+                      "unit.citizen.marksman": 1,
+                      "unit.citizen.trooper": 1
+                    },
+                    "count": 2,
+                    "value": 10
+                  },
+                  "lost": {
+                    "counts": {},
+                    "count": 0,
+                    "value": 0
+                  }
+                },
+                "B": {
+                  "dealt": 0,
+                  "engaged": {
+                    "counts": {
+                      "unit.bench.spawnling": 1
+                    },
+                    "count": 1,
+                    "value": 10
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.bench.spawnling": 1
+                    },
+                    "count": 1,
+                    "value": 10
+                  }
+                }
+              }
+            }
+          ],
+          "sides": {
+            "A": {
+              "army": {
+                "start": {
+                  "counts": {
+                    "unit.citizen.marksman": 2,
+                    "unit.citizen.vasse": 1,
+                    "unit.citizen.trooper": 4,
+                    "unit.bench.spawnling": 4
+                  },
+                  "count": 11,
+                  "value": 80
+                },
+                "end": {
+                  "counts": {
+                    "unit.citizen.marksman": 2,
+                    "unit.citizen.vasse": 1,
+                    "unit.bench.spawnling": 9,
+                    "unit.citizen.trooper": 1
+                  },
+                  "count": 13,
+                  "value": 100
+                },
+                "trained": {
+                  "counts": {
+                    "unit.bench.spawnling": 9
+                  },
+                  "count": 9,
+                  "value": 90
+                },
+                "lost": {
+                  "counts": {
+                    "unit.bench.spawnling": 4,
+                    "unit.citizen.trooper": 3
+                  },
+                  "count": 7,
+                  "value": 70
+                },
+                "commanderFell": false,
+                "abilities": {}
+              },
+              "buildings": {
+                "standing": {
+                  "counts": {
+                    "structure.bench.hatchery": 5,
+                    "structure.citizen.nexus": 1
+                  },
+                  "count": 6,
+                  "value": 150
+                },
+                "damaged": [
+                  {
+                    "contentId": "structure.bench.hatchery",
+                    "at": {
+                      "x": 19,
+                      "y": 14
+                    },
+                    "hp": 70,
+                    "most": 100
+                  }
+                ],
+                "lost": {
+                  "structure.bench.hatchery by unit.citizen.marksman": 1,
+                  "structure.bench.hatchery by unit.citizen.trooper": 1
+                },
+                "nexus": {
+                  "before": 400,
+                  "after": 400,
+                  "most": 400
+                }
+              },
+              "advance": {
+                "start": 18,
+                "end": 23,
+                "closest": 14
+              },
+              "damage": {
+                "taken": {
+                  "unit.bench.spawnling": 94,
+                  "unit.citizen.vasse": 70,
+                  "unit.citizen.marksman": 69,
+                  "unit.citizen.trooper": 127
+                },
+                "own": 0,
+                "dealt": {
+                  "units": 259,
+                  "buildings": 0,
+                  "nexus": 0
+                }
+              }
+            },
+            "B": {
+              "army": {
+                "start": {
+                  "counts": {
+                    "unit.citizen.marksman": 1,
+                    "unit.citizen.vasse": 1,
+                    "unit.bench.spawnling": 2,
+                    "unit.citizen.trooper": 2
+                  },
+                  "count": 6,
+                  "value": 40
+                },
+                "end": {
+                  "counts": {
+                    "unit.bench.spawnling": 9
+                  },
+                  "count": 9,
+                  "value": 90
+                },
+                "trained": {
+                  "counts": {
+                    "unit.bench.spawnling": 21
+                  },
+                  "count": 21,
+                  "value": 210
+                },
+                "lost": {
+                  "counts": {
+                    "unit.bench.spawnling": 14,
+                    "unit.citizen.trooper": 2,
+                    "unit.citizen.vasse": 1,
+                    "unit.citizen.marksman": 1
+                  },
+                  "count": 18,
+                  "value": 160
+                },
+                "commanderFell": true,
+                "abilities": {}
+              },
+              "buildings": {
+                "standing": {
+                  "counts": {
+                    "structure.bench.hatchery": 7,
+                    "structure.citizen.nexus": 1
+                  },
+                  "count": 8,
+                  "value": 210
+                },
+                "damaged": [],
+                "lost": {},
+                "nexus": {
+                  "before": 400,
+                  "after": 400,
+                  "most": 400
+                }
+              },
+              "advance": {
+                "start": 39,
+                "end": 44,
+                "closest": 39
+              },
+              "damage": {
+                "taken": {
+                  "unit.bench.spawnling": 156,
+                  "unit.citizen.marksman": 21,
+                  "unit.citizen.trooper": 59,
+                  "unit.citizen.vasse": 23
+                },
+                "own": 0,
+                "dealt": {
+                  "units": 130,
+                  "buildings": 230,
+                  "nexus": 0
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "round": 3,
+        "sides": {
+          "A": {
+            "commander": "vasse",
+            "credits": 150,
+            "spent": 150,
+            "earned": 0,
+            "kept": "Reserve Callup",
+            "hand": [
+              "Reserve Callup",
+              "Aid Station Permit",
+              "Standing Order"
+            ],
+            "built": [
+              "hatchery at 25,13",
+              "hatchery at 23,12",
+              "hatchery at 23,14",
+              "hatchery at 21,12",
+              "hatchery at 25,15"
+            ],
+            "refused": [],
+            "stance": "hold",
+            "banner": "defensive at 18,14"
+          },
+          "B": {
+            "commander": "vasse",
+            "credits": 150,
+            "spent": 150,
+            "earned": 0,
+            "kept": "Reserve Callup",
+            "hand": [
+              "Reserve Callup",
+              "Standing Order",
+              "Aid Station Permit"
+            ],
+            "built": [
+              "hatchery at 45,12",
+              "hatchery at 47,12",
+              "hatchery at 45,14",
+              "hatchery at 47,14",
+              "hatchery at 49,12"
+            ],
+            "refused": [],
+            "stance": "attack",
+            "note": "rush: cheapest producers, all forward, attack every round"
+          }
+        },
+        "ticks": 360,
+        "ended": "time",
+        "reading": {
+          "engagements": [
+            {
+              "start": 33,
+              "end": 360,
+              "at": {
+                "x": 25,
+                "y": 13
+              },
+              "reach": 14,
+              "sides": {
+                "A": {
+                  "dealt": 299,
+                  "engaged": {
+                    "counts": {
+                      "structure.bench.hatchery": 6,
+                      "unit.bench.spawnling": 14,
+                      "unit.citizen.trooper": 3,
+                      "unit.citizen.marksman": 2,
+                      "unit.citizen.vasse": 1
+                    },
+                    "count": 26,
+                    "value": 350
+                  },
+                  "lost": {
+                    "counts": {
+                      "structure.bench.hatchery": 4,
+                      "unit.bench.spawnling": 12,
+                      "unit.citizen.trooper": 2
+                    },
+                    "count": 18,
+                    "value": 260
+                  }
+                },
+                "B": {
+                  "dealt": 610,
+                  "engaged": {
+                    "counts": {
+                      "unit.bench.spawnling": 19,
+                      "unit.citizen.trooper": 2,
+                      "unit.citizen.vasse": 1
+                    },
+                    "count": 22,
+                    "value": 210
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.bench.spawnling": 17,
+                      "unit.citizen.trooper": 2
+                    },
+                    "count": 19,
+                    "value": 190
+                  }
+                }
+              }
+            }
+          ],
+          "sides": {
+            "A": {
+              "army": {
+                "start": {
+                  "counts": {
+                    "unit.citizen.marksman": 2,
+                    "unit.citizen.vasse": 1,
+                    "unit.bench.spawnling": 9,
+                    "unit.citizen.trooper": 3
+                  },
+                  "count": 15,
+                  "value": 120
+                },
+                "end": {
+                  "counts": {
+                    "unit.citizen.marksman": 2,
+                    "unit.citizen.vasse": 1,
+                    "unit.bench.spawnling": 9,
+                    "unit.citizen.trooper": 1
+                  },
+                  "count": 13,
+                  "value": 100
+                },
+                "trained": {
+                  "counts": {
+                    "unit.bench.spawnling": 12
+                  },
+                  "count": 12,
+                  "value": 120
+                },
+                "lost": {
+                  "counts": {
+                    "unit.bench.spawnling": 12,
+                    "unit.citizen.trooper": 2
+                  },
+                  "count": 14,
+                  "value": 140
+                },
+                "commanderFell": false,
+                "abilities": {}
+              },
+              "buildings": {
+                "standing": {
+                  "counts": {
+                    "structure.bench.hatchery": 6,
+                    "structure.citizen.nexus": 1
+                  },
+                  "count": 7,
+                  "value": 180
+                },
+                "damaged": [
+                  {
+                    "contentId": "structure.bench.hatchery",
+                    "at": {
+                      "x": 19,
+                      "y": 14
+                    },
+                    "hp": 54,
+                    "most": 100
+                  },
+                  {
+                    "contentId": "structure.bench.hatchery",
+                    "at": {
+                      "x": 21,
+                      "y": 12
+                    },
+                    "hp": 71,
+                    "most": 100
+                  }
+                ],
+                "lost": {
+                  "structure.bench.hatchery by unit.bench.spawnling": 3,
+                  "structure.bench.hatchery by unit.citizen.vasse": 1
+                },
+                "nexus": {
+                  "before": 400,
+                  "after": 400,
+                  "most": 400
+                }
+              },
+              "advance": {
+                "start": 14,
+                "end": 22,
+                "closest": 17
+              },
+              "damage": {
+                "taken": {
+                  "unit.bench.spawnling": 512,
+                  "unit.citizen.trooper": 51,
+                  "unit.citizen.vasse": 47
+                },
+                "own": 0,
+                "dealt": {
+                  "units": 299,
+                  "buildings": 0,
+                  "nexus": 0
+                }
+              }
+            },
+            "B": {
+              "army": {
+                "start": {
+                  "counts": {
+                    "unit.bench.spawnling": 9,
+                    "unit.citizen.vasse": 1,
+                    "unit.citizen.trooper": 2
+                  },
+                  "count": 12,
+                  "value": 110
+                },
+                "end": {
+                  "counts": {
+                    "unit.citizen.vasse": 1,
+                    "unit.bench.spawnling": 12
+                  },
+                  "count": 13,
+                  "value": 120
+                },
+                "trained": {
+                  "counts": {
+                    "unit.bench.spawnling": 20
+                  },
+                  "count": 20,
+                  "value": 200
+                },
+                "lost": {
+                  "counts": {
+                    "unit.bench.spawnling": 17,
+                    "unit.citizen.trooper": 2
+                  },
+                  "count": 19,
+                  "value": 190
+                },
+                "commanderFell": false,
+                "abilities": {}
+              },
+              "buildings": {
+                "standing": {
+                  "counts": {
+                    "structure.bench.hatchery": 12,
+                    "structure.citizen.nexus": 1
+                  },
+                  "count": 13,
+                  "value": 360
+                },
+                "damaged": [],
+                "lost": {},
+                "nexus": {
+                  "before": 400,
+                  "after": 400,
+                  "most": 400
+                }
+              },
+              "advance": {
+                "start": 37,
+                "end": 53,
+                "closest": 38
+              },
+              "damage": {
+                "taken": {
+                  "unit.bench.spawnling": 106,
+                  "unit.citizen.trooper": 122,
+                  "unit.citizen.marksman": 63,
+                  "unit.citizen.vasse": 8
+                },
+                "own": 0,
+                "dealt": {
+                  "units": 165,
+                  "buildings": 445,
+                  "nexus": 0
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "round": 4,
+        "sides": {
+          "A": {
+            "commander": "vasse",
+            "credits": 170,
+            "spent": 150,
+            "earned": 0,
+            "kept": "Reserve Callup",
+            "hand": [
+              "Reserve Callup",
+              "Standing Order",
+              "Aid Station Permit"
+            ],
+            "built": [
+              "hatchery at 27,12",
+              "hatchery at 25,12",
+              "hatchery at 26,14",
+              "hatchery at 23,12",
+              "hatchery at 26,10"
+            ],
+            "refused": [],
+            "stance": "hold",
+            "banner": "defensive at 18,14"
+          },
+          "B": {
+            "commander": "vasse",
+            "credits": 170,
+            "spent": 150,
+            "earned": 0,
+            "kept": "Reserve Callup",
+            "hand": [
+              "Reserve Callup",
+              "Aid Station Permit",
+              "Standing Order"
+            ],
+            "built": [
+              "hatchery at 39,12",
+              "hatchery at 41,12",
+              "hatchery at 39,14",
+              "hatchery at 41,14",
+              "hatchery at 43,12"
+            ],
+            "refused": [],
+            "stance": "attack",
+            "note": "rush: cheapest producers, all forward, attack every round"
+          }
+        },
+        "ticks": 360,
+        "ended": "time",
+        "reading": {
+          "engagements": [
+            {
+              "start": 9,
+              "end": 360,
+              "at": {
+                "x": 27,
+                "y": 12
+              },
+              "reach": 15,
+              "sides": {
+                "A": {
+                  "dealt": 194,
+                  "engaged": {
+                    "counts": {
+                      "structure.bench.hatchery": 7,
+                      "unit.citizen.trooper": 3,
+                      "unit.bench.spawnling": 7,
+                      "unit.citizen.marksman": 2
+                    },
+                    "count": 19,
+                    "value": 310
+                  },
+                  "lost": {
+                    "counts": {
+                      "structure.bench.hatchery": 6,
+                      "unit.bench.spawnling": 3,
+                      "unit.citizen.marksman": 1
+                    },
+                    "count": 10,
+                    "value": 210
+                  }
+                },
+                "B": {
+                  "dealt": 686,
+                  "engaged": {
+                    "counts": {
+                      "unit.bench.spawnling": 21,
+                      "unit.citizen.vasse": 1,
+                      "unit.citizen.trooper": 2
+                    },
+                    "count": 24,
+                    "value": 230
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.bench.spawnling": 20,
+                      "unit.citizen.vasse": 1,
+                      "unit.citizen.trooper": 1
+                    },
+                    "count": 22,
+                    "value": 210
+                  }
+                }
+              }
+            },
+            {
+              "start": 212,
+              "end": 284,
+              "at": {
+                "x": 24,
+                "y": 16
+              },
+              "reach": 8,
+              "sides": {
+                "A": {
+                  "dealt": 48,
+                  "engaged": {
+                    "counts": {
+                      "unit.citizen.marksman": 2,
+                      "unit.bench.spawnling": 1,
+                      "unit.citizen.vasse": 1
+                    },
+                    "count": 4,
+                    "value": 10
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.bench.spawnling": 1,
+                      "unit.citizen.vasse": 1
+                    },
+                    "count": 2,
+                    "value": 10
+                  }
+                },
+                "B": {
+                  "dealt": 40,
+                  "engaged": {
+                    "counts": {
+                      "unit.citizen.trooper": 2,
+                      "unit.bench.spawnling": 1
+                    },
+                    "count": 3,
+                    "value": 30
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.bench.spawnling": 1,
+                      "unit.citizen.trooper": 1
+                    },
+                    "count": 2,
+                    "value": 20
+                  }
+                }
+              }
+            },
+            {
+              "start": 248,
+              "end": 281,
+              "at": {
+                "x": 19,
+                "y": 14
+              },
+              "reach": 0,
+              "sides": {
+                "A": {
+                  "dealt": 0,
+                  "engaged": {
+                    "counts": {
+                      "structure.bench.hatchery": 1
+                    },
+                    "count": 1,
+                    "value": 30
+                  },
+                  "lost": {
+                    "counts": {},
+                    "count": 0,
+                    "value": 0
+                  }
+                },
+                "B": {
+                  "dealt": 18,
+                  "engaged": {
+                    "counts": {
+                      "unit.bench.spawnling": 2
+                    },
+                    "count": 2,
+                    "value": 20
+                  },
+                  "lost": {
+                    "counts": {},
+                    "count": 0,
+                    "value": 0
+                  }
+                }
+              }
+            }
+          ],
+          "sides": {
+            "A": {
+              "army": {
+                "start": {
+                  "counts": {
+                    "unit.citizen.marksman": 2,
+                    "unit.citizen.vasse": 1,
+                    "unit.bench.spawnling": 9,
+                    "unit.citizen.trooper": 3
+                  },
+                  "count": 15,
+                  "value": 120
+                },
+                "end": {
+                  "counts": {
+                    "unit.citizen.marksman": 1,
+                    "unit.bench.spawnling": 8,
+                    "unit.citizen.trooper": 3
+                  },
+                  "count": 12,
+                  "value": 110
+                },
+                "trained": {
+                  "counts": {
+                    "unit.bench.spawnling": 3
+                  },
+                  "count": 3,
+                  "value": 30
+                },
+                "lost": {
+                  "counts": {
+                    "unit.bench.spawnling": 4,
+                    "unit.citizen.vasse": 1,
+                    "unit.citizen.marksman": 1
+                  },
+                  "count": 6,
+                  "value": 40
+                },
+                "commanderFell": true,
+                "abilities": {}
+              },
+              "buildings": {
+                "standing": {
+                  "counts": {
+                    "structure.bench.hatchery": 5,
+                    "structure.citizen.nexus": 1
+                  },
+                  "count": 6,
+                  "value": 150
+                },
+                "damaged": [
+                  {
+                    "contentId": "structure.bench.hatchery",
+                    "at": {
+                      "x": 19,
+                      "y": 14
+                    },
+                    "hp": 24,
+                    "most": 100
+                  }
+                ],
+                "lost": {
+                  "structure.bench.hatchery by unit.bench.spawnling": 5,
+                  "structure.bench.hatchery by unit.citizen.vasse": 1
+                },
+                "nexus": {
+                  "before": 400,
+                  "after": 400,
+                  "most": 400
+                }
+              },
+              "advance": {
+                "start": 16,
+                "end": 27,
+                "closest": 17
+              },
+              "damage": {
+                "taken": {
+                  "unit.bench.spawnling": 574,
+                  "unit.citizen.vasse": 64,
+                  "unit.citizen.trooper": 106
+                },
+                "own": 0,
+                "dealt": {
+                  "units": 242,
+                  "buildings": 0,
+                  "nexus": 0
+                }
+              }
+            },
+            "B": {
+              "army": {
+                "start": {
+                  "counts": {
+                    "unit.citizen.vasse": 1,
+                    "unit.bench.spawnling": 12,
+                    "unit.citizen.trooper": 2
+                  },
+                  "count": 15,
+                  "value": 140
+                },
+                "end": {
+                  "counts": {
+                    "unit.bench.spawnling": 11
+                  },
+                  "count": 11,
+                  "value": 110
+                },
+                "trained": {
+                  "counts": {
+                    "unit.bench.spawnling": 20
+                  },
+                  "count": 20,
+                  "value": 200
+                },
+                "lost": {
+                  "counts": {
+                    "unit.bench.spawnling": 21,
+                    "unit.citizen.vasse": 1,
+                    "unit.citizen.trooper": 2
+                  },
+                  "count": 24,
+                  "value": 230
+                },
+                "commanderFell": true,
+                "abilities": {}
+              },
+              "buildings": {
+                "standing": {
+                  "counts": {
+                    "structure.bench.hatchery": 17,
+                    "structure.citizen.nexus": 1
+                  },
+                  "count": 18,
+                  "value": 510
+                },
+                "damaged": [],
+                "lost": {},
+                "nexus": {
+                  "before": 400,
+                  "after": 400,
+                  "most": 400
+                }
+              },
+              "advance": {
+                "start": 47,
+                "end": 49,
+                "closest": 35
+              },
+              "damage": {
+                "taken": {
+                  "unit.citizen.trooper": 101,
+                  "unit.bench.spawnling": 75,
+                  "unit.citizen.marksman": 51,
+                  "unit.citizen.vasse": 15
+                },
+                "own": 0,
+                "dealt": {
+                  "units": 143,
+                  "buildings": 601,
+                  "nexus": 0
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "round": 5,
+        "sides": {
+          "A": {
+            "commander": "vasse",
+            "credits": 230,
+            "spent": 210,
+            "earned": 0,
+            "kept": "Reserve Callup",
+            "hand": [
+              "Reserve Callup",
+              "Aid Station Permit",
+              "Standing Order"
+            ],
+            "built": [
+              "hatchery at 25,13",
+              "hatchery at 23,12",
+              "hatchery at 23,14",
+              "hatchery at 21,12",
+              "hatchery at 25,15",
+              "hatchery at 21,14",
+              "hatchery at 19,12"
+            ],
+            "refused": [],
+            "stance": "hold",
+            "banner": "defensive at 18,14"
+          },
+          "B": {
+            "commander": "vasse",
+            "credits": 230,
+            "spent": 210,
+            "earned": 0,
+            "kept": "Reserve Callup",
+            "hand": [
+              "Reserve Callup",
+              "Standing Order",
+              "Aid Station Permit"
+            ],
+            "built": [
+              "hatchery at 33,12",
+              "hatchery at 35,12",
+              "hatchery at 33,14",
+              "hatchery at 35,14",
+              "hatchery at 37,12",
+              "hatchery at 34,10",
+              "hatchery at 37,14"
+            ],
+            "refused": [],
+            "stance": "attack",
+            "note": "rush: cheapest producers, all forward, attack every round"
+          }
+        },
+        "ticks": 360,
+        "ended": "time",
+        "reading": {
+          "engagements": [
+            {
+              "start": 37,
+              "end": 360,
+              "at": {
+                "x": 25,
+                "y": 15
+              },
+              "reach": 11,
+              "sides": {
+                "A": {
+                  "dealt": 253,
+                  "engaged": {
+                    "counts": {
+                      "structure.bench.hatchery": 5,
+                      "unit.bench.spawnling": 12,
+                      "unit.citizen.trooper": 3,
+                      "unit.citizen.marksman": 1,
+                      "unit.citizen.vasse": 1
+                    },
+                    "count": 22,
+                    "value": 300
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.bench.spawnling": 9,
+                      "structure.bench.hatchery": 3,
+                      "unit.citizen.trooper": 3
+                    },
+                    "count": 15,
+                    "value": 210
+                  }
+                },
+                "B": {
+                  "dealt": 567,
+                  "engaged": {
+                    "counts": {
+                      "unit.bench.spawnling": 25,
+                      "unit.citizen.trooper": 2,
+                      "unit.citizen.vasse": 1
+                    },
+                    "count": 28,
+                    "value": 270
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.bench.spawnling": 21,
+                      "unit.citizen.trooper": 1
+                    },
+                    "count": 22,
+                    "value": 220
+                  }
+                }
+              }
+            }
+          ],
+          "sides": {
+            "A": {
+              "army": {
+                "start": {
+                  "counts": {
+                    "unit.citizen.marksman": 1,
+                    "unit.bench.spawnling": 8,
+                    "unit.citizen.trooper": 5,
+                    "unit.citizen.vasse": 1
+                  },
+                  "count": 15,
+                  "value": 130
+                },
+                "end": {
+                  "counts": {
+                    "unit.citizen.marksman": 1,
+                    "unit.bench.spawnling": 9,
+                    "unit.citizen.trooper": 2,
+                    "unit.citizen.vasse": 1
+                  },
+                  "count": 13,
+                  "value": 110
+                },
+                "trained": {
+                  "counts": {
+                    "unit.bench.spawnling": 10
+                  },
+                  "count": 10,
+                  "value": 100
+                },
+                "lost": {
+                  "counts": {
+                    "unit.bench.spawnling": 9,
+                    "unit.citizen.trooper": 3
+                  },
+                  "count": 12,
+                  "value": 120
+                },
+                "commanderFell": false,
+                "abilities": {}
+              },
+              "buildings": {
+                "standing": {
+                  "counts": {
+                    "structure.bench.hatchery": 9,
+                    "structure.citizen.nexus": 1
+                  },
+                  "count": 10,
+                  "value": 270
+                },
+                "damaged": [
+                  {
+                    "contentId": "structure.bench.hatchery",
+                    "at": {
+                      "x": 19,
+                      "y": 14
+                    },
+                    "hp": 24,
+                    "most": 100
+                  },
+                  {
+                    "contentId": "structure.bench.hatchery",
+                    "at": {
+                      "x": 21,
+                      "y": 12
+                    },
+                    "hp": 88,
+                    "most": 100
+                  },
+                  {
+                    "contentId": "structure.bench.hatchery",
+                    "at": {
+                      "x": 23,
+                      "y": 12
+                    },
+                    "hp": 4,
+                    "most": 100
+                  }
+                ],
+                "lost": {
+                  "structure.bench.hatchery by unit.bench.spawnling": 2,
+                  "structure.bench.hatchery by unit.citizen.trooper": 1
+                },
+                "nexus": {
+                  "before": 400,
+                  "after": 400,
+                  "most": 400
+                }
+              },
+              "advance": {
+                "start": 17,
+                "end": 23,
+                "closest": 19
+              },
+              "damage": {
+                "taken": {
+                  "unit.bench.spawnling": 441,
+                  "unit.citizen.trooper": 102,
+                  "unit.citizen.vasse": 24
+                },
+                "own": 0,
+                "dealt": {
+                  "units": 253,
+                  "buildings": 0,
+                  "nexus": 0
+                }
+              }
+            },
+            "B": {
+              "army": {
+                "start": {
+                  "counts": {
+                    "unit.bench.spawnling": 11,
+                    "unit.citizen.vasse": 1,
+                    "unit.citizen.trooper": 2
+                  },
+                  "count": 14,
+                  "value": 130
+                },
+                "end": {
+                  "counts": {
+                    "unit.citizen.vasse": 1,
+                    "unit.citizen.trooper": 1,
+                    "unit.bench.spawnling": 11
+                  },
+                  "count": 13,
+                  "value": 120
+                },
+                "trained": {
+                  "counts": {
+                    "unit.bench.spawnling": 21
+                  },
+                  "count": 21,
+                  "value": 210
+                },
+                "lost": {
+                  "counts": {
+                    "unit.bench.spawnling": 21,
+                    "unit.citizen.trooper": 1
+                  },
+                  "count": 22,
+                  "value": 220
+                },
+                "commanderFell": false,
+                "abilities": {}
+              },
+              "buildings": {
+                "standing": {
+                  "counts": {
+                    "structure.bench.hatchery": 24,
+                    "structure.citizen.nexus": 1
+                  },
+                  "count": 25,
+                  "value": 720
+                },
+                "damaged": [],
+                "lost": {},
+                "nexus": {
+                  "before": 400,
+                  "after": 400,
+                  "most": 400
+                }
+              },
+              "advance": {
+                "start": 33,
+                "end": 63,
+                "closest": 36
+              },
+              "damage": {
+                "taken": {
+                  "unit.bench.spawnling": 123,
+                  "unit.citizen.trooper": 99,
+                  "unit.citizen.marksman": 21,
+                  "unit.citizen.vasse": 10
+                },
+                "own": 0,
+                "dealt": {
+                  "units": 159,
+                  "buildings": 408,
+                  "nexus": 0
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "round": 6,
+        "sides": {
+          "A": {
+            "commander": "vasse",
+            "credits": 270,
+            "spent": 90,
+            "earned": 0,
+            "kept": "Reserve Callup",
+            "hand": [
+              "Standing Order",
+              "Aid Station Permit",
+              "Reserve Callup"
+            ],
+            "built": [
+              "hatchery at 25,12",
+              "hatchery at 24,14",
+              "hatchery at 26,16"
+            ],
+            "refused": [
+              "Hatchery at 29,12: the enemy built there at the same moment, so neither was built",
+              "Hatchery at 27,12: the enemy built there at the same moment, so neither was built",
+              "Hatchery at 28,14: the enemy built there at the same moment, so neither was built",
+              "Hatchery at 28,10: the enemy built there at the same moment, so neither was built",
+              "Hatchery at 26,14: the enemy built there at the same moment, so neither was built",
+              "Hatchery at 26,10: the enemy built there at the same moment, so neither was built"
+            ],
+            "stance": "hold",
+            "banner": "defensive at 18,14"
+          },
+          "B": {
+            "commander": "vasse",
+            "credits": 270,
+            "spent": 90,
+            "earned": 0,
+            "kept": "Reserve Callup",
+            "hand": [
+              "Aid Station Permit",
+              "Standing Order",
+              "Reserve Callup"
+            ],
+            "built": [
+              "hatchery at 31,12",
+              "hatchery at 31,14",
+              "hatchery at 28,16"
+            ],
+            "refused": [
+              "Hatchery at 29,12: the enemy built there at the same moment, so neither was built",
+              "Hatchery at 27,12: the enemy built there at the same moment, so neither was built",
+              "Hatchery at 27,14: the enemy built there at the same moment, so neither was built",
+              "Hatchery at 29,14: the enemy built there at the same moment, so neither was built",
+              "Hatchery at 27,10: the enemy built there at the same moment, so neither was built",
+              "Hatchery at 29,10: the enemy built there at the same moment, so neither was built"
+            ],
+            "stance": "attack",
+            "note": "rush: cheapest producers, all forward, attack every round"
+          }
+        },
+        "ticks": 360,
+        "ended": "time",
+        "reading": {
+          "engagements": [
+            {
+              "start": 13,
+              "end": 110,
+              "at": {
+                "x": 26,
+                "y": 16
+              },
+              "reach": 9,
+              "sides": {
+                "A": {
+                  "dealt": 8,
+                  "engaged": {
+                    "counts": {
+                      "structure.bench.hatchery": 1,
+                      "unit.citizen.trooper": 1,
+                      "unit.bench.spawnling": 1
+                    },
+                    "count": 3,
+                    "value": 50
+                  },
+                  "lost": {
+                    "counts": {
+                      "structure.bench.hatchery": 1,
+                      "unit.bench.spawnling": 1
+                    },
+                    "count": 2,
+                    "value": 40
+                  }
+                },
+                "B": {
+                  "dealt": 126,
+                  "engaged": {
+                    "counts": {
+                      "unit.bench.spawnling": 6,
+                      "unit.citizen.vasse": 1,
+                      "unit.citizen.trooper": 1
+                    },
+                    "count": 8,
+                    "value": 70
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.bench.spawnling": 1
+                    },
+                    "count": 1,
+                    "value": 10
+                  }
+                }
+              }
+            },
+            {
+              "start": 13,
+              "end": 358,
+              "at": {
+                "x": 25,
+                "y": 12
+              },
+              "reach": 17,
+              "sides": {
+                "A": {
+                  "dealt": 411,
+                  "engaged": {
+                    "counts": {
+                      "structure.bench.hatchery": 5,
+                      "unit.citizen.trooper": 4,
+                      "unit.citizen.vasse": 1,
+                      "unit.bench.spawnling": 18
+                    },
+                    "count": 28,
+                    "value": 370
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.citizen.trooper": 2,
+                      "structure.bench.hatchery": 3,
+                      "unit.bench.spawnling": 16
+                    },
+                    "count": 21,
+                    "value": 270
+                  }
+                },
+                "B": {
+                  "dealt": 523,
+                  "engaged": {
+                    "counts": {
+                      "unit.bench.spawnling": 31,
+                      "unit.citizen.trooper": 3,
+                      "unit.citizen.vasse": 1,
+                      "structure.bench.hatchery": 1
+                    },
+                    "count": 36,
+                    "value": 370
+                  },
+                  "lost": {
+                    "counts": {
+                      "unit.bench.spawnling": 26,
+                      "unit.citizen.trooper": 3,
+                      "unit.citizen.vasse": 1
+                    },
+                    "count": 30,
+                    "value": 290
+                  }
+                }
+              }
+            }
+          ],
+          "sides": {
+            "A": {
+              "army": {
+                "start": {
+                  "counts": {
+                    "unit.citizen.marksman": 1,
+                    "unit.bench.spawnling": 9,
+                    "unit.citizen.trooper": 4,
+                    "unit.citizen.vasse": 1
+                  },
+                  "count": 15,
+                  "value": 130
+                },
+                "end": {
+                  "counts": {
+                    "unit.citizen.marksman": 1,
+                    "unit.citizen.trooper": 2,
+                    "unit.citizen.vasse": 1,
+                    "unit.bench.spawnling": 9
+                  },
+                  "count": 13,
+                  "value": 110
+                },
+                "trained": {
+                  "counts": {
+                    "unit.bench.spawnling": 17
+                  },
+                  "count": 17,
+                  "value": 170
+                },
+                "lost": {
+                  "counts": {
+                    "unit.bench.spawnling": 17,
+                    "unit.citizen.trooper": 2
+                  },
+                  "count": 19,
+                  "value": 190
+                },
+                "commanderFell": false,
+                "abilities": {}
+              },
+              "buildings": {
+                "standing": {
+                  "counts": {
+                    "structure.bench.hatchery": 8,
+                    "structure.citizen.nexus": 1
+                  },
+                  "count": 9,
+                  "value": 240
+                },
+                "damaged": [
+                  {
+                    "contentId": "structure.bench.hatchery",
+                    "at": {
+                      "x": 19,
+                      "y": 14
+                    },
+                    "hp": 24,
+                    "most": 100
+                  },
+                  {
+                    "contentId": "structure.bench.hatchery",
+                    "at": {
+                      "x": 21,
+                      "y": 12
+                    },
+                    "hp": 61,
+                    "most": 100
+                  },
+                  {
+                    "contentId": "structure.bench.hatchery",
+                    "at": {
+                      "x": 21,
+                      "y": 14
+                    },
+                    "hp": 27,
+                    "most": 100
+                  }
+                ],
+                "lost": {
+                  "structure.bench.hatchery by unit.bench.spawnling": 4
+                },
+                "nexus": {
+                  "before": 400,
+                  "after": 400,
+                  "most": 400
+                }
+              },
+              "advance": {
+                "start": 12,
+                "end": 24,
+                "closest": 17
+              },
+              "damage": {
+                "taken": {
+                  "unit.bench.spawnling": 486,
+                  "unit.citizen.vasse": 48,
+                  "unit.citizen.trooper": 115
+                },
+                "own": 0,
+                "dealt": {
+                  "units": 374,
+                  "buildings": 45,
+                  "nexus": 0
+                }
+              }
+            },
+            "B": {
+              "army": {
+                "start": {
+                  "counts": {
+                    "unit.citizen.vasse": 1,
+                    "unit.citizen.trooper": 3,
+                    "unit.bench.spawnling": 11
+                  },
+                  "count": 15,
+                  "value": 140
+                },
+                "end": {
+                  "counts": {
+                    "unit.bench.spawnling": 12
+                  },
+                  "count": 12,
+                  "value": 120
+                },
+                "trained": {
+                  "counts": {
+                    "unit.bench.spawnling": 28
+                  },
+                  "count": 28,
+                  "value": 280
+                },
+                "lost": {
+                  "counts": {
+                    "unit.bench.spawnling": 27,
+                    "unit.citizen.trooper": 3,
+                    "unit.citizen.vasse": 1
+                  },
+                  "count": 31,
+                  "value": 300
+                },
+                "commanderFell": true,
+                "abilities": {}
+              },
+              "buildings": {
+                "standing": {
+                  "counts": {
+                    "structure.bench.hatchery": 27,
+                    "structure.citizen.nexus": 1
+                  },
+                  "count": 28,
+                  "value": 810
+                },
+                "damaged": [
+                  {
+                    "contentId": "structure.bench.hatchery",
+                    "at": {
+                      "x": 28,
+                      "y": 16
+                    },
+                    "hp": 55,
+                    "most": 100
+                  }
+                ],
+                "lost": {},
+                "nexus": {
+                  "before": 400,
+                  "after": 400,
+                  "most": 400
+                }
+              },
+              "advance": {
+                "start": 48,
+                "end": 63,
+                "closest": 38
+              },
+              "damage": {
+                "taken": {
+                  "unit.citizen.trooper": 168,
+                  "unit.citizen.vasse": 52,
+                  "unit.bench.spawnling": 199
+                },
+                "own": 0,
+                "dealt": {
+                  "units": 245,
+                  "buildings": 404,
+                  "nexus": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "result": null,
+    "carried": {
+      "schemaVersion": 3,
+      "tick": 0,
+      "ticksPerSecond": 12,
+      "entities": [
+        {
+          "ordinal": 3,
+          "id": "A:hatch#4",
+          "player": "A",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 11,
+            "y": 12
+          },
+          "facing": "e",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 4,
+          "id": "A:hatch#5",
+          "player": "A",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 13,
+            "y": 12
+          },
+          "facing": "e",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 5,
+          "id": "B:hatch#6",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 57,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 6,
+          "id": "B:hatch#7",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 59,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 8,
+          "id": "A:nexus#9",
+          "player": "A",
+          "contentId": "structure.citizen.nexus",
+          "hp": 400,
+          "anchor": {
+            "x": 6,
+            "y": 13
+          },
+          "facing": "e",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0
+        },
+        {
+          "ordinal": 15,
+          "id": "B:nexus#16",
+          "player": "B",
+          "contentId": "structure.citizen.nexus",
+          "hp": 400,
+          "anchor": {
+            "x": 63,
+            "y": 13
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0
+        },
+        {
+          "ordinal": 16,
+          "id": "A:marksman#17",
+          "player": "A",
+          "contentId": "unit.citizen.marksman",
+          "hp": 24,
+          "anchor": {
+            "x": 17,
+            "y": 15
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0
+        },
+        {
+          "ordinal": 19,
+          "id": "A:hatch#20",
+          "player": "A",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 13,
+            "y": 14
+          },
+          "facing": "e",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 20,
+          "id": "B:hatch#21",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 57,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 44,
+          "id": "B:hatch#45",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 51,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 45,
+          "id": "B:hatch#46",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 53,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 50,
+          "id": "A:hatch#51",
+          "player": "A",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 17,
+            "y": 14
+          },
+          "facing": "e",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 51,
+          "id": "A:hatch#52",
+          "player": "A",
+          "contentId": "structure.bench.hatchery",
+          "hp": 24,
+          "anchor": {
+            "x": 19,
+            "y": 14
+          },
+          "facing": "e",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 52,
+          "id": "B:hatch#53",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 51,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 53,
+          "id": "B:hatch#54",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 53,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 87,
+          "id": "B:hatch#88",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 45,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 88,
+          "id": "B:hatch#89",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 47,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 89,
+          "id": "B:hatch#90",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 49,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 95,
+          "id": "B:hatch#96",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 45,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 96,
+          "id": "B:hatch#97",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 47,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 135,
+          "id": "B:hatch#136",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 39,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 136,
+          "id": "B:hatch#137",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 41,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 137,
+          "id": "B:hatch#138",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 43,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 138,
+          "id": "A:trooper#139",
+          "player": "A",
+          "contentId": "unit.citizen.trooper",
+          "hp": 33,
+          "anchor": {
+            "x": 15,
+            "y": 15
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0
+        },
+        {
+          "ordinal": 139,
+          "id": "A:trooper#140",
+          "player": "A",
+          "contentId": "unit.citizen.trooper",
+          "hp": 2,
+          "anchor": {
+            "x": 15,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0
+        },
+        {
+          "ordinal": 143,
+          "id": "B:hatch#144",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 39,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 144,
+          "id": "B:hatch#145",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 41,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 168,
+          "id": "A:vasse#169",
+          "player": "A",
+          "contentId": "unit.citizen.vasse",
+          "hp": 80,
+          "anchor": {
+            "x": 16,
+            "y": 13
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0
+        },
+        {
+          "ordinal": 170,
+          "id": "B:hatch#171",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 34,
+            "y": 10
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 171,
+          "id": "A:hatch#172",
+          "player": "A",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 19,
+            "y": 12
+          },
+          "facing": "e",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 172,
+          "id": "A:hatch#173",
+          "player": "A",
+          "contentId": "structure.bench.hatchery",
+          "hp": 61,
+          "anchor": {
+            "x": 21,
+            "y": 12
+          },
+          "facing": "e",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 174,
+          "id": "B:hatch#175",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 33,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 175,
+          "id": "B:hatch#176",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 35,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 176,
+          "id": "B:hatch#177",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 37,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 181,
+          "id": "A:hatch#182",
+          "player": "A",
+          "contentId": "structure.bench.hatchery",
+          "hp": 27,
+          "anchor": {
+            "x": 21,
+            "y": 14
+          },
+          "facing": "e",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 183,
+          "id": "B:hatch#184",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 33,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 184,
+          "id": "B:hatch#185",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 35,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 185,
+          "id": "B:hatch#186",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 37,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 209,
+          "id": "A:spawnling#210",
+          "player": "A",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 15,
+            "y": 13
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 182,
+          "homeAt": {
+            "x": 23,
+            "y": 14
+          }
+        },
+        {
+          "ordinal": 216,
+          "id": "A:spawnling#217",
+          "player": "A",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 13,
+            "y": 10
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 172,
+          "homeAt": {
+            "x": 21,
+            "y": 13
+          }
+        },
+        {
+          "ordinal": 218,
+          "id": "A:spawnling#219",
+          "player": "A",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 13,
+            "y": 11
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 172,
+          "homeAt": {
+            "x": 21,
+            "y": 13
+          }
+        },
+        {
+          "ordinal": 220,
+          "id": "B:hatch#221",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 31,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 226,
+          "id": "B:hatch#227",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 100,
+          "anchor": {
+            "x": 31,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 228,
+          "id": "B:hatch#229",
+          "player": "B",
+          "contentId": "structure.bench.hatchery",
+          "hp": 55,
+          "anchor": {
+            "x": 28,
+            "y": 16
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "productionCooldown": 60,
+          "produced": 0,
+          "owed": 0
+        },
+        {
+          "ordinal": 251,
+          "id": "A:spawnling#252",
+          "player": "A",
+          "contentId": "unit.bench.spawnling",
+          "hp": 2,
+          "anchor": {
+            "x": 15,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 51,
+          "homeAt": {
+            "x": 19,
+            "y": 14
+          }
+        },
+        {
+          "ordinal": 255,
+          "id": "B:spawnling#256",
+          "player": "B",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 30,
+            "y": 12
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 170,
+          "homeAt": {
+            "x": 34,
+            "y": 11
+          }
+        },
+        {
+          "ordinal": 256,
+          "id": "B:spawnling#257",
+          "player": "B",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 30,
+            "y": 13
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 170,
+          "homeAt": {
+            "x": 34,
+            "y": 11
+          }
+        },
+        {
+          "ordinal": 257,
+          "id": "B:spawnling#258",
+          "player": "B",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 30,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 170,
+          "homeAt": {
+            "x": 35,
+            "y": 11
+          }
+        },
+        {
+          "ordinal": 258,
+          "id": "A:spawnling#259",
+          "player": "A",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 15,
+            "y": 11
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 171,
+          "homeAt": {
+            "x": 19,
+            "y": 13
+          }
+        },
+        {
+          "ordinal": 261,
+          "id": "B:spawnling#262",
+          "player": "B",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 33,
+            "y": 16
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 184,
+          "homeAt": {
+            "x": 36,
+            "y": 14
+          }
+        },
+        {
+          "ordinal": 262,
+          "id": "B:spawnling#263",
+          "player": "B",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 30,
+            "y": 16
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 184,
+          "homeAt": {
+            "x": 35,
+            "y": 14
+          }
+        },
+        {
+          "ordinal": 263,
+          "id": "A:spawnling#264",
+          "player": "A",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 12,
+            "y": 15
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 50,
+          "homeAt": {
+            "x": 18,
+            "y": 15
+          }
+        },
+        {
+          "ordinal": 264,
+          "id": "B:spawnling#265",
+          "player": "B",
+          "contentId": "unit.bench.spawnling",
+          "hp": 5,
+          "anchor": {
+            "x": 31,
+            "y": 15
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 175,
+          "homeAt": {
+            "x": 35,
+            "y": 13
+          }
+        },
+        {
+          "ordinal": 265,
+          "id": "B:spawnling#266",
+          "player": "B",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 29,
+            "y": 13
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 175,
+          "homeAt": {
+            "x": 36,
+            "y": 13
+          }
+        },
+        {
+          "ordinal": 266,
+          "id": "B:spawnling#267",
+          "player": "B",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 32,
+            "y": 11
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 175,
+          "homeAt": {
+            "x": 35,
+            "y": 13
+          }
+        },
+        {
+          "ordinal": 267,
+          "id": "B:spawnling#268",
+          "player": "B",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 29,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 176,
+          "homeAt": {
+            "x": 37,
+            "y": 13
+          }
+        },
+        {
+          "ordinal": 268,
+          "id": "A:spawnling#269",
+          "player": "A",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 15,
+            "y": 10
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 50,
+          "homeAt": {
+            "x": 17,
+            "y": 14
+          }
+        },
+        {
+          "ordinal": 269,
+          "id": "B:spawnling#270",
+          "player": "B",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 32,
+            "y": 16
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 185,
+          "homeAt": {
+            "x": 37,
+            "y": 14
+          }
+        },
+        {
+          "ordinal": 270,
+          "id": "B:spawnling#271",
+          "player": "B",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 33,
+            "y": 11
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 185,
+          "homeAt": {
+            "x": 37,
+            "y": 14
+          }
+        },
+        {
+          "ordinal": 271,
+          "id": "A:spawnling#272",
+          "player": "A",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 12,
+            "y": 14
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 50,
+          "homeAt": {
+            "x": 17,
+            "y": 15
+          }
+        },
+        {
+          "ordinal": 272,
+          "id": "B:spawnling#273",
+          "player": "B",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 34,
+            "y": 16
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 185,
+          "homeAt": {
+            "x": 37,
+            "y": 14
+          }
+        },
+        {
+          "ordinal": 273,
+          "id": "A:spawnling#274",
+          "player": "A",
+          "contentId": "unit.bench.spawnling",
+          "hp": 8,
+          "anchor": {
+            "x": 12,
+            "y": 11
+          },
+          "facing": "w",
+          "moveCredit": 0,
+          "cooldown": 0,
+          "targetOrdinal": null,
+          "windup": 0,
+          "spawnCooldown": 0,
+          "focusStreak": 0,
+          "home": 4,
+          "homeAt": {
+            "x": 14,
+            "y": 13
+          }
+        }
+      ],
+      "groundItems": [
+        {
+          "at": {
+            "x": 22,
+            "y": 12
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#13",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#26",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 12
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#2",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#27",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 20,
+            "y": 16
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#22",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 13
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#10",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 11
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#15",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#30",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#28",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#32",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#33",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 11
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#12",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 15
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#23",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#34",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#31",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 10
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#29",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 16
+          },
+          "amount": 6,
+          "sourceId": "B:marksman#24",
+          "sourceContentId": "unit.citizen.marksman"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 12
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#1",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#35",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#38",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#37",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#41",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 20,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#39",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 19,
+            "y": 12
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#44",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#62",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#56",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#55",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#60",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#61",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 20,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#57",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#58",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#63",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 15
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#19",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#64",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 19,
+            "y": 11
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#18",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#65",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 18,
+            "y": 10
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#40",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 20,
+            "y": 10
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#67",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 19,
+            "y": 12
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#49",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 19,
+            "y": 11
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#48",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 20,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#59",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#66",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#69",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 11
+          },
+          "amount": 6,
+          "sourceId": "B:marksman#8",
+          "sourceContentId": "unit.citizen.marksman"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#70",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 17,
+            "y": 12
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#43",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 18,
+            "y": 11
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#50",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 13
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#93",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#84",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 15
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#99",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#83",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#76",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 10
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#77",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#82",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#80",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 18
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#36",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 17
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#25",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#75",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 10
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#94",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#71",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 14
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#95",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#106",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#101",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 20,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#100",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 20,
+            "y": 17
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#81",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#73",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 29,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#42",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#72",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 18
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#78",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#102",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 27,
+            "y": 11
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#47",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#103",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 20,
+            "y": 16
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#98",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 28,
+            "y": 10
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#91",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#107",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#113",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#117",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 12
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#87",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 27,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#109",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#124",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 27,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#115",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#108",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#122",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#104",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 10
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#132",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 27,
+            "y": 12
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#135",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 12
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#134",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#114",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 19,
+            "y": 10
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#131",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 14
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#143",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 12
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#133",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 10
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#111",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#118",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#110",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#121",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 9
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#112",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#123",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 12
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#86",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 18
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#116",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#120",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#105",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 20,
+            "y": 17
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#142",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#79",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#146",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#128",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#126",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#148",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#129",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#147",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 20,
+            "y": 16
+          },
+          "amount": 6,
+          "sourceId": "A:marksman#3",
+          "sourceContentId": "unit.citizen.marksman"
+        },
+        {
+          "at": {
+            "x": 27,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#149",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#150",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#151",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 27,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#152",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 16
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#141",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 28,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#153",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 28,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#130",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 28,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#154",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#119",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#167",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 17
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#164",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 15
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#188",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 16
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#92",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 18
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#155",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 17
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#158",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#163",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 17
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#161",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#160",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 18
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#159",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#166",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 16
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#180",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#193",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 27,
+            "y": 16
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#181",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 13
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#179",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#198",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 30,
+            "y": 17
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#162",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#192",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#199",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#196",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 31,
+            "y": 17
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#178",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#194",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#197",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#157",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#190",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 17
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#168",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#195",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#165",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#189",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#202",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#203",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#191",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#205",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 11
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#206",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#214",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 14
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#183",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 16
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#228",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 18
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#127",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 17
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#215",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#218",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 17
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#187",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 18
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#204",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 17
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#225",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 12
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#220",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 20,
+            "y": 17
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#207",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#211",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 12
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#174",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 18
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#213",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 18
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#74",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 17
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#156",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 26,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#209",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#125",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 17
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#230",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 14
+          },
+          "amount": 40,
+          "sourceId": "A:hatch#226",
+          "sourceContentId": "structure.bench.hatchery"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#216",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#201",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#235",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#231",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#236",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 16
+          },
+          "amount": 10,
+          "sourceId": "A:trooper#222",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#212",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#234",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 18
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#68",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#238",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#239",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#242",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#245",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#244",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#243",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 19
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#208",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#240",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 18
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#233",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#246",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#251",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#248",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 21,
+            "y": 16
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#232",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 22,
+            "y": 16
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#223",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 17
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#237",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#249",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#250",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#247",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 15
+          },
+          "amount": 10,
+          "sourceId": "B:trooper#224",
+          "sourceContentId": "unit.citizen.trooper"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#241",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#200",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 25,
+            "y": 14
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#254",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 24,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#255",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 12
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#253",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 15
+          },
+          "amount": 2,
+          "sourceId": "B:spawnling#261",
+          "sourceContentId": "unit.bench.spawnling"
+        },
+        {
+          "at": {
+            "x": 23,
+            "y": 13
+          },
+          "amount": 2,
+          "sourceId": "A:spawnling#260",
+          "sourceContentId": "unit.bench.spawnling"
+        }
+      ],
+      "vacatedTiles": [],
+      "outcome": null,
+      "rng": {
+        "name": "pcg32-xsh-rr",
+        "state": "fbb61cc63681026e",
+        "inc": "0000000000000001"
+      },
+      "nextOrdinal": 274,
+      "targets": {
+        "A": {
+          "x": 16,
+          "y": 13,
+          "width": 4,
+          "height": 4
+        },
+        "B": {
+          "x": 6,
+          "y": 13,
+          "width": 3,
+          "height": 2
+        }
+      }
+    }
+  },
+  "draft": {
+    "p1": {
+      "power": 3,
+      "build": [
+        {
+          "building": "hatchery",
+          "x": 27,
+          "y": 12
+        },
+        {
+          "building": "hatchery",
+          "x": 25,
+          "y": 12
+        },
+        {
+          "building": "hatchery",
+          "x": 27,
+          "y": 14
+        },
+        {
+          "building": "hatchery",
+          "x": 25,
+          "y": 14
+        },
+        {
+          "building": "hatchery",
+          "x": 23,
+          "y": 12
+        },
+        {
+          "building": "hatchery",
+          "x": 26,
+          "y": 10
+        },
+        {
+          "building": "hatchery",
+          "x": 23,
+          "y": 14
+        },
+        {
+          "building": "hatchery",
+          "x": 26,
+          "y": 16
+        },
+        {
+          "building": "hatchery",
+          "x": 24,
+          "y": 10
+        },
+        {
+          "building": "hatchery",
+          "x": 24,
+          "y": 16
+        },
+        {
+          "building": "hatchery",
+          "x": 22,
+          "y": 10
+        },
+        {
+          "building": "hatchery",
+          "x": 17,
+          "y": 12
+        },
+        {
+          "building": "turret",
+          "x": 22,
+          "y": 16
+        }
+      ],
+      "stance": "hold",
+      "banner": {
+        "x": 18,
+        "y": 14,
+        "stance": "defensive"
+      }
+    }
+  }
+}

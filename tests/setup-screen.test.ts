@@ -17,7 +17,7 @@ import { openSkirmish } from "../src/cli/skirmish-open.ts"
 import type { SaveEntry } from "../src/cli/title-screens.ts"
 import type { LevelDestination } from "../src/cli/route.ts"
 import { formatRoute, parseRoute } from "../src/cli/route.ts"
-import { isShippedSave, planOnRound, playedOf, positionOf, skirmishLevel } from "../src/cli/skirmish-play.ts"
+import { buildActionsOf, isShippedSave, planOnRound, playedOf, positionOf, skirmishLevel } from "../src/cli/skirmish-play.ts"
 import { listSaves } from "../src/cli/skirmish-files.ts"
 import { readProfiles } from "../src/skirmish/profile-files.ts"
 import { SHIPPED_PROFILES, SHIPPED_SAVES } from "../src/skirmish/shipped-players.ts"
@@ -195,7 +195,7 @@ test("the screen plays a round exactly as playNext plays it headless: the same s
   const save: SaveFile = { format: SAVE_FORMAT, setup: RICH }
   const level = skirmishLevel(save, {}, { profiles: SHIPPED_PROFILES })
   const context = withoutScene(level.firstRound())
-  const plan: BuildActions = { power: 1, build: [{ building: "turret", x: 10, y: 11 }], stance: "attack" }
+  const plan: BuildActions = { power: 1, build: [{ building: "turret", x: 10, y: 11 }] }
   const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
   const opened = createBuildState(context, nexusTile(context) ?? { x: 0, y: 0 }, viewport)
   const planned = planOnRound(context, opened, plan, level.play.keep as NonNullable<typeof level.play.keep>)
@@ -203,7 +203,11 @@ test("the screen plays a round exactly as playNext plays it headless: the same s
   assert.ok(resolved !== null)
   const onScreen = playedOf(resolved)
   assert.ok(onScreen !== undefined)
-  const headless = playNext(RICH, battleOf(save, SHIPPED_PROFILES), { p1: { ...plan, stance: "attack" } }, SHIPPED_PROFILES)
+  // The plan the screen hands the round: the one laid on it. The rally point it starts with in front of the base is the
+  // battle's own default, so the plan names none, and the headless round rallies on the same tile.
+  const screenPlan = buildActionsOf(planned.context, planned.state)
+  assert.equal(screenPlan.rally, undefined, "the screen's default rally point is not the battle's")
+  const headless = playNext(RICH, battleOf(save, SHIPPED_PROFILES), { p1: screenPlan }, SHIPPED_PROFILES)
   assert.deepEqual(onScreen.battle, headless.state)
   // The share and the modifiers acted: p2 earns more than the curve, p1 less, and the round was half as long.
   assert.equal(onScreen.battle.setup.pulseTicks, Math.round(RICH.roundTicks / 2))
@@ -250,6 +254,8 @@ test("a battle's result offers the setup screen beside the same battle again and
   const run = runGamePlaytest({
     start: { kind: "title", place: "load-game" },
     saves: () => shippedSaves(SHIPPED_PROFILES),
+    // Next round on manual, so each round's result is there for Enter (the default goes straight on).
+    experiments: { nextRound: "key" },
     steps: parseKeyScript("4 1 s Esc s wait~1000*40 Enter Esc s wait~1000*40 m"),
   })
   const result = run.frames[run.frames.length - 2]

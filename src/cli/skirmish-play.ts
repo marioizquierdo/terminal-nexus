@@ -31,11 +31,14 @@ import { STARTER_START_CURSOR, nexusDraftOf } from "../build/catalog.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { DialogLine, FieldEntity, IncomingEntity, StandingStructure } from "../build/types.ts"
 import { status } from "../build/status.ts"
+import { defaultValue, setting } from "../build/all-settings.ts"
+import { bannerOrder } from "../build/banner.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../engine/events/types.ts"
 import { tilesOf } from "../engine/geometry/coords.ts"
 import type { BattleState, Player, RoundReport, Side, BuildActions } from "../battle/index.ts"
-import { SIDES, armyOf, briefOf, battleTerrain, handOf, loadoutOf, mapOf, beginBattle, placementsOf, restoredOf, roundOpening, standingOf } from "../battle/index.ts"
+import { nameOf } from "../battle/reading/lines.ts"
+import { SIDES, armyOf, briefOf, battleTerrain, defaultRallyTile, handOf, loadoutOf, mapOf, beginBattle, nexusOf, placementsOf, restoredOf, roundOpening, standingOf } from "../battle/index.ts"
 import type { RegroupResult } from "../match/index.ts"
 import { centreTile, standDown } from "../match/index.ts"
 import { spawnEvents } from "../engine/pulse/index.ts"
@@ -179,6 +182,10 @@ function roundContext(position: SkirmishPosition, previous: Partial<BuildContext
   }
   // Spectating: nobody builds at the screen, so it offers nothing to build or pick (`BuildContext.spectating`).
   const watching = spectating(position.setup)
+  // Where the rally point starts: in front of the base, the Rally point start Experiment's share of the way — the
+  // battle's own default (`defaultRallyTile`) at the Experiment's default.
+  const share = (previous.experiments as Readonly<Record<string, unknown>> | undefined)?.["rallyStart"]
+  const front = defaultRallyTile(battle, content, "A", typeof share === "number" ? share : defaultValue("rallyStart"))
   const context: BuildContext = {
     ...carriedOver(previous),
     terrain: battleTerrain(map),
@@ -201,11 +208,28 @@ function roundContext(position: SkirmishPosition, previous: Partial<BuildContext
     incoming: arrivalsOf(battle, []),
     roundText: {},
     mode: position,
+    ...(front === null ? {} : { bannerDefault: { tile: front, name: "ground in front of your base", stance: "defensive" as const } }),
     saveName: saveNameOf(position),
     openingStatus: status(opening, "hint"),
   }
   return scene.length === 0 ? context : { ...context, scene }
 }
+
+/** The player's buildings the battle destroyed, counted by name ("2 Barracks, a Turret"), or `null` for none. */
+function lostBuildings(events: readonly DomainEvent[]): string | null {
+  const counts = new Map<string, number>()
+  for (const event of events) {
+    if (event.kind !== "structure.destroyed" || event.player !== "A") continue
+    const name = nameOf(event.contentId)
+    counts.set(name, (counts.get(name) ?? 0) + 1)
+  }
+  if (counts.size === 0) return null
+  return [...counts].map(([name, count]) => (count === 1 ? `a ${name}` : `${count} ${name}`)).join(", ")
+}
+
+/** Buildings both sides put on the same ground: built by neither, paid back. */
+const clashLine = (count: number): string =>
+  `${count === 1 ? "A building was" : `${count} buildings were`} not built: the enemy chose the same ground at the same moment. Paid back.`
 
 /** A new battle's first round: what it is, then how the other side plays, looking at its Nexus. */
 function firstRound(setup: SaveSetup, previous: Partial<BuildContext>, before: readonly DialogLine[] = [], extras: Pick<SkirmishPosition, "file" | "draft"> = {}, profiles?: Profiles): BuildContext {
@@ -265,23 +289,32 @@ const tileOf = (key: string): Readonly<{ x: number; y: number }> => {
 /**
  * **Side A's battle plan from a Build Phase**: the power picked (its number in the hand, which is the battle's hand), every
  * building placed at its exact anchor in the order placed, the buildings held this round, the building actions taken,
- * and the troops marching on the enemy's Nexus — the Build Phase has no stance to choose.
+ * and the rally point: where the player placed it, else the round's default in front of the base. Left out when it is
+ * the tile the battle would rally on by itself (`defaultRallyTile`), so a plan the player did not touch names none; the
+ * enemy's Nexus when the round has no default (Rally point start at 100).
  */
 export function buildActionsOf(context: BuildContext, state: BuildState): BuildActions {
   const { battle } = positionOf(context)
   const hold = state.held.map(tileOf)
   const actions = state.fitted.map((taken) => ({ ...tileOf(taken.anchor), action: taken.action }))
+  const tile = state.banner?.tile ?? context.bannerDefault?.tile ?? null
+  // A spot the troops cannot get to is no order: the round plays its default.
+  const placed = tile !== null && bannerOrder(context, { planned: state.planned, banner: { tile, stance: "defensive" } }) !== null
+  const own = defaultRallyTile(battle, contentOf(battle), "A")
+  const rally: BuildActions["rally"] = tile === null ? "ENEMY_NEXUS" : placed ? { x: tile.x, y: tile.y } : undefined
+  const isOwn = rally !== undefined && typeof rally !== "string" && own !== null && rally.x === own.x && rally.y === own.y
   return {
     ...(state.nexusPick === null ? {} : { power: state.nexusPick + 1 }),
     build: state.planned.map((placement) => ({ building: cardIdOf(battle, placement.contentId), x: placement.anchor.x, y: placement.anchor.y })),
-    stance: "attack",
     ...(hold.length === 0 ? {} : { hold }),
     ...(actions.length === 0 ? {} : { actions }),
+    ...(rally === undefined || isOwn ? {} : { rally }),
   }
 }
 
-/** Whether a plan has anything in it: a power, a building, a hold or an action. */
-const planned = (plan: BuildActions): boolean => plan.power !== undefined || plan.build.length > 0 || (plan.hold?.length ?? 0) > 0 || (plan.actions?.length ?? 0) > 0
+/** Whether a plan has anything in it: a power, a building, a hold, an action or a rally point. */
+const planned = (plan: BuildActions): boolean =>
+  plan.power !== undefined || plan.build.length > 0 || (plan.hold?.length ?? 0) > 0 || (plan.actions?.length ?? 0) > 0 || plan.rally !== undefined
 
 /**
  * **A round as a save**: its setup, the battle as this Build Phase opened, and the plan so far as p1's draft — what Save
@@ -316,8 +349,17 @@ export function planOnRound(context: BuildContext, state: BuildState, plan: Buil
       bonusAllotment: option?.bonusAllotment ?? 0,
       held: (plan.hold ?? []).map((tile) => `${tile.x},${tile.y}`),
       fitted: (plan.actions ?? []).map((taken) => ({ anchor: `${taken.x},${taken.y}`, action: taken.action })),
+      ...(plan.rally === undefined ? {} : { banner: { tile: rallyTileOf(battle, plan.rally), stance: "defensive" as const } }),
     },
   }
+}
+
+/** A plan's rally point as a tile side A's Build Phase places its banner on: the tile, or the middle of the Nexus it
+ *  names (its area there is the round's: the Nexus and a ring of one). */
+function rallyTileOf(battle: BattleState, rally: NonNullable<BuildActions["rally"]>): Readonly<{ x: number; y: number }> {
+  if (typeof rally !== "string") return { x: rally.x, y: rally.y }
+  const nexus = nexusOf(battle, contentOf(battle), rally === "HOME_NEXUS" ? "A" : "B")
+  return centreTile(nexus.anchor, nexus.footprint)
 }
 
 /** What a Skirmish needs from the screens: a new battle's seed, chosen by them (from the clock), or a test's own; and
@@ -380,12 +422,15 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
       }
       // Nobody walks home: the survivors stand where the shooting stopped, and regroup in the next Build Phase. Once the
       // battle is over nothing regroups; its end, settled where everyone stands, is what the result shows.
-      const resolved: ResolvedPulse = { timeline, regroup: played.regroup ?? standDown(final, registry, sides), nexus: nexusTile(context), mission, enemy: "enemy", ...(spectating(setup) ? { watched: { A: shortName(setup.slots.p1.commander), B: shortName(setup.slots.p2.commander) } } : {}) }
+      const resolved: ResolvedPulse = { timeline, regroup: played.regroup ?? standDown(final, registry, sides), nexus: nexusTile(context), mission, enemy: "enemy",
+        // The buildings both plans put on the same ground: the screen throws them down before the fight (`prelude.ts`).
+        ...(played.report.clashes.length === 0 ? {} : { clashes: played.report.clashes }),
+        ...(spectating(setup) ? { watched: { A: shortName(setup.slots.p1.commander), B: shortName(setup.slots.p2.commander) } } : {}) }
       PLAYED.set(resolved, { battle: next, report: played.report, regroup: played.regroup })
       return resolved
     },
 
-    nextRound(context, _state, resolved, alternative = false) {
+    nextRound(context, state, resolved, alternative = false) {
       const played = playedOf(resolved)
       if (played === undefined) return null
       const position = positionOf(context)
@@ -397,13 +442,27 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
         const opened = roundContext({ kind: "skirmish", setup, battle, ...(position.file === undefined ? {} : { file: position.file }) }, context, [], "", played.regroup)
         const back = restoredOf(battle, contentOf(battle))
         const news = back === null ? null : commanderNews(back.restored, back.absent, battle.round, battle.setup.rounds)
-        const refused = isPlayer(setup, "p1") ? report.sides.A.refused : []
+        const refusedAll = isPlayer(setup, "p1") ? report.sides.A.refused : []
+        // The rally point's refusal is not a building's: it says where the troops went instead.
+        const isRally = (line: string): boolean => line.startsWith("rally point at ")
+        // A clash is not a mistake: both sides chose the same ground, neither built there, both paid back. Said once,
+        // counted (the owner, 2026-11-26: buildings that seemed cancelled; tests/skirmish-play.test.ts holds it).
+        const isClash = (line: string): boolean => line.includes("the enemy built there at the same moment")
+        const refused = refusedAll.filter((line) => !isRally(line) && !isClash(line))
+        const rallyRefused = refusedAll.filter(isRally)
+        const clashed = isPlayer(setup, "p1") ? report.clashes.filter((clash) => clash.side === "A") : []
+        // What the battle destroyed of the player's: nothing else ever takes a building away between two Build Phases.
+        const lost = isPlayer(setup, "p1") ? lostBuildings(resolved.timeline.events) : null
         const scene = [
           ...(news === null ? [] : [said(news, nexusFocus(opened))]),
+          ...(lost === null ? [] : [said(`Lost in the battle: ${lost}.`)]),
+          ...(clashed.length === 0 ? [] : [said(clashLine(clashed.length), clashed[0] === undefined ? null : { tile: clashed[0].anchor, own: [] })]),
           ...(refused.length === 0 ? [] : [said(`Not built last round: ${refused.join("; ")}.`)]),
+          ...rallyRefused.map((line) => said(`The ${line.replace(/, so the troops went to the default$/u, "")}: the troops rallied in front of the base instead.`)),
         ]
         const next = spectating(setup) ? "[s] starts the next round." : "The Nexus Pulse deals a new hand: [n]."
-        return { ...withoutScene(opened), ...(scene.length === 0 ? {} : { scene }), openingStatus: status(`${last} ${next}`, "hint") }
+        // The banner stays where it was planted, round after round, until it is moved.
+        return { ...withoutScene(opened), ...(scene.length === 0 ? {} : { scene }), openingStatus: status(`${last} ${next}`, "hint"), placedBanner: state.banner }
       }
       // The battle is over: the same battle again from round 1, or a new one on a new seed (the result's other choice).
       // Either is a new battle: no longer the file it was loaded from, so Save game offers a new name.

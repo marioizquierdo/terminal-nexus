@@ -1,21 +1,18 @@
-// **The battle banner** on the Build Phase (the challenge runs, step 11G; the owner's idea, 2026-10-31): where the
-// player's troops head when the Battle Round starts, and whether they push on from there or hold it. Behind the
-// Battle banner Experiment.
+// **The rally point** on the Build Phase (the challenge runs, step 11G; the owner's idea, 2026-10-31, named on
+// 2026-11-25): where the player's troops head when the Battle Round starts, and hold; the banner is the flag drawn
+// there. (The code keeps the word banner for both.)
 //
 // Everything here is read from the context and the plan, never from the match: the spot under a tile in a player's
-// words ("the enemy Nexus", "ground near resources"), whether troops could get there, the march lines drawn to it, and
-// the order the Battle Round is handed (`bannerOrder`, which the shell turns into the match layer's `BannerOrder`).
-//
-// **The lines are the march route, walked on the Build Phase's own map**: a distance field toward the banner's area
-// over the terrain and every structure standing or planned (`src/engine/routing/`, the battle engine's own routing), walked downhill
-// from the side of the player's Nexus nearest the banner and from the Commander, a tile a step — the way a lone trooper
-// with the road clear would walk it. Not the battle engine's march itself: that is walked by every unit at once, round each
-// other, fighting what comes in reach; this is the line it keeps to with nobody in the way.
+// words ("the enemy Nexus", "ground near resources"), whether troops could get there, the march line drawn to it, and
+// the order the Battle Round is handed (`bannerOrder`). The area, the refusal and the route are the rules layer's own
+// (`src/match/rally.ts`), read here on the Build Phase's map — the structures standing, the plan's and the field's —
+// so the preview and the round agree: it cannot see only what the round refuses of the plan, or what the enemy
+// builds that round.
 
-import { footprintBox, footprintCentre, tileDistance, inBounds, tilesOf } from "../engine/geometry/coords.ts"
-import type { Coord, Direction } from "../engine/geometry/types.ts"
-import { DistanceField, UNREACHABLE, goalsInside, goalsNear, groundFor, rankSteps, wallsOf, weightsFor } from "../engine/routing/index.ts"
-import type { Ground, RankedStep } from "../engine/routing/index.ts"
+import { footprintCentre, tileDistance, tilesOf } from "../engine/geometry/coords.ts"
+import type { Coord } from "../engine/geometry/types.ts"
+import { rallyArea, rallyRefusal, rallyRoute } from "../match/rally.ts"
+import type { RallyGround, RallyRefusal, RallyStructure } from "../match/rally.ts"
 import { cardTextFor } from "../content/cards.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import type { BannerStance } from "./types.ts"
@@ -32,10 +29,8 @@ export type BannerView = Readonly<{ tile: Coord; name: string; stance: BannerSta
 export type BannerSpot = Readonly<{ tile: Coord; name: string; area: BannerArea; refusal: string | null }>
 
 /** What the context and plan say of the map the banner is planted on. */
-type Ctx = Pick<BuildContext, "terrain" | "registry" | "standing" | "field" | "incoming" | "commander" | "bannerDefault" | "landmarks" | "catalog">
+type Ctx = Pick<BuildContext, "terrain" | "registry" | "standing" | "field" | "incoming" | "bannerDefault" | "landmarks" | "catalog">
 type Plan = Pick<BuildState, "planned" | "banner">
-
-const ONE_TILE: readonly Coord[] = [{ x: 0, y: 0 }]
 
 /** A structure on the map — the player's, a scripted side's, or one of the plan's — with whose it is. */
 type Structure = Readonly<{ contentId: string; anchor: Coord; player: "A" | "B" }>
@@ -48,10 +43,24 @@ function structuresOf(context: Ctx, plan: Pick<BuildState, "planned">): Structur
   return [...own, ...field]
 }
 
+/** The Build Phase's map as a rally point reads it: the terrain, and every structure standing or planned. */
+function groundOf(context: Ctx, plan: Pick<BuildState, "planned">): RallyGround {
+  return { terrain: context.terrain, structures: structuresOf(context, plan).map((structure) => footprintOf(context, structure)) }
+}
+
+const footprintOf = (context: Ctx, structure: Structure): RallyStructure => ({ anchor: structure.anchor, footprint: context.registry.get(structure.contentId).footprint })
+
 function structureAt(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord): Structure | undefined {
   return structuresOf(context, plan).find((structure) =>
     tilesOf(structure.anchor, context.registry.get(structure.contentId).footprint).some((each) => each.x === tile.x && each.y === tile.y),
   )
+}
+
+/** The tiles of the structure — standing, planned, or a scripted side's — a rally point on `tile` stands on, or `null`
+ *  on open ground: what the screen lights so a rally point on a building is seen. */
+export function structureTilesAt(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord): readonly Coord[] | null {
+  const structure = structureAt(context, plan, tile)
+  return structure === undefined ? null : tilesOf(structure.anchor, context.registry.get(structure.contentId).footprint)
 }
 
 const centreOf = (context: Ctx, structure: Structure): Coord => {
@@ -130,6 +139,8 @@ function describe(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord):
   const landmarks = context.landmarks ?? []
   const named = landmarks.find((landmark) => inside(landmark, tile))
   if (named !== undefined) return named.name
+  // The round's own default tile is called what the round calls it.
+  if (fallback !== undefined && fallback.tile.x === tile.x && fallback.tile.y === tile.y) return fallback.name
   const structures = structuresOf(context, plan)
   const tilesOfSide = (player: "A" | "B"): Coord[] =>
     structures.filter((each) => each.player === player).flatMap((each) => tilesOf(each.anchor, context.registry.get(each.contentId).footprint))
@@ -144,7 +155,9 @@ function describe(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord):
   const landmark = [...landmarks].sort((a, b) => nearest(tile, areaTiles(a)) - nearest(tile, areaTiles(b)))[0]
   if (landmark !== undefined && nearest(tile, areaTiles(landmark)) <= NEAR_LANDMARK) return `ground near ${landmark.name}`
   if (nearest(tile, tilesOfSide("A")) <= NEAR_OWN_BASE) return "ground near your base"
-  if (fallback !== undefined && tileDistance(tile, fallback.tile) <= NEAR_LANDMARK) return `ground near ${fallback.name}`
+  // A default that is itself ground ("ground in front of your base") names the ground near it too, never "ground near
+  // ground in front of your base".
+  if (fallback !== undefined && tileDistance(tile, fallback.tile) <= NEAR_LANDMARK) return fallback.name.startsWith("ground ") ? fallback.name : `ground near ${fallback.name}`
   return "open ground"
 }
 
@@ -154,130 +167,43 @@ function areaTiles(area: BannerArea): Coord[] {
   return tiles
 }
 
-/** The area troops head for when the banner stands on `tile`: a structure's footprint and a tile round it, so they
- *  gather at its walls; on open ground three tiles by three round the banner. Clipped to the map. */
-function areaFor(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord): BannerArea {
-  const structure = structureAt(context, plan, tile)
-  const box = structure === undefined ? { left: tile.x, right: tile.x, top: tile.y, bottom: tile.y } : footprintBox(structure.anchor, context.registry.get(structure.contentId).footprint)
-  const left = Math.max(0, box.left - 1)
-  const top = Math.max(0, box.top - 1)
-  const right = Math.min(context.terrain.width - 1, box.right + 1)
-  const bottom = Math.min(context.terrain.height - 1, box.bottom + 1)
-  return { x: left, y: top, width: right - left + 1, height: bottom - top + 1 }
+/** What the Build Phase says when a spot is refused, by the rules layer's reason (`rallyRefusal`). */
+const REFUSALS: Readonly<Record<RallyRefusal, string>> = {
+  off: "Off the map.",
+  rock: "Rock: no troops can stand there.",
+  crowded: "No ground to stand on there.",
+  unreachable: "Unreachable: no way there from your Nexus.",
 }
 
-/** The ground a lone trooper walks: the terrain, and every structure standing or planned as a wall. */
-function groundOf(context: Ctx, plan: Pick<BuildState, "planned">): Ground {
-  const blocked = structuresOf(context, plan).flatMap((structure) => tilesOf(structure.anchor, context.registry.get(structure.contentId).footprint))
-  return groundFor(wallsOf(context.terrain, "impassable", blocked), ONE_TILE)
-}
-
-/** A field toward an area over that ground, the terrain's weights counted as a route counts them. */
-function fieldToward(context: Ctx, ground: Ground, area: BannerArea): DistanceField {
-  return new DistanceField(ground, goalsInside(ground, ONE_TILE, area), weightsFor(context.terrain, ONE_TILE, "impassable") ?? undefined)
-}
-
-/** The open tiles touching a structure, where its troops step out. */
-function ringOf(context: Ctx, ground: Ground, structure: Structure): Coord[] {
-  return goalsNear(ground, ONE_TILE, structure.anchor, context.registry.get(structure.contentId).footprint, { kind: "touch", steps: 1 })
-}
-
-/** Whether a spot is somewhere the troops could get to: not rock, with ground to stand on in its area, and — with a
- *  Nexus of the player's on the map — a way to it from the Nexus. */
+/** Whether a spot is somewhere the troops could get to, by the round's own rule (`rallyRefusal`): on the map, not rock
+ *  unless built on, with ground to stand on in its area, and — with a Nexus of the player's on the map — a way to it
+ *  from the Nexus round the rock, through any building. */
 export function bannerSpot(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord): BannerSpot {
   const name = describe(context, plan, tile)
-  const area = areaFor(context, plan, tile)
-  if (!inBounds(context.terrain, tile)) return { tile, name, area, refusal: "Off the map." }
-  if (terrainAt(context, tile) === "terrain.rock") return { tile, name, area, refusal: "Rock: no troops can stand there." }
   const ground = groundOf(context, plan)
-  if (goalsInside(ground, ONE_TILE, area).length === 0) return { tile, name, area, refusal: "No ground to stand on there." }
+  const area = rallyArea(ground, tile)
   const home = ownNexus(context)
-  if (home !== undefined) {
-    const field = fieldToward(context, ground, area)
-    if (!ringOf(context, ground, home).some((start) => field.distanceAt(start) !== UNREACHABLE)) {
-      return { tile, name, area, refusal: "Unreachable: no way there from your Nexus." }
-    }
-  }
-  return { tile, name, area, refusal: null }
+  const refusal = rallyRefusal(ground, tile, home === undefined ? undefined : footprintOf(context, home))
+  return { tile, name, area, refusal: refusal === null ? null : REFUSALS[refusal] }
 }
 
-/** The way from `from` down `field` to its goal, a tile a step, the best step first and, of two as good, the one that
- *  turns least — the first in compass order after that. Empty when the field does not reach `from`. */
-function walkDown(field: DistanceField, from: Coord, limit: number): Coord[] {
-  if (field.distanceAt(from) === UNREACHABLE) return []
-  const path: Coord[] = [from]
-  let at = from
-  let facing: Direction = "e"
-  while (field.distanceAt(at) > 0 && path.length < limit) {
-    const next: RankedStep | undefined = rankSteps(field, at, facing).flat().find((choice) => choice.downhill)
-    if (next === undefined) break
-    at = next.to
-    facing = next.direction
-    path.push(at)
-  }
-  return path
-}
+/** The march line a rally point on `tile` draws: one from the player's Nexus (the owner, 2026-11-25: "a single arrow
+ *  would be better", none from the Commander), walked by the rules layer's route (`rallyRoute`): round the rock,
+ *  straight through every building. A list of tiles, empty when there is no such line. */
+export type BannerLines = Readonly<{ fromNexus: readonly Coord[] }>
 
-/** The march lines a banner on `tile` draws: from the player's Nexus, from the Commander, and — aggressive — on from
- *  the banner to the enemy. Each a list of tiles, empty when there is no such line. */
-export type BannerLines = Readonly<{ fromNexus: readonly Coord[]; fromCommander: readonly Coord[]; onward: readonly Coord[] }>
-
-/** Where the player's Commander stands this round: on the field, or where she arrives. */
-function commanderTile(context: Ctx): Coord | null {
-  const id = context.commander?.contentId
-  if (id === undefined) return null
-  const standing = (context.field ?? []).find((entity) => entity.player === "A" && entity.contentId === id)
-  if (standing !== undefined) return standing.anchor
-  const arriving = (context.incoming ?? []).find((entity) => entity.player === "A" && entity.contentId === id)
-  return arriving?.anchor ?? null
-}
-
-/** What an aggressive banner's troops go on to: the enemy's Nexus, or — with none — the nearest enemy on the map or
- *  arriving as the round starts. */
-function onwardGoal(context: Ctx, from: Coord): BannerArea | null {
-  const nexus = enemyNexus(context)
-  if (nexus !== undefined) return areaFor(context, { planned: [] }, centreOf(context, nexus))
-  const enemies = [
-    ...(context.field ?? []).filter((entity) => entity.player === "B" && context.registry.get(entity.contentId).layer !== "obstacles").map((entity) => entity.anchor),
-    ...(context.incoming ?? []).filter((entity) => entity.player === "B" && entity.tick === 0).map((entity) => entity.anchor),
-  ]
-  if (enemies.length === 0) return null
-  const closest = [...enemies].sort((a, b) => tileDistance(from, a) - tileDistance(from, b) || a.y - b.y || a.x - b.x)[0] as Coord
-  return { x: closest.x - 1, y: closest.y - 1, width: 3, height: 3 }
-}
-
-export function bannerLines(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord, stance: BannerStance): BannerLines {
+export function bannerLines(context: Ctx, plan: Pick<BuildState, "planned">, tile: Coord): BannerLines {
   const spot = bannerSpot(context, plan, tile)
-  if (spot.refusal !== null) return { fromNexus: [], fromCommander: [], onward: [] }
-  const ground = groundOf(context, plan)
-  const field = fieldToward(context, ground, spot.area)
-  const limit = context.terrain.width * context.terrain.height
   const home = ownNexus(context)
-  let fromNexus: Coord[] = []
-  if (home !== undefined) {
-    const starts = ringOf(context, ground, home).filter((start) => field.distanceAt(start) !== UNREACHABLE)
-    const start = [...starts].sort((a, b) => field.distanceAt(a) - field.distanceAt(b) || a.y - b.y || a.x - b.x)[0]
-    if (start !== undefined) fromNexus = walkDown(field, start, limit)
-  }
-  const commander = commanderTile(context)
-  const fromCommander = commander === null ? [] : walkDown(field, commander, limit)
-  let onward: Coord[] = []
-  if (stance === "aggressive") {
-    const goal = onwardGoal(context, tile)
-    const from = fromNexus[fromNexus.length - 1] ?? tile
-    if (goal !== null && !inside(goal, from)) {
-      const beyond = new DistanceField(ground, goalsInside(ground, ONE_TILE, goal), weightsFor(context.terrain, ONE_TILE, "impassable") ?? undefined)
-      onward = walkDown(beyond, from, limit)
-    }
-  }
-  return { fromNexus, fromCommander, onward }
+  if (spot.refusal !== null || home === undefined) return { fromNexus: [] }
+  return { fromNexus: rallyRoute(context.terrain, footprintOf(context, home), spot.area) }
 }
 
-/** The order the Battle Round is handed for the banner: its area, its words and its stance — or `null` while it is
- *  the level's own default (or the Experiment is off, which the caller checks), so the round plays as it always did. */
-export function bannerOrder(context: Ctx, plan: Plan): Readonly<{ area: BannerArea; name: string; stance: BannerStance }> | null {
+/** The order the Battle Round is handed for the rally point: its area and its words — or `null` while it is the
+ *  level's own default, or a spot the troops cannot get to, so the round plays its own default. */
+export function bannerOrder(context: Ctx, plan: Plan): Readonly<{ area: BannerArea; name: string }> | null {
   if (plan.banner === null) return null
   const spot = bannerSpot(context, plan, plan.banner.tile)
   if (spot.refusal !== null) return null
-  return { area: spot.area, name: spot.name, stance: plan.banner.stance }
+  return { area: spot.area, name: spot.name }
 }

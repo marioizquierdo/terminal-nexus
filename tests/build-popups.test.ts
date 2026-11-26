@@ -313,7 +313,7 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
   assert.equal(expected.popup, null)
   assert.equal(expected.planned.length, 0)
   assert.equal(expected.nexusPick, null)
-  assert.equal(expected.experiments.nextRound, stepExperiment(defaultExperiments(), "nextRound", 1).flags.nextRound)
+  assert.equal(expected.experiments.nextRound, stepExperiment({ ...defaultExperiments(), nextRound: "key" as const }, "nextRound", 1).flags.nextRound)
   assert.equal(expected.settings.theme, "light")
   assert.equal(expected.status.text, "Build Phase restarted with these settings.")
   const comparable = (side: Side) => ({ ...side.build.state, ack: null, highlightHidden: false })
@@ -474,8 +474,8 @@ test("the top bar's right end says what Esc does: menu, back, close", () => {
     ["the Nexus Pulse popup", ["n"], "close [esc]"],
     ["the game menu", [ESC], "close [esc]"],
     ["Settings", ["d"], "close [esc]"],
-    ["the start-the-Pulse question", ["n", "1", "p"], "close [esc]"],
-    ["a committed Build Phase", ["n", "1", "p", "y"], "menu [esc]"],
+    ["the rally point being placed", ["n", "1", "p"], "back [esc]"],
+    ["a committed Build Phase", ["n", "1", "p", "s"], "menu [esc]"],
   ]
   for (const size of SIZES) {
     for (const [name, steps, label] of cases) {
@@ -509,7 +509,7 @@ test("a click on the top bar's Esc label is Esc: the same state, whatever is ope
     [ESC, "s"], // Settings over the game menu: back one level, not everything closed
     ["d", "e"], // the export over Settings
     ["n", "1", "p"],
-    ["n", "1", "p", "y"],
+    ["n", "1", "p", "s"],
   ]
   for (const steps of openings) {
     const byKey = buildSide()
@@ -535,7 +535,7 @@ test("a click on the top bar's Esc label is Esc: the same state, whatever is ope
 })
 
 test("no popup carries [esc] in its border, and its corner is no click target", () => {
-  const openings: readonly (readonly string[])[] = [["n"], [ESC], ["d"], ["d", "e"], ["n", "1", "p"]]
+  const openings: readonly (readonly string[])[] = [["n"], [ESC], ["d"], ["d", "e"]]
   for (const steps of openings) {
     const side = buildSide()
     keys(side, ...steps)

@@ -198,8 +198,9 @@ test("the default level is the Build Phase as it opens when told nothing: PERIME
 test("a route to round 2 opens exactly the screen a player reaches by playing round 1 with nothing built and no power kept", () => {
   // The demos used to walk there with keys: start the Pulse, let it play, then Enter. A power kept would change the
   // battle, so the walk keeps none (the pick is optional).
-  const walked = runBuildPlaytest({ steps: parseKeyScript("Esc s s wait~1000*26 Enter") })
-  const routed = runBuildPlaytest({ steps: [], at: playtestOpening({ at: "story?mission=vasse-test-1&round=2" }).at })
+  // Next round on manual for both: the walk ends on the result's Enter (the default goes straight on).
+  const walked = runBuildPlaytest({ experiments: { nextRound: "key" }, steps: parseKeyScript("Esc s s wait~1000*26 Enter") })
+  const routed = runBuildPlaytest({ experiments: { nextRound: "key" }, steps: [], at: playtestOpening({ at: "story?mission=vasse-test-1&round=2" }).at })
   const reached = walked.frames[walked.frames.length - 1]!
   const opened = routed.frames[0]!
   assert.equal(frameToAnsi(opened.frame, "truecolor", "dark"), frameToAnsi(reached.frame, "truecolor", "dark"))

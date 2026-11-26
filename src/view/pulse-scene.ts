@@ -39,7 +39,10 @@ import { put, text } from "./draw.ts"
 import type { StyleRole } from "./roles.ts"
 import type { PulseSample } from "./snapshot.ts"
 import type { GlyphPack } from "./theme.ts"
-import { entityGlyph, playerRole } from "./theme.ts"
+import { chromeGlyph, entityGlyph, playerRole } from "./theme.ts"
+import { trailGlyph } from "./build-map.ts"
+import type { RallyMark } from "./rally-arrows.ts"
+import type { PreludeFrame } from "./prelude.ts"
 
 /** What the Pulse's scene needs for one presentation instant. Built by `PulsePresenter.frame`. */
 export type PulseFrame = Readonly<{
@@ -78,6 +81,16 @@ export type PulseFrame = Readonly<{
   /** Where and when the player's Commander fell in this Pulse, for her vignette and her dim glyph beside the Nexus
    *  (`commander-moments.ts`). Absent: she did not fall. */
   fall?: FallFrame
+  /** The rally arrows and flags showing at this instant (`rally-arrows.ts`). Absent: none. */
+  rally?: readonly RallyMark[]
+  /** The prelude at this instant (`prelude.ts`): the enemy's new things not yet revealed, those rising, the clashed
+   *  buildings still standing. Absent: the fight is on. */
+  prelude?: PreludeFrame
+  /** Draw no map cursor this frame: the round has just begun, its prelude and rally arrows playing. */
+  cursorHidden?: boolean
+  /** The round has settled and plays fast (`fast-forward.ts`): `speed` is that speed, the panel and the bottom line say
+   *  so. Absent: the round plays at the player's speed. */
+  fastForward?: boolean
 }>
 
 /** A Commander's aura as the scene draws it: the tile she is drawn on, how far it reaches in tiles — measured
@@ -118,7 +131,11 @@ type SceneView = Readonly<{ camera: Camera; viewport: Viewport; layout: BuildLay
 export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: PulseFrame): ReadonlySet<number> {
   const range = visibleRange(view.camera, view.viewport)
   const occupied = new Set<number>()
+  const prelude = pulse.prelude
   const draw = (entity: Readonly<{ ordinal: number; contentId: string; player: PlayerId; anchor: Coord }>): void => {
+    // The prelude: what is still to be revealed is not there yet; what rises is drawn as its going-up frame.
+    if (prelude?.hidden.has(entity.ordinal) === true) return
+    const rising = prelude?.rising.get(entity.ordinal)
     const definition = pulse.registry.get(entity.contentId)
     const at = pulse.positions.get(entity.ordinal) ?? entity.anchor
     const band = definition.layer === "obstacles" ? BANDS.structures : definition.layer === "air" ? BANDS.air : BANDS.units
@@ -126,13 +143,16 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
       const tile = { x: at.x + offset.x, y: at.y + offset.y }
       if (!inBounds(view.terrain, tile)) continue
       if (!inView(range, tile)) continue
+      const look = rising?.(offset) ?? null
+      if (look !== null && look.glyph === null) continue
       occupied.add(tileIndex(view.terrain, tile))
       const cell = cellForTile(view.layout, view.camera, tile)
-      put(cells, band, cell.x, cell.y, entityGlyph(entity.contentId, entity.player, offset), playerRole(entity.player), {
-        bold: drawnBold(definition),
-      })
+      const glyph = look?.glyph ?? entityGlyph(entity.contentId, entity.player, offset)
+      put(cells, band, cell.x, cell.y, glyph, playerRole(entity.player), { bold: look === null ? drawnBold(definition) : look.bold })
     }
   }
+  // A clashed building still stands until its turn in the prelude, then is thrown down (`prelude.ts`).
+  prelude?.clashing.forEach((step) => draw({ ...step, ordinal: Number.NaN }))
   pulse.sample.state.entities.forEach(draw)
   pulse.sample.heldCorpses.forEach(draw)
   return occupied
@@ -165,8 +185,10 @@ export function drawPulseEffects(
   view: SceneView,
   pulse: PulseFrame,
   occupied: ReadonlySet<number>,
+  pack: GlyphPack = "ascii",
 ): void {
   drawAura(cells, view, pulse)
+  drawRallyMarks(cells, view, pulse, occupied, pack)
   const range = visibleRange(view.camera, view.viewport)
   const sources: EffectCellSource[] = []
   for (const painted of pulse.sample.effects) {
@@ -184,6 +206,33 @@ export function drawPulseEffects(
     (tile) => occupied.has(tileIndex(view.terrain, tile)),
   )
   drawVoiceOnMap(cells, view, pulse, occupied)
+}
+
+/**
+ * ***The rally arrows*** (`rally-arrows.ts`): a side's arrows running from its Nexus to where its troops head, and its
+ * flag there, bold in its side's colour, so they read in monochrome by glyph and weight. On the ground-items band, under
+ * everything that stands and every effect. An arrow goes on open plain ground only, never over a glyph that stands (a
+ * unit, a building, a corpse still falling) nor over rock or a deposit, which are information too: there it is
+ * simply not drawn, passing under. The flag is the same: its glyph on open ground, and on a tile something stands on
+ * nothing at all — no restyle of a building or a unit during the battle (the owner, 2026-11-25).
+ */
+export function drawRallyMarks(cells: BandCell[], view: SceneView, pulse: PulseFrame, occupied: ReadonlySet<number>, pack: GlyphPack = "ascii"): void {
+  const marks = pulse.rally
+  if (marks === undefined) return
+  const range = visibleRange(view.camera, view.viewport)
+  for (const mark of marks) {
+    const { tile } = mark
+    if (!inBounds(view.terrain, tile) || !inView(range, tile)) continue
+    if (occupied.has(tileIndex(view.terrain, tile))) continue
+    const cell = cellForTile(view.layout, view.camera, tile)
+    const role = playerRole(mark.player)
+    if (mark.kind === "flag") {
+      put(cells, BANDS.groundItems, cell.x, cell.y, chromeGlyph(pack, "banner"), role, { bold: true })
+      continue
+    }
+    if (view.terrain.tiles[tileIndex(view.terrain, tile)] !== "terrain.plain") continue
+    put(cells, BANDS.groundItems, cell.x, cell.y, trailGlyph(pack, mark.dx, mark.dy), role, { bold: true })
+  }
 }
 
 /**
@@ -288,7 +337,8 @@ export function drawFrameLight(cells: BandCell[], layout: BuildLayout, pulse: Pu
     for (const { x, y } of border) cells.push({ band: BANDS.chrome, x, y, style })
     return
   }
-  const beam = beamFrame(pulse.times, pulse.timeMs, border.length, pulse.reducedMotion)
+  // Not through the prelude: the first seconds are the fight's, and it has not started.
+  const beam = pulse.prelude === undefined ? beamFrame(pulse.times, pulse.timeMs, border.length, pulse.reducedMotion) : null
   if (beam === null) return
   border.forEach(({ x, y }, index) => {
     const light = beamLight(beam, index)
@@ -324,9 +374,17 @@ const secondsOf = (pulse: PulseFrame, tick: number): string => (tick / pulse.tic
  *  "None of yours is left." */
 const cameHome = (count: number): string => (count === 0 ? "None of yours is left." : `${count} of yours hold the field.`)
 
+/** The label a settled round plays under, in the panel beside its speed (`fast-forward.ts`). */
+export const FAST_FORWARD = "Fast forward"
+
+/** The bottom line while it plays fast: why, and the way back to normal speed. Fits 80 columns. */
+export const FAST_FORWARD_LINE = `${FAST_FORWARD} - the battle has settled. Any key: normal speed.`
+
 /** The one line under the map: what the Pulse is doing now, or how it ended, in plain words. */
 export function pulseStatus(pulse: PulseFrame): StatusMessage {
   const held = pulse.paused && pulse.phase !== "home" ? "Paused. " : ""
+  // Fast forward: what is happening, and the way back (the bottom line's "the result and the way back").
+  if (pulse.fastForward === true && !pulse.paused) return status(FAST_FORWARD_LINE)
   switch (pulse.phase) {
     case "final":
       return status(`${held}The battle is about to end.`)
@@ -509,7 +567,7 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
       for (const words of wrapWords(pulse.result.mission ?? "", limit - 1)) line(words, "chrome.label")
       break
     default: {
-      const lit = timerLit(pulse.times, pulse.timeMs, pulse.reducedMotion)
+      const lit = pulse.prelude === undefined && timerLit(pulse.times, pulse.timeMs, pulse.reducedMotion)
       const timer = formatTimer(timerSeconds(pulse.times, pulse.timeMs))
       // One column in from the divider, as the panel's prose is.
       const right = limit - 1
@@ -518,7 +576,13 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
         inverse: lit,
       })
       line(`BATTLE ROUND ${pulseNumber}`, "chrome.title", { bold: true, limit: right - timer.length - 1 })
-      line(`time left  ${pulse.speed}x${pulse.paused ? " paused" : ""}`, "chrome.label")
+      // Fast forward says so where the speed is, in the hotkey's look so it is seen; paused, it waits with the round.
+      if (pulse.fastForward === true && !pulse.paused) {
+        const lead = `time left  ${pulse.speed}x `
+        text(cells, band, column, layout.panelRow + at, lead, "chrome.label", { limit })
+        text(cells, band, column + lead.length, layout.panelRow + at, FAST_FORWARD, "chrome.hotkey", { bold: true, limit: Math.max(0, limit - lead.length) })
+        at += 1
+      } else line(`time left  ${pulse.speed}x${pulse.paused ? " paused" : ""}`, "chrome.label")
     }
   }
   gap()

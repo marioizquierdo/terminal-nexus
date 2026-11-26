@@ -175,7 +175,8 @@ export const ESC_KEY = "[esc]"
  * it — "menu [esc]" — the way a way-back is read, hotkey on the right.
  */
 export function escLabel(state: Pick<BuildState, "popup" | "focus" | "committed" | "armed" | "exploreMap">): string {
-  const action = state.popup !== null ? "close" : state.committed || mapMode(state) === "menu" ? "menu" : "back"
+  // Placing the rally point is a step of the Build Phase, not a popup to close: Esc goes back to it.
+  const action = state.popup === "banner-place" ? "back" : state.popup !== null ? "close" : state.committed || mapMode(state) === "menu" ? "menu" : "back"
   return `${action} ${ESC_KEY}`
 }
 

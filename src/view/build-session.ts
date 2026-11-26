@@ -22,6 +22,7 @@ import { decodeKeyEvent } from "../terminal/key-events.ts"
 import type { KeyPhase } from "../terminal/key-events.ts"
 import { keysFromChunk } from "../terminal/playback.ts"
 import { PulsePresenter, outcomeOf } from "./pulse-live.ts"
+import type { KnownMap } from "./prelude.ts"
 import type { BarksOf, ResolvedPulse } from "./pulse-live.ts"
 import type { PulseFrame } from "./pulse-scene.ts"
 import type { SpokenLine } from "./pulse-voice.ts"
@@ -154,6 +155,9 @@ export type BuildSessionOptions = Readonly<{
    * settled it beside her).
    */
   barksOf?: BarksOf
+  /** How many times faster a settled Battle Round plays (`src/view/fast-forward.ts`): the tuned value unless a test,
+   *  reading its screens at instants of the round's own clock, hands it 1. */
+  fastForwardSpeed?: number
 }>
 
 /**
@@ -199,6 +203,12 @@ export class BuildSession {
   private readonly nextRound: (context: BuildContext, state: BuildState, resolved: ResolvedPulse, alternative?: boolean) => BuildContext | null
   /** The Battle Round on screen, from the moment the plan is committed until the Build Phase starts over. */
   private presenter: PulsePresenter | null = null
+  /** The last Battle Round played, as it resolved: what the game menu's Watch last battle plays again. */
+  private lastBattle: ResolvedPulse | null = null
+  /** What the Build Phase's map showed as the last Battle Round began, so watching it again plays its reveal again. */
+  private lastKnown: KnownMap | undefined = undefined
+  /** Whether the Battle Round on screen is a replay: its result goes back to the Build Phase it was opened from. */
+  private replaying = false
   /** The screen's clock at the last thing the session heard of it, so a Pulse begun by a key press is at
    *  zero when that key arrived. `undefined` for a driver that never says. */
   private now: number | undefined
@@ -217,6 +227,8 @@ export class BuildSession {
   private readonly captureScreen: (() => string) | null
   /** Where a Commander's lines come from (`BuildSessionOptions.barksOf`); `undefined`: her army's. */
   private readonly barksOf: BarksOf | undefined
+  /** `BuildSessionOptions.fastForwardSpeed`; `undefined`: the tuned value. */
+  private readonly fastForwardSpeed: number | undefined
   /** The raid last foreseen, and the round and plan it was foreseen on. */
   private foreseen: Readonly<{ context: BuildContext; planned: BuildState["planned"]; banner: BuildState["banner"]; raid: RaidForecast }> | null = null
 
@@ -251,6 +263,7 @@ export class BuildSession {
     this.captureScreen = options.captureScreen ?? null
     this.keep = options.keep ?? ((context, card) => ({ ...context, kept: [...(context.kept ?? []), card] }))
     this.barksOf = options.barksOf
+    this.fastForwardSpeed = options.fastForwardSpeed
     this.recordDialog(null)
   }
 
@@ -328,6 +341,8 @@ export class BuildSession {
     // A playback control belongs to the Pulse's clock, not to the state: handed on like a quit. Pause has
     // nothing to pause once the result stands — and no row is drawn for it there — so it is not handed on.
     if (command.kind === "pulse") {
+      // A driver's playback control is a key pressed: it returns a fast-forwarding round to normal speed too.
+      this.endFastForward()
       const over = this.presenter?.phase() === "home"
       if (!(over && command.control === "toggle")) this.presenter?.apply(command.control)
       this.log.log("build.command", { command: command.kind })
@@ -367,6 +382,8 @@ export class BuildSession {
     else if (before.committed && !this.buildState.committed) this.presenter = null
     // Save game asked to write: the shell writes it and says how it went, which the bottom line says.
     if (this.buildState.saveRequests > before.saveRequests) this.save()
+    // Watch last battle: the last Battle Round on screen again.
+    if (this.buildState.replayRequests > before.replayRequests && this.replayLastBattle()) this.log.log("build.command", { command: "replay-battle" })
     // The note opened: the screen as it stood is what the note shows. Saved: the shell writes the moment.
     if (this.buildState.popup === "note" && before.popup !== "note") this.beforeNote = { context: this.context, state: before, at: this.sinceOpened(), ...(screenBefore === undefined ? {} : { text: screenBefore }) }
     if (this.buildState.noteRequests > before.noteRequests) this.note()
@@ -541,7 +558,15 @@ export class BuildSession {
 
   private moveOn(alternative: boolean): void {
     const presenter = this.presenter
-    if (presenter === null || presenter.phase() !== "home") return
+    if (presenter === null || !presenter.canMoveOn()) return
+    // A replay's result goes back to the Build Phase it was opened from, as it stood.
+    if (this.replaying) {
+      this.presenter = null
+      this.replaying = false
+      return
+    }
+    this.lastBattle = presenter.resolved
+    this.lastKnown = presenter.known
     // The result's other way on is only there when the round that ended offers one.
     if (alternative && presenter.resolved.mission?.ending?.alternative === undefined) return
     const next = this.nextRound(this.context, this.buildState, presenter.resolved, alternative)
@@ -580,13 +605,18 @@ export class BuildSession {
     const cursor = nexusTile(this.context) ?? before.startCursor
     const fresh = createBuildState(this.context, cursor, before.viewport, before.experiments, before.settings)
     // The sequences keep counting up, so the live loop never mistakes a new one for one it has shown.
-    this.buildState = { ...fresh, ack: before.ack, refusedTry: before.refusedTry, handoff: before.handoff }
+    this.buildState = { ...fresh, ack: before.ack, refusedTry: before.refusedTry, handoff: before.handoff, canReplay: this.lastBattle !== null, replayRequests: before.replayRequests }
     this.presenter = null
     this.recordDialog(null)
     // A new round: a note from here on replays from its opening.
     this.opened = { context: this.context, state: this.buildState }
     this.pressed = []
     this.openedAt = this.now ?? null
+  }
+
+  /** A fast-forwarding round back to normal speed for the rest of it (`PulsePresenter.endFastForward`), logged. */
+  private endFastForward(): void {
+    if (this.presenter?.endFastForward() === true) this.log.log("build.command", { command: "normal-speed" })
   }
 
   /** A command from a key or a click, kept with its time for a note — not the note's own keys, which a replay would
@@ -655,6 +685,30 @@ export class BuildSession {
     }
   }
 
+  /** Whether there is a battle to replay: a Battle Round played since the screen opened, and none on screen now. */
+  canReplay(): boolean {
+    return this.lastBattle !== null && this.presenter === null && !this.buildState.committed
+  }
+
+  /** **Watch last battle** (the game menu): the last Battle Round again, from its start, with its result going back
+   *  to this Build Phase, its plan as it stands. Nothing about the round changes. */
+  replayLastBattle(): boolean {
+    const last = this.lastBattle
+    if (last === null || !this.canReplay()) return false
+    this.presenter = new PulsePresenter(last, undefined, {
+      autoNextMs: null,
+      replay: true,
+      ...(this.lastKnown === undefined ? {} : { known: this.lastKnown }),
+      ...(this.barksOf === undefined ? {} : { barksOf: this.barksOf }),
+      ...(this.fastForwardSpeed === undefined ? {} : { fastForwardSpeed: this.fastForwardSpeed }),
+    })
+    this.replaying = true
+    this.resultLogged = true
+    this.voiced = new Set()
+    if (this.now !== undefined) this.presenter.advance(this.now)
+    return true
+  }
+
   /** Resolve the committed plan and put its Pulse on screen. A Pulse that cannot start — a plan that
    *  leaves no room for the units — undoes the commit and says why, so the player can fix the plan. */
   private beginPulse(): void {
@@ -667,8 +721,13 @@ export class BuildSession {
     }
     if (resolved === null) return
     this.presenter = new PulsePresenter(resolved, undefined, {
+      // What this Build Phase's map showed: the enemy's entities in the round's opening that were not on it are
+      // revealed before the fight (`prelude.ts`).
+      known: { standing: this.context.standing, field: this.context.field ?? [], incoming: this.context.incoming ?? [] },
       autoNextMs: setting(this.buildState, "nextRound") === "auto" ? TUNING.autoNextRoundMs : null,
+      straight: setting(this.buildState, "nextRound") === "straight",
       ...(this.barksOf === undefined ? {} : { barksOf: this.barksOf }),
+      ...(this.fastForwardSpeed === undefined ? {} : { fastForwardSpeed: this.fastForwardSpeed }),
     })
     this.resultLogged = false
     this.voiced = new Set()
@@ -697,6 +756,8 @@ export class BuildSession {
     const event = decodeKeyEvent(key)
     if (event === null) return
     const mouse = parseMouseEvent(event.key)
+    // Fast forward: any key pressed, or any click, returns the round to normal speed; the key then does what it does.
+    if ((mouse === null && event.phase !== "release") || mouse?.press === true) this.endFastForward()
     if (mouse === null) {
       this.handleKeyEvent(event.key, event.phase ?? (this.reportsReleases() ? "press" : null), timing.now)
       return

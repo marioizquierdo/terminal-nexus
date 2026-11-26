@@ -234,7 +234,7 @@ What the game builds around a unit, and what the unit does without it:
 
 | What is absent | What happens | Where |
 | --- | --- | --- |
-| **Banner** (the stance's rally point) | A side with no target heads for the enemy's Nexus, and with none engages the nearest enemy. A sandbox that wants a banner writes a `target` in a start: that is the banner, mocked as the area the side heads for and holds. A stance's second leg (aggressive: there, then on) is the match layer's (`src/match/banner.ts`) and a sandbox has none. | the engine reads `targets` (`src/engine/pulse/target.ts`) and never a banner |
+| **Rally point** | A plan's `rally`: a tile, `HOME_NEXUS` or `ENEMY_NEXUS`; absent means in front of the base. Old `stance` and `banner` are read as `rally`. A sandbox that wants one writes a `target` in a start: the area the side heads for and holds. | the engine reads `targets` (`src/engine/pulse/target.ts`) and never a rally point |
 | **Own Nexus** | The side's march has no guide line (the band) and its units march from where they stand. A Nexus is only a building here; it is placed like one. | `src/engine/pulse/march.ts` |
 | **Enemy Nexus** | Units engage the nearest enemy. With no enemy at all they stand, and the round ends on its ticks, a draw. | `src/engine/pulse/perception.ts` |
 | **Commander** | A Commander is a regular troop. A Commander's content id (`unit.citizen.vasse`) is placed like any unit and fights with its own attack and abilities; nothing else needs her on the battlefield. | `src/engine/pulse/abilities.ts` reads `commander` for abilities only |

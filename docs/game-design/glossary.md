@@ -31,11 +31,19 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **affinity** — how a Commander is bound to a Nexus: **Native**, **Estranged**, **Unsanctioned**, **Foreign**,
   **Dual-bound**, **Proxy**. Averno is Native with a **leak**: a card from the Ravel Nexus in some rounds' hands
   ([`commander-armies.md`](commander-armies.md)).
+- **army** — every unit a side has on the battlefield, its Commander included; what a Commander brings to a battle as
+  a package is the **Commander Army** ([`movement.md`](../system-design/movement.md), its words).
+- **army group** — a side's units that can fight together: each within 5 tiles of another in it, chained (the
+  **engagement**'s reach, so a round's report and the troops' aiming share one rule); worked out about once an in-game
+  second; its centre is the Commander when she is in it, else the unit nearest its middle; a side's Nexus is always an
+  army group of its own, and a building that shoots joins the army group within reach. Its **front** faces its nearest
+  enemy army group. Designed; built in the pull request after the rally point's ([`movement.md`](../system-design/movement.md)).
+- **army group formation** — an army group's ranks across the line to its nearest enemy army group, the formation's
+  priority list front to back.
 - **army value** — what an army cost, in credits: each unit valued at what its building pays for one unit, its card's
   cost divided by the units it makes a round ([`battles.md`](../system-design/battles.md)).
-- **banner** — where the player sets the army's target in the Build Phase, aggressive or defensive (by default the
-  enemy Nexus, aggressive); **the battle banner** is the panel that starts a Battle Round with it. Behind the Battle
-  banner Experiment ([`ui-patterns.md`](../system-design/ui-patterns.md)).
+- **banner** — the flag drawn at a rally point (`!`, `⚑` with Unicode symbols). The code still says *banner* for the
+  rally point itself (`src/build/banner.ts`, `BuildActions.banner`).
 - **battle** — one battlefield, two sides, rounds until a result: the unit of play. The code is `src/battle/` (`BattleState`,
   `BattleSetup`, `BattleResult`); the battle engine says *match* ([`battles.md`](../system-design/battles.md)).
 - **battle reading** — what a battle says, read in one place (`src/battle/reading/`) for the brief, the round's report
@@ -74,6 +82,8 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **engagement** — units of both sides fighting in one place: it starts at a first hit, takes in every hit within 5
   tiles of one already in it, and ends after 5 seconds with no hit there. Each has where and when, damage and losses by
   side, and the units engaged by side ([`battles.md`](../system-design/battles.md)).
+- **fast forward** — a Battle Round that has settled (no hit to its end, the units close to where they end) played
+  faster until its last seconds, labelled; any key returns it to normal speed ([`ui-patterns.md`](../system-design/ui-patterns.md)).
 - **faction** — the side a Commander belongs to, with its Nexus, units and buildings: the whole pool an army fields a
   few of. Citizen and Ravel are built.
 - **formation** — the order an army marches in (flankers, melee, ranged; then by class); also how build actions set
@@ -98,9 +108,20 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   choosing from the hand ([`commander-armies.md`](commander-armies.md)).
 - **Nexus Pulse** — the moment each round opens, when the Nexus deals its Commander a hand of Nexus powers.
 - **PERIMETER**, **RIGHT OF SALVAGE** — Vasse's first mission, the tutorial, and her first technology mission.
+- **rally point** — where a side's troops head and hold for a Battle Round: a tile, or a named place (`HOME_NEXUS`,
+  `ENEMY_NEXUS`; later a map's hotspots); in a plan, `rally`. Placed in the Build Phase as Start Battle Round opens, by
+  default in front of the base (the Rally point start Experiment). The banner is only its flag
+  ([`movement.md`](../system-design/movement.md), [`ui-patterns.md`](../system-design/ui-patterns.md)).
+- **prelude** — the moment between Enter and a Battle Round's first tick: both sides' rally arrows, and the enemy's new
+  buildings and units revealed one by one; the round's timer starts after it ([`ui-patterns.md`](../system-design/ui-patterns.md)).
 - **raid** — a group a mission's opponent sends, with its **intention**: one line saying what it means to do, shown in
   the panel ([`scripted-opponent.md`](scripted-opponent.md)).
-- **regroup** — what happens when a Battle Round ends: survivors step back and form up across their march line, so the
+- **marching** — troops walking toward their rally point, keeping the formation's order and facing the enemy; an army
+  group has **arrived** when its centre is near the rally point and it is not engaged, and then forms up there.
+- **engaging** (in combat) — a unit with an enemy in its vision leaves the march and fights; where the sides fight is an
+  **engagement**. **Re-targeting** is a unit choosing a new enemy to attack: its target fell, or a better one came within
+  reach.
+- **regroup** — what happens when a Battle Round ends: survivors step back and form up on their rally point (or back to it), facing the enemy, so the
   next round starts from **the kept front** ([`movement.md`](../system-design/movement.md)).
 - **result** — how a battle ends: `BATTLE WON`, `BATTLE LOST`, `BATTLE DRAWN` (`<COMMANDER> WINS` when two scripts
   play); a Battle Round's own end reads `VICTORY`, `DEFEAT`, `DRAW` or `TIME'S UP`.
@@ -114,13 +135,13 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   battle; a battle reading (`scoreOf`).
 - **Skirmish** — one battle against a scripted Commander Army, set up by the player: the centre of the game and of its
   testing ([`game-modes.md`](game-modes.md)).
-- **stance** — whether a side's army attacks or holds this round (`attack`, `hold`).
+- **stance** — retired with the rally point: what was `hold` is a rally point on `HOME_NEXUS`, `attack` on `ENEMY_NEXUS`.
 - **starter map** — the Build Phase's one disposable map and the few buildings it offers; not a mission.
 - **Story** — a Commander's story: missions in order, with **technologies** carried from one to the next, ending in a
   final battle; its parts are the tutorial, technology missions, the **endless stand** and the final battle
   ([`story.md`](story.md)). A story in progress is a **save slot**.
 - **supply** — the cap on how many units a side may field; supply buildings raise it.
-- **target** — the place a side's troops head for: they engage what comes within reach on the way, and stand there
+- **target** — the area the battle engine sends a side's fighting units to (in a battle, its rally point's area): they engage what comes within reach on the way, and stand there
   ([`pulse.md`](../system-design/pulse.md)).
 - **tech tree**, **blueprint**, **Special**, **research**, **upgrade** — what grows an army between rounds and
   missions ([`commander-armies.md`](commander-armies.md)): a blueprint is what a player may build, a building what they
@@ -291,8 +312,13 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
 - **style role** — what a cell carries instead of a colour (`src/view/roles.ts`); a **reserved colour** means one thing
   (red, the player's own Nexus hurt).
 - **the three worlds** — state, the Pulse and presentation ([`architecture.md`](../system-design/architecture.md)).
-- **tick** — one step of a Battle Round's simulation; a Battle Round lasts 360 of them, thirty seconds, unless a setup
-  says otherwise.
+- **tick** — one step of a Battle Round's simulation; a Battle Round lasts 360 of them, thirty in-game seconds, unless a
+  setup says otherwise.
+- **in-game second** — 12 ticks: how long anything inside the simulation lasts is said in ticks or in-game seconds,
+  never in milliseconds.
+- **frame** — one drawing of the screen; how many a second the screen draws has nothing to do with the simulation.
+- **real time** — time on the clock, in milliseconds, for what is outside the simulation only: playback speed, effects,
+  key timing, the Build Phase's animations.
 
 ## Words that do two jobs
 

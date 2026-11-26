@@ -38,6 +38,7 @@ import type { PopupBorder } from "./build-popup.ts"
 import { drawPopup } from "./build-popup.ts"
 import { drawDialog } from "./build-dialog.ts"
 import { drawBanner } from "./banner-marks.ts"
+import type { RallyCall } from "./banner-marks.ts"
 
 // What tests and scripts import from here, wherever it now lives.
 export { ACTIVE_VALUE } from "./build-menu.ts"
@@ -156,11 +157,12 @@ export type BuildCompositionInput = Readonly<{
    */
   room?: readonly Readonly<{ ordinal: number; elapsedMs: number }>[]
   /**
-   * **The battle banner's clock** (`BannerClock`, `src/view/build-live.ts`): how long ago its panels opened — its
-   * pulse while it is the cursor, and its march lines' arrows moving — and how long ago it was last planted, while
-   * its planting plays. Absent — every still frame — the banner is drawn on the beat, its lines still.
+   * **The rally point's clock** (`BannerClock`, `src/view/build-live.ts`): how long ago it became the cursor — its pulse
+   * and its march line's arrows moving — and what its call shows now (`rallyCallAt`, `src/view/banner-marks.ts`): the
+   * four arrows, a flash, the bottom line's keys blanked. Absent — every still frame — it is drawn on the beat, its four
+   * arrows standing, its line still; under reduced motion `pulseMs` is absent and the call is the arrows alone.
    */
-  banner?: Readonly<{ pulseMs?: number; dropMs?: number }>
+  banner?: Readonly<{ pulseMs?: number; call?: RallyCall }>
   /** Draw no Commander on the map this frame: she is still to appear (`commanderHidden`). Set by the composer. */
   commanderHidden?: boolean
 }>
@@ -206,14 +208,14 @@ export function composeBuildFrame(
     drawTerrain(cells, view, pack)
     const occupied = drawPulseEntities(cells, view, input.pulse)
     drawPulseFire(cells, view, input.pulse, occupied, pack)
-    drawPulseEffects(cells, view, input.pulse, occupied)
+    drawPulseEffects(cells, view, input.pulse, occupied, pack)
     // When she falls: her dim glyph beside the Nexus, and the vignette over the battle.
     drawOutInBattle(cells, view, input.pulse.fall, input.pulse.timeMs, nexusIn(input.pulse), occupied)
     drawVignette(cells, view, input.pulse.fall, input.pulse.timeMs, input.pulse.reducedMotion, pack, occupied, input.pulse.voice)
     drawCursor(cells, input)
     drawChrome(cells, input, pack)
     drawFrameLight(cells, input.layout, input.pulse)
-    drawTopBarAndBottomLine(cells, input, null)
+    drawTopBarAndBottomLine(cells, input, null, pack)
     const panel: BandCell[] = []
     drawPulsePanel(panel, input.layout, input.pulse, input.state.pulseNumber)
     for (const cell of panel) if (cell.y <= input.layout.panelLastRow) cells.push(cell)
@@ -236,7 +238,7 @@ export function composeBuildFrame(
   drawCursor(cells, input)
   drawRefusedTry(cells, input, preview)
   drawChrome(cells, input, pack)
-  drawTopBarAndBottomLine(cells, input, preview)
+  drawTopBarAndBottomLine(cells, input, preview, pack)
 
   // The panel shows the menu, or a card — Explore Map's, or the armed building's — or the committed
   // summary. Clipped to the panel's own rows: on a terminal too short for the whole menu, a row that

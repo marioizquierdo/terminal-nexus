@@ -709,6 +709,15 @@ The browser-bundle test runs the bundled game in a `vm` sandbox and compared its
 but the sandbox's arrays carry the sandbox's `Array` prototype. Copy a value out of a sandbox (`[...frames]`) before
 comparing it. Read an assertion's whole message before calling a failure a difference.
 
+### A control on screen is not done until the battle reads it
+
+The banner was built for PERIMETER, then reached the Skirmish screen with the Build Phase it lives in: the panel, the
+lines and the planting all worked, every test of them passed, and the troops ignored it, because the Skirmish's plan
+never carried it to the round (`buildActionsOf` wrote `stance: "attack"`, with a comment saying the Build Phase had no
+stance). Mario found it in his first battle. A test of a control that changes the battle counts where the units went,
+not what the panel says; and when a screen is reused by a new mode, list every choice it offers and follow each one to
+the round.
+
 ### `git checkout <file>` undoes everything uncommitted in it
 
 Undoing a probe edit (a bad line put in to test the validator) with `git checkout` also threw away a whole uncommitted

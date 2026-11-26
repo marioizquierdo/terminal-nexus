@@ -76,7 +76,7 @@ export type SideOptions = Readonly<{
   cursor?: Coord
   terminal?: Readonly<{ columns: number; rows: number }>
 }> &
-  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "nextRound" | "foresee" | "keep" | "resume" | "onSave" | "scenes" | "activity" | "barksOf">
+  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "nextRound" | "foresee" | "keep" | "resume" | "onSave" | "scenes" | "activity" | "barksOf" | "fastForwardSpeed">
 
 /** An Activity Logs of a test's own, on `now` — a clock standing still at 0 unless
  *  the test passes one — so nothing a test logs reaches the game's global log, or another test's. */
@@ -88,18 +88,21 @@ export function activityLog(now: () => number = () => 0): ActivityLog {
  *  otherwise, with the keyboard on the menu as the real screen opens. `quits()` counts the times it
  *  asked to leave. It records into an Activity Logs of its own (`activity`), which its Activity logs
  *  window shows, as the live screen's shows the log it records into. Laid out as the live screen is. */
-/** A context with the Battle banner Experiment at this build's default, for a test about the Experiments themselves. */
-export function withDefaultBanner(context: BuildContext = starterContext()): BuildContext {
-  return { ...context, experiments: { ...context.experiments, battleBanner: "on" } }
+/** A context with the Experiment the helper pins (Next round) at this build's default, for a test about the
+ *  Experiments themselves. */
+export function withDefaultNextRound(context: BuildContext = starterContext()): BuildContext {
+  return { ...context, experiments: { ...context.experiments, nextRound: "straight" } }
 }
 
 export function buildSide(options: SideOptions = {}): BuildSide {
   const { context: given = starterContext(), cursor = OPEN_GROUND, terminal = MINIMUM, onQuit, activity = activityLog(), ...rest } = options
   const logged: BuildContext = given.activity === undefined ? { ...given, activity } : given
-  // The suite was written for the Battle Round confirmation: a session plays with the Battle banner Experiment off
-  // unless its context names it (tests/battle-banner.test.ts turns it on; the export's tests keep the default).
+  // A session starts its Battle Round through the rally point, as the game does: `s` makes the cursor the rally point,
+  // and `s` or Enter again places it and begins. For a round's result between rounds, Next round waits for Enter unless
+  // the context names it (the default goes straight on to the next Build Phase, which tests/next-round-straight.test.ts
+  // holds).
   const context: BuildContext =
-    logged.experiments?.battleBanner === undefined ? { ...logged, experiments: { ...logged.experiments, battleBanner: "off" } } : logged
+    logged.experiments?.nextRound === undefined ? { ...logged, experiments: { ...logged.experiments, nextRound: "key" } } : logged
   const layout = buildLayout(terminal, context.terrain)
   let quits = 0
   const build = new BuildSession({

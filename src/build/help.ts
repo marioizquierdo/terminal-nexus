@@ -35,7 +35,7 @@ import {
   structureAtTile,
 } from "./state.ts"
 import { WHEEL_TILES } from "./mouse.ts"
-import { bannerSpot, capitalised } from "./banner.ts"
+import { bannerSpot } from "./banner.ts"
 import { defaultValue, setting } from "./all-settings.ts"
 import type { ConstructItem } from "./types.ts"
 
@@ -50,7 +50,6 @@ import type { ConstructItem } from "./types.ts"
  */
 export type HintSituation =
   | "nexus-powers"
-  | "battle-round"
   | "game-menu"
   | "settings"
   | "export"
@@ -61,7 +60,6 @@ export type HintSituation =
   | "save-game"
   | "note"
   | "banner-place"
-  | "banner-stance"
   | "committed"
   | "menu-mouse"
   | "menu-explore"
@@ -76,7 +74,6 @@ export type HintSituation =
 export function hintSituation(context: BuildContext, state: BuildState): HintSituation {
   switch (state.popup) {
     case "nexus-powers":
-    case "battle-round":
     case "settings":
     case "export":
     case "message":
@@ -87,7 +84,6 @@ export function hintSituation(context: BuildContext, state: BuildState): HintSit
     case "save-game":
     case "note":
     case "banner-place":
-    case "banner-stance":
       return state.popup
     default:
       break
@@ -140,16 +136,9 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
     nexusPowers(context, state).pending.length > 0
       ? "Pick one: up/down and [enter], or its number. [esc] closes without a pick."
       : "The Nexus powers you have. [esc] closes.",
-  "battle-round": (_context, state) =>
-    setting(state, "battleBanner") === "on"
-      ? `Battle Round ${state.pulseNumber}: [s] starts it, [t] moves the banner, [esc] back to the plan.`
-      : `Battle Round ${state.pulseNumber}: [enter] or [s] starts it, [esc] goes back to the plan.`,
-  // The owner: "when hovering targets the action says '[enter] Place Target on Xxx'".
-  "banner-place": (context, state) => {
-    const spot = bannerSpot(context, state, state.cursor)
-    return spot.refusal === null ? `[enter] Place Target on ${spot.name}. Arrows move it, [esc] back.` : `${capitalised(spot.name)}: ${spot.refusal}`
-  },
-  "banner-stance": () => "[a] aggressive, [d] defensive, up/down and [enter]. [esc] moves it again.",
+  // Nothing is drawn beside the rally point on the map (the owner, 2026-11-25: "basically nothing in the middle that
+  // is covering the line"): this line says it all.
+  "banner-place": (context, state) => rallyPointLine(bannerSpot(context, state, state.cursor)),
   "game-menu": () => "Up/down and [enter] choose, or press a row's key. [esc] back to the game.",
   settings: (_context, state) => `Left/right change a value, [e] exports them all. ${escBack(state)}`,
   export: (_context, state) => `Paste this into the pull request. Up/down scroll. ${escBack(state)}`,
@@ -202,7 +191,7 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
       ? setting(state, "powerPick") === "required"
         ? `Start Battle Round ${state.pulseNumber}: pick a Nexus power first, [n] opens them.`
         : `Start Battle Round ${state.pulseNumber} without a Nexus power? [n] picks one, [enter] begins.`
-      : `Start Battle Round ${state.pulseNumber}: lock in your plan and fight. [enter] to begin.`,
+      : `Start Battle Round ${state.pulseNumber}: place the rally point, then fight. [enter] to begin.`,
 
   // --- The map ---
   // Its own key cancels it, as Esc does; another building waits until it is placed or
@@ -220,10 +209,32 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   map: () => "Arrows move the cursor, [enter] explores here, a number selects a building.",
 }
 
+/** The keys part of the rally point's line: what the reminder blanks on its off beats (`[      ]`,
+ *  `src/view/build-frame.ts`). */
+export const RALLY_KEYS = "[arrows]"
+
+/** The rally point's line while it may go where the cursor is (the owner, 2026-11-26: "The status bar at the bottom
+ *  should show the available acctions: "[arrows] Set Rally Point. [enter] Start battle." There's no need to label
+ *  every location"). */
+export const RALLY_POINT_LINE = `${RALLY_KEYS} Set Rally Point. [enter] Start battle.`
+
+/**
+ * **The rally point's bottom line**: the two actions — or, where troops could not stand or get, why not, and
+ * nothing more: Enter does nothing there (`bannerPlace`). No spot is named.
+ */
+export function rallyPointLine(spot: Readonly<{ refusal: string | null }>): string {
+  return spot.refusal ?? RALLY_POINT_LINE
+}
+
 /** What can be done where the keyboard is, in the quiet `hint` tone — never about a tile, so it never
- *  lapses on its own: the bottom line shows it whenever no command has anything to say. */
+ *  lapses on its own: the bottom line shows it whenever no command has anything to say. A rally point where troops
+ *  could not get is the one hint in the `warning` tone. */
 export function hint(context: BuildContext, state: BuildState): StatusMessage {
-  return status(HINTS[hintSituation(context, state)](context, state), "hint")
+  const situation = hintSituation(context, state)
+  // Where the rally point could not go, why reads as a warning, not a quiet hint — as the words beside it on the map
+  // did before they went; Enter there says it again in red (`bannerPlace`).
+  const refused = situation === "banner-place" && bannerSpot(context, state, state.cursor).refusal !== null
+  return status(HINTS[situation](context, state), refused ? "warning" : "hint")
 }
 
 /**
@@ -365,6 +376,16 @@ export function controlsPage(numbers: MoveNumbers = defaultMoveNumbers()): reado
         { keys: "bksp/delete", text: "remove what is planned here" },
         { keys: "u", text: "undo the last building" },
         { keys: "e/esc/x", text: "go back" },
+      ],
+    },
+    {
+      // Start Battle Round makes the cursor the rally point: where the troops head.
+      heading: "THE RALLY POINT",
+      lines: [
+        { keys: "arrows", text: "move the rally point" },
+        { keys: "enter/space/s", text: "place it and start the round" },
+        { keys: "click", text: "move it; again to place it" },
+        { keys: "esc/x", text: "back to the plan" },
       ],
     },
     {

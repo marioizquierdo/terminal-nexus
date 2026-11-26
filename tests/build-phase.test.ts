@@ -63,7 +63,7 @@ const RXVT_SHIFT_RIGHT = `${ESC}[c`
 function session(
   terminal = MINIMUM,
 ): { build: BuildSession; layout: ReturnType<typeof buildLayout>; context: ReturnType<typeof starterContext> } {
-  const context = { ...starterContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT, experiments: { battleBanner: "off" as const } }
+  const context = { ...starterContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
   const layout = buildLayout(terminal, context.terrain)
   const build = readyBuildSession({
     context,
@@ -354,9 +354,10 @@ test("mouse: a click on a menu row arms it at once, and a right click goes back,
 test("mouse: a click on the side panel is not a click on the battlefield", () => {
   const { build, layout } = session()
   const cursorBefore = { ...build.state.cursor }
-  // Well below the building rows, inside the panel: neither a row nor a tile.
+  // Well below the building rows and above the Start row, inside the panel: neither a row nor a tile. (One row lower
+  // is the Start row, whose click now moves the cursor to the rally point.)
   build.handleData(
-    formatMouseEvent(MOUSE_LEFT, layout.panelColumn + 3, layout.footerRow - 1),
+    formatMouseEvent(MOUSE_LEFT, layout.panelColumn + 3, layout.footerRow - 3),
     layout,
   )
   assert.deepEqual(build.state.cursor, cursorBefore)

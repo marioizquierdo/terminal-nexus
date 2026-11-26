@@ -36,27 +36,27 @@ function inTemp(work: (dir: string) => void): void {
 
 test("two slots' build actions of one's own play against each other; a build file by round plays blind until it has no entry", { timeout: 30_000 }, () => {
   inTemp((dir) => {
-    writeFileSync(join(dir, "a.json"), JSON.stringify({ build: [{ building: "turret" }], stance: "hold" }))
-    writeFileSync(join(dir, "b.json"), JSON.stringify({ build: [{ building: "hatchery" }], stance: "attack" }))
+    writeFileSync(join(dir, "a.json"), JSON.stringify({ build: [{ building: "turret" }], rally: "HOME_NEXUS" }))
+    writeFileSync(join(dir, "b.json"), JSON.stringify({ build: [{ building: "hatchery" }], rally: "ENEMY_NEXUS" }))
     // Without a round to play, both slots' build actions are checked.
     const checked = run(["--map", "pocket", "--p1", `build:${dir}/a.json`, "--p2", `build:${dir}/b.json`])
     assert.match(checked.out, /p1 \(west, vasse, player\): build actions for round 1 checked[\s\S]*builds turret/)
     assert.match(checked.out, /p2 \(east, dob, player\): build actions for round 1 checked[\s\S]*builds hatchery/)
     const played = run(["--map", "pocket", "--p1", `build:${dir}/a.json`, "--p2", `build:${dir}/b.json`, "--play-to", "next"])
-    assert.match(played.out, /p1 vasse: .*built 1; hold/)
-    assert.match(played.out, /p2 dob: .*built 1; attack/)
+    assert.match(played.out, /p1 vasse: .*built 1; rally point HOME_NEXUS/)
+    assert.match(played.out, /p2 dob: .*built 1; rally point ENEMY_NEXUS/)
     // A file of one object is for the first round played: the battle stops at round 2, both briefs printed.
     assert.match(played.out, /^round 2 of 8, at its Build Phase[\s\S]*--- brief for p1[\s\S]*--- brief for p2/m)
     // A build file by round: round 1, then rounds 2 and 3, then every round; played blind to the end.
     writeFileSync(join(dir, "rounds.json"), JSON.stringify([
-      { round: 1, build: [{ building: "turret" }], stance: "hold" },
-      { round: "2-3", build: ["barracks"], stance: "hold" },
-      { round: "*", build: ["depot"], stance: "attack" },
+      { round: 1, build: [{ building: "turret" }], rally: "HOME_NEXUS" },
+      { round: "2-3", build: ["barracks"], rally: "HOME_NEXUS" },
+      { round: "*", build: ["depot"], rally: "ENEMY_NEXUS" },
     ]))
     const blind = run(["--map", "pocket", "--p1", `build:${dir}/rounds.json`, "--p2", "script:", "--rounds", "4", "--play-to", "end"])
-    assert.match(blind.out, /^round 1: [\s\S]*p1 vasse: .*built 1; hold[\s\S]*^round 3: [\s\S]*hold[\s\S]*^round 4: [\s\S]*attack[\s\S]*^over: /m, blind.out)
+    assert.match(blind.out, /^round 1: [\s\S]*p1 vasse: .*built 1; rally point HOME_NEXUS[\s\S]*^round 3: [\s\S]*HOME_NEXUS[\s\S]*^round 4: [\s\S]*ENEMY_NEXUS[\s\S]*^over: /m, blind.out)
     // Without a "*" entry it stops at the first round it has nothing for, and prints the brief.
-    writeFileSync(join(dir, "two.json"), JSON.stringify([{ round: "1-2", build: [], stance: "hold" }]))
+    writeFileSync(join(dir, "two.json"), JSON.stringify([{ round: "1-2", build: [], rally: "HOME_NEXUS" }]))
     const stopped = run(["--map", "pocket", "--p1", `build:${dir}/two.json`, "--p2", "script:", "--play-to", "end"])
     assert.match(stopped.out, /^round 2: ended[\s\S]*p1 has no build actions for round 3[\s\S]*--- brief for p1/m)
     assert.throws(() => run(["--map", "pocket", "--p1", `build:${dir}/two.json`, "--p2", "script:", "--play-to", "end", "--seeds", "1-2"]), /no build actions for round 3: give its build file a "\*" entry/)
@@ -159,8 +159,8 @@ test("no turns: either slot's build actions may be handed in alone, in any order
   inTemp((dir) => {
     const save = join(dir, "two.save.json")
     run(["--map", "pocket", "--p1", "build:", "--p2", "build:", "--rounds", "2", "--ticks", "120", "--save", save])
-    writeFileSync(join(dir, "a.json"), '{"power": 1, "build": [{"building": "barracks", "at": "forward"}], "stance": "hold"}')
-    writeFileSync(join(dir, "b.json"), '{"power": 0, "build": [], "stance": "attack"}')
+    writeFileSync(join(dir, "a.json"), '{"power": 1, "build": [{"building": "barracks", "at": "forward"}], "rally": "HOME_NEXUS"}')
+    writeFileSync(join(dir, "b.json"), '{"power": 0, "build": [], "rally": "ENEMY_NEXUS"}')
     // Both slots read the same battle: p2's brief is the same before and after p1 hands its actions in.
     const before = run(["-f", save, "--json"]).out
     run(["-f", save, "--p1", `build:${dir}/a.json`])
@@ -169,8 +169,8 @@ test("no turns: either slot's build actions may be handed in alone, in any order
     assert.equal(p2Brief(after), p2Brief(before))
     // p2 hands its actions in later and plays the round: p1's, kept as the draft, play too.
     const played = run(["-f", save, "--p2", `build:${dir}/b.json`, "--play-to", "next"])
-    assert.match(played.out, /p1 vasse: .*built 1; hold/)
-    assert.match(played.out, /p2 dob: .*built 0; attack/)
+    assert.match(played.out, /p1 vasse: .*built 1; rally point HOME_NEXUS/)
+    assert.match(played.out, /p2 dob: .*built 0; rally point ENEMY_NEXUS/)
     assert.match(played.out, /--- brief for p1[\s\S]*round 2 of 2/)
     assert.match(played.out, /on screen: \.\/bin\/terminal-nexus\.ts --load /)
     // A finished battle loaded prints every round's report.

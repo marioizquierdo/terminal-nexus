@@ -43,7 +43,7 @@ test("a note made in a Battle Round opens again at exactly that moment: the same
   assert.equal(note.line, "too fast")
   assert.equal(note.at, "skirmish?load=saves/crossing-round-4.save.json")
   assert.equal(note.save?.state?.round, 4, "the save is the round as its Build Phase opened")
-  assert.deepEqual(note.pressed.map((entry) => entry.command.kind), ["cancel", "open-nexus-powers", "pick-nexus", "arm", "place", "open-battle-round", "start-pulse"])
+  assert.deepEqual(note.pressed.map((entry) => entry.command.kind), ["cancel", "open-nexus-powers", "pick-nexus", "arm", "place", "open-battle-round", "banner-place"])
   assert.ok(note.activity.some((line) => /pulse\.start/u.test(line)))
   // The screen is the one `!` found: the Battle Round, no note popup over it.
   const pressedAt = made.frames.findIndex((frame) => frame.label === "!")

@@ -15,15 +15,12 @@ A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and
   to start. Play a round or two, then Esc, Esc, `v` to Save game. Quit, start again, `1`, `2` Load game, open your save
   and carry on; or change p1 to a script (`1` on its row) and watch both scripts play. Press `!` wherever something
   confuses you: the note saves that very moment. Then ask me to play your save on with scripts on both sides.
-- **Play, about fifteen minutes: the banner, in a Skirmish** (the title menu's Skirmish row, `1`; unlike PERIMETER it
-  has an enemy Nexus to aim at). Esc skips its opening lines. Build as you like, press
-  `s` for the start panel, `t` to change the target: move the banner with the arrows or the mouse, Enter, then `a`
-  (aggressive) or `d` (defensive), and `s` to start. Is placing it comfortable and clear, or should a simpler stance row
-  replace it? In a battle the banner does not move the army yet (the step's next item), so judge the placing, not the
-  battle. While you are there, say anything about the kept front (survivors step back and form up in the first
-  10 seconds), a building's actions (`e` onto a Barracks, then `c`), and the Nexus shooting back. In Settings, under
-  Experiments, try the keyboard's Arrow step, Shift step, Shift pace and Hold pace, then export the settings and paste
-  them with your notes.
+- **Play, about fifteen minutes: the rally point and the prelude** (from your three rounds on it).
+  `./bin/terminal-nexus.ts --map crossing --p1-commander vasse --p2-commander vasse --p2 script:steady`, Esc skips the
+  opening lines. Build, press `s`: the cursor flies to the rally point in front of your base; move it or not, Enter.
+  Watch both sides' arrows and the enemy's new buildings come in, then the fight. Between rounds, read what the battle
+  destroyed; the game menu's `w` replays the last battle. A round that settles fast-forwards, labelled; any key
+  slows it back.
 - **Watch, five minutes: troops at a narrow door.** `npm run skirmish -- --load sandboxes/engage/engage-gap2-melee-vs-mix.save.json --play-to next --show 0,60,120,240,end`,
   then the same with `engage-gap2-airmix-vs-mix`: twelve troopers lose at a door two rows wide, and the same
   number with half of them in the air win. Does that read as good ground (a choice that matters) or as air too strong
@@ -97,6 +94,8 @@ Small, none blocking. What rounds on PERIMETER left unfinished moved to
 
 | Item | Why | Size |
 | --- | --- | --- |
+| **Army groups** (the next pull request, on the owner's word of 2026-11-26) | A side's units chained within 5 tiles (an engagement's reach), worked out about once an in-game second, the Commander their centre, the Nexus always one; front and back by the nearest enemy army group; the half-speed rule within an army group; arriving at the rally point and forming up there when not engaged; the regroup by army group. Changes every battle: measured before and after ([movement.md](../system-design/movement.md), its words; [his words](../history/feedback/2026-11-25-rally-point.md)) | medium to large |
+| **Story stops: PERIMETER and the mission runner leave the game** (the next pull request, on the owner's word of 2026-11-26) | New mechanics are built in Skirmish only; a story map either plays as a Skirmish or is deleted. The Build Phase's test base and the scripted playtest's default move from PERIMETER onto a Skirmish save; the Story row, its routes and `src/match/mission.ts` go; the Story design pages say it waits ([his words](../history/feedback/2026-11-25-rally-point.md)) | large |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see [`portability.md`](../system-design/portability.md) |
 | The curve levels' empty-base walk is guarded once | The tests of a level's layout now walk it with its battles undecided, so a change to how battles play cannot fail them. Whether a base with nothing built lives to the last round (what a route to a later round plays) is one check over every level, which says how low the Nexus fell each round: at worst 210 of 400, on Averno's level in round 4. If it tips, shape what an empty base faces on that level (a lighter round-4 raid, or a free defender), not the rules | small |
 | `src/cli/pulse-run.ts` still exports PERIMETER's mission connection for seven tests | The game no longer uses it; the tests can reach the mission another way | small |

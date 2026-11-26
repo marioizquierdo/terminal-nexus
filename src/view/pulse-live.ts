@@ -39,6 +39,12 @@ import type { AuraFrame, PulseFrame, VoiceFrame } from "./pulse-scene.ts"
 import type { Speaker, SpokenLine } from "./pulse-voice.ts"
 import { VOICE, commanderOf, labelPlace, planVoice, shippedBarks, speakerOf, voiceAt, voiceLight, voiceMoments } from "./pulse-voice.ts"
 import { DEFAULT_PRESENTATION, createView } from "./snapshot.ts"
+import type { RallyPlan } from "./rally-arrows.ts"
+import { rallyEndMs, rallyMarksAt, rallyPlan } from "./rally-arrows.ts"
+import type { Clash, KnownMap, PreludePlan } from "./prelude.ts"
+import { NO_PRELUDE, preludeAt, preludePlan } from "./prelude.ts"
+import type { FastForwardWindow } from "./fast-forward.ts"
+import { fastForwardStep, fastForwardWindow, settledTick } from "./fast-forward.ts"
 import type { PresentationOptions, PulseTimeline, PulseView } from "./snapshot.ts"
 
 /** A Pulse the battle engine has resolved, and the regroup that follows it — everything the screen needs to play it, built by
@@ -61,6 +67,9 @@ export type ResolvedPulse = Readonly<{
   /** Both sides' names when nobody at the screen plays either (a Skirmish watched, two scripts): the Battle Round then
    *  says "Vasse" and "Averno" where it would say "yours" and "the enemy", and who won rather than VICTORY. */
   watched?: Readonly<Record<PlayerId, string>>
+  /** The building clashes of the round (`RoundReport.clashes`: both sides built on the same ground, so neither stands),
+   *  as the Skirmish hands them on: each is thrown down, with the removal's sparks, at the start of the prelude. */
+  clashes?: readonly Clash[]
 }>
 
 /** A mission's round, as the result reads it. */
@@ -148,6 +157,9 @@ export class PulsePresenter {
   /** How long after the result appears the next round begins on its own, or `null`: it waits for the
    *  player (the Next round Experiment). */
   private readonly autoNextMs: number | null
+  /** Whether the next round begins the moment the fight stops, with no result shown, when the battle goes on (the Next
+   *  round Experiment's `straight`). A battle won or lost still shows its result. */
+  private readonly straight: boolean
 
   /** The player's Commander in this Pulse, or `null` when she is not on the battlefield in it. */
   private readonly bearer: Bearer | null
@@ -156,17 +168,39 @@ export class PulsePresenter {
   /** Where and when she fell in this Pulse, or `null` when she did not: her vignette and her dim glyph beside the
    *  Nexus are drawn from it (`commander-moments.ts`). */
   private readonly fall: FallFrame | null
+  /** Where each side's troops head and the way there, walked once from the round's opening: the rally arrows
+   *  (`rally-arrows.ts`). `null` for a timeline with no opening state. */
+  private readonly rally: RallyPlan | null
+  /** The enemy's new buildings and units revealed before the fight's first tick, and how long that takes
+   *  (`prelude.ts`): the fight's own clock (`timeMs`) starts at its end. */
+  readonly prelude: PreludePlan
+  /** What the Build Phase's map showed as the round began, kept so watching it again reveals the same. */
+  readonly known: KnownMap | undefined
 
   constructor(
     resolved: ResolvedPulse,
     presentation: PresentationOptions = DEFAULT_PRESENTATION,
-    options: Readonly<{ autoNextMs?: number | null; barksOf?: BarksOf }> = {},
+    options: Readonly<{
+      autoNextMs?: number | null
+      straight?: boolean
+      replay?: boolean
+      barksOf?: BarksOf
+      /** How many times faster a settled round plays (`fast-forward.ts`). Absent: the tuned value. */
+      fastForwardSpeed?: number
+      /** What the Build Phase's map showed when the round began: the enemy's entities in the opening that were not on
+       *  it are revealed one by one before the fight (`prelude.ts`). Absent: no reveal. */
+      known?: KnownMap
+    }> = {},
   ) {
     this.resolved = resolved
     this.autoNextMs = options.autoNextMs ?? null
+    this.straight = options.straight === true && resolved.mission?.verdict.kind === "continue"
     this.view = createView(resolved.timeline, presentation)
     this.times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, TUNING)
-    this.result = missionResultOf(watchedResult(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), outcomeOf(resolved.timeline), resolved.watched), resolved.mission)
+    const result = missionResultOf(watchedResult(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), outcomeOf(resolved.timeline), resolved.watched), resolved.mission)
+    // A replay (the game menu's Watch last battle) goes nowhere but back to the Build Phase it was opened from.
+    this.result = options.replay === true ? replayResult(result, resolved.mission?.round) : result
+    if (options.replay === true) this.straight = false
     this.strain = nexusStrain(resolved.timeline)
     this.home = resolved.regroup.state.entities.filter(
       (entity) => entity.player === "A" && isMobile(resolved.timeline, entity.contentId),
@@ -178,6 +212,39 @@ export class PulsePresenter {
     this.bearer = bearerOf(resolved.timeline)
     this.voice = this.planLines(options.barksOf ?? shippedBarks, presentation.cosmeticSeed)
     this.fall = this.fallOf()
+    const opening = resolved.timeline.states[0]
+    this.known = options.known
+    this.prelude = opening === undefined || options.known === undefined ? NO_PRELUDE : preludePlan(opening, resolved.timeline.registry, options.known, resolved.clashes ?? [])
+    // The arrows run from the round's first instant, the prelude included: on the presentation clock (`elapsedMs`).
+    this.rally = opening === undefined ? null : rallyPlan(opening, resolved.timeline.registry, { count: TUNING.rallyArrowsCount, stopMs: this.times.stopMs + this.prelude.lengthMs })
+    // Fast forward: worked out once, from the whole resolved round.
+    this.settled = settledTick(resolved.timeline)
+    this.fastWindow = fastForwardWindow(this.settled, this.view.tickDurationMs, this.times)
+    this.fastFactor = options.fastForwardSpeed ?? TUNING.fastForwardSpeed
+  }
+
+  /** The tick from which the round has settled (`settledTick`), or `null`: it never does. */
+  readonly settled: number | null
+  /** The part of the fight that plays fast, on its own clock, or `null`: none (`fastForwardWindow`). */
+  readonly fastWindow: FastForwardWindow | null
+  /** How many times faster it plays there. */
+  private readonly fastFactor: number
+  /** A key or a click came while it played fast: normal speed for the rest of the round. */
+  private fastEnded = false
+
+  /** Whether the round is in its fast part and nothing has ended it: what the label shows. */
+  get fastForward(): boolean {
+    if (this.fastWindow === null || this.fastEnded) return false
+    const time = this.playback.presentationTimeMs - this.prelude.lengthMs
+    return time >= this.fastWindow.fromMs && time < this.fastWindow.untilMs
+  }
+
+  /** **Any key or click returns to normal speed** while it plays fast, for the rest of the round (Replay from the top
+   *  starts it over). A key before the fast part ends nothing. Whether it ended it. */
+  endFastForward(): boolean {
+    if (!this.fastForward) return false
+    this.fastEnded = true
+    return true
   }
 
   /** Where and when the player's Commander fell, in presentation time: her death's tick, at the Pulse's own pace. */
@@ -230,9 +297,16 @@ export class PulsePresenter {
     return states[Math.max(0, Math.min(this.view.lastTick, Math.floor(timeMs / this.view.tickDurationMs)))] ?? this.resolved.regroup.state
   }
 
-  /** Where in the Pulse the screen is, in presentation milliseconds. */
-  get timeMs(): number {
+  /** How long the round has been on screen, in presentation milliseconds: from the moment Enter placed the rally
+   *  point, the prelude included. */
+  get elapsedMs(): number {
     return this.playback.presentationTimeMs
+  }
+
+  /** Where in the fight the screen is, in presentation milliseconds: 0 through the prelude, then the fight's own
+   *  clock — what the timer, the ending, the voice and every effect read. */
+  get timeMs(): number {
+    return Math.max(0, this.playback.presentationTimeMs - this.prelude.lengthMs)
   }
 
   get paused(): boolean {
@@ -256,14 +330,24 @@ export class PulsePresenter {
     }
     const elapsed = Math.max(0, now - this.lastNow)
     this.lastNow = now
-    if (!hold) this.playback.advance(elapsed)
+    if (hold) return
+    // In the settled part of the round, the fight's clock runs `fastFactor` times as fast (`fastForwardStep`), the
+    // prelude never: its time is before the fight's.
+    const window = this.fastEnded ? null : this.fastWindow
+    const speed = this.playback.speed
+    const step = fastForwardStep(this.playback.presentationTimeMs - this.prelude.lengthMs, elapsed, speed, window, this.fastFactor)
+    this.playback.advance(step / speed)
   }
 
   /** A playback control: pause, speed, a step, or watching it again from the top. */
   apply(control: PlaybackControl): void {
     this.playback.apply(control)
-    // From the top, the camera moves are due again: the story starts over, and so does the view.
-    if (control === "restart") this.fired.clear()
+    // From the top, the camera moves are due again: the story starts over, and so does the view — and fast forward,
+    // which plays again as it did the first time.
+    if (control === "restart") {
+      this.fired.clear()
+      this.fastEnded = false
+    }
   }
 
   /**
@@ -273,6 +357,12 @@ export class PulsePresenter {
    */
   due(): BuildCommand[] {
     const commands: BuildCommand[] = []
+    // Straight on: the next Build Phase begins as the fight stops, its opening showing the survivors regroup.
+    if (this.straight && !this.fired.has("next") && this.timeMs >= this.times.stopMs) {
+      this.fired.add("next")
+      commands.push({ kind: "next-round" })
+      return commands
+    }
     // The next round begins on its own a moment after the result, when the Next round Experiment says so.
     // Sent once; a paused Pulse's clock does not move, so it waits with it.
     if (this.autoNextMs !== null && !this.fired.has("next") && this.timeMs >= this.times.homeMs + this.autoNextMs) {
@@ -293,6 +383,12 @@ export class PulsePresenter {
     return commands
   }
 
+  /** Whether the screen may go on to the next round now: once the result is up, or, going straight on, once the fight
+   *  has stopped. */
+  canMoveOn(): boolean {
+    return this.phase() === "home" || (this.straight && this.timeMs >= this.times.stopMs)
+  }
+
   /** Where the Pulse is in its ending right now. */
   phase(): EndingPhase {
     return phaseAt(this.times, this.timeMs)
@@ -308,6 +404,7 @@ export class PulsePresenter {
     // Her vignette still open over the result.
     if (this.fall !== null && this.timeMs < this.fall.atMs + vignetteLengthMs(commanderArt(this.fall.contentId)?.falls.length ?? 0)) return now + FRAME_MS
     // The result stands still; the timer runs on only to begin the next round on its own, when it will.
+    if (this.straight && !this.fired.has("next")) return now + Math.max(FRAME_MS, this.times.stopMs - this.timeMs)
     if (this.autoNextMs === null || this.fired.has("next")) return null
     return now + Math.max(FRAME_MS, this.times.homeMs + this.autoNextMs - this.timeMs)
   }
@@ -319,11 +416,17 @@ export class PulsePresenter {
     const { colors, reducedMotion } = options
     const timeMs = this.timeMs
     const times = this.times
-    const drawn = this.view.sampleAt(timeMs, colors, reducedMotion)
+    const elapsedMs = this.elapsedMs
+    const opening = this.view.sampleAt(timeMs, colors, reducedMotion)
+    // The prelude: the enemy's new things rising one by one over the fight's first tick, their light and sparks
+    // painted with every other effect.
+    const prelude = preludeAt(this.prelude, elapsedMs, this.resolved.timeline.registry, reducedMotion, colors)
+    const drawn = prelude === null ? opening : { ...opening, effects: [...opening.effects, ...prelude.effects] }
     const positions = drawn.positions
     const forces = { A: { units: 0, hp: 0 }, B: { units: 0, hp: 0 } }
     for (const entity of drawn.state.entities) {
-      if (!isMobile(this.resolved.timeline, entity.contentId)) continue
+      // What the prelude has not revealed yet is not counted either.
+      if (!isMobile(this.resolved.timeline, entity.contentId) || prelude?.hidden.has(entity.ordinal) === true) continue
       forces[entity.player].units += 1
       forces[entity.player].hp += entity.hp
     }
@@ -333,7 +436,14 @@ export class PulsePresenter {
     // The light on her as she starts to speak, painted with every other effect, under the corruption law.
     const light = voice === null ? null : this.lightOn(voice, options)
     const sample = light === null ? drawn : { ...drawn, effects: [...drawn.effects, light] }
+    const rally = this.rally === null ? [] : rallyMarksAt(this.rally, elapsedMs, drawn.state.targets, reducedMotion)
+    // On Enter the cursor goes (the owner: "The lines are removed, the cursor goes away"): not drawn while the prelude
+    // and the rally arrows play, then back for looking round.
+    const cursorHidden = elapsedMs < Math.max(this.prelude.lengthMs, this.rally === null ? 0 : rallyEndMs(this.rally, reducedMotion))
     return {
+      ...(rally.length === 0 ? {} : { rally }),
+      ...(prelude === null ? {} : { prelude }),
+      ...(cursorHidden ? { cursorHidden } : {}),
       ...(aura === null ? {} : { aura }),
       ...(voice === null ? {} : { voice: voice.frame }),
       ...(this.fall === null ? {} : { fall: this.fall }),
@@ -342,7 +452,8 @@ export class PulsePresenter {
       openingHealth: this.view.openingHealth,
       ticksPerSecond: this.resolved.timeline.ticksPerSecond,
       paused: this.playback.paused,
-      speed: this.playback.speed,
+      speed: this.fastForward ? this.playback.speed * this.fastFactor : this.playback.speed,
+      ...(this.fastForward ? { fastForward: true } : {}),
       phase,
       timeMs,
       times,
@@ -460,6 +571,13 @@ function bearerOf(timeline: PulseTimeline): Bearer | null {
   if (commander === null) return null
   const aura = auraOf(timeline.registry.get(commander.contentId))?.radius ?? null
   return { ordinal: commander.ordinal, contentId: commander.contentId, player: commander.player, aura }
+}
+
+/** The result of a replayed round: what happened, and Enter back to the Build Phase it was replayed from. */
+function replayResult(result: PulseResult, round: number | undefined): PulseResult {
+  const { alternative: _alternative, setup: _setup, commander: _commander, ...rest } = result
+  const which = round === undefined ? "the last round" : `round ${round}`
+  return { ...rest, mission: `A replay of ${which}.`, goOn: "Build Phase", line: `${result.headline} - a replay of ${which}. Enter: back to the Build Phase.` }
 }
 
 /** A result as a watched battle says it: who won, by name, rather than VICTORY or DEFEAT, which are a player's words. */

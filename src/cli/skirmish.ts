@@ -20,11 +20,13 @@
 //   skirmish --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --play-to end
 //
 // A build file is a slot's build actions as JSON: the power it keeps, what it builds and where, the actions taken on
-// its buildings, the formation and the stance (docs/system-design/battles.md, the brief and the build actions). One object
-// is for the first round played; a list of them is by round, each with "round": 3, "2-4" or "*", the first that
-// fits winning:
-//   [{ "round": 1, "build": [{ "building": "barracks", "at": "forward" }], "stance": "hold" },
-//    { "round": "*", "build": ["barracks", "depot"], "stance": "attack" }]
+// its buildings, the formation and the rally point (docs/system-design/battles.md, the brief and the build actions).
+// "rally" is where the troops head and hold: "HOME_NEXUS" (its own Nexus), "ENEMY_NEXUS", or a tile { "x": 25, "y": 3 };
+// left out, in front of its base. It is for the rounds its entry covers; an old "stance" or "banner" is read as one,
+// and said. One object is for the first round played; a list of them is by round, each with "round": 3, "2-4" or "*",
+// the first that fits winning:
+//   [{ "round": 1, "build": [{ "building": "barracks", "at": "forward" }], "rally": "HOME_NEXUS" },
+//    { "round": "*", "build": ["barracks", "depot"], "rally": "ENEMY_NEXUS" }]
 // Rounds a build file covers play blind, without a brief between them. When a player slot has no build actions for
 // the round about to play, the battle stops at that round's Build Phase and prints the slot's brief.
 //

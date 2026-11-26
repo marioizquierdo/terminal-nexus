@@ -36,7 +36,7 @@ import { skirmishSaver } from "../src/cli/skirmish-files.ts"
 const level = (seed = 1): PlayableLevel => newSkirmishLevel(seed, { newSeed: () => 4242 })
 
 /** A player that builds nothing and keeps no power: it loses. */
-const idle: Player = () => ({ build: [], stance: "attack" })
+const idle: Player = () => ({ build: [], rally: "ENEMY_NEXUS" })
 const balanced = scriptedPlayer("balanced") as Player
 
 const first = (seed = 1): BuildContext => withoutScene(level(seed).firstRound())
@@ -113,7 +113,7 @@ test("a round played from a Build Phase places exactly the buildings the player 
   const { play } = level()
   const context = first()
   const { battle } = positionOf(context)
-  const spots = placementsOf(battle, "A", { build: [{ building: "barracks", at: "forward" }, { building: "turret", at: "north" }], stance: "attack" })
+  const spots = placementsOf(battle, "A", { build: [{ building: "barracks", at: "forward" }, { building: "turret", at: "north" }], rally: "ENEMY_NEXUS" })
   assert.equal(spots.length, 2)
   const kept = (play.keep as NonNullable<typeof play.keep>)(context, (context.nexusDraft[0] as BuildContext["nexusDraft"][number]).card)
   const state = planOn(kept, spots, 0)
@@ -128,7 +128,8 @@ test("a round played from a Build Phase places exactly the buildings the player 
   assert.deepEqual(standing, expected)
   assert.deepEqual(played.report.sides.A.refused, [])
   assert.equal(played.report.sides.A.kept, context.nexusDraft[0]?.name)
-  assert.equal(played.report.sides.A.stance, "attack", "the troops march on the enemy's Nexus")
+  // The rally point starts in front of the base (Rally point start, 20%): the troops gather there and hold it.
+  assert.deepEqual(played.report.sides.A.rally, { x: 24, y: 14 }, "the rally point is not in front of the base")
   assert.equal(resolved.mission?.round, 1)
   assert.equal(resolved.mission?.of, 8)
   assert.equal(resolved.enemy, "enemy")
@@ -138,7 +139,7 @@ test("p2's plan comes from its script: the round is the battle's own", { timeout
   const { play } = level()
   const context = first()
   const { battle } = positionOf(context)
-  const state = planOn(context, placementsOf(battle, "A", { build: [{ building: "barracks", at: "forward" }], stance: "attack" }))
+  const state = planOn(context, placementsOf(battle, "A", { build: [{ building: "barracks", at: "forward" }], rally: "ENEMY_NEXUS" }))
   const { played } = started(play, context, state)
   const plans = { A: buildActionsOf(context, state), B: balanced(briefOf(battle, "B").data) }
   const duelRound = playRound(battle, plans)
@@ -150,7 +151,7 @@ test("the next round carries where the regroup left everyone: the player's build
   const { play } = level()
   const context = first()
   const { battle } = positionOf(context)
-  const turret = placementsOf(battle, "A", { build: [{ building: "turret", at: "back" }], stance: "attack" })
+  const turret = placementsOf(battle, "A", { build: [{ building: "turret", at: "back" }], rally: "ENEMY_NEXUS" })
   const state = planOn(context, turret)
   const { resolved, played } = started(play, context, state)
   assert.equal(played.battle.result, null, "the battle ended in its first round; this test wants a second")
@@ -201,8 +202,8 @@ test("a battle's end offers the same battle again or a new seed, each from round
 
 test("a building held this round trains nothing (Hold production)", { timeout: 60_000 }, () => {
   const battle = beginBattle({ map: "crossing", seed: 3, rounds: 6, pulseTicks: 600, commanders: { A: "vasse", B: "dob" } })
-  const quiet = { build: [], stance: "hold" } as const
-  const one = playRound(battle, { A: { build: [{ building: "barracks", at: "back" }], stance: "hold" }, B: quiet }).state
+  const quiet = { build: [], rally: "HOME_NEXUS" } as const
+  const one = playRound(battle, { A: { build: [{ building: "barracks", at: "back" }], rally: "HOME_NEXUS" }, B: quiet }).state
   const barracks = one.carried?.entities.find((entity) => entity.player === "A" && entity.contentId === "structure.citizen.barracks")
   assert.ok(barracks !== undefined, "the Barracks did not stand")
   const free = playRound(one, { A: quiet, B: quiet }).report.reading.sides.A.army.trained.counts
@@ -215,7 +216,8 @@ test("a Skirmish plays on the Build Phase screen: place a building, start the Ba
   // From the route, as the game, the page and `scripts/playtest.mjs --at 'skirmish?seed=1'` open it: its words skipped,
   // the first power picked, the menu's first building armed and placed, the Battle Round started and watched to its end.
   const steps = parseKeyScript("Esc n 1 1 Enter s s wait~1000*32 Enter")
-  const run = runBuildPlaytest({ steps, at: playtestOpening({ at: "skirmish?seed=1" }).at })
+  // Next round on manual: the round's result, then Enter (the default goes straight on).
+  const run = runBuildPlaytest({ steps, at: playtestOpening({ at: "skirmish?seed=1" }).at, experiments: { nextRound: "key" } })
   const opening = frameToText(run.frames[0]!.frame)
   assert.match(opening, /build phase - round 1 of 8/u)
   assert.match(opening, /A Skirmish on The Crossing, seed 1/u)
@@ -247,13 +249,13 @@ test("the driver plays a Skirmish to its end, and the same save and script give 
 function halfPlanned(): Readonly<{ play: PlayableLevel["play"]; context: BuildContext; state: BuildState }> {
   const { play } = level()
   const one = first()
-  const barracks = placementsOf(positionOf(one).battle, "A", { build: [{ building: "barracks", at: "back" }], stance: "attack" })
+  const barracks = placementsOf(positionOf(one).battle, "A", { build: [{ building: "barracks", at: "back" }], rally: "ENEMY_NEXUS" })
   const state1 = planOn(one, barracks)
   const { resolved } = started(play, one, state1)
   const two = withoutScene(play.nextRound(one, state1, resolved) as BuildContext)
   const { battle } = positionOf(two)
   const kept = (play.keep as NonNullable<typeof play.keep>)(two, (two.nexusDraft[0] as BuildContext["nexusDraft"][number]).card)
-  const turret = placementsOf(battle, "A", { power: 1, build: [{ building: "turret", at: "north" }], stance: "attack" })
+  const turret = placementsOf(battle, "A", { power: 1, build: [{ building: "turret", at: "north" }], rally: "ENEMY_NEXUS" })
   const anchor = barracks[0]?.anchor as NonNullable<(typeof barracks)[number]>["anchor"]
   return { play, context: kept, state: { ...planOn(kept, turret, 0), held: [`${anchor.x},${anchor.y}`] } }
 }

@@ -96,8 +96,6 @@ test("the answers players rely on still show right after their command, and laps
     ["remove", (side) => keys(side, TAB, "1", ENTER, BACKSPACE), /^Barracks removed, 40 refunded\.$/],
     ["cancel", (side) => keys(side, "1", ESC), /^Cancelled\.$/],
     ["restart", (side) => keys(side, ESC, "r"), /^Build Phase restarted with these settings\.$/],
-    // A Nexus power left unpicked holds nothing back: the Battle Round screen opens.
-    ["Start Battle Round with a power waiting", (side) => keys(side, "s"), /^Battle Round 1: Enter starts it, Esc goes back\.$/],
     ["a key refused while a building is armed", (side) => keys(side, "1", "s"), /^Place the Barracks or cancel it first: \[1\] or \[esc\]\.$/, "warning"],
   ]
   for (const [name, drive, text, tone] of cases) {
@@ -139,7 +137,6 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
     [(side) => keys(side, "n"), /^Pick one: up\/down and \[enter\], or its number\. \[esc\] closes without a pick\.$/],
     [(side) => keys(side, "n", "1", "n"), /^The Nexus powers you have\. \[esc\] closes\.$/],
   ],
-  "battle-round": [[(side) => keys(side, "n", "1", "s"), /^Battle Round 1: \[enter\] or \[s\] starts it, \[esc\] goes back to the plan\.$/]],
   "game-menu": [[(side) => keys(side, ESC), /^Up\/down and \[enter\] choose, or press a row's key\. \[esc\] back to the game\.$/]],
   settings: [
     [(side) => keys(side, "d"), /^Left\/right change a value, \[e\] exports them all\. \[esc\] closes\.$/],
@@ -171,9 +168,13 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
   // a Skirmish: tests/skirmish-play.test.ts).
   "save-game": [[(side) => ({ ...side.build.state, popup: "save-game" }), /^Type a name, \[enter\] saves\. \[esc\] back to the menu\.$/]],
   note: [[(side) => keys(side, "!"), /^Type what you noticed, \[enter\] saves the note with this moment\. \[esc\] back\.$/]],
-  // The battle banner's two panels, put up by hand as the dialog is: these sessions play with its Experiment off.
-  "banner-place": [[(side) => ({ ...side.build.state, popup: "banner-place", cursor: { x: 30, y: 12 } }), /^\[enter\] Place Target on .+\. Arrows move it, \[esc\] back\.$/]],
-  "banner-stance": [[(side) => ({ ...side.build.state, popup: "banner-stance", bannerDraft: { x: 30, y: 12 } }), /^\[a\] aggressive, \[d\] defensive, up\/down and \[enter\]\. \[esc\] moves it again\.$/]],
+  // Moving the rally point, put up by hand as the dialog is: these sessions play with its Experiment off.
+  // A Nexus power left unpicked holds nothing back: Start makes the cursor the rally point, and the line says the two
+  // actions, no place named (the owner, 2026-11-26).
+  "banner-place": [
+    [(side) => keys(side, "s"), /^\[arrows\] Set Rally Point\. \[enter\] Start battle\.$/],
+    [(side) => keys(side, "n", "1", "s", `${ESC}[C`), /^\[arrows\] Set Rally Point\. \[enter\] Start battle\.$/],
+  ],
   committed: [[(side) => keys(side, "n", "1", "s", "s"), /^The plan is locked in\. \[esc\] opens the menu\.$/]],
   "menu-mouse": [
     [
@@ -192,7 +193,7 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
   ],
   "menu-start": [
     [(side) => keys(side, PAGE_DOWN), /^Start Battle Round 1 without a Nexus power\? \[n\] picks one, \[enter\] begins\.$/],
-    [(side) => keys(side, "n", "1", PAGE_DOWN), /^Start Battle Round 1: lock in your plan and fight\. \[enter\] to begin\.$/],
+    [(side) => keys(side, "n", "1", PAGE_DOWN), /^Start Battle Round 1: place the rally point, then fight\. \[enter\] to begin\.$/],
   ],
   placing: [[(side) => keys(side, "2"), /^Place the Hatchery: arrows move, \[enter\] places, \[2\] or \[esc\] cancels\.$/]],
   explore: [[(side) => keys(side, "e"), /^Explore Map: arrows move, the panel shows what is here\. \[esc\] goes back\.$/]],
@@ -222,11 +223,11 @@ test("a hint for every situation the hint list names, each one line that fits th
 
 test("the game menu lists [c] Controls and hotkeys right after Settings", () => {
   // Activity logs and Save game sit between Controls and Restart.
-  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "save", "restart", "quit"])
+  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "save", "replay", "restart", "quit"])
   const side = buildSide()
   keys(side, ESC)
   const text = screenText(side)
-  assert.match(text, /\[s\] Settings[\s\S]*\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[v\] Save game[\s\S]*\[r\] Restart/)
+  assert.match(text, /\[s\] Settings[\s\S]*\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[v\] Save game[\s\S]*\[w\] Watch last battle[\s\S]*\[r\] Restart/)
   assert.match(text, new RegExp(CONTROLS_DESCRIPTION))
 })
 
@@ -349,7 +350,7 @@ test("the page is one table: every situation, every line fits at the floor, and 
   const sections = controlsPage()
   assert.deepEqual(
     sections.map((section) => section.heading),
-    ["THE MENU", "THE MAP", "THE GROUND", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "THE DIALOG", "SAVE GAME", "ANY LIST", "THE MOUSE", "THE BATTLE ROUND", "ANYWHERE"],
+    ["THE MENU", "THE MAP", "THE GROUND", "PLACING A BUILDING", "EXPLORE MAP", "THE RALLY POINT", "POPUPS", "THE DIALOG", "SAVE GAME", "ANY LIST", "THE MOUSE", "THE BATTLE ROUND", "ANYWHERE"],
   )
   for (const size of SIZES) {
     const side = buildSide({ terminal: size })

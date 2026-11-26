@@ -74,7 +74,8 @@ function handoffFlight(input: BuildCompositionInput): Flight | null {
   const { state, layout } = input
   const flight = input.handoffFlight
   if (flight === undefined || state.committed) return null
-  if (state.focus !== "map" || state.popup !== null) return null
+  // Start sends the focus arrow to the rally point, which is the cursor while it is placed (`BannerClock` times it).
+  if (state.popup !== "banner-place" && (state.focus !== "map" || state.popup !== null)) return null
   const range = visibleRange(state.camera, state.viewport)
   const cursor = input.cursor ?? state.cursor
   if (!inView(range, cursor)) return null

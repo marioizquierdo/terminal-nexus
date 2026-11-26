@@ -119,7 +119,7 @@ export const ACTIVITY_EVENTS = {
     defaultLevel: "info",
     description: "A popup opened over the Build Phase.",
     props: {
-      popup: { type: "string", description: "Which: nexus-powers, battle-round, game-menu, settings, export, controls, activity-logs, message, dialog, save-game, note, banner-place, banner-stance." },
+      popup: { type: "string", description: "Which: nexus-powers, battle-round, game-menu, settings, export, controls, activity-logs, message, dialog, save-game, note, banner-place (the rally point being moved)." },
     },
   },
   "game.save": {

@@ -25,7 +25,8 @@ import { DEFENCE_KEYS } from "./pulse-helpers.ts"
 
 
 /** The title row's clock, whatever styling sits between the words and the time. */
-const timerAt = (write: string): string | undefined => new RegExp(`BATTLE ROUND 1(?:${ESC}\\[[0-9;]*m)* +(\\d:\\d\\d)`).exec(write)?.[1]
+// The timer may carry its own style between the title and its digits: it flashes in the first and last seconds.
+const timerAt = (write: string): string | undefined => new RegExp(`BATTLE ROUND 1(?:${ESC}\\[[0-9;]*m| )+(\\d:\\d\\d)`).exec(write)?.[1]
 
 const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, colors: "monochrome" }
 
@@ -280,6 +281,8 @@ test("the live loop plays a Battle Round on its own clock: timer, last seconds, 
   const exits: number[] = []
   void runBuildPhase({
     settings: TEST_SETTINGS,
+    // Next round on manual: the result stays until a key (the default goes straight on).
+    experiments: { nextRound: "key" },
     scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,

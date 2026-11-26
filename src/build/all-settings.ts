@@ -86,7 +86,7 @@ type Description = Readonly<{
 type SettingSpec = Readonly<{ default: Value; unit?: Unit }> &
   (Readonly<{ tier: "tuned" } & Partial<Description>> | (Readonly<{ tier: "player" | "experiment" }> & Description))
 
-const NEXT_ROUND = ["key", "auto"] as const
+const NEXT_ROUND = ["straight", "key", "auto"] as const
 const POWER_PICK = ["optional", "required"] as const
 
 /** How a building's units leave its roof (`roofExit`): along their route, or to the nearest open ground. */
@@ -347,10 +347,11 @@ export const ALL_SETTINGS = {
     tier: "experiment",
     section: "mission",
     label: "Next round",
-    question: "After a round's result: wait for Enter, or begin the next Build Phase on its own a few seconds later.",
+    question: "When a fight stops: straight to the next Build Phase, or the result until Enter, or for a few seconds.",
     values: NEXT_ROUND,
-    names: { key: "manual", auto: "auto" },
-    default: "key",
+    names: { straight: "straight", key: "manual", auto: "auto" },
+    // The owner, 2026-11-25: "When the battle ends, it will be nice that it goes directly to build mode."
+    default: "straight",
   },
   /** How long a round's result stays before the next Build Phase begins on its own, when Next round is
    *  auto; a first guess. */
@@ -434,23 +435,38 @@ export const ALL_SETTINGS = {
     default: "route",
   },
 
-  // --- The battle banner (the challenge runs, step 11G) ----------------------------------------------------
-  // The owner, 2026-10-31: "I would actually like to test placing the banner on the map first, because the UX to do
-  // it is the big question ... if we can't, we will fallback to the stance." Start Battle Round shows the banner and
-  // its stance in the side panel, the camera on it; Change Target turns the cursor into the banner, with the march
-  // lines drawn to it; placing it asks aggressive or defensive. Off: the Battle Round confirmation as it was, and the
-  // troops head where the level sends them.
+  // --- The rally point (the owner, 2026-11-25, after playing the banner in a Skirmish) -------------------------
+  // The troops gather at the rally point and hold it (the owner settled it, 2026-11-26, with the stance folded into
+  // the rally point): nothing to choose. Owner's playtest feedback: docs/history/feedback/2026-11-25-rally-point.md.
 
-  /** Whether Start Battle Round goes through the banner — where the troops head, and whether they push on from
-   *  there or hold it — or straight to the old confirmation. First guess: on, so the owner feels it. */
-  battleBanner: {
+  /** How many arrows run along each side's route: the owner's "like 2 or 3 arrows". */
+  rallyArrowsCount: { tier: "tuned", default: 3 },
+
+  // --- Where the rally point starts (the owner, 2026-11-25, second playtest) ----------------------------------
+  // "Instead of by default having the rally at the enemy nexus, I think it would be better to have it 10% of the
+  // distance or 30% of the distance. So basically in front of your base ... I always start by leaving the units in
+  // front of the base so I can form an army." A Skirmish's rally point starts this far along the way from the
+  // player's Nexus to the enemy's (an open question between his two numbers; 100 is the enemy Nexus as before).
+
+  /** Where a Skirmish's rally point starts each battle, as a share of the way from your Nexus to the enemy's. The owner,
+   *  2026-11-25 after playing it: "30% looks good". */
+  rallyStart: {
     tier: "experiment",
     section: "mission",
-    label: "Battle banner",
-    question: "On: Start Battle Round shows the banner; move it, then choose aggressive or defensive. Off: the old popup.",
-    values: ["on", "off"],
-    default: "on",
+    label: "Rally point start",
+    question: "Where the rally point starts: this share of the way from your Nexus to the enemy's; 100 is their Nexus.",
+    values: [10, 20, 30, 100],
+    unit: "percent",
+    default: 30,
   },
+
+  // --- Fast forward (the owner, 2026-11-25, F339) -------------------------------------------------------------
+  // "if I am playing defensive, the unit groups arrive at the rally point, and nothing happens until the round ends.
+  // The game should fast forward to the end of the round." Once a round has settled (`src/view/fast-forward.ts`), it
+  // plays this many times faster until its last seconds, labelled, any key back to normal speed (his choice).
+
+  /** How many times faster a settled Battle Round plays: the owner's "about 8x". */
+  fastForwardSpeed: { tier: "tuned", unit: "count", default: 8 },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 
 // --- Names, values and tiers, as types --------------------------------------------------------------

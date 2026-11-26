@@ -142,7 +142,6 @@ export function menuRowActive(context: BuildContext, state: BuildState, entry: n
  */
 const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
   "nexus-powers": "nexus",
-  "battle-round": "start",
   "game-menu": null,
   settings: null,
   export: null,
@@ -153,7 +152,6 @@ const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
   "save-game": null,
   note: null,
   "banner-place": "start",
-  "banner-stance": "start",
 }
 
 /**

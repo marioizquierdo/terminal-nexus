@@ -593,16 +593,53 @@ the game menu opening over it. Its design is in the runs' history ([`challenge-r
 
 ### A panel over the menu
 
-A popup may dock over the side panel instead of the map, when what it is about is on the map: the Battle Round panel, moving the banner, choosing the stance. It runs from the rule under the top bar down to the rule over the bottom bar, its shadow on that rule. Rows that do not fit are left off from the end, so such a panel puts its actions before anything that can be dropped. Esc goes back one panel at a time. (GUIDANCE — `tests/battle-banner.test.ts`)
+A popup may dock over the side panel instead of the map, when what it is about is on the map: the Battle Round panel. It runs from the rule under the top bar down to the rule over the bottom bar, its shadow on that rule. Rows that do not fit are left off from the end, so such a panel puts its actions before anything that can be dropped. Esc goes back one panel at a time. (GUIDANCE — `tests/battle-banner.test.ts`)
 
-### The battle banner
+### The rally point
 
-Behind the **Battle banner** Experiment (on by default; off keeps the centred start popup). Starting the Battle Round (`s`, or the menu's Start row) centres the camera on the banner and docks a panel: "Start Battle Round 2.", the Target and the Stance, then `[t] Change Target` and `[s] Start Battle`.
-- **The default banner** is the enemy Nexus, aggressive, where the map has one; otherwise the level's own target (PERIMETER's line, defensive, as its troops hold it today), or "the nearest enemy". Planting back on the default with the default stance clears the order, so the round plays as before.
-- **Change Target** makes the cursor the banner (`!`, `⚑` with Unicode symbols), pulsing on 500 ms beats; the arrows and the mouse move it. The panel and the bottom line say "[enter] Place Target on <spot>": a structure ("the enemy Nexus", "your Barracks"), a named place ("the line"), or ground and what it is near ("ground near resources", "ground near the enemy base", "open ground").
-- **Lines** run to it in the player's colour, from the Nexus and from the Commander, walked on the routing field round terrain and every standing or planned structure (the route with nobody in the way). Rock, ground with no footing, or anywhere troops could not get is refused: the tile flashes, the line turns red and the panel says why.
-- **Planting** (Enter, Space, the panel row, or a second click on the same tile) opens a ring outward from the banner and asks `[a] Aggressive — Keep pushing on` or `[d] Defensive — Hold position`. Aggressive adds a fainter line from the banner on to the enemy.
-- The banner carries to the next round until moved; outside the panels a moved banner stays as a dim mark. Under reduced motion the ring is skipped and the pulse holds. (GUIDANCE — `tests/battle-banner.test.ts`)
+The rally point is where the troops head and hold; the banner is the flag drawn there (`!`, `⚑` with Unicode symbols).
+Start Battle Round (`s`, or the menu's Start row) sends the focus arrow from its row to the rally point, where it stood
+last or on the round's default, and centres the camera on it. No panel opens.
+- **The default** in a Skirmish is in front of your base: the **Rally point start** Experiment's share of the way from
+  your Nexus to the enemy's (20% by default; 100 is the enemy Nexus), on open ground. Placing it back there keeps it.
+- **The call**: as the focus arrow lands, the movement keys' four arrows stand round the flag, or round the building
+  it is on, each pointing away from it the way its key moves it (`^ v < >`; `▲ ▼ ◀ ▶` with Unicode symbols), bold in the
+  player's colour. Three times the flag lights, then the arrows a moment after it, then both go dark, so the light seems
+  to run outward and asks for the keys. Reduced motion: no flight, the arrows stand still, nothing flashes.
+- **The bottom line** says `[arrows] Set Rally Point. [enter] Start battle.` and names no place. A refused spot (rock,
+  ground with no footing, no way there from your Nexus round the rock) says only why, and Enter does nothing there.
+- **The reminder**: left unmoved for a second, the arrows flash again, then the line's keys flash (`[      ]` on the off
+  beats), every five seconds, never while the player moves it.
+- **Placing it**: Enter, Space, `s`, the Start row or a second click places it and starts the round. Esc, `x`,
+  Backspace or a right click goes back with nothing changed; the top bar says `back [esc]`. The troops hold it.
+- **On a building** its glyphs hide the flag, so the whole building takes the rally point's look, its glyphs kept.
+- **One line** runs to it from the player's Nexus, in the player's colour, round rock only and straight through every
+  building, the player's and the enemy's, standing or planned (`src/match/rally.ts`, shared with the Battle Round's
+  arrows).
+- The rally point carries to the next round until moved. (GUIDANCE — `tests/battle-banner.test.ts`)
+
+### Between rounds
+
+- **Enter begins the Battle Round with its prelude**: the cursor is hidden, both sides' arrows run at once from each
+  Nexus to its rally point, each flag showing for a second; the enemy's new buildings and units come in one by one with
+  the placement animation, nearest their Nexus first, 200 ms apart (`src/view/prelude.ts`), and a clash (both sides on
+  the same ground) plays first, thrown down with the removal sparks. The round's timer starts after it: from Enter to
+  the fight's first tick takes at most 2.7 seconds, none with nothing new. (GUIDANCE — `tests/prelude.test.ts`)
+- **Fast forward**: once a round has settled (no hit of either side to its end, and the units close to where they end:
+  at least half exactly there, the rest within a tile, no more than two within two tiles; checked once an in-game
+  second), it plays at the `fastForwardSpeed` tuned value (8x) until its last seconds, the panel saying `Fast forward`
+  beside the speed and the bottom line why and the way back. Any key or click returns it to normal speed for the rest of
+  the round, and the key still does its own work; Replay plays it fast again. Never in the fight's first or last
+  seconds, the prelude or the result. Presentation only. (GUIDANCE — `tests/fast-forward.test.ts`)
+- **The fight's first seconds** take the same light round the map's border and timer flash as its last.
+- **Straight on** (the **Next round** Experiment, `straight` by default): when a round's fight stops and the battle goes
+  on, the next Build Phase opens at once, its opening showing the survivors regroup; no result to close. A battle won or
+  lost always stops on its result. `manual` shows every round's result until Enter; `auto` for a few seconds. The next
+  round opens on what the last one took away: "Lost in the battle: a Barracks, 2 Turret." and, for a clash, one line
+  with the refund. (GUIDANCE — `tests/next-round-straight.test.ts`, `tests/round-losses.test.ts`)
+- **Watch last battle** (`w` in the game menu) plays the last Battle Round again from its start, prelude included; its
+  result says it is a replay and `[enter] Build Phase` comes back to the Build Phase as it stood. Dimmed, saying why,
+  until a round has ended.
 
 ## The bottom line
 

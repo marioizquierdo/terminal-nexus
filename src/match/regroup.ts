@@ -18,16 +18,20 @@
 // - **The step back, 2 seconds** (`STEP_BACK_TICKS`): a survivor in a fight — an enemy unit or building within
 //   `FIGHT_REACH` of it — walks toward its own Nexus. One not in a fight stands.
 // - **The formation, 6 seconds** (`FORM_TICKS`), then **2 seconds standing formed** (`STAND_TICKS`), in which the
-//   slowest still walk in. Each side forms up across its march line — from its Commander while she stands on the battlefield,
-//   else from its own Nexus, toward the enemy's Nexus (the guide line, movement.md) — in ranks across the line's main
-//   axis, the front rank where the side's front stands after stepping back (where its first rank's worth of units
-//   stands, so a straggler left forward does not pull the rest up to it): by the formation's priority list (movement.md,
+//   slowest still walk in. **Each side forms up on its rally point, or falls back to it, facing the enemy** (the owner,
+//   2026-11-26, F337: "The formation should be facing the enemy, not necesarily the lines towards the banner"): in ranks
+//   across a line from its rally point (its target, `MatchState.targets`; with none, from its Commander while she stands
+//   on the battlefield, else its own Nexus) toward the enemy it faces — the middle of the enemy's surviving fighting units
+//   nearest the rally point, those within `ARMY_REACH` of the nearest; else the enemy's Nexus; with neither, the line
+//   runs from the Commander (else the Nexus) to the rally point, or the battlefield's middle — along the line's main
+//   axis. The front rank stands where the side's front stands after stepping back (where its first rank's worth of units
+//   stands, so a straggler left forward does not pull the rest up to it), but never past the rally point: a side that
+//   fought past it (nearer the enemy along that line) falls back, its front rank on the rally point's middle; one short of
+//   it forms where it stands and marches on next round. The ranks go by the formation's priority list (movement.md,
 //   troop formation) front to back — flankers, melee, ranged, shorter range first, tank to siege — and units with no
-//   attack behind; the Commander takes the place her attack gives her. A side whose level names a target for it
-//   (a story's automatic target) forms up on the line to that target instead, and one with no enemy Nexus to face
-//   on the line to the battlefield's middle; a side with neither a Commander nor a Nexus of its own (a mission's raid) has no
-//   line, and its survivors stand where the round left them. Survivors more than `BEHIND` columns behind
-//   that front (units that never left the base) form a group of their own where their own front stands. Each slot is
+//   attack behind; the Commander takes the place her attack gives her. A side with neither a Commander nor a Nexus of
+//   its own (a mission's raid) has no line, and its survivors stand where the round left them. Survivors more than
+//   `BEHIND` columns behind that front (units that never left the base) form a group of their own where they stand. Each slot is
 //   claimed on free ground (`nearestFit`), never within `KEEP_APART` of a slot the enemy claimed, and two facing fronts
 //   are held `FRONT_GAP` columns apart; a slot is given to the unit whose place across the line is nearest it, so the
 //   ranks form without crossing.
@@ -134,30 +138,78 @@ function lineAcross(line: Line, forward: number): number {
   return Math.floor(half / 2 + 0.5)
 }
 
-/** A side's line: from its Commander while she stands on the battlefield (on the ground), else from its own Nexus, to the
- *  middle of its target when its level names one (`MatchState.targets`), else of the enemy's Nexus, else (a mission's
- *  raid has none) of the battlefield, so an army with no enemy base to face forms up facing out from its own; along the axis it
- *  runs further on, a row counting two columns. `null` for a side with neither a Commander nor a Nexus on the battlefield. */
-function lineOfSide(state: MatchState, definitionOf: Definitions, player: PlayerId): Line | null {
-  const commander = state.entities.find((entity) => entity.player === player && definitionOf(entity).commander === true && definitionOf(entity).layer !== "air")
-  const own = state.entities.find((entity) => entity.player === player && definitionOf(entity).nexus === true)
-  const enemy = state.entities.find((entity) => entity.player !== player && definitionOf(entity).nexus === true)
-  const area = state.targets?.[player]
-  const start = commander ?? own
-  if (start === undefined) return null
-  const from = middleOf(start.anchor, definitionOf(start).footprint)
-  const to =
-    area !== undefined
-      ? { x: 2 * area.x + area.width - 1, y: 2 * area.y + area.height - 1 }
-      : enemy !== undefined
-        ? middleOf(enemy.anchor, definitionOf(enemy).footprint)
-        : { x: state.terrain.width - 1, y: state.terrain.height - 1 }
+/** The line from `from` to `to` (half tiles), along the axis it runs further on, a row counting two columns; `null`
+ *  when the two are one point. */
+function lineBetween(from: Coord, to: Coord): Line | null {
   if (to.x === from.x && to.y === from.y) return null
   const dx = to.x - from.x
   const dy = to.y - from.y
   // A row is two columns: the line runs along x while it covers as much ground across as down.
   if (Math.abs(dx) >= 2 * Math.abs(dy)) return { axis: "x", way: dx >= 0 ? 1 : -1, from, to }
   return { axis: "y", way: dy >= 0 ? 1 : -1, from, to }
+}
+
+/** How near (the battlefield's distance) an enemy unit must stand to the nearest one to be of its army: an engagement's
+ *  reach (`ENGAGEMENT_REACH`, `src/battle/reading/engagements.ts`), the reach army groups will be read by. */
+export const ARMY_REACH = 5
+
+/** The battlefield's distance between two points in half tiles, doubled: a row counts two columns. */
+const halfDistance = (a: Coord, b: Coord): number => Math.abs(a.x - b.x) + 2 * Math.abs(a.y - b.y)
+
+/**
+ * **The enemy a side faces** (the owner, 2026-11-26: "The formation should be facing the enemy, not necesarily the lines
+ * towards the banner"), in half tiles: the middle of the enemy's surviving fighting units nearest `from` — the nearest
+ * (every one as near, so no order picks between them) and each within `ARMY_REACH` of one of those — else the middle of
+ * the enemy's Nexus; `null` with neither (a mission whose raid is cleared). A mean, not rounded: a mirrored battlefield
+ * gives the mirrored point.
+ */
+function enemyOf(state: MatchState, definitionOf: Definitions, player: PlayerId, from: Coord): Coord | null {
+  const fighters = state.entities.filter((entity) => {
+    const definition = definitionOf(entity)
+    return entity.player !== player && definition.layer !== "obstacles" && definition.movementRate !== undefined && definition.attack !== undefined
+  })
+  if (fighters.length > 0) {
+    const middles = fighters.map((entity) => middleOf(entity.anchor, definitionOf(entity).footprint))
+    const nearest = Math.min(...middles.map((middle) => halfDistance(middle, from)))
+    const firsts = middles.filter((middle) => halfDistance(middle, from) === nearest)
+    // Within reach of one of the nearest: `ARMY_REACH` tiles is twice as many half tiles.
+    const army = middles.filter((middle) => firsts.some((first) => halfDistance(middle, first) <= 2 * ARMY_REACH))
+    return { x: army.reduce((sum, middle) => sum + middle.x, 0) / army.length, y: army.reduce((sum, middle) => sum + middle.y, 0) / army.length }
+  }
+  const nexus = state.entities.find((entity) => entity.player !== player && definitionOf(entity).nexus === true)
+  return nexus === undefined ? null : middleOf(nexus.anchor, definitionOf(nexus).footprint)
+}
+
+/** A side's formation line, and its rally point when it has one: where the formation's front stands at the furthest. */
+type SideLine = Readonly<{ line: Line; rally: Coord | null }>
+
+/**
+ * **A side's line, facing the enemy** (F337): from its rally point — the middle of its target when its plan or level
+ * names one (`MatchState.targets`) — else from its Commander while she stands on the battlefield (on the ground), else
+ * from its own Nexus, toward the enemy it faces (`enemyOf`, read from there). Where that enemy stands on the rally point
+ * itself, toward it from the side's own Nexus; with no enemy to face, from the Commander (else the Nexus) to the rally
+ * point (else the battlefield's middle). `null` for a side with neither a Commander nor a Nexus on the battlefield
+ * (a mission's raid, whatever its target), or nothing to face.
+ */
+function lineOfSide(state: MatchState, definitionOf: Definitions, player: PlayerId): SideLine | null {
+  const commander = state.entities.find((entity) => entity.player === player && definitionOf(entity).commander === true && definitionOf(entity).layer !== "air")
+  const own = state.entities.find((entity) => entity.player === player && definitionOf(entity).nexus === true)
+  const area = state.targets?.[player]
+  const start = commander ?? own
+  // A mission's raid, with neither, has no line: its survivors stand where the round left them, as before rally points.
+  if (start === undefined) return null
+  const rally = area === undefined ? null : { x: 2 * area.x + area.width - 1, y: 2 * area.y + area.height - 1 }
+  const from = rally ?? middleOf(start.anchor, definitionOf(start).footprint)
+  const enemy = enemyOf(state, definitionOf, player, from)
+  const origin = middleOf(start.anchor, definitionOf(start).footprint)
+  // Nothing to face (a mission's raid cleared, no enemy Nexus): the line from the Commander, else the Nexus, to the
+  // rally point, or with none to the battlefield's middle, so an army forms up facing out from its base, as before.
+  if (enemy === null) {
+    const line = lineBetween(origin, rally ?? { x: state.terrain.width - 1, y: state.terrain.height - 1 })
+    return line === null ? null : { line, rally }
+  }
+  const line = lineBetween(from, enemy) ?? (own === undefined ? null : lineBetween(middleOf(own.anchor, definitionOf(own).footprint), enemy))
+  return line === null ? null : { line, rally }
 }
 
 /** A unit's place in the formation's order, front first: the priority list (`formationRank`, movement.md, troop
@@ -266,7 +318,8 @@ export function regroup(state: MatchState, registry: ContentRegistry, sides?: Re
     return ground
   }
 
-  const lines = new Map<PlayerId, Line | null>(players.map((player) => [player, lineOfSide(state, definitionOf, player)]))
+  const sideLines = new Map<PlayerId, SideLine | null>(players.map((player) => [player, lineOfSide(state, definitionOf, player)]))
+  const lines = new Map<PlayerId, Line | null>(players.map((player) => [player, sideLines.get(player)?.line ?? null]))
   const orderOf = new Map<PlayerId, readonly Direction[]>(players.map((player) => [player, stepOrder(lines.get(player) ?? null)]))
 
   const credit = new Map<number, number>(walkers.map((walker) => [walker.ordinal, 0]))
@@ -377,19 +430,39 @@ export function regroup(state: MatchState, registry: ContentRegistry, sides?: Re
   )
 
   // 2. The formation: each side's groups and their slots, from where everyone stands after the step back.
-  type Group = Readonly<{ player: PlayerId; line: Line; front: number; members: readonly EntityState[] }>
+  // A side with a rally point forms up on it, or falls back to it when it fought past it (F337): its front stands
+  // where its first rank's worth stands, never further forward than the rally point's middle (of two middle tiles,
+  // the one further back). Past it is nearer the enemy along the line toward the enemy.
+  // `across`, when set, is where across the line the ranks are centred: on the rally point when the front stands on
+  // it; else (an army still on its way there) on the middle of where the group stands; with no rally point, where the
+  // line from the Commander crosses the rank.
+  type Group = Readonly<{ player: PlayerId; line: Line; front: number; members: readonly EntityState[]; across?: number }>
   const groups: Group[] = []
   for (const player of players) {
-    const line = lines.get(player) ?? null
-    if (line === null) continue
+    const sideLine = sideLines.get(player) ?? null
+    if (sideLine === null) continue
+    const { line, rally } = sideLine
     const members = walkers.filter((walker) => walker.player === player)
     if (members.length === 0) continue
     const forward = (walker: EntityState): number => forwardOf(line, centreTile(at.get(walker.ordinal) as Coord, definitionOf(walker).footprint))
+    const across = (walker: EntityState): number => acrossOf(line, centreTile(at.get(walker.ordinal) as Coord, definitionOf(walker).footprint))
+    const rallyForward = rally === null ? null : Math.floor(((line.axis === "x" ? rally.x : rally.y) * line.way) / 2)
     const furthest = Math.max(...members.map(forward))
-    const main = members.filter((walker) => forward(walker) >= furthest - BEHIND)
-    const behind = members.filter((walker) => forward(walker) < furthest - BEHIND)
-    groups.push({ player, line, front: frontOf(main.map(forward)), members: main })
-    if (behind.length > 0) groups.push({ player, line, front: frontOf(behind.map(forward)), members: behind })
+    const reach = rallyForward === null ? furthest : Math.min(furthest, rallyForward)
+    const main = members.filter((walker) => forward(walker) >= reach - BEHIND)
+    const behind = members.filter((walker) => forward(walker) < reach - BEHIND)
+    const standing = frontOf(main.map(forward))
+    if (rallyForward === null) groups.push({ player, line, front: standing, members: main })
+    else if (standing >= rallyForward) groups.push({ player, line, front: rallyForward, members: main, across: lineAcross(line, rallyForward) })
+    else {
+      const acrosses = main.map(across)
+      groups.push({ player, line, front: standing, members: main, across: Math.floor((Math.min(...acrosses) + Math.max(...acrosses)) / 2 + 0.5) })
+    }
+    if (behind.length > 0) {
+      const acrosses = behind.map(across)
+      const centre = rallyForward === null ? {} : { across: Math.floor((Math.min(...acrosses) + Math.max(...acrosses)) / 2 + 0.5) }
+      groups.push({ player, line, front: frontOf(behind.map(forward)), members: behind, ...centre })
+    }
   }
   // Two main fronts that face each other along one axis are held `FRONT_GAP` clear columns apart, each giving back half.
   const mainA = groups.find((group) => group.player === "A")
@@ -417,7 +490,7 @@ export function regroup(state: MatchState, registry: ContentRegistry, sides?: Re
         a.ordinal - b.ordinal,
     )
     const width = rankWidth(sorted.length)
-    const across = lineAcross(line, group.front)
+    const across = group.across ?? lineAcross(line, group.front)
     const spacing = line.axis === "x" ? 1 : 2
     const places: Array<Readonly<{ member: EntityState; tile: Coord; order: number }>> = []
     for (let rank = 0; rank * width < sorted.length; rank += 1) {

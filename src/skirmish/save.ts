@@ -16,8 +16,8 @@ import { TERRAIN } from "../engine/geometry/types.ts"
 import type { Armies } from "../armies/index.ts"
 import { ARMIES } from "../armies/index.ts"
 import type { MatchState, TargetArea } from "../engine/state/types.ts"
-import type { BattleMap, BattleSetup, BattleState, Side, BuildActions } from "../battle/index.ts"
-import { BATTLE_MAPS, BATTLE_ROUND_TICKS, BATTLE_ROUNDS, battleArmy, battleTerrain, beginBattle, readBuildActions, scriptedName } from "../battle/index.ts"
+import type { BattleMap, BattleSetup, BattleState, Side, BuildActions, RallySpot, SideReport } from "../battle/index.ts"
+import { BATTLE_MAPS, BATTLE_ROUND_TICKS, BATTLE_ROUNDS, SIDES, battleArmy, battleTerrain, beginBattle, readBuildActions, scriptedName } from "../battle/index.ts"
 import { isObject, isWhole } from "../content/shape.ts"
 import { openBattle } from "./opening/open.ts"
 import type { SaveStart } from "./start.ts"
@@ -399,7 +399,11 @@ export function readSave(text: string, profiles: Profiles = NO_PROFILES): ReadSa
     else {
       for (const [slot, plan] of Object.entries(draft)) {
         if (!(SLOTS as readonly string[]).includes(slot)) problems.push(`draft.${slot}: the slots are ${SLOTS.join(" and ")}`)
-        else for (const problem of readBuildActions(plan).problems) problems.push(`draft.${slot}: ${problem}`)
+        else {
+          // A draft from before the rally point (its "stance", its "banner") is read in the new form, not refused.
+          const read = readBuildActions(plan)
+          for (const problem of read.problems) if (!read.retired.includes(problem)) problems.push(`draft.${slot}: ${problem}`)
+        }
       }
     }
   }
@@ -416,7 +420,39 @@ export function readSave(text: string, profiles: Profiles = NO_PROFILES): ReadSa
       }
     }
   }
-  return problems.length > 0 ? { save: null, problems } : { save: value as SaveFile, problems }
+  return problems.length > 0 ? { save: null, problems } : { save: withRallyPoints(value as SaveFile), problems }
+}
+
+/**
+ * **A save from before the rally point, read in the new form** (the owner, 2026-11-26: the stance goes, the rally point
+ * says where the troops go): each draft's `"stance"` and `"banner"` as its `"rally"` (`readBuildActions`), and each
+ * round's report's `stance` and `banner` as the rally point it played — `"attack"` the enemy's Nexus, `"hold"` the
+ * side's own, a banner its tile — with no clashes recorded. A save already in the new form is returned as it is.
+ */
+function withRallyPoints(save: SaveFile): SaveFile {
+  const oldPlan = (plan: unknown): boolean => isObject(plan) && ("stance" in plan || "banner" in plan)
+  const draft = save.draft
+  const drafts = draft !== undefined && Object.values(draft).some(oldPlan)
+  const history = save.state?.history ?? []
+  const reports = history.some((report) => !("clashes" in report) || SIDES.some((side) => !("rally" in report.sides[side])))
+  if (!drafts && !reports) return save
+  const reportRally = (side: Readonly<Record<string, unknown>>): RallySpot => {
+    if ("rally" in side) return side["rally"] as RallySpot
+    const banner = typeof side["banner"] === "string" ? /(\d+),(\d+)$/u.exec(side["banner"]) : null
+    if (banner !== null) return { x: Number(banner[1]), y: Number(banner[2]) }
+    return side["stance"] === "attack" ? "ENEMY_NEXUS" : "HOME_NEXUS"
+  }
+  const sideReport = (side: SideReport): SideReport => {
+    const { stance: _stance, banner: _banner, ...rest } = side as SideReport & { stance?: unknown; banner?: unknown }
+    return { ...rest, rally: reportRally(side as unknown as Readonly<Record<string, unknown>>) }
+  }
+  return {
+    ...save,
+    ...(drafts && draft !== undefined ? { draft: Object.fromEntries(Object.entries(draft).map(([slot, plan]) => [slot, oldPlan(plan) ? readBuildActions(plan).actions : plan])) } : {}),
+    ...(reports && save.state !== undefined
+      ? { state: { ...save.state, history: history.map((report) => ({ ...report, clashes: report.clashes ?? [], sides: { A: sideReport(report.sides.A), B: sideReport(report.sides.B) } })) } }
+      : {}),
+  }
 }
 
 // --- Writing -----------------------------------------------------------------------------------------------------------

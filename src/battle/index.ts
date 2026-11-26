@@ -20,6 +20,8 @@ export { restoredOf, roundOpening } from "./round-opening.ts"
 export type { Callup, Restored, RoundOpeningInput } from "./round-opening.ts"
 export { checkBuildActions, handOf, incomeOf, mapOf, musterOf, beginBattle, placementsOf, playRound, standingOf, titleOf, zonePoint } from "./round.ts"
 export { armyOf, battleArmy, loadoutOf, restrictedTo } from "./sides.ts"
+export { defaultRallyTile, nexusOf, rallyOf } from "./rally.ts"
+export type { RallyRead } from "./rally.ts"
 export type { BattleArmy } from "./sides.ts"
 
 /** A whole battle, each side's plans from its player, round by round until it ends. */

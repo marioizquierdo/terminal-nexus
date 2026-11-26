@@ -142,6 +142,8 @@ export function newSession(
     startPulse: mission.startPulse,
     nextRound: mission.nextRound,
     keep: mission.keep,
+    // Its screens are read at instants of the round's own clock (`at`): fast forward off (tests/fast-forward.test.ts).
+    fastForwardSpeed: 1,
     ...(onQuit === undefined ? {} : { onQuit }),
   })
   return { build, context, layout, mission }
@@ -192,5 +194,5 @@ export function atHome(played: Pick<Played, "build">): void {
   const pulse = played.build.pulse
   assert.ok(pulse !== null, "there is no Pulse on screen")
   played.build.advance(0)
-  played.build.advance(pulse.times.homeMs + 100)
+  played.build.advance(pulse.prelude.lengthMs + pulse.times.homeMs + 100)
 }

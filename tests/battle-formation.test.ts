@@ -26,7 +26,7 @@ const anchorsOf = (report: RoundReport, side: "A" | "B"): Coord[] =>
 /** Two rounds of a side building `count` then `more` of `building` forward by `formation`, both sides alike, holding
  *  through a battle too short to reach anything, so the first round's buildings stand in the second. */
 function twoRounds(commander: string, building: string, formation: Formation): RoundReport[] {
-  const plan = (count: number): BuildActions => ({ power: 0, build: Array.from({ length: count }, () => ({ building, at: "forward" as const })), formation, stance: "hold" })
+  const plan = (count: number): BuildActions => ({ power: 0, build: Array.from({ length: count }, () => ({ building, at: "forward" as const })), formation, rally: "HOME_NEXUS" })
   let state: BattleState = beginBattle({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 24, commanders: { A: commander, B: commander } })
   const reports: RoundReport[] = []
   for (const count of [3, 5]) {
@@ -114,10 +114,10 @@ test("zones is how every plan placed before formations: the same battle, buildin
 })
 
 test("a model's plan states a formation, read like any other field, and the brief says what a formation wins and loses", () => {
-  const read = readBuildActions('{"power": 0, "build": ["den"], "formation": "apart", "stance": "attack"}')
-  assert.deepEqual(read.actions, { power: 0, build: [{ building: "den" }], formation: "apart", stance: "attack" })
+  const read = readBuildActions('{"power": 0, "build": ["den"], "formation": "apart", "rally": "ENEMY_NEXUS"}')
+  assert.deepEqual(read.actions, { power: 0, build: [{ building: "den" }], formation: "apart", rally: "ENEMY_NEXUS" })
   assert.deepEqual(read.problems, [])
-  const wrong = readBuildActions('{"build": [], "formation": "tight", "stance": "hold"}')
+  const wrong = readBuildActions('{"build": [], "formation": "tight", "rally": "HOME_NEXUS"}')
   assert.equal(wrong.actions.formation, undefined)
   assert.deepEqual(wrong.problems, ['"formation" should be "block", "apart", "zones"; each building goes where its "at" says'])
   const brief = briefOf(beginBattle({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" } }), "A")
