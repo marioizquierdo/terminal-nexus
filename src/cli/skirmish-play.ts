@@ -422,7 +422,10 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
       }
       // Nobody walks home: the survivors stand where the shooting stopped, and regroup in the next Build Phase. Once the
       // battle is over nothing regroups; its end, settled where everyone stands, is what the result shows.
-      const resolved: ResolvedPulse = { timeline, regroup: played.regroup ?? standDown(final, registry, sides), nexus: nexusTile(context), mission, enemy: "enemy", ...(spectating(setup) ? { watched: { A: shortName(setup.slots.p1.commander), B: shortName(setup.slots.p2.commander) } } : {}) }
+      const resolved: ResolvedPulse = { timeline, regroup: played.regroup ?? standDown(final, registry, sides), nexus: nexusTile(context), mission, enemy: "enemy",
+        // The buildings both plans put on the same ground: the screen throws them down before the fight (`prelude.ts`).
+        ...(played.report.clashes.length === 0 ? {} : { clashes: played.report.clashes }),
+        ...(spectating(setup) ? { watched: { A: shortName(setup.slots.p1.commander), B: shortName(setup.slots.p2.commander) } } : {}) }
       PLAYED.set(resolved, { battle: next, report: played.report, regroup: played.regroup })
       return resolved
     },

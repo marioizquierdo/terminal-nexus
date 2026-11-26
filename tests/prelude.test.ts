@@ -29,6 +29,11 @@ import { PulsePresenter } from "../src/view/pulse-live.ts"
 import type { ResolvedPulse } from "../src/view/pulse-live.ts"
 import type { KnownMap } from "../src/view/prelude.ts"
 import { REVEAL_SPAN_MS, REVEAL_STEP_MS, newEnemies, preludeAt, preludePlan } from "../src/view/prelude.ts"
+import { readFileSync } from "node:fs"
+import { readBuildActions } from "../src/battle/index.ts"
+import { planOnRound, playedOf, skirmishLevel } from "../src/cli/skirmish-play.ts"
+import { readSave } from "../src/skirmish/save.ts"
+import { readProfiles } from "../src/skirmish/profile-files.ts"
 
 /** Round 1 of a Skirmish on the Crossing, nothing built by the player: the enemy's script builds its first buildings. */
 function round(): Readonly<{ context: BuildContext; resolved: ResolvedPulse; known: KnownMap }> {
@@ -113,6 +118,36 @@ test("the prelude changes nothing the round did", () => {
     presenter.frame({ colors: "truecolor", reducedMotion: false })
   }
   assert.deepEqual(ROUND.resolved.timeline.states.map((state) => hashState(state)), hashes)
+})
+
+test("a Skirmish's clash plays in the prelude: the round's report handed on, the building thrown down before the fight", { timeout: 120_000 }, () => {
+  // Round 7, Vasse against the agro script: the plan's Turret at 22,16 is where the enemy builds this round
+  // (tests/round-losses.test.ts).
+  const profiles = readProfiles()
+  const read = readSave(readFileSync(new URL("./fixtures/clash-turret.save.json", import.meta.url), "utf8"), profiles)
+  assert.ok(read.save !== null, read.problems.join("; "))
+  const level = skirmishLevel(read.save, {}, { profiles })
+  const context = withoutScene(level.firstRound())
+  const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
+  const opened = createBuildState(context, nexusTile(context) ?? { x: 0, y: 0 }, viewport)
+  const plan = readBuildActions(read.save.draft?.p1 ?? {}).actions
+  const planned = planOnRound(context, opened, plan, level.play.keep as NonNullable<typeof level.play.keep>)
+  const resolved = level.play.startPulse(planned.context, planned.state)
+  assert.ok(resolved !== null)
+  const played = playedOf(resolved)
+  assert.ok(played !== undefined && played.report.clashes.length > 0, "the fixture no longer clashes")
+  assert.deepEqual(resolved.clashes, played.report.clashes, "the report's clashes were not handed on")
+  const known: KnownMap = { standing: planned.context.standing, field: planned.context.field ?? [], incoming: planned.context.incoming ?? [] }
+  const presenter = new PulsePresenter(resolved, undefined, { known })
+  const clashSteps = presenter.prelude.steps.filter((each) => each.kind === "clash")
+  assert.deepEqual(clashSteps.map((each) => [each.player, each.contentId, each.anchor]), played.report.clashes.map((clash) => [clash.side, clash.contentId, clash.anchor]))
+  assert.ok(presenter.prelude.lengthMs > 0)
+  // Thrown down with sparks as the round begins, before the fight's first tick.
+  presenter.advance(0)
+  presenter.advance(clashSteps[0]!.atMs + 50)
+  assert.equal(presenter.timeMs, 0)
+  const frame = presenter.frame({ colors: "truecolor", reducedMotion: false })
+  assert.ok((frame.prelude?.effects.length ?? 0) > 0, "no sparks where the clash was")
 })
 
 test("the clashes hook: each clash goes first, standing until its turn, then thrown down with sparks", () => {

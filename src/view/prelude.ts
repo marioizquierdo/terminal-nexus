@@ -11,11 +11,10 @@
 // closer together when there are many, so the reveals never take longer than `REVEAL_SPAN_MS` to start. The fight's
 // clock starts when the last one has settled. Nothing new: no prelude, the fight starts at once.
 //
-// **Clashes** (both sides built on the same ground, so neither stands: `RoundReport.clashes`, another change in
-// flight). HOOK: `ResolvedPulse.clashes` takes them; each plays first, in the order given, as a building of its side
-// still standing on the map and then thrown down with the removal's sparks (`removalSchedule`). Nothing supplies them
-// yet: the shell that builds a `ResolvedPulse` (`src/cli/pulse-run.ts`, `src/cli/skirmish-play.ts`) passes the round
-// report's clashes when they exist.
+// **Clashes** (both sides built on the same ground, so neither stands: `RoundReport.clashes`, handed on as
+// `ResolvedPulse.clashes` by the Skirmish's `startPulse`, `src/cli/skirmish-play.ts`): each plays first, in the order
+// given, as a building of its side still standing on the map and then thrown down with the removal's sparks
+// (`removalSchedule`). A story mission's rounds have none.
 //
 // Presentation only: worked out from the resolved round's opening state and the Build Phase's map, it changes nothing
 // the round did — a match resolves the same with the renderer deleted. Pure in time: `preludeAt` reads only the plan

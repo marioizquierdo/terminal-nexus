@@ -65,8 +65,8 @@ export type ResolvedPulse = Readonly<{
   /** Both sides' names when nobody at the screen plays either (a Skirmish watched, two scripts): the Battle Round then
    *  says "Vasse" and "Averno" where it would say "yours" and "the enemy", and who won rather than VICTORY. */
   watched?: Readonly<Record<PlayerId, string>>
-  /** HOOK for the building clashes of the round (`RoundReport.clashes`: both sides built on the same ground, so neither
-   *  stands): each is thrown down, with the removal's sparks, at the start of the prelude. Nothing passes them yet. */
+  /** The building clashes of the round (`RoundReport.clashes`: both sides built on the same ground, so neither stands),
+   *  as the Skirmish hands them on: each is thrown down, with the removal's sparks, at the start of the prelude. */
   clashes?: readonly Clash[]
 }>
 
