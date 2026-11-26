@@ -6,6 +6,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { buildLayout } from "../src/build/layout.ts"
+import { bannerSpot } from "../src/build/banner.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
 import { createBuildState, nexusTile, withoutScene } from "../src/build/state.ts"
 import type { BattleState, BuildActions, RoundReport } from "../src/battle/index.ts"
@@ -90,15 +91,23 @@ test("no rally point: the default in front of the base, the tile the Skirmish sc
   assert.deepEqual(context.bannerDefault?.tile, round.report.sides.A.rally, "the screen's default rally point is not the battle's")
 })
 
-test("a rally point the troops cannot stand on is refused and said; they rally at the default", { timeout: 60_000 }, () => {
+test("a rally point off the battlefield is refused and said, the troops at the default; one on rock goes to its nearest open ground", { timeout: 60_000 }, () => {
   const offMap = roundWith({ x: 500, y: 3 })
   assert.deepEqual(offMap.report.sides.A.rally, { x: 24, y: 14 })
   assert.ok(offMap.report.sides.A.refused.some((line) => line.startsWith("rally point at 500,3: off the battlefield")), offMap.report.sides.A.refused.join("; "))
-  // The Crossing's ridge: rock down the middle column.
+  // The Crossing's ridge: rock down the middle column. Re-pinned for F338 (the owner, 2026-11-26: "even if we did [allow
+  // the rally point on a rock], the units should still walk towards the intended location"): it was the default in
+  // front of the base, it is now the nearest open ground, and the troops march there.
   const rock = roundWith({ x: 35, y: 0 })
-  assert.deepEqual(rock.report.sides.A.rally, { x: 24, y: 14 })
-  assert.ok(rock.report.sides.A.refused.some((line) => line.startsWith("rally point at 35,0: rock")), rock.report.sides.A.refused.join("; "))
-  assert.match(roundLines(rock.report).join("\n"), /rally point 24,14/u)
+  assert.deepEqual(rock.report.sides.A.rally, { x: 34, y: 0 })
+  assert.ok(rock.report.sides.A.refused.some((line) => line.startsWith("rally point at 35,0: rock") && line.endsWith("the nearest open ground, 34,0")), rock.report.sides.A.refused.join("; "))
+  assert.match(roundLines(rock.report).join("\n"), /rally point 34,0/u)
+  // Its area is clipped to four open tiles by the rock and the battlefield's edge, so the troops gather round it: every
+  // one within five tiles of it, none left at home.
+  const area = rock.start.targets?.A as TargetArea
+  const own = rock.fighters(rock.final)
+  const near = (tile: Readonly<{ x: number; y: number }>): boolean => tile.x >= area.x - 5 && tile.x < area.x + area.width + 5 && tile.y >= area.y - 5 && tile.y < area.y + area.height + 5
+  assert.ok(own.length > 0 && own.every((entity) => near(entity.anchor)), `not every fighting unit marched to the open ground beside the rock: ${own.map((entity) => `${entity.anchor.x},${entity.anchor.y}`).join(" ")}`)
 })
 
 test("a build file names its rally point, and says what is wrong with one it cannot read", () => {
@@ -236,4 +245,41 @@ test("a saved round keeps its rally point, and loading it reads it back", () => 
   const read = readSave(saveText(save))
   assert.deepEqual(read.problems, [])
   assert.deepEqual(read.save?.draft?.p1?.rally, FLANK)
+})
+
+// --- F338: the troops always march to the rally point --------------------------------------------------------------
+
+// The owner, 2026-11-26: "if the UX shows that I can place the banner, then the units should march towards the new
+// location". The Build Phase sees the battlefield as the last round left it; the enemy builds in secret and reveals with
+// the player. A rally point on the enemy's Nexus whose ring the enemy builds shut that same round was refused by the
+// round ("no ground to stand on there"), and the troops went to the default in front of their own base: they stayed
+// home (found on the Crossing, seed 1, turtle against Dob, round 7: 24 spots the screen took, every one refused).
+
+/** On Dob's Nexus on the Crossing (63,13, three wide and two tall): the Build Phase takes it on round 1. */
+const ON_THEIR_NEXUS = { x: 64, y: 13 }
+
+test("a rally point the enemy builds shut that round is still marched to: half the troops end at it", { timeout: 60_000 }, () => {
+  const { context, state: opened } = screenRound(null)
+  assert.equal(bannerSpot(context, opened, ON_THEIR_NEXUS).refusal, null, "the screen refuses the spot")
+  // The enemy, given the credits, builds Stashes (3 x 1) round its Nexus the same round: its ring has no open tile.
+  const begun: BattleState = beginBattle({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 360, commanders: { A: "vasse", B: "dob" } })
+  const battle: BattleState = { ...begun, sides: { ...begun.sides, B: { ...begun.sides.B, credits: 400 } } }
+  const ring = [[62, 12], [65, 12], [62, 15], [65, 15], [60, 13], [60, 14], [66, 13], [66, 14]] as const
+  const A: BuildActions = { power: 0, build: [{ building: "barracks", at: "forward" }, { building: "barracks", at: "forward" }], rally: ON_THEIR_NEXUS }
+  const B: BuildActions = { power: 0, build: ring.map(([x, y]) => ({ building: "stash", x, y })), rally: "HOME_NEXUS" }
+  let registry: ContentRegistry | null = null
+  let start: MatchState | null = null
+  let final: MatchState | null = null
+  const { report } = playRound(battle, { A, B }, (each, _events, _registry, sides) => {
+    registry = sides.A
+    start ??= each
+    final = each
+  })
+  assert.equal(report.sides.B.built.length, ring.length, `the enemy did not build its ring shut: ${report.sides.B.refused.join("; ")}`)
+  assert.deepEqual(report.sides.A.rally, ON_THEIR_NEXUS, `the round refused the spot: ${report.sides.A.refused.join("; ")}`)
+  const area = (start as unknown as MatchState).targets?.A as TargetArea
+  assert.deepEqual(area, { x: 62, y: 12, width: 5, height: 4 }, "not the Nexus and a ring of one")
+  const fighters = (final as unknown as MatchState).entities.filter((entity) => entity.player === "A" && followsTarget((registry as ContentRegistry).get(entity.contentId)))
+  const there = fighters.filter((entity) => at(area, entity.anchor)).length
+  assert.ok(fighters.length > 0 && there * 2 >= fighters.length, `only ${there} of ${fighters.length} fighting units reached the rally point`)
 })

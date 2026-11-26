@@ -1,12 +1,12 @@
 // **A battle's rally points** (the owner, 2026-11-26, F324): where each side's troops head for a Battle Round, read
 // from its plan (`BuildActions.rally`) on the battlefield as the round opens. A tile, the side's own Nexus or the
-// enemy's; absent or refused, the default in front of the side's base, the same tile the Skirmish screen starts the
+// enemy's; absent or off the battlefield, the default in front of the side's base, the same tile the Skirmish screen starts the
 // rally point on, so the `skirmish` command and the screen play one default. The area, the refusal and the route are
 // the rules layer's (`src/match/rally.ts`); this is where a battle's plan meets them.
 
 import { defaultValue } from "../build/all-settings.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import type { Coord } from "../engine/geometry/types.ts"
+import type { Coord, MapTerrain } from "../engine/geometry/types.ts"
 import { TERRAIN } from "../engine/geometry/types.ts"
 import type { MatchState, TargetArea } from "../engine/state/types.ts"
 import { isRallyPlace, rallyArea, rallyGroundOf, rallyRefusal, rallyWords, ringedArea } from "../match/rally.ts"
@@ -48,6 +48,12 @@ export function defaultRallyTile(
   const from = middleOf(nexusOf(battle, content, side))
   const to = middleOf(nexusOf(battle, content, otherSide(side)))
   const goal = { x: Math.round(from.x + ((to.x - from.x) * share) / 100), y: Math.round(from.y + ((to.y - from.y) * share) / 100) }
+  return nearestOpen(terrain, goal)
+}
+
+/** The tile nearest `goal` troops can stand on — not rock, on the battlefield — ring by ring outward, on a ring the first
+ *  in reading order; `null` on a battlefield of rock. */
+function nearestOpen(terrain: MapTerrain, goal: Coord): Coord | null {
   const open = (x: number, y: number): boolean => {
     if (x < 0 || y < 0 || x >= terrain.width || y >= terrain.height) return false
     const ground = terrain.tiles[y * terrain.width + x]
@@ -76,9 +82,10 @@ const REFUSALS: Readonly<Record<RallyRefusal, string>> = {
 
 /**
  * **Where a side's troops head this round**, on the battlefield as it opens (a rally point on a building just placed
- * takes its footprint): the plan's spot — a tile's area (`rallyArea`), or a Nexus's footprint and a ring of one — or,
- * with none, or one refused (`rallyRefusal`), the default (`defaultRallyTile`), or the enemy's Nexus when the default
- * is it.
+ * takes its footprint): the plan's spot — a tile's area (`rallyArea`), or a Nexus's footprint and a ring of one; a rock
+ * tile's nearest open ground — or, with none, or one off the battlefield, the default (`defaultRallyTile`), or the
+ * enemy's Nexus when the default is it. Nothing else is refused: a spot crowded with buildings, or one rock closes
+ * off, is still marched toward (the battle engine walks its troops to the nearest tiles they can reach, and breaches).
  */
 export function rallyOf(
   battle: Pick<BattleState, "setup" | "sides">,
@@ -97,8 +104,16 @@ export function rallyOf(
   const spot = plan.rally
   if (spot === undefined) return fallback()
   if (isRallyPlace(spot)) return { spot, area: placeArea(spot) }
-  const refusal = rallyRefusal(ground, spot, home)
-  if (refusal === null) return { spot: { x: spot.x, y: spot.y }, area: rallyArea(ground, spot) }
-  const why = refusal === "off" ? `${REFUSALS.off} (${opened.terrain.width} by ${opened.terrain.height})` : REFUSALS[refusal]
-  return { ...fallback(), refusal: `rally point at ${rallyWords(spot)}: ${why}, so the troops went to the default` }
+  // F338 (the owner, 2026-11-26: "if the UX shows that I can place the banner, then the units should march towards the
+  // new location"): a spot on the battlefield is always marched to. Off it is the only refusal; on rock with nothing
+  // built there the troops head for the nearest open ground; a spot with no ground to stand on in its area, or with no
+  // way there, is still their target: they walk as near as they can, fighting what is in the way.
+  const refusal = rallyRefusal(ground, spot)
+  if (refusal === "off") return { ...fallback(), refusal: `rally point at ${rallyWords(spot)}: ${REFUSALS.off} (${opened.terrain.width} by ${opened.terrain.height}), so the troops went to the default` }
+  if (refusal === "rock") {
+    const open = nearestOpen(opened.terrain, spot)
+    if (open === null) return { ...fallback(), refusal: `rally point at ${rallyWords(spot)}: ${REFUSALS.rock}, so the troops went to the default` }
+    return { spot: open, area: rallyArea(ground, open), refusal: `rally point at ${rallyWords(spot)}: ${REFUSALS.rock}, so the troops went to the nearest open ground, ${rallyWords(open)}` }
+  }
+  return { spot: { x: spot.x, y: spot.y }, area: rallyArea(ground, spot) }
 }

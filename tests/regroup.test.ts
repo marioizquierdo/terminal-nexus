@@ -11,7 +11,7 @@ import type { Coord, MapTerrain, TerrainId } from "../src/engine/geometry/types.
 import { BEHIND, FRONT_GAP, REGROUP_TICKS, centreTile, openingState, regroup, regroupAt, standDown } from "../src/match/index.ts"
 import type { Force, RegroupResult, StructurePlacement } from "../src/match/index.ts"
 import { hashState } from "../src/engine/state/serialize.ts"
-import type { EntityState, MatchState } from "../src/engine/state/types.ts"
+import type { EntityState, MatchState, TargetArea } from "../src/engine/state/types.ts"
 import { BATTLE_ROUND_TICKS, briefOf, beginBattle, playRound, scriptedPlayer } from "../src/battle/index.ts"
 import type { BattleState, Side } from "../src/battle/index.ts"
 import { createHash } from "node:crypto"
@@ -195,6 +195,71 @@ test("mirror-fair: a mirrored end of round regroups into the mirrored formation"
   }
 })
 
+// --- F337: the regroup faces the enemy, on the rally point ------------------------------------------------------------
+
+/** Side A's rally point on the open field: the 3 x 3 round 20,10. */
+const RALLY: TargetArea = { x: 19, y: 9, width: 3, height: 3 }
+
+/** The middle of a side's units, in tiles. */
+function middleOfArmy(state: MatchState, player: Side): Coord {
+  const own = units(state, player)
+  return { x: own.reduce((sum, entity) => sum + entity.anchor.x, 0) / own.length, y: own.reduce((sum, entity) => sum + entity.anchor.y, 0) / own.length }
+}
+
+/** How far side A's units of `contentId` stand from `point`, on average, by the battlefield's distance. */
+function meanDistance(state: MatchState, contentId: string, point: Coord): number {
+  const these = units(state, "A").filter((entity) => entity.contentId === contentId)
+  return these.reduce((sum, entity) => sum + Math.abs(entity.anchor.x - point.x) + 2 * Math.abs(entity.anchor.y - point.y), 0) / these.length
+}
+
+/** Side A's army round its Commander at `muster`, its rally point at `RALLY`; side B's army at 45,10. */
+function rallied(muster: Coord): MatchState {
+  const forces: Force[] = [
+    { player: "A", muster, units: [VASSE, TROOPER, TROOPER, TROOPER, TROOPER, MARKSMAN, MARKSMAN, MARKSMAN, MARKSMAN] },
+    { player: "B", muster: { x: 45, y: 10 }, units: [TROOPER, TROOPER, TROOPER, MARKSMAN, MARKSMAN] },
+  ]
+  return { ...stateOf(forces), targets: { A: RALLY } }
+}
+
+for (const [where, muster] of [["beside", { x: 20, y: 17 }], ["past", { x: 33, y: 10 }]] as const) {
+  test(`a side whose Commander stands ${where} its rally point forms up with its front rank toward the enemy, not the map's edge`, () => {
+    const result = regroup(rallied(muster), FIXTURE_REGISTRY)
+    assertNoOverlap(result.state, definitionOf, "after the regroup")
+    const enemy = middleOfArmy(result.state, "B")
+    // The count: the front rank (troopers, melee) stands nearer the enemy army than the back rank (marksmen).
+    const front = meanDistance(result.state, TROOPER, enemy)
+    const back = meanDistance(result.state, MARKSMAN, enemy)
+    assert.ok(front < back, `the front rank stands ${front} from the enemy, the back rank ${back}`)
+    // The second count: everyone faces east, toward side B.
+    for (const entity of units(result.state, "A")) assert.equal(entity.facing, "e", `${entity.contentId} #${entity.ordinal} faces ${entity.facing}`)
+  })
+}
+
+test("a side that fought past its rally point falls back to it: its front rank on the rally point's middle", () => {
+  const result = regroup(rallied({ x: 33, y: 10 }), FIXTURE_REGISTRY)
+  const troopers = units(result.state, "A").filter((entity) => entity.contentId === TROOPER)
+  assert.ok(Math.max(...troopers.map((entity) => entity.anchor.x)) <= 20, `the front stands at ${troopers.map((entity) => entity.anchor.x)}, past the rally point's column 20`)
+  for (const entity of units(result.state, "A")) assert.ok(entity.anchor.x >= 10 && Math.abs(entity.anchor.y - 10) <= 6, `${entity.contentId} at ${JSON.stringify(entity.anchor)} is not near the rally point`)
+})
+
+test("a side short of its rally point forms up where it stands, facing the enemy: it marches on next round", () => {
+  const result = regroup(rallied({ x: 10, y: 10 }), FIXTURE_REGISTRY)
+  const xs = units(result.state, "A").map((entity) => entity.anchor.x)
+  assert.ok(Math.max(...xs) < 19, `the army walked up to the rally point: ${xs}`)
+  for (const entity of units(result.state, "A")) assert.equal(entity.facing, "e")
+})
+
+test("mirror-fair with a rally point: a mirrored end of round regroups into the mirrored formation", () => {
+  const state = rallied({ x: 33, y: 7 })
+  const width = state.terrain.width
+  const flipped = regroup({ ...mirrored(state), targets: { B: { ...RALLY, x: width - RALLY.x - RALLY.width } } }, FIXTURE_REGISTRY)
+  const result = regroup(state, FIXTURE_REGISTRY)
+  for (const path of result.paths) {
+    const twin = flipped.paths.find((each) => each.ordinal === path.ordinal) as (typeof flipped.paths)[number]
+    assert.deepEqual(twin.to, { x: width - 1 - path.to.x, y: path.to.y }, `${path.contentId} #${path.ordinal} ends mirrored`)
+  }
+})
+
 /** A battle played round by round, the regroup of each round kept. */
 function duelRounds(rounds: number, commanders: Readonly<Record<Side, string>>, players: Readonly<Record<Side, string>>, seed = 2) {
   let battle: BattleState = beginBattle({ map: "crossing", seed, rounds: 8, pulseTicks: BATTLE_ROUND_TICKS, commanders })
@@ -243,11 +308,12 @@ test("the regroup of a played battle round is pinned, on Node and on Bun", { tim
   // Pinned: the same end of round regroups into the same walks and the same state on every runtime; a change to the
   // regroup, the battle engine, the scripts or the armies moves it, and says so. (Moved when an army came to sort itself on the
   // march by half speed, the Commander a regular troop, and the regroup's ranks went by the same priority list; and again when a unit came to keep the target it holds
-  // until it falls: commitment; and when the stance gave way to the rally point: balanced holds round its own Nexus.)
-  assert.equal(pathsHash(result), "3f0aca1f71110b8c")
+  // until it falls: commitment; and when the stance gave way to the rally point: balanced holds round its own Nexus; and
+  // when the regroup came to form up on the rally point, or fall back to it, facing the enemy army: F337.)
+  assert.equal(pathsHash(result), "31a1548c69eff9d4")
   // Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
-  // And again when the stance gave way to the rally point (the paths hash above says why).
-  assert.equal(hashState(result.state), "6ba943ac2b9ad2c9aa543780c206b54f873726af6c18e83c00fdf103579fe04b")
+  // And again when the stance gave way to the rally point, and when the regroup came to face the enemy (the paths hash above says why).
+  assert.equal(hashState(result.state), "d74ad83bfe72b896ffc75e985ac17fec88f334953d1643594261b676bd8b6e2c")
 })
 
 test("the round's end settled where everyone stands: the regroup's first frame, what a match that is over keeps", () => {

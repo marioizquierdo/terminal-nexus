@@ -86,6 +86,8 @@ export type RallyRefusal = "off" | "rock" | "crowded" | "unreachable"
  * **Whether troops could rally on `tile`**: `null` when they could, else why not. On the battlefield; not rock unless
  * something is built there (troops gather round a building's walls); with at least one tile of its area open ground,
  * neither rock nor built on; and — given the side's Nexus (`home`) — a route to the area from it (`rallyRoute`).
+ * The Build Phase refuses a spot for any of these; the round, which sees what the enemy built in secret that round,
+ * refuses only one off the battlefield, and takes a rock tile as its nearest open ground (F338, `src/battle/rally.ts`).
  */
 export function rallyRefusal(ground: RallyGround, tile: Coord, home?: RallyStructure): RallyRefusal | null {
   const { terrain } = ground

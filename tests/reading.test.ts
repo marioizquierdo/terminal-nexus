@@ -126,7 +126,8 @@ test("skirmish --json writes only data on stdout, a brief a line, and the round-
 // abilities did, as the round report gave them then (tests/fixtures/battle-numbers.json, seed 2, every pairing, both
 // maps). The reading must give the same, counted by card name. Re-pinned when the stance gave way to the rally point
 // (the owner, 2026-11-26): a script that holds now gathers at its own Nexus, not the map's hold ground, and one that
-// attacks stands round the enemy Nexus and a ring of one.
+// attacks stands round the enemy Nexus and a ring of one. And again when the regroup came to form up on the rally point,
+// or fall back to it, facing the enemy army (F337): the survivors open each round elsewhere.
 test("the reading's totals are what the round report's battle numbers were: the same seed, the same sums", { timeout: 120_000 }, () => {
   const fixture = JSON.parse(readFileSync(new URL("./fixtures/battle-numbers.json", import.meta.url), "utf8")) as Record<string, readonly Record<string, any>[]>
   const pairings: readonly (readonly [string, string, string, string])[] = [
