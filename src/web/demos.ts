@@ -8,9 +8,9 @@
 //
 //   label     the button's name
 //   try       what to try once it opens, shown under the screen
-//   at        where it opens, as a route (`src/cli/route.ts`): `story?mission=vasse-test-1&round=2` opens that
-//             round without a key script walking to it, `skirmish?seed=7` a Skirmish; PERIMETER's first round unless
-//             given (the page itself opens on a Skirmish, but a demo written before that still opens where it did)
+//   at        where it opens, as a route (`src/cli/route.ts`): `skirmish?seed=7` a new Skirmish,
+//             `skirmish?load=saves/crossing-round-4.save.json` a save at its Build Phase; the starter map's first round
+//             (`saves/starter.save.json`) unless given
 //   keys      a key script played first, as `--keys` takes it — on a Build Phase only
 //   settings  a settings text to start with, as `--settings` takes it — on a Build Phase only
 //

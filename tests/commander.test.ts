@@ -8,68 +8,32 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { STARTER_STANDING, starterTerrain } from "../src/build/catalog.ts"
+import { starterTerrain } from "./starter-fixture.ts"
 import { FIXTURE_REGISTRY, createRegistry } from "../src/content/index.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
 import { artFor } from "../src/content/art.ts"
 import { footprintSteps } from "../src/engine/geometry/coords.ts"
-import {
-  fallen,
-  openingState,
-  regroup,
-  resolveMissionPulse,
-  restoreCommanders,
-  roundsOutOf,
-} from "../src/match/index.ts"
-import type { Absence, MissionPulse, Restoration } from "../src/match/index.ts"
-import { PERIMETER } from "../src/armies/index.ts"
-import { MissionError, validateMission } from "../src/mission/index.ts"
-import type { MissionDefinition } from "../src/mission/index.ts"
+import { fallen, openingState, regroup, restoreCommanders, roundsOutOf } from "../src/match/index.ts"
+import type { Absence } from "../src/match/index.ts"
+import { ARMIES } from "../src/armies/index.ts"
 import { hashState } from "../src/engine/state/serialize.ts"
 import type { MatchState } from "../src/engine/state/types.ts"
 import { entityGlyph } from "../src/view/theme.ts"
-import { COMMANDER_FALLS, VASSE, sittingOut } from "./commander-fixture.ts"
+import { FIXTURE_BASE, VASSE, playWithCommanders, sittingOut } from "./commander-fixture.ts"
+import type { FixtureRound } from "./commander-fixture.ts"
 
 const terrain = starterTerrain()
 const registry = FIXTURE_REGISTRY
 const NEXUS = "structure.citizen.nexus"
 
-type Round = Readonly<{ pulse: MissionPulse; restored: readonly Restoration[]; absent: readonly Absence[] }>
-
-/** A mission played round by round as the screen plays it: the regroup between rounds, the Commanders who fell
- *  counted, and whoever is due set down beside the Nexus before the next round opens. `absent` is who is
- *  out when the round's Pulse has ended. */
-function playWithCommanders(
-  mission: MissionDefinition,
-  plans: readonly (readonly { contentId: string; anchor: { x: number; y: number } }[])[] = [],
-  registry: ContentRegistry = FIXTURE_REGISTRY,
-): Round[] {
-  const rounds: Round[] = []
-  let carried: MatchState | null = null
-  let absent: Absence[] = []
-  for (let number = 1; number <= mission.pulses; number += 1) {
-    let restored: readonly Restoration[] = []
-    if (carried !== null) {
-      const back = restoreCommanders(carried, absent, number, registry)
-      carried = back.state
-      absent = back.absent
-      restored = back.restored
-    }
-    const structures = [...(number === 1 ? STARTER_STANDING : []), ...(plans[number - 1] ?? [])]
-    const pulse = resolveMissionPulse({ mission, terrain, registry, pulse: number, carried, structures })
-    absent = [...absent, ...fallen(pulse.events, registry, number)]
-    rounds.push({ pulse, restored, absent })
-    if (pulse.verdict.kind !== "continue") break
-    carried = regroup(pulse.final, registry).state
-  }
-  return rounds
-}
+type Round = FixtureRound
+const STARTER_STANDING = FIXTURE_BASE
 
 const vasseIn = (state: MatchState) => state.entities.filter((entity) => entity.contentId === VASSE)
 
 // --- Vasse -------------------------------------------------------------------------------------------
 
-test("Vasse is a Commander: a persistent @ on the units layer, and PERIMETER brings her with the squads", () => {
+test("Vasse is a Commander: a persistent @ on the units layer, who walks out with her starting package", () => {
   const vasse = registry.get(VASSE)
   assert.equal(vasse.commander, true)
   assert.equal(vasse.layer, "units")
@@ -82,17 +46,16 @@ test("Vasse is a Commander: a persistent @ on the units layer, and PERIMETER bri
   assert.deepEqual(artFor("unit.citizen.averno"), ["&"])
   assert.deepEqual(artFor("unit.ravel.dob"), ["$"])
 
-  const squads = PERIMETER.triggers.find((trigger) => trigger.id === "squads")
-  const spawned = squads?.do.flatMap((action) => ("spawn" in action ? action.spawn.units : []))
-  assert.deepEqual(spawned?.filter((entry) => entry.unit === VASSE), [{ unit: VASSE, count: 1 }])
+  // Her army names her, and a battle sets her down with her starting package (`src/battle/round-opening.ts`).
+  assert.equal(ARMIES.commanders.find((commander) => commander.id === "vasse")?.unit, VASSE)
 
   // Persistent: round 2 opens with the same Vasse, her id, her ordinal and her health, home at the Nexus.
-  const [round1, round2] = playWithCommanders(PERIMETER)
+  const [round1, round2] = playWithCommanders(registry, false)
   assert.ok(round1 !== undefined && round2 !== undefined)
   const [first] = vasseIn(round1.pulse.states[0] as MatchState)
-  assert.ok(first !== undefined, "PERIMETER's round 1 opened without her")
+  assert.ok(first !== undefined, "round 1 opened without her")
   const survived = vasseIn(round1.pulse.final)[0]
-  assert.ok(survived !== undefined, "she fell in PERIMETER's round 1 with nothing built")
+  assert.ok(survived !== undefined, "she fell in round 1 beside her line")
   const [again] = vasseIn(round2.pulse.states[0] as MatchState)
   assert.ok(again !== undefined)
   assert.deepEqual([again.id, again.ordinal, again.hp], [first.id, first.ordinal, survived.hp])
@@ -100,36 +63,17 @@ test("Vasse is a Commander: a persistent @ on the units layer, and PERIMETER bri
   assert.ok(regroup(round1.pulse.final, registry).paths.some((path) => path.ordinal === first.ordinal))
 })
 
-test("a mission brings its Commander once: two of her, or a second arrival, is refused by name", () => {
-  const twice: MissionDefinition = {
-    ...COMMANDER_FALLS,
-    triggers: [
-      ...COMMANDER_FALLS.triggers,
-      { id: "again", when: { pulse: 2, tick: 0 }, do: [{ spawn: { side: "A", units: [{ unit: VASSE, count: 1 }], at: "muster" } }] },
-      { id: "pair", when: { pulse: 3, tick: 0 }, do: [{ spawn: { side: "B", units: [{ unit: VASSE, count: 2 }], at: "ambush" } }] },
-    ],
-  }
-  assert.throws(
-    () => validateMission(twice, terrain, registry),
-    (error: unknown) =>
-      error instanceof MissionError &&
-      error.problems.some((problem) => /"again".*the Commander "unit\.citizen\.vasse" a second time/.test(problem)) &&
-      error.problems.some((problem) => /"pair".*2 of the Commander "unit\.citizen\.vasse"; a side has one/.test(problem)),
-  )
-  assert.doesNotThrow(() => validateMission(COMMANDER_FALLS, terrain, registry))
-})
-
 // --- The named fixture: she falls, and the Nexus restores her as the next round opens ----------------
 
 test("she falls in round 1 and is gone for the rest of it; her death ends nothing", () => {
-  const [round1] = playWithCommanders(COMMANDER_FALLS)
+  const [round1] = playWithCommanders()
   assert.ok(round1 !== undefined)
   const { pulse } = round1
   assert.equal(vasseIn(pulse.states[0] as MatchState).length, 1, "round 1 opened without her")
   const died = pulse.events.find((event) => event.kind === "entity.died" && event.contentId === VASSE)
   assert.ok(died !== undefined, "she did not fall")
   assert.ok(pulse.states.slice(died.tick).every((state) => vasseIn(state).length === 0), "she came back during the Pulse she fell in")
-  // The fight went on without her, to the raid's end; the Nexus, not she, is what a side loses by.
+  // The fight went on without her, to the runners' end; the Nexus, not she, is what a side loses by.
   assert.ok((pulse.final.outcome?.tick ?? 0) > died.tick)
   assert.deepEqual([pulse.final.outcome?.winner, pulse.final.outcome?.reason], ["A", "annihilation"])
   // Vasse sits no round out: due back as the very next round opens.
@@ -157,18 +101,18 @@ function assertRestored(rounds: readonly Round[], round: number): void {
 }
 
 test("the Nexus restores her as round 2 opens: no round is played without her", () => {
-  const rounds = playWithCommanders(COMMANDER_FALLS)
+  const rounds = playWithCommanders()
   const [round1, round2, round3] = rounds
   assert.ok(round1 !== undefined && round2 !== undefined && round3 !== undefined)
   assert.deepEqual(round1.absent, [{ player: "A", contentId: VASSE, fellInRound: 1, returnsInRound: 2 }])
   assertRestored(rounds, 2)
   assert.ok(round2.absent.every((absence) => absence.fellInRound === 2), "she was still out after round 2 opened")
-  // And the mission went on to be held: nothing about her decides it.
-  assert.deepEqual(round3.pulse.verdict, { kind: "won", trigger: "hold" })
+  // And the battle went on, every round won by her side: nothing about her decides it.
+  assert.ok(rounds.every((round) => round.pulse.final.outcome?.winner === "A"))
 })
 
 test("a Commander who sits one round out: round 2 is played without her from its Build Phase to its end, and the Nexus restores her for round 3", () => {
-  const rounds = playWithCommanders(COMMANDER_FALLS, [], sittingOut(1))
+  const rounds = playWithCommanders(sittingOut(1))
   const [, round2, round3] = rounds
   assert.ok(round2 !== undefined && round3 !== undefined)
 
@@ -180,11 +124,10 @@ test("a Commander who sits one round out: round 2 is played without her from its
   // Round 3: back as it opens.
   assertRestored(rounds, 3)
   assert.deepEqual(round3.absent, [])
-  assert.deepEqual(round3.pulse.verdict, { kind: "won", trigger: "hold" })
 })
 
-test("a Commander who sits two rounds out is out for the rest of the three-round mission", () => {
-  const rounds = playWithCommanders(COMMANDER_FALLS, [], sittingOut(2))
+test("a Commander who sits two rounds out is out for the rest of the three rounds", () => {
+  const rounds = playWithCommanders(sittingOut(2))
   const [, round2, round3] = rounds
   assert.ok(round2 !== undefined && round3 !== undefined)
   for (const round of [round2, round3]) {
@@ -192,8 +135,7 @@ test("a Commander who sits two rounds out is out for the rest of the three-round
     assert.ok(round.pulse.states.every((state) => vasseIn(state).length === 0), "she was on the battlefield while she sat out")
     assert.deepEqual(round.absent, [{ player: "A", contentId: VASSE, fellInRound: 1, returnsInRound: 4 }])
   }
-  // Had the mission a fourth round, it would open with her: due in round 4, the Nexus sets her down as it opens. (From
-  // round 2's end, where her Nexus still stands; with her out two rounds this empty base does not hold round 3.)
+  // A fourth round would open with her: due in round 4, the Nexus sets her down as it opens.
   const fourth = restoreCommanders(regroup(round2.pulse.final, registry).state, round2.absent, 4, registry)
   assert.equal(fourth.restored.length, 1)
   assert.deepEqual(fourth.absent, [])
@@ -205,7 +147,7 @@ test("the named fixture is the same every run, and on both runtimes, whatever sh
     [0, PINNED_ROUNDS],
     [1, PINNED_SITTING_OUT],
   ] as const) {
-    const play = () => playWithCommanders(COMMANDER_FALLS, [], out === 0 ? registry : sittingOut(out))
+    const play = () => playWithCommanders(out === 0 ? registry : sittingOut(out))
     const first = fingerprint(play())
     for (let run = 0; run < 5; run += 1) assert.deepEqual(fingerprint(play()), first)
     // Pinned: Node and Bun run this same line, so a runtime that resolves a round differently fails here.
@@ -217,29 +159,22 @@ test("the named fixture is the same every run, and on both runtimes, whatever sh
   }
 })
 
-// The three rounds as the rules play them: By the Book guarding her and the troopers beside her, the ambush's two
-// runners making sure she falls in round 1, a row counting two columns in every distance and step, and every step
-// taking whole beats, one across and two up or down. Round 1 is the same whatever she sits out; from round 2 on,
-// Vasse, back beside the Nexus, fights in it. Rounds 2 and 3 pinned again when the survivors came to stay on the battlefield and
-// regroup between rounds rather than walk home (2026-10-26).
-// Pinned again when a unit came to keep the target it holds until it falls, or goes 30 ticks unable to strike it
-// (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
-// Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
+// The three rounds as the rules play them: By the Book guarding her, the five runners making sure she falls in round 1,
+// her line beating them after, and every rule a Battle Round walks by. Round 1 is the same whatever she sits out; from
+// round 2 on, Vasse, back beside the Nexus, fights in it. These were the Story level "The Commander falls" until Story
+// stopped (the owner, 2026-11-26), and were pinned again then, on the fixture's own forces.
 const PINNED_ROUNDS = [
-  "97acd3d34991b645749d67b59f93dd251e61d9bd825c0bc1b5eed34f8b23c87d",
-  "cf3d6266657c7c23826d1bb9d76f561279a4a7dba9da9ef72254bd9213d2403f",
-  "48741aea97b17a75092db8184909572f7ae9fe1df52e84eae0a93634fe6f4115",
+  "8871d42bd6a375666a33c69f11e14cde1efd81aa6706c71e89153d922eb013c9",
+  "8ba190515824db73a2eeac634ba2b027ac59c73c3e3b10f27522da78c431aa02",
+  "060edf5f8097c21a73b88467e717e3533988bb3bd78d7ad5f38b05fc3beb1f3b",
 ]
 
 // The same three rounds with a test-only Vasse who sits one round out: the rule as it stood before Vasse came back at
-// once. Both sets pinned again when every tie came to go by what a unit faces, then a draw (no side wins by where it
-// stands), and when units came to walk by routes; and rounds 2 and 3 when the survivors came to regroup between rounds (2026-10-26).
-// Both sets pinned again for commitment (a unit keeps the target it holds), above.
-// Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
+// once.
 const PINNED_SITTING_OUT = [
-  "97acd3d34991b645749d67b59f93dd251e61d9bd825c0bc1b5eed34f8b23c87d",
-  "26b79e34d6fc64cb3ad6a083a1866135841fa72c29ed36d67058f75bf4e84a80",
-  "ac7f9f3e7ffc207e1eb63d06f4ef2bafee2832f3b75ced38afc2cec75a4592a0",
+  "8871d42bd6a375666a33c69f11e14cde1efd81aa6706c71e89153d922eb013c9",
+  "20f26c8219a013e3f8878f0309a226ffd6ea8d144b75f1965e9c5c6ef0d09cb8",
+  "940cb247d11f6551c4f4eb34769784ab0d88b532fc9fae5ba394d74ef5503a68",
 ]
 
 // --- The rule's edges --------------------------------------------------------------------------------

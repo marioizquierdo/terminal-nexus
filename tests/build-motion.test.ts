@@ -8,6 +8,7 @@
 // timeout and the frame timer. Every timing claim is made against an injected clock — a number — so
 // nothing here waits, except the one lifecycle test of the frame timer itself, which has to.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
@@ -25,7 +26,7 @@ import type { KeyPhase } from "../src/terminal/key-events.ts"
 import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
-import { DEFAULT_LEVEL } from "../src/cli/levels.ts"
+import { DEFAULT_LEVEL } from "../src/cli/starter.ts"
 import type { LevelDestination } from "../src/cli/route.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import type { Coord } from "../src/engine/geometry/types.ts"
@@ -57,7 +58,7 @@ import {
 import type { Side } from "./build-helpers.ts"
 
 /** A Build Phase with the Nexus power picked and the keyboard on the map, in plain navigation. */
-function exploring(context: BuildContext = starterContext(), cursor: Coord = OPEN_GROUND, terminal = MINIMUM): Side {
+function exploring(context: BuildContext = testBase(), cursor: Coord = OPEN_GROUND, terminal = MINIMUM): Side {
   const side = buildSide({ context, cursor, terminal })
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
   side.build.dispatch({ kind: "focus", target: "map" })
@@ -146,7 +147,7 @@ test("the motion rules run on each number as it is now: the navigation Experimen
 test("a navigation number changed in Settings changes the very next key", () => {
   const start = { x: 0, y: 13 }
   // The jump distance, one step up: a Shift jump goes that far, with a clock and without one (a driver).
-  const jump = exploring(starterContext(), start)
+  const jump = exploring(testBase(), start)
   jump.build.dispatch({ kind: "setting-adjust", field: "jumpStep", step: 1 })
   const far = jump.build.state.experiments.jumpStep
   assert.notEqual(far, TUNED.jumpStep)
@@ -155,7 +156,7 @@ test("a navigation number changed in Settings changes the very next key", () => 
   jump.build.handleData(SHIFT_RIGHT, jump.layout)
   assert.equal(jump.build.state.cursor.x, start.x + 2 * far)
   // The hold pace reaches the rules as the session reads it.
-  const paced = exploring(starterContext(), start)
+  const paced = exploring(testBase(), start)
   paced.build.dispatch({ kind: "setting-adjust", field: "holdMoveMs", step: 1 })
   const live = moveTuning(paced.build.state)
   assert.ok(live.holdMoveMs > TUNED.holdMoveMs)
@@ -244,7 +245,7 @@ test("an arrow always moves its step: quick taps and long holds never go further
   const got = moves(EAST, presses(held(0, 100, 180, 30)))
   assert.deepEqual([...new Set(got.filter((move) => move !== hold(0)))].sort(), [hold(1), tap(1)])
   // Through the session, with a clock: eight quick taps, eight tiles.
-  const side = exploring(starterContext(), { x: 0, y: 13 })
+  const side = exploring(testBase(), { x: 0, y: 13 })
   side.build.setKeyReleases(true)
   timed(side, taps(0, 8, QUICK).map((at) => [RIGHT, at] as const))
   assert.equal(side.build.state.cursor.x, 8)
@@ -256,7 +257,7 @@ test("the arrow's step is how far a tap and each move of a held arrow go, and Sh
   assert.deepEqual(moves(EAST, presses(held(0, 3, 180, five.holdMoveMs + 30)), five), [tap(5), hold(5), hold(5), hold(5)])
   assert.deepEqual(moves(JUMP_EAST, presses([0, 500]), five), ["jump 1", "jump 1"])
   // And through the session: the map cursor goes five, Shift one — and a list still goes one row.
-  const side = exploring(starterContext(), { x: 0, y: 13 })
+  const side = exploring(testBase(), { x: 0, y: 13 })
   for (const [field, steps] of [["tapStep", 4], ["jumpStep", -9]] as const) {
     for (let step = 0; step < Math.abs(steps); step += 1) side.build.dispatch({ kind: "setting-adjust", field, step: steps > 0 ? 1 : -1 })
   }
@@ -282,7 +283,7 @@ test("a held arrow's pace can be taken off: every repeat the keyboard sends then
   const repeats = presses(held(0, 10, 400, 30))
   const jumps = (tuning: MoveTuning): number => moves(JUMP_EAST, repeats, tuning).filter((move) => move !== "jump 0").length
   assert.ok(jumps(slow) < jumps(TUNED), "a slower Shift pace did not move less often")
-  const side = exploring(starterContext(), { x: 0, y: 13 })
+  const side = exploring(testBase(), { x: 0, y: 13 })
   for (let step = 0; step < 2; step += 1) side.build.dispatch({ kind: "setting-adjust", field: "jumpRepeatMs", step: 1 })
   assert.ok(moveTuning(side.build.state).jumpRepeatMs > TUNED.jumpRepeatMs, "the session did not read the Shift pace")
 })
@@ -322,8 +323,8 @@ function parityIntent(key: string): Readonly<{ timed: (readonly [string, number]
 test("the same intent as timed presses and as press, repeat and release events lands on the same tile, and the same row", () => {
   // The design's parity rule: only how a repeat is told from a tap differs, never where the cursor goes.
   const intent = parityIntent(RIGHT)
-  const byTiming = exploring(starterContext(), { x: 0, y: 13 })
-  const byEvents = exploring(starterContext(), { x: 0, y: 13 })
+  const byTiming = exploring(testBase(), { x: 0, y: 13 })
+  const byEvents = exploring(testBase(), { x: 0, y: 13 })
   byEvents.build.setKeyReleases(true)
   const positions = (side: Side, sequence: readonly (readonly [string, number])[]): number[] =>
     sequence.map(([key, at]) => {
@@ -370,7 +371,7 @@ test("a release sends nothing, and a letter's release is not a second press; Ctr
 })
 
 test("Shift+Arrow jumps; held, it jumps again at most once per jump repeat, and a fresh press always jumps", () => {
-  const side = exploring(starterContext(), { x: 0, y: 13 })
+  const side = exploring(testBase(), { x: 0, y: 13 })
   timed(side, [[SHIFT_RIGHT, 0]])
   assert.equal(side.build.state.cursor.x, TUNED.jumpStep)
   assert.deepEqual(side.build.lastMove, { kind: "jump", tiles: TUNED.jumpStep })
@@ -386,7 +387,7 @@ test("Shift+Arrow jumps; held, it jumps again at most once per jump repeat, and 
   })
   assert.ok(jumps.length > 1 && jumps.length < times.length, "the repeat limit dropped nothing, or everything")
   assert.deepEqual(got.filter((step) => step !== "jump 0"), jumps.map(() => `jump ${TUNED.jumpStep}`))
-  const heldSide = exploring(starterContext(), { x: 0, y: 13 })
+  const heldSide = exploring(testBase(), { x: 0, y: 13 })
   timed(heldSide, times.map((at) => [SHIFT_RIGHT, at] as const))
   assert.equal(heldSide.build.state.cursor.x, jumps.length * TUNED.jumpStep)
   // With key events, repeats are limited the same way, and two quick presses are two jumps.
@@ -400,7 +401,7 @@ test("without a clock every arrow is a tap and every Shift+Arrow one jump: drive
   const side = exploring()
   for (let step = 0; step < 10; step += 1) side.build.handleData(RIGHT, side.layout)
   assert.equal(side.build.state.cursor.x, OPEN_GROUND.x + 10)
-  const jumps = exploring(starterContext(), { x: 0, y: 13 })
+  const jumps = exploring(testBase(), { x: 0, y: 13 })
   for (let step = 0; step < 3; step += 1) jumps.build.handleData(SHIFT_RIGHT, jumps.layout)
   assert.equal(jumps.build.state.cursor.x, 3 * TUNED.jumpStep)
   // A playtest's untimed steps are a second apart: taps that start over.
@@ -432,7 +433,7 @@ test("the margin is a share of the view's own width and height, never so wide th
   assert.equal(shareOfSpan(90, 16), 7, "a margin past the middle is capped")
   // The camera follows at the tuned margin: walking east, it first moves with the cursor that far from
   // the view's east edge.
-  const side = exploring(starterContext(), { x: 0, y: 0 })
+  const side = exploring(testBase(), { x: 0, y: 0 })
   const margin = marginForView(TUNING.scrollMargin, side.layout.viewport).x
   while (side.build.state.camera.x === 0) side.build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
   assert.equal(side.layout.viewport.width - 1 - (side.build.state.cursor.x - side.build.state.camera.x), margin)
@@ -442,7 +443,7 @@ test("the margin is a share of the view's own width and height, never so wide th
 
 test("exploring, a click near an edge scrolls further the nearer the edge it lands", () => {
   const moveFor = (column: number): number => {
-    const side = exploring(starterContext(), { x: 40, y: 20 })
+    const side = exploring(testBase(), { x: 40, y: 20 })
     const camera = side.build.state.camera
     clickTile(side, { x: camera.x + column, y: camera.y + 8 })
     return side.build.state.camera.x - camera.x
@@ -455,14 +456,14 @@ test("exploring, a click near an edge scrolls further the nearer the edge it lan
   assert.ok(nearEdge > fiveIn && fiveIn > 0, `near ${nearEdge}, five in ${fiveIn}`)
   assert.equal(moveFor(24), 0)
   // The very edge brings the clicked tile to the middle of the view.
-  const side = exploring(starterContext(), { x: 40, y: 20 })
+  const side = exploring(testBase(), { x: 40, y: 20 })
   const camera = side.build.state.camera
   const tile = { x: camera.x + width - 1, y: camera.y + 8 }
   clickTile(side, tile)
   assert.equal(tile.x - side.build.state.camera.x, Math.floor((width - 1) / 2))
   // Pure: west and north work the same way, and the zone is a share of the view.
   const view = { width: 48, height: 16 }
-  const terrain = starterContext().terrain
+  const terrain = testBase().terrain
   assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 30, y: 10 }, view, terrain, 33).x < 30)
   assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 40, y: 10 }, view, terrain, 33).y < 10)
 })
@@ -472,7 +473,7 @@ test("exploring, a click near an edge scrolls further the nearer the edge it lan
 const SCROLLING_SPOT = { x: 15, y: 8 } as const
 
 test("armed, a click scrolls like an exploring one, and a quick double click places where the first pointed", () => {
-  const side = exploring(starterContext(), { x: 40, y: 20 })
+  const side = exploring(testBase(), { x: 40, y: 20 })
   side.build.handleData("1", side.layout)
   const camera = side.build.state.camera
   const tile = SCROLLING_SPOT
@@ -486,7 +487,7 @@ test("armed, a click scrolls like an exploring one, and a quick double click pla
   side.build.handleData(click, side.layout, { now: 1200 })
   assert.equal(side.build.state.planned.length, 1, "the double click did not place")
   // Where Enter would have placed it after the first click alone.
-  const reference = exploring(starterContext(), { x: 40, y: 20 })
+  const reference = exploring(testBase(), { x: 40, y: 20 })
   reference.build.handleData("1", reference.layout)
   reference.build.handleData(click, reference.layout, { now: 1000 })
   reference.build.dispatch({ kind: "place" })
@@ -497,7 +498,7 @@ test("a double click on the ghost's own tile places once and leaves the keyboard
   // Armed from the menu by a click on its row; the ghost sits at the cursor, so the first half of a
   // double click on it places by the second-click rule. The second half has nothing left to do: it must
   // not take the keyboard to the map, nor lapse the placement's answer.
-  const side = exploring(starterContext(), { x: 40, y: 20 })
+  const side = exploring(testBase(), { x: 40, y: 20 })
   side.build.dispatch({ kind: "focus", target: "menu" })
   const row = menuEntryRow(side.layout, side.context.catalog, { kind: "construct", index: 0 }) as number
   side.build.handleData(formatMouseEvent(MOUSE_LEFT, side.layout.panelColumn + 1, row + 1), side.layout, { now: 1000 })
@@ -515,7 +516,7 @@ test("a double click on the ghost's own tile places once and leaves the keyboard
 })
 
 test("a slow second click on a scrolled spot is a fresh first click, not a place on the wrong tile", () => {
-  const side = exploring(starterContext(), { x: 40, y: 20 })
+  const side = exploring(testBase(), { x: 40, y: 20 })
   side.build.handleData("1", side.layout)
   const camera = side.build.state.camera
   const tile = SCROLLING_SPOT
@@ -529,7 +530,7 @@ test("a slow second click on a scrolled spot is a fresh first click, not a place
 
 test("the fast move drags the view at the margin like any other move; it does not re-centre", () => {
   // The owner turned "Shift centres" off in his settings export (2026-09-30), and the Experiment went.
-  const side = exploring(starterContext(), { x: 40, y: 20 })
+  const side = exploring(testBase(), { x: 40, y: 20 })
   side.build.handleData(SHIFT_RIGHT, side.layout)
   // Only dragged along: the cursor sits on the margin's inner edge, the tuned margin from the view's east
   // side.
@@ -538,7 +539,7 @@ test("the fast move drags the view at the margin like any other move; it does no
 })
 
 test("a click during a slide lands on the tile drawn under the pointer, not the one the view is heading to", () => {
-  const side = exploring(starterContext(), { x: 40, y: 20 })
+  const side = exploring(testBase(), { x: 40, y: 20 })
   const drawn = side.build.state.camera
   side.build.handleData(SHIFT_RIGHT, side.layout) // the view heads east; say it has not moved yet
   assert.notDeepEqual(side.build.state.camera, drawn)
@@ -550,7 +551,7 @@ test("a click during a slide lands on the tile drawn under the pointer, not the 
 // --- The sliding view, the gliding cursor and the frame timer ----------------------------------------------------------
 
 test("the view slides to a new camera over the ease time, whole tiles at a time, and then stops", () => {
-  const side = exploring(starterContext(), { x: 40, y: 20 })
+  const side = exploring(testBase(), { x: 40, y: 20 })
   const animation = new BuildAnimation({ ...TUNING, cursorGlideMs: 0 }) // the camera alone
   const start = side.build.state.camera
   assert.deepEqual(animation.frame(side.build.state, 0), { camera: start, cursor: side.build.state.cursor, busyUntil: null })
@@ -567,7 +568,7 @@ test("the view slides to a new camera over the ease time, whole tiles at a time,
   assert.deepEqual(end.camera, target)
   assert.equal(end.busyUntil, null, "still busy after the slide ended")
   // A slide and a glide of no time: a jump, and nothing to animate.
-  const jump = exploring(starterContext(), { x: 40, y: 20 })
+  const jump = exploring(testBase(), { x: 40, y: 20 })
   const still = new BuildAnimation({ ...TUNING, easeMs: 0, cursorGlideMs: 0 })
   still.frame(jump.build.state, 0)
   jump.build.handleData(SHIFT_RIGHT, jump.layout)
@@ -579,7 +580,7 @@ test("the view slides to a new camera over the ease time, whole tiles at a time,
 })
 
 test("every camera move slides, the plain arrow at the margin included — only a resize snaps", () => {
-  const side = exploring(starterContext(), { x: 0, y: 20 })
+  const side = exploring(testBase(), { x: 0, y: 20 })
   const animation = new BuildAnimation()
   animation.frame(side.build.state, 0)
   const start = side.build.state.camera
@@ -603,7 +604,7 @@ test("every camera move slides, the plain arrow at the margin included — only 
 
 test("the cursor glides to its new tile over the glide time; the state is already there", () => {
   // Shift jump toward the battlefield's west edge, where the camera has nowhere to go: the cursor alone.
-  const side = exploring(starterContext(), { x: 20, y: 20 })
+  const side = exploring(testBase(), { x: 20, y: 20 })
   const animation = new BuildAnimation()
   const from = side.build.state.cursor
   const camera = side.build.state.camera
@@ -633,7 +634,7 @@ test("the cursor glides to its new tile over the glide time; the state is alread
 })
 
 test("when the camera moves, the cursor rides along with the slide and never leaves the view", () => {
-  const side = exploring(starterContext(), { x: 40, y: 20 })
+  const side = exploring(testBase(), { x: 40, y: 20 })
   const animation = new BuildAnimation()
   animation.frame(side.build.state, 0)
   side.build.handleData(SHIFT_RIGHT, side.layout) // the cursor drags the view: it slides under a gliding cursor
@@ -647,7 +648,7 @@ test("when the camera moves, the cursor rides along with the slide and never lea
 })
 
 test("reduced motion snaps the view and the cursor alike", () => {
-  const side = exploring(starterContext(), { x: 40, y: 20 })
+  const side = exploring(testBase(), { x: 40, y: 20 })
   const animation = new BuildAnimation()
   const reduced = { reducedMotion: true }
   animation.frame(side.build.state, 0, reduced)
@@ -661,7 +662,7 @@ test("reduced motion snaps the view and the cursor alike", () => {
 })
 
 test("a gliding cursor is drawn where it is, and the armed preview travels with it", () => {
-  const side = exploring(starterContext(), { x: 20, y: 20 })
+  const side = exploring(testBase(), { x: 20, y: 20 })
   side.build.handleData("1", side.layout)
   const { context, layout } = side
   const state = side.build.state

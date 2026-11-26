@@ -56,7 +56,7 @@ export const SECTIONS: readonly Readonly<{ section: Section; title: string }>[] 
   { section: "display", title: "DISPLAY" },
   { section: "keyboard", title: "KEYBOARD NAVIGATION" },
   { section: "effects", title: "EFFECTS" },
-  { section: "mission", title: "THE MISSION" },
+  { section: "mission", title: "THE BATTLE" },
 ]
 
 /** When a change is seen: at once, or only once the Build Phase starts over. */

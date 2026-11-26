@@ -1,12 +1,11 @@
-// A Skirmish played on the Build Phase's screen — the application shell's part of it, beside a story mission's
-// (`./pulse-run.ts`), and the only place a save, the battle, the Build Phase and the view meet.
+// A Skirmish played on the Build Phase's screen — the application shell's part of it, and the only place a save, the
+// battle, the Build Phase and the view meet.
 //
 // **A Skirmish is a save played on**: its setup (`SaveSetup`, `src/skirmish/save.ts`) and the battle as it stands at a
 // Build Phase (`BattleState`) travel in the round's context (`BuildContext.mode`), so the screen's battle is always one
 // `saveOf` away from a file, and a file one `battleOf` away from the screen. The player plans slot p1 (side A) on the
-// Build Phase screen — the same screen, keys, menu, Nexus Pulse hand and Battle Round as a story mission — and slot p2
-// is planned by its controller, a scripted battle player from its own brief. The screen is handed the same functions a
-// story mission hands it (`LevelPlay`): nothing below the mode knows it serves a Skirmish.
+// Build Phase screen, and slot p2 is planned by its controller, a scripted battle player from its own brief. The screen
+// is handed a level's functions (`LevelPlay`): nothing below the mode knows it serves a Skirmish.
 //
 // - **a round's Build Phase** is side A's: the battle map, its Commander's whole army with every power kept applied, the
 //   battle's credits, the hand its Nexus Pulse deals, its buildings standing, and everything else as the field;
@@ -53,8 +52,44 @@ import { resultOf } from "../view/ending.ts"
 import type { MissionEnding, MissionRound, ResolvedPulse } from "../view/pulse-live.ts"
 import { outcomeOf } from "../view/pulse-live.ts"
 import type { LevelPlay, PlayableLevel } from "./levels.ts"
-import { commanderNews, keepPower } from "./pulse-run.ts"
+import type { ConstructItem, CommanderAbsence } from "../build/types.ts"
+import { constructItem } from "../build/catalog.ts"
+import type { Loadout, PowerCard } from "../armies/index.ts"
+import { applyEffect } from "../armies/index.ts"
+import { commanderName } from "../content/cards.ts"
+import type { Restoration } from "../match/index.ts"
 import { timelineOf } from "./timeline.ts"
+
+/** What the next Build Phase's first line says of the player's Commander — restored beside the Nexus by the Nexus
+ *  Pulse that opens the round, or out this round and, when the battle lasts that long, the round she is back for — or
+ *  `null` when there is nothing to say. */
+export function commanderNews(restored: readonly Restoration[], absent: readonly CommanderAbsence[], round: number, of: number): string | null {
+  const back = restored.find((restoration) => restoration.player === "A")
+  if (back !== undefined) return `The Nexus Pulse restores ${commanderName(back.contentId)} beside the Nexus.`
+  const out = absent.find((absence) => absence.player === "A")
+  if (out === undefined) return null
+  const name = commanderName(out.contentId)
+  return out.returnsInRound > round && out.returnsInRound <= of ? `${name} is out this round, back for round ${out.returnsInRound}.` : `${name} is out this round.`
+}
+
+/**
+ * What keeping a Nexus power does to the round's context, for the rest of the battle (commander-armies.md, what a Nexus
+ * power does): `kept` gains it, and its effect is applied to the round's content, build menu and call-ups
+ * (`applyEffect`, `src/armies/effects.ts`, where each kind of effect says what it changes) — so what it changes is on
+ * screen the moment it is picked. Credits change nothing here: the reducer adds them to what is left to spend when the
+ * pick is made.
+ */
+export function keepPower(context: BuildContext, card: PowerCard): BuildContext {
+  const loadout: Loadout<ConstructItem> = {
+    registry: context.registry,
+    catalog: context.catalog,
+    callups: context.callups ?? [],
+    cards: context.buildingCards ?? [],
+    row: (building, index) => constructItem(building, index, context.buildingCards ?? []),
+  }
+  const changed = applyEffect(loadout, card.effect)
+  return { ...context, kept: [...(context.kept ?? []), card], registry: changed.registry, catalog: changed.catalog, callups: changed.callups }
+}
 
 /** What a Skirmish's round carries in its context (`BuildContext.mode`): the setup, the battle at this Build Phase, the
  *  file it was loaded from or last saved to (what Save game offers to write over), and p1's draft still to restore. */

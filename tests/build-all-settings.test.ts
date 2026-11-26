@@ -100,7 +100,7 @@ test("Settings lists its rows section by section: Display, Keyboard navigation, 
   assert.equal(sectionHeading("display"), "DISPLAY - saved")
   assert.equal(sectionHeading("keyboard"), "KEYBOARD NAVIGATION - experiments")
   assert.equal(sectionHeading("effects"), "EFFECTS - experiments")
-  assert.equal(sectionHeading("mission"), "THE MISSION - experiments")
+  assert.equal(sectionHeading("mission"), "THE BATTLE - experiments")
   // `d` opens at Keyboard navigation's first row; during a Pulse, at the mission's first.
   assert.equal(sectionOfRow(FIRST_EXPERIMENT_ROW), "keyboard")
   assert.equal(FIRST_EXPERIMENT_ROW, settingRow((EXPERIMENT_FIELDS[0] as (typeof EXPERIMENT_FIELDS)[number]).field))

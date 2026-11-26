@@ -25,7 +25,6 @@ import { visibleRange } from "../build/camera.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { Coord } from "../engine/geometry/types.ts"
 import type { RegroupResult } from "../match/types.ts"
-import type { MissionVerdict } from "../mission/types.ts"
 import type { Outcome, PlayerId } from "../engine/state/types.ts"
 import { endingTimes, missionResultOf, nexusStrain, phaseAt, redAlert, resultOf } from "./ending.ts"
 import type { EndingPhase, EndingTimes, NexusStrain, PulseResult } from "./ending.ts"
@@ -72,9 +71,12 @@ export type ResolvedPulse = Readonly<{
   clashes?: readonly Clash[]
 }>
 
-/** A mission's round, as the result reads it. */
+/** How the battle stands after a round: it goes on to the next Build Phase, or it is over, won or lost. */
+export type RoundVerdict = Readonly<{ kind: "continue" }> | Readonly<{ kind: "won" | "lost"; trigger: string }>
+
+/** A battle's round, as the result reads it. */
 export type MissionRound = Readonly<{
-  verdict: MissionVerdict
+  verdict: RoundVerdict
   round: number
   of: number
   /** The mission's own line for a won or lost mission. */

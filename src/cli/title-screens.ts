@@ -1,5 +1,5 @@
-// The title menu's screens as one driveable thing, with no terminal: the top-level menu, Settings, Story's placeholder,
-// About, and the Skirmish screens — the Skirmish screen (New game, Load game), New game's setup and Load game's list
+// The title menu's screens as one driveable thing, with no terminal: the top-level menu, Settings, About,
+// and the Skirmish screens — the Skirmish screen (New game, Load game), New game's setup and Load game's list
 // of saves and the loaded save's changes (docs/system-design/ui-patterns.md, "The setup screen"). A key in, the next
 // screen and whatever it asked for out (a battle to open, the settings changed, leaving), and the frame it shows now.
 //
@@ -36,15 +36,15 @@ import type { Destination, LevelDestination, TitlePlace } from "./route.ts"
 import { parseRoute } from "./route.ts"
 import { skirmishLevel } from "./skirmish-play.ts"
 
-/** Five rows (the owner, 2026-11-11: Skirmish is "the center stone for game design and testing", so it comes first).
- *  About sits above Exit, so Exit's digit is 5 — the digits stay one sequence in walking order, and `q` still leaves
- *  from every title screen. Each row but Exit names the route it opens. */
+/** Four rows (the owner, 2026-11-11: Skirmish is "the center stone for game design and testing", so it comes first;
+ *  2026-11-26: Story stops until Skirmish is solid, so its row is gone). About sits above Exit, so Exit's digit is 4 —
+ *  the digits stay one sequence in walking order, and `q` still leaves from every title screen. Each row but Exit names
+ *  the route it opens. */
 export const TOP_LEVEL_ITEMS: readonly MenuItem[] = [
   { id: "skirmish", hotkey: "1", label: "Skirmish", route: "skirmish?setup" },
-  { id: "story", hotkey: "2", label: "Story", route: "story" },
-  { id: "settings", hotkey: "3", label: "Settings", route: "settings" },
-  { id: "about", hotkey: "4", label: "About", route: "about" },
-  { id: "exit", hotkey: "5", label: "Exit" },
+  { id: "settings", hotkey: "2", label: "Settings", route: "settings" },
+  { id: "about", hotkey: "3", label: "About", route: "about" },
+  { id: "exit", hotkey: "4", label: "Exit" },
 ]
 
 /** The Skirmish screen: New game, Load game, and the way back. */
@@ -54,7 +54,7 @@ export const SKIRMISH_ITEMS: readonly MenuItem[] = [
   { id: "back", hotkey: "3", label: "Back" },
 ]
 
-/** A screen with only words to show — Story's placeholder and About — has exactly one row, the way back. */
+/** A screen with only words to show — About — has exactly one row, the way back. */
 const BACK_ONLY_ITEMS: readonly MenuItem[] = [{ id: "back", hotkey: "1", label: "Back" }]
 
 /** The Settings screen's rows, rebuilt from the current values every time one changes. */
@@ -84,7 +84,7 @@ function withNextValue(settings: Settings, id: string): Settings {
 }
 
 /** Every title screen. */
-export type TitleScreen = "top" | "settings" | "story" | "about" | "skirmish" | "new-game" | "load-game" | "load-edit"
+export type TitleScreen = "top" | "settings" | "about" | "skirmish" | "new-game" | "load-game" | "load-edit"
 
 /** The rows of the setup screens are a row a line, from the fourth: thirteen of them fit above the lines that explain. */
 export const SETUP_LAYOUT: MenuLayout = { column: 4, row: 4, rowStep: 1 }
@@ -93,7 +93,6 @@ export const SETUP_LAYOUT: MenuLayout = { column: 4, row: 4, rowStep: 1 }
 const SCREEN_INFO: Readonly<Record<TitleScreen, Readonly<{ subtitle: string; showBack: boolean; layout: MenuLayout }>>> = {
   top: { subtitle: "main menu", showBack: false, layout: MENU_LAYOUT },
   settings: { subtitle: "settings", showBack: true, layout: MENU_LAYOUT },
-  story: { subtitle: "story", showBack: true, layout: MENU_LAYOUT },
   about: { subtitle: "about", showBack: true, layout: MENU_LAYOUT },
   skirmish: { subtitle: "skirmish", showBack: true, layout: MENU_LAYOUT },
   "new-game": { subtitle: "skirmish - new game", showBack: true, layout: SETUP_LAYOUT },
@@ -104,7 +103,6 @@ const SCREEN_INFO: Readonly<Record<TitleScreen, Readonly<{ subtitle: string; sho
 /** The screen each title menu place opens, and the line it says there. */
 const PLACE_SCREENS: Readonly<Record<TitlePlace, Readonly<{ screen: TitleScreen; notice?: string }>>> = {
   menu: { screen: "top" },
-  story: { screen: "story", notice: "Story is not built yet - its menu is coming soon." },
   settings: { screen: "settings" },
   about: { screen: "about" },
   skirmish: { screen: "skirmish" },
@@ -116,7 +114,6 @@ const PLACE_SCREENS: Readonly<Record<TitlePlace, Readonly<{ screen: TitleScreen;
 const BACK_TO: Readonly<Record<TitleScreen, TitleScreen>> = {
   top: "top",
   settings: "top",
-  story: "top",
   about: "top",
   skirmish: "top",
   "new-game": "skirmish",
@@ -174,7 +171,6 @@ export type TitleScreensOptions = Readonly<{
 const SCREEN_ROUTES: Readonly<Record<TitleScreen, string>> = {
   top: "menu",
   settings: "settings",
-  story: "story",
   about: "about",
   skirmish: "skirmish?setup",
   "new-game": "skirmish?setup=new",
@@ -213,7 +209,6 @@ export class TitleScreens {
     this.sessions = {
       top: new MenuSession({ items: TOP_LEVEL_ITEMS, onActivate: this.picked("top", (item) => this.topRow(item)), onQuit: leave }),
       settings: new MenuSession({ items: settingsItems(this.settingsNow), onActivate: this.picked("settings", (item) => this.settingsRow(item)), onQuit: leave, onBack: back }),
-      story: new MenuSession({ items: BACK_ONLY_ITEMS, onActivate: this.picked("story", back), onQuit: leave, onBack: back }),
       about: new MenuSession({ items: BACK_ONLY_ITEMS, onActivate: this.picked("about", back), onQuit: leave, onBack: back }),
       skirmish: new MenuSession({ items: SKIRMISH_ITEMS, onActivate: this.picked("skirmish", (item) => this.skirmishRow(item)), onQuit: leave, onBack: back }),
       "new-game": new MenuSession({ items: [], onActivate: this.picked("new-game", (item) => this.newGameRow(item)), onQuit: leave, onBack: back }),

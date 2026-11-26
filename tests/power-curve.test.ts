@@ -1,11 +1,10 @@
 // The expected power curve (src/armies/curve.ts; docs/game-design/commander-armies.md, "The expected power curve",
 // "What an army leans on"): the numbers every Commander Army is designed against hold the shape the design writes
-// in words; the game's schedule and every shipped level deal no rarity before its act; the dealer, falling back to a
+// in words; the game's schedule and every Commander's own deal no rarity before its act; the dealer, falling back to a
 // rarer card, keeps the same rule; and every Commander names what her army leans on, checked by the loader.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { MAPS } from "../src/build/maps.ts"
 import type { PowerCard, Rarity, Role } from "../src/armies/index.ts"
 import {
   ACTS,
@@ -16,7 +15,6 @@ import {
   EARLIEST_ROUND,
   LEANS,
   MAX_ROUNDS,
-  PERIMETER_LEVEL,
   RARITIES,
   ROUND_CREDITS,
   dealHand,
@@ -74,11 +72,11 @@ test("over nine rounds the opening brings about a sixth, the closing about half,
   }
 })
 
-test("no rarity is dealt before its act: the game's schedule and every shipped level keep it", () => {
+test("no rarity is dealt before its act: the game's schedule and every Commander's own keep it", () => {
   assert.deepEqual(EARLIEST_ROUND, { common: 1, uncommon: 1, rare: 4, legendary: 7 })
-  const powers = new Map(ARMIES.levels.flatMap((level) => level.offer.powers.map((card) => [card.id, card.rarity] as const)))
-  const schedules = [DEFAULT_SCHEDULE, ...ARMIES.levels.flatMap((level) => (level.offer.schedule === undefined ? [] : [level.offer.schedule]))]
-  assert.ok(PERIMETER_LEVEL.offer.schedule !== undefined, "PERIMETER has a schedule of its own to check")
+  const powers = new Map(Object.values(ARMIES.arsenals).flatMap((arsenal) => arsenal.powers.map((card) => [card.id, card.rarity] as const)))
+  const schedules = [DEFAULT_SCHEDULE, ...ARMIES.commanders.flatMap((commander) => (commander.schedule === undefined ? [] : [commander.schedule]))]
+  assert.ok(schedules.length > 1, "no Commander has a schedule of her own to check")
   for (const schedule of schedules) {
     for (const entry of schedule) {
       for (const slot of entry.deal) {
@@ -116,7 +114,7 @@ test("every Commander names what her army leans on, one or two of five, and Vass
   })
   const problemsOf = (lean: unknown): readonly string[] => {
     try {
-      loadArmies({ armies: [...ARMY_FILES, commanders(lean)] }, { registry: FIXTURE_REGISTRY, maps: MAPS })
+      loadArmies({ armies: [...ARMY_FILES, commanders(lean)] }, { registry: FIXTURE_REGISTRY })
       return []
     } catch (error) {
       assert.ok(error instanceof ArmyError, String(error))
@@ -132,7 +130,7 @@ test("every Commander names what her army leans on, one or two of five, and Vass
   assert.deepEqual(problemsOf(["luck"]), ['army "leans": commander.lean[0] should be one of "units", "nexus", "structures", "commander", "economy", not "luck"'])
 })
 
-test("the tech tree is checked by name: tiers in range, lower tiers required, the tier below named, and every level able to reach what it offers", () => {
+test("the tech tree is checked by name: tiers in range, lower tiers required, the tier below named", () => {
   const card = (id: string, extra: object = {}): object => ({ id, structure: "structure.bench.beamturret", cost: 10, ...extra })
   const tree = {
     id: "tree",
@@ -147,16 +145,9 @@ test("the tech tree is checked by name: tiers in range, lower tiers required, th
       card("leap", { tier: 3, requires: ["barracks"] }),
     ],
   }
-  const treeStory = {
-    id: "tree",
-    title: "Tree",
-    commander: "vasse",
-    requires: ["vasse", "ravel"],
-    levels: [{ id: "tree-1", map: "starter-open", credits: 10, unlocks: { buildings: ["garrison"] }, mission: PERIMETER_LEVEL.mission }],
-  }
   const problems = (() => {
     try {
-      loadArmies({ armies: [...ARMY_FILES, tree], stories: [treeStory] }, { registry: FIXTURE_REGISTRY, maps: MAPS })
+      loadArmies({ armies: [...ARMY_FILES, tree] }, { registry: FIXTURE_REGISTRY })
       return []
     } catch (error) {
       assert.ok(error instanceof ArmyError, String(error))
@@ -170,6 +161,5 @@ test("the tech tree is checked by name: tiers in range, lower tiers required, th
     'army "tree": the building "level" of tier 2 requires "garrison", of tier 2: a building requires only lower tiers',
     'army "tree": the building "floating" of tier 2 requires nothing: name the building of tier 1 that unlocks it',
     'army "tree": the building "leap" of tier 3 requires no building of tier 2',
-    'story "tree": level "tree-1" offers the building "garrison", which requires "barracks", which the level neither offers nor has standing',
   ])
 })

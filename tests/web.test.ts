@@ -11,6 +11,7 @@
 //   4. the page's keys are the scripted playtest's keys — one table of what a terminal sends;
 //   5. its direct links are the game's routes — `#at=`, the mode buttons and a demo's `at` read what `--at` reads.
 
+import { testBase } from "./starter-fixture.ts"
 import assert from "node:assert/strict"
 import { readFileSync, readdirSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
@@ -19,7 +20,6 @@ import { runInNewContext } from "node:vm"
 
 import { EventEmitter } from "node:events"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import { KEYBOARD_POP, KEYBOARD_PUSH, KEYBOARD_QUERY, encodeKeyEvent } from "../src/terminal/key-events.ts"
 import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
@@ -123,7 +123,7 @@ if (RUNTIME_IS_BUN) {
 // --- 3. The same characters and colours as the terminal -------------------------------------------
 
 function buildFrame(script: readonly string[]): ReadonlyCellFrame {
-  const context = starterContext()
+  const context = testBase()
   const layout = buildLayout({ columns: 80, rows: 24 }, context.terrain)
   const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })
   for (const name of script) build.handleData(keyBytes(name), layout)

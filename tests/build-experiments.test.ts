@@ -7,7 +7,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { STARTER_CATALOG } from "../src/build/catalog.ts"
+import { STARTER_CATALOG } from "./starter-fixture.ts"
 import { EXPERIMENT_FIELDS, defaultExperiments, experimentSpec, formatExperimentValue, stepExperiment } from "../src/build/experiments.ts"
 import type { Experiments } from "../src/build/experiments.ts"
 import type { ExperimentField } from "../src/build/experiments.ts"

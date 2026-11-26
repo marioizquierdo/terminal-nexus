@@ -4,13 +4,13 @@
 // (the battle engine's healer on a building: `behavior: "support"`, a heal attack, its layers), how a heal looks on
 // screen, and its card at the 80 x 24 floor.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { currentCard } from "../src/build/card.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { CARD_FIRST_ROW, menuFloor } from "../src/build/layout.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { CONTENT_ART, PLACEMENT_ART } from "../src/content/art.ts"
 import { CARD_TEXT } from "../src/content/cards.ts"
 import type { ContentDef } from "../src/content/index.ts"
@@ -391,7 +391,7 @@ test("a heal's mark goes on the first open tile beside the mended unit: above, r
 /** PERIMETER's Build Phase with the Aid Station on its build menu, as Aid Station Permit puts it: the fourth
  *  row, after the buildings already there. */
 function withAidStation(): BuildContext {
-  const context = starterContext()
+  const context = testBase()
   const hotkey = String(context.catalog.length + 1)
   return { ...context, catalog: [...context.catalog, { hotkey, contentId: AID, label: CARD_TEXT[AID]?.title ?? AID, cost: 25 }] }
 }

@@ -12,7 +12,7 @@ import { APART_GAP, briefOf, battleArmy, loadoutOf, beginBattle, playRound, read
 import { footprintDistance, footprintSteps } from "../src/engine/geometry/coords.ts"
 import type { Coord } from "../src/engine/geometry/types.ts"
 import type { MeasureSpec } from "../src/measure/index.ts"
-import { jobsOf, LEVEL_PLANS, measureDuel, mergeMeasurements, pairingIndex, playerPairs, QUICK_SPEC, runSpec, summaryLines } from "../src/measure/index.ts"
+import { jobsOf, measureDuel, mergeMeasurements, pairingIndex, playerPairs, QUICK_SPEC, runSpec, summaryLines } from "../src/measure/index.ts"
 
 const WIDTH = 72
 
@@ -132,8 +132,6 @@ const TINY: MeasureSpec = {
   seeds: [1],
   saves: "routes",
   duels: { map: "pocket", rounds: 2, pulseTicks: 240, commanders: ["vasse", "dob"], players: ["rush"], formations: ["block", "apart"] },
-  levels: [],
-  plans: LEVEL_PLANS,
 }
 
 test("a measurement sets formations against each other from both ends, splits and merges them in order, and says who won by formation", { timeout: 120_000 }, () => {
@@ -147,14 +145,14 @@ test("a measurement sets formations against each other from both ends, splits an
   assert.deepEqual(playerPairs({ ...TINY.duels, formations: ["block"] }, "rush"), [{ A: "rush-block", B: "rush-block" }])
   assert.equal(pairingIndex(TINY.duels, { A: "rush-apart", B: "rush-block" }), 1)
   const parts = new Set(["duels"])
-  const whole = runSpec(TINY, { saves: [], levels: [], parts })
+  const whole = runSpec(TINY, { saves: [], parts })
   assert.equal(whole.duels.length, 2 * 2 * 2)
   assert.deepEqual(
     whole.duels.slice(0, 4).map((duel) => duel.players),
     Array.from({ length: 4 }, () => ({ A: "rush-block", B: "rush-apart" })),
   )
-  const written = (duels: typeof whole.duels) => ({ spec: "tiny", build: "abc", date: "2026-10-21", routing: "test", msPerTick: 1, saves: [], duels, levels: [] })
-  const played = jobsOf(TINY, parts).map((job) => written(runSpec({ ...TINY, seeds: job.seeds, duels: { ...TINY.duels, players: job.players, west: job.west } }, { saves: [], levels: [], parts }).duels))
+  const written = (duels: typeof whole.duels) => ({ spec: "tiny", build: "abc", date: "2026-10-21", routing: "test", msPerTick: 1, saves: [], duels })
+  const played = jobsOf(TINY, parts).map((job) => written(runSpec({ ...TINY, seeds: job.seeds, duels: { ...TINY.duels, players: job.players, west: job.west } }, { saves: [], parts }).duels))
   assert.deepEqual(mergeMeasurements([...played].reverse(), TINY).duels, whole.duels)
   const summary = summaryLines(written(whole.duels)).join("\n")
   assert.match(summary, /players set against each other \(8 duels, from both ends\):\n {4}rush-block v rush-apart: rush-block \d, rush-apart \d, draw \d; \d by a Nexus falling/u)

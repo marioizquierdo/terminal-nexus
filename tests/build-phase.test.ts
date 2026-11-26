@@ -7,7 +7,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { STARTER_ALLOTMENT, STARTER_CATALOG, STARTER_NEXUS_DRAFT, starterTerrain } from "../src/build/catalog.ts"
+import { STARTER_ALLOTMENT, STARTER_CATALOG, STARTER_NEXUS_DRAFT, starterTerrain, testBase } from "./starter-fixture.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
@@ -31,7 +31,6 @@ import { popupSpec } from "../src/build/popup.ts"
 import { cardText } from "../src/build/card.ts"
 import { bottomLine } from "../src/build/help.ts"
 import type { BuildCommand, PlannedPlacement } from "../src/build/types.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { fitViewport, marginForView } from "../src/build/camera.ts"
 import { DOWN, ENTER, ESC, LEFT, MAXIMUM, MINIMUM, PAGE_DOWN, PAGE_UP, RIGHT, SHIFT_LEFT, SHIFT_RIGHT, UP, screenText } from "./build-helpers.ts"
 
@@ -62,8 +61,8 @@ const RXVT_SHIFT_RIGHT = `${ESC}[c`
 
 function session(
   terminal = MINIMUM,
-): { build: BuildSession; layout: ReturnType<typeof buildLayout>; context: ReturnType<typeof starterContext> } {
-  const context = { ...starterContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
+): { build: BuildSession; layout: ReturnType<typeof buildLayout>; context: ReturnType<typeof testBase> } {
+  const context = { ...testBase(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
   const layout = buildLayout(terminal, context.terrain)
   const build = readyBuildSession({
     context,
@@ -260,7 +259,7 @@ test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never 
   assert.deepEqual(buildKeyboardCommand(`${ESC}f`, context), { kind: "move-cursor", dx: fast, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), { kind: "move-cursor", dx: 0, dy: -fastDown })
   // End to end, through the real splitter: nothing is armed, and the screen is not left.
-  const context2 = starterContext()
+  const context2 = testBase()
   const layout = buildLayout(MINIMUM, context2.terrain)
   const build = readyBuildSession({ context: context2, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   build.handleData(`${ESC}f`, layout)
@@ -286,7 +285,7 @@ test("keyboard: Esc is cancel and x is back in every focus, and q opens the game
     }
   }
   // Inside the game menu, q is its Quit row's key; Ctrl+C always quits outright.
-  const context = starterContext()
+  const context = testBase()
   const menu = applyBuildCommand(context, createBuildState(context, { x: 18, y: 13 }, { width: 48, height: 16 }), { kind: "open-game-menu" })
   assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed: false, popup: "game-menu", popupSpec: popupSpec(context, menu) }), { kind: "quit" })
   assert.deepEqual(buildKeyboardCommand(String.fromCharCode(3), { itemCount: 3, armed: false }), { kind: "quit" })
@@ -311,7 +310,7 @@ test("keyboard: h j k l are the arrows everywhere, and H J K L the fast move", (
     ["K", `${ESC}[1;2A`],
     ["L", SHIFT_RIGHT],
   ]
-  const context = starterContext()
+  const context = testBase()
   const menu = applyBuildCommand(context, createBuildState(context, { x: 18, y: 13 }, { width: 48, height: 16 }), { kind: "open-game-menu" })
   const contexts: readonly KeyboardContext[] = [
     { itemCount: 3, armed: false, focus: "map" },
@@ -442,7 +441,7 @@ test("a misclick costs one undo, which is what makes a two-click placement revis
 
 test("legality: an illegal placement is refused with a reason and nothing is moved to fit", () => {
   const { build, layout } = session()
-  const context = starterContext()
+  const context = testBase()
   // A build range of 4, so the Nexus's own range reaches the row under the north-west wall: no rock stands
   // inside the range the map opens with at 3, and a building planned now gives none until it stands.
   build.dispatch({ kind: "experiment-adjust", field: "buildRange", step: 1 })
@@ -516,7 +515,7 @@ test("a plan is revisable: remove under the cursor, and undo the last one", () =
 })
 
 test("the cursor points at a structure's centre tile, the way a sandbox's start already does", () => {
-  const context = starterContext()
+  const context = testBase()
   const barracks = context.registry.get("structure.citizen.barracks")
   // A 3x2 footprint centres on its second column and its first row.
   assert.deepEqual(anchorForCursor({ x: 30, y: 14 }, barracks.footprint), { x: 29, y: 14 })
@@ -525,7 +524,7 @@ test("the cursor points at a structure's centre tile, the way a sandbox's start 
 })
 
 test("every building row names content that exists, costs something, and says what it does", () => {
-  const context = starterContext()
+  const context = testBase()
   for (const item of STARTER_CATALOG) {
     assert.ok(context.registry.has(item.contentId), `${item.contentId} is not real content`)
     assert.ok(item.cost > 0, `${item.label} costs nothing`)
@@ -543,7 +542,7 @@ test("the budget actually runs out, which is the only thing that makes the menu 
   // player placing things hits the wall, not that three particular numbers sum a particular way.
   const { build, layout } = session()
   build.handleData("1", layout) // the most expensive row
-  const context = starterContext()
+  const context = testBase()
   assert.equal(remaining(context, build.state), STARTER_ALLOTMENT)
 
   // Placed wherever arming puts it — the nearest spot in the build range — and armed again, as a player does.
@@ -558,7 +557,7 @@ test("the budget actually runs out, which is the only thing that makes the menu 
 })
 
 test("spending is exactly as revisable as the plan: placing spends, removing and undoing refund", () => {
-  const context = starterContext()
+  const context = testBase()
   const { build, layout } = session()
   const barracks = STARTER_CATALOG[0]!
   const turret = STARTER_CATALOG[2]!
@@ -584,7 +583,7 @@ test("spending is exactly as revisable as the plan: placing spends, removing and
 })
 
 test("a placement that cannot be afforded is refused, and changes nothing at all", () => {
-  const context = starterContext()
+  const context = testBase()
   const { build, layout } = session()
   // Spend down to less than the barracks costs, then try a barracks.
   build.handleData("1", layout)
@@ -607,7 +606,7 @@ test("a placement that cannot be afforded is refused, and changes nothing at all
 })
 
 test("affordability is reported before a tile problem, because it is true wherever the cursor is", () => {
-  const context = starterContext()
+  const context = testBase()
   // Onto rock, with a budget that cannot pay for it either. Reporting the rock would send the
   // player to move the cursor, which would not help. The rock of the north-west wall, at a build range of 8,
   // which brings the row under it, four rows up, into the Nexus's range.
@@ -640,7 +639,7 @@ test("the buildings' digits run straight through the one list, with no mode to t
 })
 
 test("the buildings are one list in catalog order, one row each, with no group headings", () => {
-  const context = starterContext()
+  const context = testBase()
   const layout = buildLayout(MINIMUM, context.terrain)
   const lines = constructLines(layout, context.catalog)
   // Every building has its row, in catalog order, on consecutive rows — which is what a click relies on.
@@ -680,9 +679,9 @@ test("the scroll margin is a share of the view: the tuned one, or another from -
   // It is a share of the view's width and height; the owner settled the share (a tuned value),
   // and `--scroll-margin` sets another for one run. 49 tiles wide at 80 columns: 5% is 2 tiles, 10% is 5,
   // 20% is 10, 25% is 12, 30% is 15. No --scroll-margin: the tuned value.
-  const tuned = marginForView(TUNING.scrollMargin, buildLayout(MINIMUM, starterContext().terrain).viewport).x
+  const tuned = marginForView(TUNING.scrollMargin, buildLayout(MINIMUM, testBase().terrain).viewport).x
   for (const [percent, margin] of [[5, 2], [10, 5], [20, 10], [25, 12], [30, 15], [undefined, tuned]] as const) {
-    const context = percent === undefined ? starterContext() : { ...starterContext(), scrollMargin: percent }
+    const context = percent === undefined ? testBase() : { ...testBase(), scrollMargin: percent }
     const layout = buildLayout(MINIMUM, context.terrain)
     const build = readyBuildSession({ context, cursor: { x: 0, y: 0 }, viewport: layout.viewport })
     // Walk east until the camera first moves: it should be exactly at the margin from the east edge.
@@ -700,7 +699,7 @@ test("the scroll margin is a share of the view: the tuned one, or another from -
 })
 
 test("a resize keeps the cursor where it was and re-fits the camera around it", () => {
-  const context = starterContext()
+  const context = testBase()
   const small = buildLayout(MINIMUM, context.terrain)
   const build = readyBuildSession({ context, cursor: { x: 60, y: 30 }, viewport: small.viewport })
   const cursor = { ...build.state.cursor }
@@ -712,7 +711,7 @@ test("a resize keeps the cursor where it was and re-fits the camera around it", 
 })
 
 test("Esc walks back to the game menu; only its q quits, and neither touches the plan", () => {
-  const context = starterContext()
+  const context = testBase()
   const layout = buildLayout(MINIMUM, context.terrain)
   let quits = 0
   const build = readyBuildSession({
@@ -827,7 +826,7 @@ test("a move clamped back to the same tile keeps the refusal on screen, read qui
 })
 
 test("keyboard: g goes to the player's Nexus from the menu or the map, and the keyboard goes to the map", () => {
-  const context = starterContext()
+  const context = testBase()
   const nexus = nexusTile(context)
   assert.ok(nexus !== null)
   assert.deepEqual(buildKeyboardCommand("g", { itemCount: 3, armed: false, focus: "menu" }), { kind: "go-nexus" })

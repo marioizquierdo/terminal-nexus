@@ -1,6 +1,6 @@
-// `terminal-nexus --at story?mission=<id>&round=<n>`, `--at skirmish`, `--load <file>` — the Build Phase's live
-// terminal loop, opened on a story mission at one of its rounds or on a Skirmish (`./levels.ts`, `./route.ts`,
-// `./skirmish-open.ts`); PERIMETER's first unless told otherwise.
+// `terminal-nexus --at skirmish`, `--load <file>` — the Build Phase's live terminal loop, opened on a Skirmish at one
+// of its rounds (`./levels.ts`, `./route.ts`, `./skirmish-open.ts`); the starter map's (`./starter.ts`) unless told
+// otherwise.
 //
 // Built on the same pieces as `src/cli/menu.ts`: the shared idempotent disposer (`lifecycle.ts`),
 // the same backend selection, the same opt-in SGR mouse reporting switched off on every exit path.
@@ -28,7 +28,8 @@ import { chunkText } from "../view/backends/ports.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
-import { DEFAULT_LEVEL, openRound } from "./levels.ts"
+import { openRound } from "./levels.ts"
+import { DEFAULT_LEVEL } from "./starter.ts"
 import { formatRoute } from "./route.ts"
 import type { LevelDestination } from "./route.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
@@ -72,9 +73,8 @@ const messageOf = (error: unknown): string => (error instanceof Error ? error.me
 export type BuildPhaseOptions = Readonly<{
   settings: Settings
   /**
-   * The story level to open and the round to open it at (`--at story?mission=<id>&round=<n>`): the level's
-   * mission plays its rounds, and a later round is reached as a player who builds nothing reaches it
-   * (`openRound`), with this run's Experiments. PERIMETER's first round (`DEFAULT_LEVEL`) unless given.
+   * The battle to open and the round to open it at: a later round is reached as a player who builds nothing reaches
+   * it (`openRound`), with this run's Experiments. The starter map's first round (`DEFAULT_LEVEL`) unless given.
    */
   at?: LevelDestination
   /** A backend name, or a backend itself (the browser playtest page's canvas). */
@@ -119,7 +119,7 @@ export type BuildPhaseOptions = Readonly<{
   activity?: ActivityLog
   /** Where the screen runs, as `session.start` records it: `terminal` unless the playtest page says `web`. */
   hostName?: HostName
-  /** Whether a round that opens with a scene plays it in the dialog first — PERIMETER's intro, a
+  /** Whether a round that opens with a scene plays it in the dialog first — a loaded save's line, a
    *  Commander's return — and the Commander's appearance with it (`commander-moments.ts`). On unless a test turns
    *  it off to start on the menu. */
   scenes?: boolean

@@ -12,6 +12,7 @@ import crossingNew from "../../saves/crossing-new.save.json" with { type: "json"
 import crossingRound4 from "../../saves/crossing-round-4.save.json" with { type: "json" }
 import mirrorVasse from "../../saves/mirror-vasse.save.json" with { type: "json" }
 import pocketShort from "../../saves/pocket-short.save.json" with { type: "json" }
+import starter from "../../saves/starter.save.json" with { type: "json" }
 import type { Profiles, ScriptProfile } from "./save.ts"
 
 /** Every script profile `players/scripts/` ships, by name. */
@@ -28,4 +29,5 @@ export const SHIPPED_SAVES: ReadonlyMap<string, string> = new Map([
   ["saves/crossing-round-4.save.json", JSON.stringify(crossingRound4)],
   ["saves/mirror-vasse.save.json", JSON.stringify(mirrorVasse)],
   ["saves/pocket-short.save.json", JSON.stringify(pocketShort)],
+  ["saves/starter.save.json", JSON.stringify(starter)],
 ])

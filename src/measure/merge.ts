@@ -1,5 +1,5 @@
 // A spec played as several processes side by side, and their results made one (docs/system-design/measurement.md).
-// `jobsOf` splits a spec into the maps, each scripted player's duels on each seed, and the Story levels; and
+// `jobsOf` splits a spec into the maps and each scripted player's duels on each seed; and
 // `mergeMeasurements` puts the parts back in the order `runSpec` plays them, whatever order they finished or were
 // named in, so a spec played in parallel writes down the same battles, in the same order, as one process would. Pure:
 // starting the processes and keeping their files are the command's (`src/cli/measure.ts`).
@@ -19,7 +19,7 @@ export type MeasureJob = Readonly<{
 }>
 
 /** A spec split into jobs: each player's duels for each Commander on side A on each seed (duels are the slow part,
- *  and one seed's can take several times another's, so they are cut small), then the levels, then the maps. */
+ *  and one seed's can take several times another's, so they are cut small), then the maps. */
 export function jobsOf(spec: MeasureSpec, parts: ReadonlySet<string>): MeasureJob[] {
   const jobs: MeasureJob[] = []
   const { players } = spec.duels
@@ -33,7 +33,6 @@ export function jobsOf(spec: MeasureSpec, parts: ReadonlySet<string>): MeasureJo
       }
     }
   }
-  if (parts.has("levels")) jobs.push({ label: "levels", parts: ["levels"], players, west, seeds: spec.seeds })
   if (parts.has("saves")) jobs.push({ label: "saves", parts: ["saves"], players, west, seeds: spec.seeds })
   return jobs
 }
@@ -51,7 +50,7 @@ export function ticksOf(measurement: Measurement): number {
   return (
     battleTicks(measurement.saves.map((run) => run.battle)) +
     battleTicks(measurement.duels.flatMap((duel) => duel.rounds.map((round) => round.battle))) +
-    battleTicks(measurement.levels.flatMap((level) => level.rounds.map((round) => round.battle)))
+    battleTicks((measurement.levels ?? []).flatMap((level) => level.rounds.map((round) => round.battle)))
   )
 }
 
@@ -60,7 +59,7 @@ export function ticksOf(measurement: Measurement): number {
  * refused: two builds in one file would compare nothing. The duels are put in the order `runSpec` plays them — by
  * player and the formations it plays by (`playerPairs`), then the west Commander, then the east, as `spec` lists them
  * (one it does not list after, by name), then by seed — so the result does not depend on how the spec was split; the
- * maps and the levels in the order the parts are given. A tick's time is weighted by the ticks each part played; `jobs` is how many played at once (all of them, unless
+ * maps in the order the parts are given. A tick's time is weighted by the ticks each part played; `jobs` is how many played at once (all of them, unless
  * the caller knows better).
  */
 export function mergeMeasurements(parts: readonly Measurement[], spec: MeasureSpec, jobs = parts.length): Measurement {
@@ -105,6 +104,5 @@ export function mergeMeasurements(parts: readonly Measurement[], spec: MeasureSp
     msPerTick: ticks === 0 ? null : Math.round((ms / ticks) * 1000) / 1000,
     saves: parts.flatMap((part) => part.saves),
     duels,
-    levels: parts.flatMap((part) => part.levels),
   }
 }

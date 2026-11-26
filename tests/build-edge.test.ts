@@ -4,6 +4,7 @@
 // checked is the rule every style a map may name keeps — **the same weight on all four sides**, in
 // both glyph packs — and that drawing and hit-testing read one geometry with the shared west side.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { isGated } from "../src/build/camera.ts"
@@ -12,10 +13,9 @@ import { EXPLORE_ROW, buildLayout, cellForTile, menuEntryAt, tileAtCell } from "
 import type { BuildLayout } from "../src/build/layout.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
-import { STARTER_EDGE_STYLE } from "../src/build/catalog.ts"
+
 import { MAP_EDGE_STYLES } from "../src/build/types.ts"
 import type { MapEdgeStyle } from "../src/build/types.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import type { MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
@@ -34,9 +34,12 @@ function wholeMap(width = 48, height = 16): MapTerrain {
   return { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") }
 }
 
+/** The style a map may name for its own edge, as the starter map named it before it became a Skirmish's: a fence. */
+const FENCE: MapEdgeStyle = "fence"
+
 /** The starter map's context on another battlefield, naming `edgeStyle` as its own — or none, when `null`. */
-function contextFor(terrain: MapTerrain, edgeStyle: MapEdgeStyle | null = STARTER_EDGE_STYLE): BuildContext {
-  const { edgeStyle: _starterEdge, ...rest } = { ...starterContext(), terrain, standing: [] }
+function contextFor(terrain: MapTerrain, edgeStyle: MapEdgeStyle | null = FENCE): BuildContext {
+  const { edgeStyle: _starterEdge, ...rest } = { ...testBase(), terrain, standing: [] }
   return edgeStyle === null ? rest : { ...rest, edgeStyle }
 }
 
@@ -145,7 +148,7 @@ test("a map shorter and narrower than the pane closes its rectangle in its edge 
 
 test("the edge style changes only the sides where the map ends: in the middle of the map the frame is the same for every style", () => {
   const middle = { x: 48, y: 20 }
-  const terrain = starterContext().terrain
+  const terrain = testBase().terrain
   for (const pack of PACKS) {
     const plain = screen(contextFor(terrain, null), pack, middle).frame
     for (const style of MAP_EDGE_STYLES) {
@@ -156,8 +159,8 @@ test("the edge style changes only the sides where the map ends: in the middle of
 })
 
 test("the map's own edge is the style the map names, and the solid bar for a map that names none", () => {
-  assert.equal(STARTER_EDGE_STYLE, "fence")
-  assert.equal(starterContext().edgeStyle, STARTER_EDGE_STYLE, "the starter map names its own")
+  // No Skirmish map names one yet: the starter map's battle draws the solid bar.
+  assert.equal(testBase().edgeStyle, undefined)
   const own = screen(contextFor(wholeMap()), "unicode")
   assert.equal(cellAt(own.frame, own.layout.mapBox.left + 3, own.layout.mapBox.top).glyph, "┅")
   const none = screen(contextFor(wholeMap(), null), "unicode")
@@ -185,8 +188,9 @@ test("a quiet edge is a role of its own, resolved in both themes at every colour
 })
 
 test("the ASCII fence's posts are fixed to the map, not the screen: they scroll with it", () => {
-  // Hard against the north edge, then further east: the posts stay on the map's own columns.
-  const context = starterContext()
+  // Hard against the north edge, then further east: the posts stay on the map's own columns. The starter map's
+  // battlefield, naming a fence for its edge.
+  const context: BuildContext = { ...testBase(), edgeStyle: FENCE }
   const at = (cursorX: number): Screen => screen(context, "ascii", { x: cursorX, y: 0 })
   const postsAt = (s: Screen): number[] => {
     const columns: number[] = []
@@ -204,7 +208,7 @@ test("the ASCII fence's posts are fixed to the map, not the screen: they scroll 
 })
 
 test("the shared west side: the divider is the battlefield's west side, the battlefield gets its column, and drawing and hit-testing agree", () => {
-  const context = starterContext()
+  const context = testBase()
   const layout = buildLayout(MINIMUM, context.terrain)
   assert.equal(layout.mapBox.left, layout.dividerColumn, "the divider is the battlefield's west side")
   assert.equal(layout.origin.column, layout.dividerColumn + 1, "the battlefield starts right beside it")
@@ -271,7 +275,7 @@ test("a scripted playtest draws every tile where the layout says, and a click on
 })
 
 test("a light side on the shared divider is the divider drawn soft; the map's edge there is the map's edge style", () => {
-  const terrain = starterContext().terrain
+  const terrain = testBase().terrain
   const middle = screen(contextFor(terrain), "ascii", { x: 48, y: 20 })
   const row = middle.layout.origin.row + 4
   assert.equal(cellAt(middle.frame, middle.layout.dividerColumn, row).glyph, chromeGlyph("ascii", "softVertical"))

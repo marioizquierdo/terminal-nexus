@@ -8,7 +8,7 @@ import { footprintSteps, footprintWithin } from "../src/engine/geometry/coords.t
 import type { Coord, Footprint, MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 import { canStand, DistanceField, goalsInside, goalsNear, groundFor, isWall, patchesOf, rankSteps, UNREACHABLE, wallsOf } from "../src/engine/routing/index.ts"
 import type { Ground } from "../src/engine/routing/index.ts"
-import { starterTerrain } from "../src/build/maps.ts"
+import { starterTerrain } from "./starter-fixture.ts"
 
 const ONE: Footprint = [{ x: 0, y: 0 }]
 const WIDE: Footprint = [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }]

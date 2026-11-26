@@ -1,25 +1,20 @@
 // The dialog and the intro highlight (the owner's Commander round 2: "Vasse is visible on the map. She should
 // have an intro highlight when she shows up ... perhaps a new type of popup at the bottom that shows dialogs").
 //
-// A mission's lines as data (`say` at `build.start`, checked when the mission loads and never read by the
-// runner); a round's scene in the Build Phase's context; **the dialog** — the popup the player does not open,
-// docked at the bottom of the map, read on by Enter, Space or a click and skipped by Esc, the camera on each
-// line's focus and the Build Phase afterwards exactly as the round opened it; **the intro highlight** around
-// that focus, in its three forms; the line the game says when a Commander comes back (the named fixture,
-// `tests/commander-fixture.ts`); the Activity Logs that say whether it was read; and Vasse bold at full
-// strength while a Pulse plays.
+// A round's scene in the Build Phase's context; **the dialog** — the popup the player does not open, docked at the
+// bottom of the map, read on by Enter, Space or a click and skipped by Esc, the camera on each line's focus and the
+// Build Phase afterwards exactly as the round opened it; **the intro highlight** around that focus, in its three
+// forms; the line the game says when a Commander comes back (a Skirmish she falls in, `tests/commander-fixture.ts`);
+// the Activity Logs that say whether it was read; and Vasse bold at full strength while a Pulse plays.
+//
+// The dialog is held on the starter map's round 1 with a four-line scene of two speakers, the intro PERIMETER opened
+// on before Story stopped (`INTRO`): what a scene can be, whoever writes it.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
-import {
-  STARTER_ALLOTMENT,
-  STARTER_CATALOG,
-  STARTER_NEXUS_DRAFT,
-  STARTER_STANDING,
-  STARTER_START_CURSOR,
-  starterTerrain,
-} from "../src/build/catalog.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
+import { STARTER_CATALOG, starterTerrain } from "./starter-fixture.ts"
 import { centreOn } from "../src/build/camera.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
@@ -29,24 +24,17 @@ import type { PlacedPopup } from "../src/build/popup.ts"
 import { placePopup, popupHitAt, popupSpec } from "../src/build/popup.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { applyBuildCommand, createBuildState, nexusTile } from "../src/build/state.ts"
+import type { DialogLine } from "../src/build/types.ts"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
-import type { MissionPlay } from "../src/cli/pulse-run.ts"
-import { STARTER_MISSION, missionPlay } from "../src/cli/pulse-run.ts"
-import { starterContext } from "../src/cli/starter.ts"
+import type { LevelPlay } from "../src/cli/levels.ts"
+import { STARTER_LEVEL, starterContext } from "../src/cli/starter.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { ROW_DISTANCE, tilesOf } from "../src/engine/geometry/coords.ts"
 import type { Coord } from "../src/engine/geometry/types.ts"
 import { ACTIVITY_FILTERS, filteredEntries } from "../src/log/activity.ts"
-import { regroup, resolveMissionPulse } from "../src/match/index.ts"
-import type { MissionPulse } from "../src/match/index.ts"
-import { PERIMETER } from "../src/armies/index.ts"
-import { MissionError, SAY_COLUMNS, SAY_LINES, sayLines, sceneOf, validateMission } from "../src/mission/index.ts"
-import type { MissionDefinition, TriggerAction, TriggerDefinition } from "../src/mission/index.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
-import { hashState } from "../src/engine/state/serialize.ts"
-import type { MatchState } from "../src/engine/state/types.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import { BREATH_FRAME_MS, BuildAnimation } from "../src/view/build-live.ts"
 import { drawnBold } from "../src/view/map-layers.ts"
@@ -80,22 +68,45 @@ import {
   screenText,
 } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
-import { COMMANDER_FALLS, VASSE, sittingOut } from "./commander-fixture.ts"
+import { VASSE, commanderFallsLevel } from "./commander-fixture.ts"
 
 const terrain = starterTerrain()
 const registry = FIXTURE_REGISTRY
 
-/** A Build Phase session as the game opens one — scenes played unless told otherwise — on PERIMETER's first
- *  round, or the context and mission given. */
+/** The starter round's own map, where the intro's lines look: Vasse arriving with her troops, Dob Hunter's army by his
+ *  Nexus, and her Nexus. */
+const ROUND_ONE = starterContext()
+const herTile = (ROUND_ONE.incoming ?? []).find((entity) => entity.contentId === VASSE)?.anchor ?? { x: 0, y: 0 }
+const enemyTiles = (ROUND_ONE.incoming ?? []).filter((entity) => entity.player === "B").map((entity) => entity.anchor)
+const nexusAt = ROUND_ONE.standing.find((structure) => ROUND_ONE.registry.get(structure.contentId).nexus === true)?.anchor ?? { x: 0, y: 0 }
+const nexusTiles = tilesOf(nexusAt, ROUND_ONE.registry.get("structure.citizen.nexus").footprint)
+const middle = (tiles: readonly Coord[]): Coord => ({
+  x: Math.floor((Math.min(...tiles.map((tile) => tile.x)) + Math.max(...tiles.map((tile) => tile.x))) / 2),
+  y: Math.floor((Math.min(...tiles.map((tile) => tile.y)) + Math.max(...tiles.map((tile) => tile.y))) / 2),
+})
+
+/** The intro PERIMETER opened on, as a scene of round 1: four lines, two speakers, three things to look at. */
+const INTRO: readonly DialogLine[] = [
+  { speaker: "Vasse", side: "A", unit: VASSE, text: "By the book. The new book.", focus: { tile: herTile, own: [herTile] } },
+  { speaker: "Corvane", side: "B", unit: null, text: "Nice fence, roadmakers. We brought wire cutters.", focus: { tile: middle(enemyTiles), own: enemyTiles } },
+  { speaker: "Vasse", side: "A", unit: VASSE, text: "It is not our fence I would worry about.", focus: { tile: herTile, own: [herTile] } },
+  { speaker: "Corvane", side: "B", unit: null, text: "...Why is your pyramid looking at me?", focus: { tile: { x: 18, y: 10 }, own: nexusTiles } },
+]
+
+/** The starter map's round 1, opening on `INTRO`. */
+const introContext = (): BuildContext => ({ ...starterContext(), scene: INTRO })
+
+/** A Build Phase session as the game opens one — scenes played unless told otherwise — on the starter map's first
+ *  round with the intro, or the context and play given. */
 function sceneSide(
-  options: Readonly<{ context?: BuildContext; mission?: Pick<MissionPlay, "startPulse" | "nextRound">; scenes?: boolean; terminal?: Readonly<{ columns: number; rows: number }> }> = {},
+  options: Readonly<{ context?: BuildContext; mission?: Pick<LevelPlay, "startPulse" | "nextRound">; scenes?: boolean; terminal?: Readonly<{ columns: number; rows: number }> }> = {},
 ): BuildSide {
   const activity = activityLog()
   // Next round on manual: these rounds open after their result, which Enter closes (the default goes straight on).
-  const given = options.context ?? starterContext()
+  const given = options.context ?? introContext()
   const context: BuildContext = { ...given, activity, experiments: { ...given.experiments, nextRound: "key" } }
   const layout = buildLayout(options.terminal ?? MINIMUM, context.terrain)
-  const play = options.mission ?? STARTER_MISSION
+  const play = options.mission ?? STARTER_LEVEL.play
   const build = new BuildSession({
     context,
     cursor: STARTER_START_CURSOR,
@@ -130,141 +141,18 @@ function playRound(side: BuildSide): void {
   assert.equal(pulse.phase(), "home")
 }
 
-/** The named fixture's first round on the starter map: Vasse falls in round 1 and is back as round 2 opens — or,
- *  with a Vasse who sits a round out (`out`), back for round 3. */
-function fixtureSide(scenes = true, out = 0): BuildSide {
-  const play = missionPlay(COMMANDER_FALLS)
-  const context = play.firstRound({
-    terrain,
-    registry: out === 0 ? registry : sittingOut(out, registry),
-    catalog: STARTER_CATALOG,
-    standing: STARTER_STANDING,
-    allotment: STARTER_ALLOTMENT,
-    nexusDraft: STARTER_NEXUS_DRAFT,
-  })
-  return sceneSide({ context, mission: play, scenes })
+/** The Skirmish she falls in, at its round 2 (`commanderFallsLevel`): Vasse falls, and is back as round 3 opens. */
+function fixtureSide(scenes = true): BuildSide {
+  const level = commanderFallsLevel()
+  const side = sceneSide({ context: level.firstRound(), mission: level.play, scenes })
+  // The loaded save's line, read past.
+  if (scenes) keys(side, ESC)
+  return side
 }
-
-// --- A mission's lines, as data -----------------------------------------------------------------------
-
-test("PERIMETER's round 1 has the intro's four lines, in order, every word already written in the story design", () => {
-  assert.deepEqual(
-    sceneOf(PERIMETER, 1).map((line) => [line.speaker, line.text]),
-    [
-      [VASSE, "By the book. The new book."],
-      ["Corvane", "Nice fence, roadmakers. We brought wire cutters."],
-      [VASSE, "It is not our fence I would worry about."],
-      ["Corvane", "...Why is your pyramid looking at me?"],
-    ],
-  )
-  assert.deepEqual(sceneOf(PERIMETER, 2), [])
-  assert.deepEqual(sceneOf(PERIMETER, 3), [])
-  // In trigger order, and in a trigger's own order.
-  const twice: MissionDefinition = {
-    ...PERIMETER,
-    triggers: [
-      { id: "first", when: { event: "build.start", pulse: 2 }, do: [say("Corvane", "One."), say("Corvane", "Two.")] },
-      ...PERIMETER.triggers,
-      { id: "last", when: { event: "build.start", pulse: 2 }, do: [say("Corvane", "Three.")] },
-    ],
-  }
-  assert.deepEqual(sceneOf(twice, 2).map((line) => line.text), ["One.", "Two.", "Three."])
-})
-
-test("every PERIMETER line fits the dialog at 80 x 24: the text budget is the dialog's own width", () => {
-  const side = sceneSide()
-  assert.equal(dialogBox(side).textLimit, SAY_COLUMNS, "the mission's text budget and the dialog's width disagree")
-  for (const line of sceneOf(PERIMETER, 1)) assert.ok(sayLines(line.text).length <= SAY_LINES, line.text)
-})
-
-/** A line by `speaker`, looking at the Nexus. */
-function say(speaker: string, text: string, focus: Record<string, string> = { region: "nexus" }): TriggerAction {
-  return { say: { speaker, text, focus } } as TriggerAction
-}
-
-const problemsOf = (mission: MissionDefinition): readonly string[] => {
-  try {
-    validateMission(mission, terrain, registry)
-    return []
-  } catch (error) {
-    assert.ok(error instanceof MissionError, `not a MissionError: ${String(error)}`)
-    return error.problems
-  }
-}
-
-const withTriggers = (...extra: readonly TriggerDefinition[]): MissionDefinition => ({ ...PERIMETER, triggers: [...PERIMETER.triggers, ...extra] })
-const at = (pulse: number) => ({ event: "build.start" as const, pulse })
-
-test("validation refuses every broken line by name, and reports them all at once", () => {
-  const long = Array.from({ length: 40 }, () => "word").join(" ")
-  const cases: readonly (readonly [string, MissionDefinition, RegExp])[] = [
-    ["a line at a moment of a Pulse", withTriggers({ id: "t", when: { pulse: 1, tick: 0 }, do: [say("Corvane", "Now.")] }), /must wait for a Build Phase to open \(build\.start\)/],
-    ["a line at a Pulse's end", withTriggers({ id: "t", when: { event: "pulse.end", pulse: 1 }, do: [say("Corvane", "Done.")] }), /must wait for a Build Phase to open/],
-    ["no speaker", withTriggers({ id: "t", when: at(1), do: [say("", "Hm.")] }), /has no speaker/],
-    ["no words", withTriggers({ id: "t", when: at(1), do: [say("Corvane", "   ")] }), /says nothing/],
-    ["too long for the dialog", withTriggers({ id: "t", when: at(1), do: [say("Corvane", long)] }), /too long for the dialog: it takes \d+ lines of 42 columns at 80 x 24, and the dialog holds 3/],
-    ["an unknown region", withTriggers({ id: "t", when: at(1), do: [say("Corvane", "There.", { region: "moon" })] }), /looks at the unknown region "moon"/],
-    ["a group not there yet", withTriggers({ id: "t", when: at(1), do: [say("Corvane", "Them.", { group: "push" })] }), /looks at the group "push", which no trigger brings by round 1/],
-    ["a unit not there yet", withTriggers({ id: "t", when: at(1), do: [say("Corvane", "That.", { unit: "unit.ravel.slinger" })] }), /looks at "unit\.ravel\.slinger", which no trigger brings by round 1/],
-    ["an unknown unit", withTriggers({ id: "t", when: at(1), do: [say("Corvane", "That.", { unit: "unit.nope" })] }), /looks at the unknown content id "unit\.nope"/],
-    ["two things at once", withTriggers({ id: "t", when: at(1), do: [say("Corvane", "Both.", { unit: VASSE, region: "nexus" })] }), /looks at 2 things at once/],
-    ["a mistyped speaker", withTriggers({ id: "t", when: at(1), do: [say("unit.citizen.vase", "Hm.")] }), /names the unknown speaker "unit\.citizen\.vase"/],
-    ["a building speaking", withTriggers({ id: "t", when: at(1), do: [say("structure.citizen.barracks", "Hm.")] }), /has the structure "structure\.citizen\.barracks" speak/],
-    ["a speaker not there yet", withTriggers({ id: "t", when: at(1), do: [say("unit.ravel.slinger", "Soon.")] }), /has "unit\.ravel\.slinger" speak, which no trigger brings by round 1/],
-    ["an unknown side", withTriggers({ id: "t", when: at(1), do: [{ say: { speaker: "Corvane", side: "C", text: "Hm." } } as unknown as TriggerAction] }), /names the unknown side "C"/],
-    ["a round the mission does not have", withTriggers({ id: "t", when: at(4), do: [say("Corvane", "Later.")] }), /waits for the Build Phase of round 4, but the mission has rounds 1 to 3/],
-    [
-      "a spawn as a Build Phase opens",
-      withTriggers({ id: "t", when: at(2), do: [{ spawn: { side: "B", units: [{ unit: "unit.ravel.runner", count: 1 }], at: "ridge" } }] }),
-      /action 1 \(spawn\) cannot run when a Build Phase opens: only a line of dialog \(say\) can/,
-    ],
-    ["a win as a Build Phase opens", withTriggers({ id: "t", when: at(2), do: [{ win: true }] }), /action 1 \(win\) cannot run when a Build Phase opens/],
-  ]
-  for (const [name, mission, expected] of cases) {
-    const problems = problemsOf(mission)
-    assert.ok(problems.some((problem) => expected.test(problem)), `${name}: ${JSON.stringify(problems)}`)
-    // Each by its trigger and action.
-    assert.ok(problems.every((problem) => /^trigger "t", action \d+ \((say|spawn|win)\)|^trigger "t" /.test(problem)), `${name}: ${JSON.stringify(problems)}`)
-  }
-  // Every problem at once, not just the first.
-  const many = withTriggers({ id: "t", when: at(1), do: [say("", " ", { region: "moon" }), say("unit.nope.x", long, { group: "ghosts" })] })
-  assert.ok(problemsOf(many).length >= 5, JSON.stringify(problemsOf(many)))
-  // And a group or a unit some trigger brings by the round is fine — the probe, Vasse.
-  assert.deepEqual(problemsOf(withTriggers({ id: "t", when: at(1), do: [say("Corvane", "You.", { group: "probe" }), say(VASSE, "Me.", { unit: VASSE })] })), [])
-})
-
-/** A whole mission, round by round, with the regroup between them: nothing planned, as the hash test in
- *  tests/mission.test.ts plays it. */
-function playMission(mission: MissionDefinition): MissionPulse[] {
-  const pulses: MissionPulse[] = []
-  let carried: MatchState | null = null
-  for (let pulse = 1; pulse <= mission.pulses; pulse += 1) {
-    const run = resolveMissionPulse({ mission, terrain, registry, pulse, carried, structures: pulse === 1 ? STARTER_STANDING : [] })
-    pulses.push(run)
-    if (run.verdict.kind !== "continue") break
-    carried = regroup(run.final, registry).state
-  }
-  return pulses
-}
-
-// It hashes every state of every round of PERIMETER, four times over: longer than Bun's five seconds a test, so it says
-// how long it may take, as the curve level's measurement does.
-test("a mission's lines never change what its Pulses resolve: with or without them, the same states, Pulse by Pulse", { timeout: 60_000 }, () => {
-  const shape = (pulses: readonly MissionPulse[]) =>
-    pulses.map((pulse) => [pulse.states.map(hashState), pulse.events.length, pulse.verdict, pulse.fired])
-  const withLines = shape(playMission(PERIMETER))
-  const without: MissionDefinition = { ...PERIMETER, triggers: PERIMETER.triggers.filter((trigger) => trigger.id !== "intro") }
-  const more = withTriggers({ id: "chatter", when: at(2), do: [say("Corvane", "Again.", { region: "ridge" })] })
-  validateMission(more, terrain, registry)
-  assert.deepEqual(shape(playMission(without)), withLines, "the intro changed a Pulse")
-  assert.deepEqual(shape(playMission(more)), withLines, "a line in round 2 changed a Pulse")
-  // The runner never fires a line: its triggers fire in the Pulse, and a line is the Build Phase's.
-  assert.ok(playMission(PERIMETER).every((pulse) => pulse.fired.every((fired) => fired.trigger !== "intro")))
-})
 
 // --- The dialog --------------------------------------------------------------------------------------
 
-test("PERIMETER's round 1 opens on the dialog when the session plays scenes: Vasse's line, under her name", () => {
+test("a round with a scene opens on the dialog when the session plays scenes: Vasse's line, under her name", () => {
   const side = sceneSide()
   const { state } = side.build
   assert.equal(state.popup, "dialog")
@@ -293,7 +181,7 @@ test("Enter, Space and a click anywhere read on, line by line; after the last th
   const byKeys = sceneSide()
   keys(byKeys, ENTER)
   assert.equal(byKeys.build.state.dialog?.line, 1)
-  assert.match(screenText(byKeys), / CORVANE /)
+  assert.match(screenText(byKeys), / CORVANE\b/)
   assert.match(screenText(byKeys), /Nice fence, roadmakers\. We brought wire/)
   keys(byKeys, SPACE)
   assert.equal(byKeys.build.state.dialog?.line, 2)
@@ -366,22 +254,17 @@ test("after the dialog the Build Phase is exactly the one a session without scen
   }
 })
 
-test("each line takes the camera to what it looks at: Vasse, the raid on the ridge, the Nexus", () => {
+test("each line takes the camera to what it looks at: Vasse, the enemy by his Nexus, her Nexus", () => {
   const side = sceneSide()
   const round = side.build.round
   const scene = round.scene ?? []
   const vasse = (round.incoming ?? []).find((entity) => entity.contentId === VASSE)
-  assert.ok(vasse !== undefined, "she is not arriving with the squads")
+  assert.ok(vasse !== undefined, "she is not arriving with her troops")
   // What each line looks at, on round 1's own map.
   assert.deepEqual(scene[0]?.focus, { tile: vasse.anchor, own: [vasse.anchor] })
   assert.deepEqual(scene[2]?.focus, scene[0]?.focus)
-  const raid = (round.incoming ?? []).filter((entity) => entity.player === "B" && entity.tick === 0)
-  const raidTiles = raid.flatMap((entity) => tilesOf(entity.anchor, registry.get(entity.contentId).footprint))
-  assert.deepEqual(
-    [...(scene[1]?.focus?.own ?? [])].sort((a, b) => a.y - b.y || a.x - b.x),
-    [...raidTiles].sort((a, b) => a.y - b.y || a.x - b.x),
-    "the probe's line does not look at the probe",
-  )
+  const enemy = (round.incoming ?? []).filter((entity) => entity.player === "B").map((entity) => entity.anchor)
+  assert.deepEqual(scene[1]?.focus?.own, enemy, "Corvane's line does not look at the enemy")
   const nexus = scene[3]?.focus
   assert.deepEqual(nexus?.tile, { x: 18, y: 10 })
   assert.equal(nexus?.own.length, 6)
@@ -394,7 +277,7 @@ test("each line takes the camera to what it looks at: Vasse, the raid on the rid
     assert.deepEqual(side.build.state.cursor, focus.tile)
     keys(side, ENTER)
   }
-  // The ridge is far from the base: the view really moved, and came back.
+  // The enemy is far from the base: the view really moved, and came back.
   assert.notDeepEqual(centreOn(scene[1]?.focus?.tile ?? { x: 0, y: 0 }, side.layout.viewport, terrain), centreOn(vasse.anchor, side.layout.viewport, terrain))
   assert.deepEqual(side.build.state.cursor, STARTER_START_CURSOR)
 })
@@ -619,79 +502,45 @@ test("the live loop breathes the light from the frame that first showed each lin
 
 // --- A Commander back: the game's own line ----------------------------------------------------------
 
-test("round 2 of the Commander's named fixture opens on her return, one line in the game's own voice", () => {
+test("the round after she falls opens on her return, one line in the game's own voice", () => {
   const side = fixtureSide()
   playRound(side)
   keys(side, ENTER)
   const { state } = side.build
-  assert.equal(state.pulseNumber, 2)
-  assert.equal(state.popup, "dialog")
-  const vasse = (side.build.round.field ?? []).find((entity) => entity.contentId === VASSE)
-  assert.ok(vasse !== undefined, "she is not on round 2's map")
-  assert.deepEqual(side.build.round.scene, [
-    { speaker: null, side: null, unit: null, text: "The Nexus Pulse restores Vasse beside the Nexus.", focus: { tile: vasse.anchor, own: [vasse.anchor] } },
-  ])
-  assert.deepEqual(state.camera, centreOn(vasse.anchor, side.layout.viewport, terrain))
-  keys(side, ENTER)
-  assert.equal(side.build.state.popup, null)
-  assert.equal(bottomLineText(side), "Round 1: victory. The Nexus Pulse restores Vasse and deals: [n].")
-})
-
-test("a Commander who sits a round out: round 2 opens on her absence, round 3 on her return, each one line in the game's own voice", () => {
-  const side = fixtureSide(true, 1)
-  assert.equal(side.build.state.popup, null, "the named fixture has no intro")
-  playRound(side)
-  keys(side, ENTER)
-  assert.equal(side.build.state.pulseNumber, 2)
-  // Commanders die as part of the game: the round without her opens by saying so, looking at the Nexus that
-  // will restore her.
-  assert.equal(side.build.state.popup, "dialog", "round 2, with her out, did not say so")
-  const nexus = nexusTile(side.build.round)
-  assert.ok(nexus !== null)
-  assert.equal(side.build.round.scene?.length, 1)
-  assert.equal(side.build.round.scene?.[0]?.text, "Vasse is out this round, back for round 3.")
-  assert.equal(side.build.round.scene?.[0]?.speaker, null)
-  assert.deepEqual(side.build.round.scene?.[0]?.focus?.tile, nexus)
-  keys(side, ENTER)
-  assert.equal(side.build.state.popup, null)
-  assert.equal(bottomLineText(side), "Round 1: victory. Vasse is out this round, back for round 3.")
-  playRound(side)
-  keys(side, ENTER)
-  const { state } = side.build
-  assert.equal(state.pulseNumber, 3)
+  assert.equal(side.build.round.round?.number, 3)
   assert.equal(state.popup, "dialog")
   const vasse = (side.build.round.field ?? []).find((entity) => entity.contentId === VASSE)
   assert.ok(vasse !== undefined, "she is not on round 3's map")
-  assert.deepEqual(side.build.round.scene, [
-    { speaker: null, side: null, unit: null, text: "The Nexus Pulse restores Vasse beside the Nexus.", focus: { tile: vasse.anchor, own: [vasse.anchor] } },
-  ])
-  assert.deepEqual(state.camera, centreOn(vasse.anchor, side.layout.viewport, terrain))
-  assert.equal(bottomLineText(side), "[enter] or [esc] closes it.")
+  assert.deepEqual(
+    (side.build.round.scene ?? []).map((line) => [line.speaker, line.side, line.unit, line.text, line.focus?.tile]),
+    [[null, null, null, "The Nexus Pulse restores Vasse beside the Nexus.", nexusTile(side.build.round)]],
+  )
+  // It looks at the Nexus that set her down beside it.
+  const nexus = nexusTile(side.build.round)
+  assert.ok(nexus !== null)
+  assert.deepEqual(state.camera, centreOn(nexus, side.layout.viewport, terrain))
   // The game's own voice has no name: the border runs unbroken where a speaker's would be.
   const frame = compose(side, {}, "truecolor")
   const { box } = dialogBox(side)
-  assert.match(frameToText(frame), /The Nexus Pulse restores Vasse beside the/)
   for (const x of [box.left + 2, box.left + 3]) {
     const cell = cellAt(frame, x, box.top)
     assert.deepEqual([cell.glyph, cell.style.fgRole, cell.style.inverse], [" ", "chrome.frame", true])
   }
-  // The light is around her. Then the round, as it opened: the bottom line says it again.
-  const beside = cellForTile(side.layout, state.camera, { x: vasse.anchor.x + 1, y: vasse.anchor.y })
-  assert.equal(cellAt(frame, beside.x, beside.y).style.seeThrough?.role, "fx.flash")
+  // The light is around the Nexus. Then the round, as it opened: the bottom line says how the last one went.
+  const lit = Array.from({ length: frame.height }, (_, y) => Array.from({ length: frame.width }, (_, x) => cellAt(frame, x, y))).flat()
+  assert.ok(lit.some((cell) => cell.style.seeThrough?.role === "fx.flash"), "no light around what the line looks at")
   keys(side, ENTER)
   assert.equal(side.build.state.popup, null)
-  assert.equal(bottomLineText(side), "Round 2: victory. The Nexus Pulse restores Vasse and deals: [n].")
+  assert.match(bottomLineText(side), /^Round 2: [\w' ]+\. The Nexus Pulse deals a new hand: \[n\]\.$/)
   // Without scenes, the same round opens straight on the menu.
-  const plain = fixtureSide(false, 1)
-  playRound(plain)
-  keys(plain, ENTER)
+  const plain = fixtureSide(false)
   playRound(plain)
   keys(plain, ENTER)
   assert.equal(plain.build.state.popup, null)
   assert.deepEqual(side.build.state, plain.build.state)
 })
 
-test("round 2 of PERIMETER opens without a scene; Restart is the mission from round 1, intro and all", () => {
+test("the round after one with a scene opens without it; Restart is the battle from round 1, its opening lines and all", () => {
   const side = sceneSide()
   keys(side, ESC)
   playRound(side)
@@ -718,7 +567,8 @@ test("a resize while the dialog is open: the camera it gives back fits the new v
 // --- Whether it was read ------------------------------------------------------------------------------
 
 test("the Activity Logs say which lines were shown and where the rest was skipped, under their own filter", () => {
-  const skipped = runBuildPlaytest({ steps: parseKeyScript("Enter Esc") })
+  const intro = { context: introContext(), play: STARTER_LEVEL.play }
+  const skipped = runBuildPlaytest({ ...intro, steps: parseKeyScript("Enter Esc") })
   const dialog = (run: typeof skipped) =>
     run.activity
       .entries()
@@ -729,7 +579,7 @@ test("the Activity Logs say which lines were shown and where the rest was skippe
     ["dialog.line", { round: 1, line: 2, of: 4, speaker: "Corvane" }],
     ["dialog.skip", { round: 1, line: 2, of: 4 }],
   ])
-  const read = runBuildPlaytest({ steps: parseKeyScript("Enter*4") })
+  const read = runBuildPlaytest({ ...intro, steps: parseKeyScript("Enter*4") })
   assert.deepEqual(
     dialog(read).map(([event]) => event),
     ["dialog.line", "dialog.line", "dialog.line", "dialog.line"],
@@ -743,13 +593,14 @@ test("the Activity Logs say which lines were shown and where the rest was skippe
   )
 })
 
-test("the scripted playtest plays scenes as the game does: an old script runs as before after one Esc", () => {
+test("the scripted playtest plays scenes as the game does: a script runs as before after one Esc", () => {
+  // The starter map's round opens on its two lines; Esc skips them, and the menu's third row down is the Turret.
   const run = runBuildPlaytest({ steps: parseKeyScript("Esc Down*3 Space*4") })
   assert.equal(run.frames[0]?.state.popup, "dialog")
   assert.equal(run.frames[1]?.state.popup, null)
   const last = run.frames[run.frames.length - 1]
   assert.equal(last?.state.planned.length, 2)
-  assert.match(frameToText(last?.frame ?? run.frames[0]!.frame), /Hatchery placed \(credits: 40\)/)
+  assert.match(frameToText(last?.frame ?? run.frames[0]!.frame), /Turret placed \(credits: 70\)/)
 })
 
 // --- The live game ------------------------------------------------------------------------------------
@@ -782,7 +633,7 @@ class FakeStdin extends EventEmitter {
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-test("the game opens PERIMETER on its intro, and Enter reads on", async () => {
+test("the game opens the starter map on its opening lines, and Enter reads on", async () => {
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
   const exits: number[] = []
@@ -797,11 +648,11 @@ test("the game opens PERIMETER on its intro, and Enter reads on", async () => {
     activity: activityLog(),
   })
   await sleep(40)
-  assert.match(stdout.written, /VASSE/)
-  assert.match(stdout.written, /By the book\. The new book\./)
+  assert.match(stdout.written, /A Skirmish on The starter map, seed 1:/)
+  assert.match(stdout.written, /Line 1 of 2\./)
   stdin.emit("data", Buffer.from(ENTER))
   await sleep(40)
-  assert.match(stdout.written, /CORVANE/)
+  assert.match(stdout.written, /Line 2 of 2\./)
   stdin.emit("data", Buffer.from(CTRL_C))
   assert.equal(await session, 0)
   assert.deepEqual(exits, [0])

@@ -3,22 +3,22 @@
 // wave a fixed delay into the Pulse and the rest a fixed gap apart. The battle engine's half — the schedule, the cap,
 // where a wave stands, that a crowded building never spawns fewer, and that nothing without a recipe changes by
 // a byte — and the match's half: a Barracks the player placed spawns, its survivors come home to it, and the
-// counters start each Pulse afresh. PERIMETER's Barracks, round by round, on the screen, is
-// tests/mission-loop.test.ts.
+// counters start each Pulse afresh. Played on the starter map (`saves/starter.save.json`), against a raid of runners.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { defaultValue } from "../src/build/all-settings.ts"
-import { STARTER_STANDING, starterTerrain } from "../src/build/catalog.ts"
+import { starterTerrain } from "./starter-fixture.ts"
 import { FIXTURE_REGISTRY, withProduction } from "../src/content/index.ts"
 import { hasRoom, supplyCostOf, supplyOf } from "../src/content/supply.ts"
 import type { ProductionRecipe } from "../src/content/index.ts"
 import { footprintRing, tilesOf } from "../src/engine/geometry/coords.ts"
-import { openingState, regroup, resolveMissionPulse, spawnRecipe, spawningRegistry } from "../src/match/index.ts"
-import type { Force, MissionPulse } from "../src/match/index.ts"
-import { PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
+import { openingState, regroup, spawnRecipe, spawningRegistry } from "../src/match/index.ts"
+import type { Force, StructurePlacement } from "../src/match/index.ts"
+import { ARMIES } from "../src/armies/index.ts"
 import type { BuildingSpawns } from "../src/armies/index.ts"
 import { resolvePulse } from "../src/engine/pulse/index.ts"
+import type { PulseRun } from "../src/engine/pulse/index.ts"
 import { TICKS_PER_SECOND } from "../src/engine/state/types.ts"
 import { hashState, serializeState } from "../src/engine/state/serialize.ts"
 import type { MatchState } from "../src/engine/state/types.ts"
@@ -50,10 +50,10 @@ function lone(given: ProductionRecipe, ticks = 90, anchor = { x: 25, y: 10 }, fo
   return { registry, run: resolvePulse({ initialState, registry, pulseTicks: ticks, seed: 1 }) }
 }
 
-const trainedEvents = (events: MissionPulse["events"]) =>
+const trainedEvents = (events: PulseRun["events"]) =>
   events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined)
 
-const ticksOf = (events: MissionPulse["events"]): number[] => trainedEvents(events).map((event) => event.tick)
+const ticksOf = (events: PulseRun["events"]): number[] => trainedEvents(events).map((event) => event.tick)
 
 // --- The recipe on content ------------------------------------------------------------------------
 
@@ -173,62 +173,76 @@ test("the same Barracks, the same seed, the same ticks: the same hash, every run
   assert.equal(hashes.size, 1)
 })
 
-// --- In a story ---------------------------------------------------------------------------------
+// --- In a battle --------------------------------------------------------------------------------
 
-/** What each building PERIMETER offers spawns, by its structure: its army's own words for it. */
+/** What each building Vasse's army offers spawns, by its structure: its army's own words for it. */
 const SPAWNS: Readonly<Record<string, BuildingSpawns>> = Object.fromEntries(
-  PERIMETER_LEVEL.offer.buildings.flatMap((card) => (card.spawns === undefined ? [] : [[card.structure, card.spawns] as const])),
+  (ARMIES.arsenals["vasse"]?.buildings ?? []).flatMap((card) => (card.spawns === undefined ? [] : [[card.structure, card.spawns] as const])),
 )
 /** Every building's first wave, in ticks: the owner's five seconds, as the tuned setting has it. */
 const FIRST_WAVE = defaultValue("firstWave") * TICKS_PER_SECOND
-const storyRegistry = spawningRegistry(FIXTURE_REGISTRY, SPAWNS, FIRST_WAVE)
+const battleRegistry = spawningRegistry(FIXTURE_REGISTRY, SPAWNS, FIRST_WAVE)
 
-function round(
-  pulse: number,
-  carried: MatchState | null,
-  plan: readonly { contentId: string; anchor: { x: number; y: number } }[] = [],
-  registry = storyRegistry,
-): MissionPulse {
-  const structures = [...(pulse === 1 ? STARTER_STANDING : []), ...plan]
-  return resolveMissionPulse({ mission: PERIMETER, terrain, registry, pulse, carried, structures })
+/** The starter map's base as round 1 opens: its Nexus, and a Barracks beside it. */
+const BASE: readonly StructurePlacement[] = [
+  { contentId: "structure.citizen.nexus", player: "A", anchor: { x: 17, y: 10 } },
+  { contentId: BARRACKS, player: "A", anchor: { x: 25, y: 10 } },
+]
+/** Round 1's armies: Vasse's starting package ahead of the base, and a raid of eight runners coming from the east. */
+const FORCES: readonly Force[] = [
+  { player: "A", muster: { x: 32, y: 12 }, units: ["unit.citizen.vasse", TROOPER, TROOPER, TROOPER, "unit.citizen.marksman", "unit.citizen.marksman"] },
+  { player: "B", muster: { x: 62, y: 12 }, units: Array.from({ length: 8 }, () => "unit.ravel.runner") },
+]
+const ROUND_TICKS = 360
+
+/** Round `pulse` on the starter map: the base and the armies in round 1, what the last round left after that, and
+ *  `plan`'s buildings newly placed. */
+function round(pulse: number, carried: MatchState | null, plan: readonly StructurePlacement[] = [], registry = battleRegistry) {
+  const initialState = openingState({
+    terrain,
+    registry,
+    structures: [...(pulse === 1 ? BASE : []), ...plan.map((placed) => ({ player: "A" as const, ...placed }))],
+    setup: { seed: 7, pulseTicks: ROUND_TICKS, forces: pulse === 1 ? FORCES : [] },
+    ...(carried === null ? {} : { carried }),
+  })
+  const states: MatchState[] = []
+  const run = resolvePulse({ initialState, registry, pulseTicks: ROUND_TICKS, seed: 7, watch: (state) => states.push(state) })
+  return { events: run.events, states, final: run.finalState }
 }
 
-test("the Barracks and the Hatchery say what they spawn on their own cards, and the story's battles run on it", () => {
+test("the Barracks and the Hatchery say what they spawn on their own cards, and the battle runs on it", () => {
   // The owner's numbers: four troopers in one wave a round; the Hatchery's brood, three, by the same rule.
-  assert.deepEqual(SPAWNS, {
-    [BARRACKS]: { unit: TROOPER, perWave: 4, waves: 1, secondsBetween: 10 },
-    [HATCHERY]: { unit: SWARMER, perWave: 3, waves: 1, secondsBetween: 10 },
-  })
+  assert.deepEqual(SPAWNS[BARRACKS], { unit: TROOPER, perWave: 4, waves: 1, secondsBetween: 10 })
+  assert.deepEqual(SPAWNS[HATCHERY], { unit: SWARMER, perWave: 3, waves: 1, secondsBetween: 10 })
   assert.equal(FIRST_WAVE, 60)
-  // The mission names nothing that spawns: that is the buildings' own.
-  assert.ok(!("trains" in PERIMETER), "PERIMETER still lists what trains")
-  assert.deepEqual(storyRegistry.get(BARRACKS).production, { output: TROOPER, perWave: 4, waves: 1, firstTicks: 60, intervalTicks: 120 })
-  assert.deepEqual(storyRegistry.get(HATCHERY).production, spawnRecipe({ unit: SWARMER, perWave: 3, waves: 1, secondsBetween: 10 }, 60))
-  assert.equal(storyRegistry.get(HATCHERY).spawn, undefined, "the story's Hatchery still breeds by its own timer")
-  assert.equal(storyRegistry.get("structure.bench.beamturret").production, undefined)
+  assert.deepEqual(battleRegistry.get(BARRACKS).production, { output: TROOPER, perWave: 4, waves: 1, firstTicks: 60, intervalTicks: 120 })
+  assert.deepEqual(battleRegistry.get(HATCHERY).production, spawnRecipe({ unit: SWARMER, perWave: 3, waves: 1, secondsBetween: 10 }, 60))
+  assert.equal(battleRegistry.get(HATCHERY).spawn, undefined, "the battle's Hatchery still breeds by its own timer")
+  assert.equal(battleRegistry.get("structure.bench.beamturret").production, undefined)
   // Nothing spawns, nothing changes.
   assert.equal(spawningRegistry(FIXTURE_REGISTRY, {}, FIRST_WAVE), FIXTURE_REGISTRY)
 })
 
-test("PERIMETER's round 1: the Barracks on the map sends its four troopers together, five seconds in, on its roof", () => {
+test("round 1: the Barracks beside the Nexus sends its four troopers together, five seconds in, on its roof", () => {
   const run = round(1, null)
   const opening = run.states[0]?.entities.find((entity) => entity.contentId === BARRACKS)
   assert.ok(opening !== undefined)
   assert.deepEqual([opening.productionCooldown, opening.produced, opening.owed], [FIRST_WAVE, 0, 0])
   const trained = trainedEvents(run.events)
   assert.deepEqual(trained.map((event) => event.tick), [60, 60, 60, 60])
-  // On its roof, on the tiles nearest where they head (the line, the troops' target, north-west of it): its north row
-  // whole, and the ties for the fourth drawn.
-  const roof = tilesOf(opening.anchor, storyRegistry.get(BARRACKS).footprint)
+  // On its roof, on the tiles nearest where they head (east, toward the raid): its east column whole, and the ties for
+  // the rest drawn.
+  const roof = tilesOf(opening.anchor, battleRegistry.get(BARRACKS).footprint)
   const at = trained.map((event) => (event.kind === "entity.spawned" ? `${event.at.x},${event.at.y}` : ""))
   assert.ok(at.every((tile) => roof.some((own) => `${own.x},${own.y}` === tile)), `a trooper came down off the roof: ${at.join(" ")}`)
-  const north = roof.filter((tile) => tile.y === opening.anchor.y).map((tile) => `${tile.x},${tile.y}`)
-  assert.ok(north.every((tile) => at.includes(tile)), `the north row is not all taken: ${at.join(" ")}`)
+  const eastmost = Math.max(...roof.map((tile) => tile.x))
+  const east = roof.filter((tile) => tile.x === eastmost).map((tile) => `${tile.x},${tile.y}`)
+  assert.ok(east.every((tile) => at.includes(tile)), `the east column is not all taken: ${at.join(" ")}`)
 })
 
-test("a building the player placed spawns too, its wave on the same tick as the map's; a Hatchery's brood the same way", () => {
-  // A Supply Depot beside them, so the army has room for both waves (the Nexus alone gives twelve: the squads
-  // and the map's Barracks's wave fill ten of them).
+test("a building the player placed spawns too, its wave on the same tick as the base's; a Hatchery's brood the same way", () => {
+  // A Supply Depot beside them, so the army has room for both waves (the Nexus alone gives twelve: the starting package
+  // and the base's Barracks's wave fill ten of them).
   const placed = [
     { contentId: BARRACKS, anchor: { x: 17, y: 13 } },
     { contentId: HATCHERY, anchor: { x: 24, y: 13 } },
@@ -254,7 +268,7 @@ test("a building the player placed spawns too, its wave on the same tick as the 
 })
 
 test("supply: an army fields no more than its buildings give, and a wave past it waits for a place, coming as one falls", () => {
-  // No Supply Depot: the Nexus gives twelve. The squads take five and the map's Barracks's wave four; a planned
+  // No Supply Depot: the Nexus gives twelve. The starting package takes five and the base's Barracks's wave four; a planned
   // Barracks's four and a Hatchery's three would take the army to sixteen.
   const placed = [
     { contentId: BARRACKS, anchor: { x: 17, y: 13 } },
@@ -262,7 +276,7 @@ test("supply: an army fields no more than its buildings give, and a wave past it
   ]
   const run = round(1, null, placed)
   const unitsAt = (state: MatchState): number =>
-    supplyOf(state.entities.filter((entity) => entity.player === "A").map((entity) => storyRegistry.get(entity.contentId))).used
+    supplyOf(state.entities.filter((entity) => entity.player === "A").map((entity) => battleRegistry.get(entity.contentId))).used
   for (const state of run.states) assert.ok(unitsAt(state) <= 12, `the army took ${unitsAt(state)} places at tick ${state.tick}`)
   const trained = trainedEvents(run.events).map((event) => event.tick)
   // Seven fit as the first waves come; the rest wait for a place.
@@ -294,10 +308,10 @@ test("supply: an army fields no more than its buildings give, and a wave past it
 })
 
 test("supply's arithmetic: a unit takes 1 unless it says, a Commander none, a structure none; no building giving any is no cap", () => {
-  const trooper = storyRegistry.get("unit.citizen.trooper")
-  const nexus = storyRegistry.get("structure.citizen.nexus")
-  const vasse = storyRegistry.get("unit.citizen.vasse")
-  const pikeman = storyRegistry.get("unit.citizen.pikeman")
+  const trooper = battleRegistry.get("unit.citizen.trooper")
+  const nexus = battleRegistry.get("structure.citizen.nexus")
+  const vasse = battleRegistry.get("unit.citizen.vasse")
+  const pikeman = battleRegistry.get("unit.citizen.pikeman")
   assert.deepEqual([supplyCostOf(trooper), supplyCostOf(vasse), supplyCostOf(pikeman), supplyCostOf(nexus)], [1, 0, 2, 0])
   assert.deepEqual(supplyOf([nexus, trooper, pikeman, vasse]), { used: 3, cap: 12 })
   assert.deepEqual(supplyOf([trooper, trooper]), { used: 2, cap: null })
@@ -312,7 +326,7 @@ test("a wave's survivors stay on the battlefield; the regroup and the next openi
   const first = round(1, null, [{ contentId: "structure.bench.beamturret", anchor: { x: 25, y: 7 } }])
   const trained = trainedEvents(first.events)
   assert.equal(trained.length, 4, "round 1 did not train its wave")
-  const back = regroup(first.final, storyRegistry)
+  const back = regroup(first.final, battleRegistry)
   const barracks = back.state.entities.find((entity) => entity.contentId === BARRACKS)
   assert.ok(barracks !== undefined)
   assert.deepEqual([barracks.productionCooldown, barracks.produced, barracks.owed], [FIRST_WAVE, 0, 0])
@@ -327,33 +341,21 @@ test("a wave's survivors stay on the battlefield; the regroup and the next openi
   const opened = second.states[0]?.entities.find((entity) => entity.contentId === BARRACKS)
   assert.deepEqual([opened?.productionCooldown, opened?.produced, opened?.owed], [FIRST_WAVE, 0, 0])
   assert.ok(second.final.tick >= 180, `round 2 ended at tick ${second.final.tick}, before a second wave could come`)
-  // The fourth of each wave comes late: round 1 now leaves one more survivor (the army sorts itself on the march and its
-  // Commander leads nothing, so the fight is played differently), and the Nexus's 12 places hold the last trooper of each
-  // wave back until a unit of the army falls (a wave the army's supply holds back, above). Where the fourth of each wave comes
-  // moved again (85 and 226) once a unit kept the target it holds to its fall: the army loses its units on other ticks.
-  assert.deepEqual(ticksOf(second.events), [60, 60, 60, 85, 180, 180, 180, 226])
+  // The second wave comes ten seconds after the first, as far as the army has room: the Nexus's 12 places, filled by
+  // round 1's survivors and the first wave, hold its last two back (a wave the army's supply holds back, above).
+  // Pinned when the round moved onto the starter map's Skirmish base (Story stopped, 2026-11-26).
+  assert.deepEqual(ticksOf(second.events), [60, 60, 60, 60, 180, 180])
 })
 
-test("PERIMETER's first round with the Barracks's wave hashes the same on every run and on both runtimes", () => {
+test("round 1 with the Barracks's wave hashes the same on every run and on both runtimes", () => {
   const run = round(1, null)
   // Pinned: Node and Bun run this same line, so a runtime that resolves the round differently fails here.
   assert.equal(hashState(run.final), PINNED_ROUND_1)
   assert.equal(hashState(round(1, null).final), PINNED_ROUND_1)
 })
 
-// PERIMETER's round 1 as the rules play it: Vasse arriving with the squads, who hold the line ahead of the base, By
-// the Book guarding those beside her, the Barracks's four troopers together five seconds in, a row counting two
-// columns in every distance and step, every step taking whole beats, one across and two up or down, every tie
-// broken by what a unit faces, then a draw, every unit walking by its route, the raid heading for the Nexus,
-// turning only to what comes within its reach, the Barracks's wave coming out over its roof, and the Nexus shooting
-// whatever of the raid comes within a marksman's reach of it — and each trooper the Barracks trained remembering it and
-// the tile it came out on (re-pinned for that alone: the round's events are byte for byte what they were). Pinned
-// again when an army came to march: its lines yielding in order and its marchers keeping to a band along the way to
-// the line it holds, and again when the raid's runners went back to the melee line; and again when the army came to
-// sort itself on the march by half speed, the Commander a regular troop leading nothing.
-// Pinned again when a unit came to keep the target it holds until it falls, or goes 30 ticks unable to strike it
-// (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
-// A unit that can reach no enemy came to look further afield for one it can, and to wait a second beside the fight before
-// it walks on round it: this round is byte for byte what it was.
-// Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
-const PINNED_ROUND_1 = "77d33ac77f7767d5ee6b649524d50471c0084f2df1e6ea835dfeb55a92e75826"
+// Round 1 as the rules play it on the starter map: Vasse's starting package ahead of the base, the Barracks's four
+// troopers together five seconds in, a raid of eight runners from the east, and every rule a Battle Round walks by.
+// It was PERIMETER's round 1, a story mission's, until Story stopped (the owner, 2026-11-26), and was pinned again
+// then, on its own opening: what a change to any rule of the battle moves is seen here.
+const PINNED_ROUND_1 = "c65ee5ae524d75b28e72aba3db7105ea2d2df43d408734a4ade6750ad182b390"

@@ -3,6 +3,7 @@
 // mouse reports into the real adapters (`BuildSession.handleData`), and the frame the screen would draw
 // read back as cells or text. `tests/pulse-helpers.ts` builds a Battle Round on top of it.
 
+import { testBase } from "./starter-fixture.ts"
 import { strict as assert } from "node:assert"
 import type { ExperimentField } from "../src/build/experiments.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
@@ -15,7 +16,6 @@ import { BuildSession } from "../src/view/build-session.ts"
 import type { GameMenuRow } from "../src/build/settings.ts"
 import { GAME_MENU_ROWS, settingRow } from "../src/build/settings.ts"
 import type { BuildContext } from "../src/build/state.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import type { Coord } from "../src/engine/geometry/types.ts"
 import type { BuildCompositionInput } from "../src/view/build.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
@@ -90,12 +90,12 @@ export function activityLog(now: () => number = () => 0): ActivityLog {
  *  window shows, as the live screen's shows the log it records into. Laid out as the live screen is. */
 /** A context with the Experiment the helper pins (Next round) at this build's default, for a test about the
  *  Experiments themselves. */
-export function withDefaultNextRound(context: BuildContext = starterContext()): BuildContext {
+export function withDefaultNextRound(context: BuildContext = testBase()): BuildContext {
   return { ...context, experiments: { ...context.experiments, nextRound: "straight" } }
 }
 
 export function buildSide(options: SideOptions = {}): BuildSide {
-  const { context: given = starterContext(), cursor = OPEN_GROUND, terminal = MINIMUM, onQuit, activity = activityLog(), ...rest } = options
+  const { context: given = testBase(), cursor = OPEN_GROUND, terminal = MINIMUM, onQuit, activity = activityLog(), ...rest } = options
   const logged: BuildContext = given.activity === undefined ? { ...given, activity } : given
   // A session starts its Battle Round through the rally point, as the game does: `s` makes the cursor the rally point,
   // and `s` or Enter again places it and begins. For a round's result between rounds, Next round waits for Enter unless

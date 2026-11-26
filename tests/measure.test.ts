@@ -4,8 +4,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { levelById } from "../src/cli/levels.ts"
-import { LEVEL_PLANS, measureDuel, measureLevel, measureSave, spreadOf, STALL_TICKS, summaryLines } from "../src/measure/index.ts"
+import { measureDuel, measureSave, spreadOf, STALL_TICKS, summaryLines } from "../src/measure/index.ts"
 import type { Measurement } from "../src/measure/index.ts"
 import { loadSandbox } from "./helpers.ts"
 
@@ -53,18 +52,6 @@ test("a duel is measured round by round: the hands dealt, the card kept, each ba
     }
   }
   assert.deepEqual(measureDuel(setup, { A: "balanced", B: "balanced" }), duel)
-})
-
-test("a story level is played by each plan to its end, every round's battle recorded", { timeout: 120_000 }, () => {
-  const level = levelById("vasse-test-2")
-  assert.ok(level !== undefined)
-  const plan = LEVEL_PLANS[0]
-  assert.ok(plan !== undefined)
-  const run = measureLevel(level, plan)
-  assert.equal(run.rounds.length, run.ended.round)
-  assert.ok(run.rounds.every((round) => round.bought.length === 0), "nothing built bought something")
-  // Her return is this level's point: she falls in round 1.
-  assert.notEqual(run.rounds[0]?.battle.sides.A.commanderFellAt ?? null, null)
 })
 
 test("a measurement says in plain words what it found", async () => {

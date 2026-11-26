@@ -4,6 +4,7 @@
 // settings." The Experiments' own tests are `tests/build-experiments.test.ts`; this file is everything around
 // them — the menu that leads to Settings, the player's half, the export and its way back in.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
@@ -22,7 +23,6 @@ import { SETTLED_EXPERIMENTS, TUNING } from "../src/build/tuning.ts"
 import { defaultValue, isSettingName } from "../src/build/all-settings.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { osc52, terminalExporter } from "../src/cli/terminal-nexus.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
@@ -54,7 +54,7 @@ import type { BuildSide } from "./build-helpers.ts"
 type SettingsSide = BuildSide & Readonly<{ exports: string[]; saved: Settings[] }>
 
 /** A Build Phase that keeps what it hands the live loop: every export and every setting to save. */
-function session(context: BuildContext = starterContext()): SettingsSide {
+function session(context: BuildContext = testBase()): SettingsSide {
   const exports: string[] = []
   const saved: Settings[] = []
   const side = buildSide({ context, onExport: (text) => exports.push(text), onSettingsChange: (settings) => saved.push(settings) })
@@ -194,7 +194,7 @@ test("every player setting's value box is a click target, the same as Left and R
 // --- The export -------------------------------------------------------------------------------------
 
 test("[e] shows the export in a popup, hands the same text to the adapter, and Esc goes back one popup at a time", () => {
-  const context: BuildContext = withDefaultNextRound({ ...starterContext(), buildId: "abc1234", exportDestination: "Copied to the clipboard." })
+  const context: BuildContext = withDefaultNextRound({ ...testBase(), buildId: "abc1234", exportDestination: "Copied to the clipboard." })
   const side = session(context)
   keys(side, "d")
   goToExperiment(side, "holdWindowMs")
@@ -508,7 +508,7 @@ test("--settings on the command line: settings over what is saved, and every exp
 })
 
 test("a Build Phase opened with imported experiments has them, and the playtest script's runner takes both halves", () => {
-  const side = session({ ...starterContext(), experiments: { keyReleases: "off", holdWindowMs: 500 } })
+  const side = session({ ...testBase(), experiments: { keyReleases: "off", holdWindowMs: 500 } })
   assert.equal(side.build.state.experiments.keyReleases, "off")
   assert.equal(side.build.state.experiments.holdWindowMs, 500)
   const run = runBuildPlaytest({

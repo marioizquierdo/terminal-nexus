@@ -5,13 +5,13 @@
 // Driven through raw bytes into the real adapters, and through the driver where the lock is the
 // reducer's.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { bottomLine } from "../src/build/help.ts"
 import { menuEntryRow } from "../src/build/layout.ts"
 import { EXPLORE_ENTRY, armedPreview, entryOfConstruct } from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { DOWN, ENTER, ESC, TAB, buildSide, clickPanelRow, keys } from "./build-helpers.ts"
 
 const barracksEntry = entryOfConstruct(0)
@@ -139,7 +139,7 @@ test("Explore Map holds nothing: a digit arms from the map, and n opens the Nexu
 test("the lock's refusal is what the bottom line says, even with the ghost on rock; the ghost's reason comes back at the next move", () => {
   // At a build range of 8 the Nexus's own range reaches the row under the north-west wall, four rows up: a
   // Barracks there has a tile in range and one on the rock.
-  const side = buildSide({ context: { ...starterContext(), experiments: { buildRange: 8 } } })
+  const side = buildSide({ context: { ...testBase(), experiments: { buildRange: 8 } } })
   keys(side, "1")
   const cursor = side.build.state.cursor
   // Onto the north-west wall, where the Barracks cannot go.

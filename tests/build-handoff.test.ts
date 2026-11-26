@@ -7,6 +7,7 @@
 // flight's length is an Experiment and the blink's count and speed are tuned values, so every number
 // here is read from them.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
@@ -19,7 +20,6 @@ import { EXPLORE_ENTRY, ONE_TILE, armingSpot, entryOfConstruct, structureAtTile 
 import type { MenuEntry } from "../src/build/types.ts"
 import { TUNING } from "../src/build/tuning.ts"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import type { TerrainId } from "../src/engine/geometry/types.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { BuildCompositionInput } from "../src/view/build.ts"
@@ -56,7 +56,7 @@ const TIMING: HandoffTiming = {
 }
 /** The Turret: one tile, so arming it keeps the cursor where each test puts it. */
 const TURRET = "3"
-const turretRow = (layout: BuildLayout): number => menuEntryRow(layout, starterContext().catalog, { kind: "construct", index: 2 }) as number
+const turretRow = (layout: BuildLayout): number => menuEntryRow(layout, testBase().catalog, { kind: "construct", index: 2 }) as number
 /** The owner's opacity for the see-through cursor's head: "about 80% 'transparency'". */
 const HEAD_ALPHA = 0.8
 
@@ -209,7 +209,7 @@ test("under reduced motion, or with the flight off, the blink plays at once; Tab
 // --- Where the cursor lands ---------------------------------------------------------------------------
 
 test("Explore Map opened from the menu moves the cursor off the Nexus onto clear ground, by the arming rule for one tile, and keeps it in view", () => {
-  const context = starterContext()
+  const context = testBase()
   const expected = armingSpot(context, [], ONE_TILE, STARTER_START_CURSOR)
   assert.equal(expected.found, true)
   assert.notDeepEqual(expected.tile, STARTER_START_CURSOR)
@@ -262,7 +262,7 @@ function corridor(width: number, turrets: readonly number[]): BuildContext {
   const tiles = new Array<TerrainId>(width * height).fill("terrain.rock")
   for (let x = 0; x < width; x += 1) tiles[width + x] = "terrain.plain"
   const standing = turrets.map((x) => ({ contentId: "structure.bench.beamturret", anchor: { x, y: 1 } }))
-  return { ...starterContext(), terrain: { width, height, tiles }, standing }
+  return { ...testBase(), terrain: { width, height, tiles }, standing }
 }
 
 test("where no free tile in reach has clear ground around it, Explore Map from the menu takes the nearest free tile", () => {
@@ -281,7 +281,7 @@ test("with no free tile in reach, Explore Map leaves the cursor where it is", ()
   const width = 40
   const height = 30
   const rock: BuildContext = {
-    ...starterContext(),
+    ...testBase(),
     terrain: { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.rock") },
     standing: [],
   }
@@ -570,7 +570,7 @@ test("the live screen draws the arrow on its own clock, then the plain divider o
     now: () => t,
   })
   await wait(40)
-  const layout = buildLayout(MINIMUM, starterContext().terrain)
+  const layout = buildLayout(MINIMUM, testBase().terrain)
   const start = { x: layout.dividerColumn, y: turretRow(layout) }
   const divider = rowsOf(stdout.lastWrite)[start.y]?.[start.x]
   stdin.emit("data", Buffer.from(TURRET))
