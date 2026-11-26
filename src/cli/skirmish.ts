@@ -50,8 +50,9 @@
 //
 // Playing:
 //   --play-to <next|n|end>   play rounds and stop at a Build Phase: the next round's, round n's, or none (the battle's
-//                            end, its limit raised to 100 rounds unless --rounds). It stops sooner when a player slot
-//                            has no build actions for the round about to play
+//                            end, its limit raised to 100 rounds unless --rounds, and stopped as "stalled" once
+//                            neither Nexus has changed for 10 rounds). It stops sooner when a player slot has no
+//                            build actions for the round about to play
 //   --seeds <1-20|1,4,9>     a new battle once a seed, with --play-to: a line each, then a tally of who won
 //   --commanders <a,b|all>   every pairing of these Commanders, each from both sides, once a seed: who won by Commander
 //

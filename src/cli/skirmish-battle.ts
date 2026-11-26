@@ -26,6 +26,7 @@ import type { LogLevel } from "../report/index.ts"
 import { buildLog } from "../report/index.ts"
 import type { Played, Ran, RoundWatch } from "../skirmish/play.ts"
 import { actionsAt, isPlayer, playOn } from "../skirmish/play.ts"
+import { stalledSince } from "../skirmish/stall.ts"
 import type { Profiles, SaveFile, SaveSetup, Slot } from "../skirmish/save.ts"
 import { saveOf, saveText, SIDE_OF, SLOTS } from "../skirmish/save.ts"
 import type { Opened, Seated } from "../skirmish/request.ts"
@@ -104,7 +105,7 @@ function locked<T>(file: string, work: () => T): T {
 }
 
 /** Where each round played is kept, and how: its save and report in `out`, its Battle Round's log in `log`. */
-export type Keep = Readonly<{ out?: string; log?: string; level: LogLevel; prefix?: string; quiet?: boolean; show?: readonly (number | "end")[]; effects?: boolean }>
+export type Keep = Readonly<{ out?: string; log?: string; level: LogLevel; prefix?: string; quiet?: boolean; show?: readonly (number | "end")[]; effects?: boolean; untilStalled?: boolean }>
 
 /** Where the request keeps each round. */
 export const keepOf = (request: SkirmishRequest, more: Partial<Keep> = {}): Keep => ({
@@ -112,6 +113,8 @@ export const keepOf = (request: SkirmishRequest, more: Partial<Keep> = {}): Keep
   ...(request.log === undefined ? {} : { log: request.log }),
   ...(request.show === undefined ? {} : { show: request.show }),
   ...(request.showEffects ? { effects: true } : {}),
+  // Played to the end on the raised limit (no --rounds): a stalled battle stops there (`stall.ts`).
+  ...(request.playTo === "end" && request.rules.rounds === undefined ? { untilStalled: true } : {}),
   level: request.logLevel ?? "info",
   ...more,
 })
@@ -165,7 +168,7 @@ export function playRounds(setup: SaveSetup, start: BattleState, builds: Seated[
       writeFileSync(join(keep.out, `${name}.save.json`), saveText(saveOf(setup, played.state)))
       writeFileSync(join(keep.out, `${name}.txt`), `${[...report, standing(setup, played.state)].join("\n")}\n`)
     }
-  }, watch)
+  }, watch, keep.untilStalled === true ? (state) => stalledSince(state) !== null : undefined)
 }
 
 /**
