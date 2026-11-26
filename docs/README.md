@@ -40,6 +40,7 @@ version of the design beyond git.
 - [`next-steps.md`](milestones/next-steps.md) — what waits on Mario, carry-over, the cleanup queue.
 - [`open-questions.md`](milestones/open-questions.md) — decisions waiting on Mario, each with options and a recommendation.
 - [`core-loop.md`](milestones/core-loop.md) — the core loop, decided: the front stays between rounds with a regroup, 30-second rounds, orders from a stance to banners; the experiment behind it.
+- [`map-first-controls.md`](milestones/map-first-controls.md) — the Build Phase driven from the map, the panel on the right: the flow to try, and how to build it as an experiment the owner plays as it changes.
 - [`backlog.md`](milestones/backlog.md) — work no milestone owns yet.
 - [`build-files-with-conditions.md`](milestones/build-files-with-conditions.md) — a proposal for the next pull request: build-file entries that hold only when the battle says so, reading one library of named facts shared by scripts, build files, a model player and missions; its first step and open questions.
 

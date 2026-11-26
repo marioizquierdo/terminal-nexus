@@ -99,6 +99,25 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
 
 _The patterns below are reference: one section per family, each rule with the test that holds it._
 
+## Three ways to play
+
+**The whole game plays three ways, each alone** (RULE for what each way reaches; the owner, 2026-11-26). A screen, a
+popup or a flow is finished only when all three reach every step of it:
+
+1. **The mouse alone.** A click on the map is how the mouse looks (it has no hover): the cursor goes to the tile and the
+   panel shows what is there. A click on a row, a button or a hotkey's label does it; a second click on the same tile is
+   Enter; a right click goes back.
+2. **Six keys**, as an old game pad has: **move** (the arrows, or `h` `j` `k` `l`; with Shift, fast), **accept** (Enter
+   or Space) and **back** (Esc, `x`, Backspace or Delete). Esc is also the pad's Start: with nothing left to go back
+   from, it opens the game menu. Every action is reachable by moving to it and accepting it.
+3. **Hotkeys**, for speed: the arrows still move, and a letter or a digit does its action at once, skipping the steps
+   between. Every hotkey is shown where its action is offered (*Keys and clicks*).
+
+The six keys are the floor, as Up, Down and Enter are a menu's (goal 1): a hotkey or a click may be faster, never the
+only way. **The map-first controls** being tried put the six keys on the map first, with the side panel as the map's
+helper on the right ([`map-first-controls.md`](../milestones/map-first-controls.md)); until they are settled, the
+rules below describe the game as it plays now.
+
 ## The screen and the keyboard
 
 - **Four regions.** The **top bar** (whole width): the title, where the player is, and at its right end
