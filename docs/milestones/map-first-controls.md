@@ -137,4 +137,6 @@ not follow the usual rules for a change until a direction is chosen:
 - **Not yet**: `b` as the list's hotkey (it is a building action's key today), the ground's panel holding the credits
   and the raid, the hand-off motions, the Battle Round's hover.
 - **Tests failing meanwhile**: the focus and hand-off tests in `tests/` that assume the menu opens the Build Phase
-  (`build-focus`, arming-spot flows, the driver and mouse equivalence frames); rewritten in the cleanup.
+  (at least 60 on the first run: the focus and opening tests, the cards and their reveal, Explore Map's way back, the
+  arming-spot flows, the panel-on-the-left layout tests, the driver and mouse equivalence frames); rewritten in the
+  cleanup.
