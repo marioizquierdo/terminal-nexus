@@ -37,6 +37,7 @@ import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../engine/events/types.ts"
 import { tilesOf } from "../engine/geometry/coords.ts"
 import type { BattleState, Player, RoundReport, Side, BuildActions } from "../battle/index.ts"
+import { nameOf } from "../battle/reading/lines.ts"
 import { SIDES, armyOf, briefOf, battleTerrain, defaultRallyTile, handOf, loadoutOf, mapOf, beginBattle, nexusOf, placementsOf, restoredOf, roundOpening, standingOf } from "../battle/index.ts"
 import type { RegroupResult } from "../match/index.ts"
 import { centreTile, standDown } from "../match/index.ts"
@@ -213,6 +214,22 @@ function roundContext(position: SkirmishPosition, previous: Partial<BuildContext
   }
   return scene.length === 0 ? context : { ...context, scene }
 }
+
+/** The player's buildings the battle destroyed, counted by name ("2 Barracks, a Turret"), or `null` for none. */
+function lostBuildings(events: readonly DomainEvent[]): string | null {
+  const counts = new Map<string, number>()
+  for (const event of events) {
+    if (event.kind !== "structure.destroyed" || event.player !== "A") continue
+    const name = nameOf(event.contentId)
+    counts.set(name, (counts.get(name) ?? 0) + 1)
+  }
+  if (counts.size === 0) return null
+  return [...counts].map(([name, count]) => (count === 1 ? `a ${name}` : `${count} ${name}`)).join(", ")
+}
+
+/** Buildings both sides put on the same ground: built by neither, paid back. */
+const clashLine = (count: number): string =>
+  `${count === 1 ? "A building was" : `${count} buildings were`} not built: the enemy chose the same ground at the same moment. Paid back.`
 
 /** A new battle's first round: what it is, then how the other side plays, looking at its Nexus. */
 function firstRound(setup: SaveSetup, previous: Partial<BuildContext>, before: readonly DialogLine[] = [], extras: Pick<SkirmishPosition, "file" | "draft"> = {}, profiles?: Profiles): BuildContext {
@@ -425,10 +442,18 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
         const refusedAll = isPlayer(setup, "p1") ? report.sides.A.refused : []
         // The rally point's refusal is not a building's: it says where the troops went instead.
         const isRally = (line: string): boolean => line.startsWith("rally point at ")
-        const refused = refusedAll.filter((line) => !isRally(line))
+        // A clash is not a mistake: both sides chose the same ground, neither built there, both paid back. Said once,
+        // counted (the owner, 2026-11-26: buildings that seemed cancelled; tests/skirmish-play.test.ts holds it).
+        const isClash = (line: string): boolean => line.includes("the enemy built there at the same moment")
+        const refused = refusedAll.filter((line) => !isRally(line) && !isClash(line))
         const rallyRefused = refusedAll.filter(isRally)
+        const clashed = isPlayer(setup, "p1") ? report.clashes.filter((clash) => clash.side === "A") : []
+        // What the battle destroyed of the player's: nothing else ever takes a building away between two Build Phases.
+        const lost = isPlayer(setup, "p1") ? lostBuildings(resolved.timeline.events) : null
         const scene = [
           ...(news === null ? [] : [said(news, nexusFocus(opened))]),
+          ...(lost === null ? [] : [said(`Lost in the battle: ${lost}.`)]),
+          ...(clashed.length === 0 ? [] : [said(clashLine(clashed.length), clashed[0] === undefined ? null : { tile: clashed[0].anchor, own: [] })]),
           ...(refused.length === 0 ? [] : [said(`Not built last round: ${refused.join("; ")}.`)]),
           ...rallyRefused.map((line) => said(`The ${line.replace(/, so the troops went to the default$/u, "")}: the troops rallied in front of the base instead.`)),
         ]
