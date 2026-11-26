@@ -11,6 +11,26 @@ placement is both defensive and offensive. Defensive because it disrupts the ene
 valuable resources. Offensive because it initiates the troop formation which makes the troops more efficient ... Units
 should be smart enough, smooth, but even more important, predictable."
 
+## Its words
+
+The owner, 2026-11-26: "I also need to get used to our vocabulary to describe the intended behavior, that I am myself
+discovering as I playtest." These are the words this page and its tests use, each in the
+[glossary](../game-design/glossary.md) too:
+
+| Word | What it means here |
+| --- | --- |
+| **Army** | Every unit a side has on the battlefield, its Commander included |
+| **Army group** | A side's units each within 5 tiles of another in it, chained: the engagement's reach, so the round's report and the troops' aiming share one rule. Worked out about once an in-game second. Its centre is the Commander when she is in it, else the unit nearest its middle; the Nexus is always one; a building that shoots joins the one within reach. Designed; built in the pull request after the rally point's |
+| **Front, back** | Toward and away from the army group's nearest enemy army group |
+| **Army group formation** | Its ranks across the line to its nearest enemy army group, the priority list front to back (below); the half-speed rule acts within an army group, "ahead" meaning nearer that enemy |
+| **Rally point** | Where a side's troops head and hold for a Battle Round (below); the **banner** is its flag on screen |
+| **Marching** | Walking toward the rally point, keeping the formation, facing the enemy. An army group has **arrived** when its centre is near the rally point and it is not engaged; then it forms up there |
+| **Engaging** | A unit with an enemy in its vision leaves the march and fights; where the sides fight is an **engagement** |
+| **Re-targeting** | A unit choosing a new enemy to attack: its target fell, or a better one came within reach |
+| **Regrouping** | Between rounds: each side steps back out of its fights and forms up on its rally point, or falls back to it if it fought past it, its front rank facing the enemy |
+| **Tick, in-game second** | One simulation step; 12 ticks are an in-game second. Durations inside the battle are said in these |
+| **Frame, real time** | One drawing of the screen; milliseconds on the clock, for what is outside the simulation only (playback speed, effects, key timing) |
+
 The review behind this page, with the games it borrows from, is
 [`2026-10-26-troop-movement-review.md`](../history/reports/2026-10-26-troop-movement-review.md); the owner's answers to
 it are in [`2026-10-26-troop-movement.md`](../history/feedback/2026-10-26-troop-movement.md).

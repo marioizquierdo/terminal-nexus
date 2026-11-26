@@ -31,6 +31,15 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **affinity** — how a Commander is bound to a Nexus: **Native**, **Estranged**, **Unsanctioned**, **Foreign**,
   **Dual-bound**, **Proxy**. Averno is Native with a **leak**: a card from the Ravel Nexus in some rounds' hands
   ([`commander-armies.md`](commander-armies.md)).
+- **army** — every unit a side has on the battlefield, its Commander included; what a Commander brings to a battle as
+  a package is the **Commander Army** ([`movement.md`](../system-design/movement.md), its words).
+- **army group** — a side's units that can fight together: each within 5 tiles of another in it, chained (the
+  **engagement**'s reach, so a round's report and the troops' aiming share one rule); worked out about once an in-game
+  second; its centre is the Commander when she is in it, else the unit nearest its middle; a side's Nexus is always an
+  army group of its own, and a building that shoots joins the army group within reach. Its **front** faces its nearest
+  enemy army group. Designed; built in the pull request after the rally point's ([`movement.md`](../system-design/movement.md)).
+- **army group formation** — an army group's ranks across the line to its nearest enemy army group, the formation's
+  priority list front to back.
 - **army value** — what an army cost, in credits: each unit valued at what its building pays for one unit, its card's
   cost divided by the units it makes a round ([`battles.md`](../system-design/battles.md)).
 - **banner** — the flag drawn at a rally point (`!`, `⚑` with Unicode symbols). The code still says *banner* for the
@@ -105,6 +114,11 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   buildings and units revealed one by one; the round's timer starts after it ([`ui-patterns.md`](../system-design/ui-patterns.md)).
 - **raid** — a group a mission's opponent sends, with its **intention**: one line saying what it means to do, shown in
   the panel ([`scripted-opponent.md`](scripted-opponent.md)).
+- **marching** — troops walking toward their rally point, keeping the formation's order and facing the enemy; an army
+  group has **arrived** when its centre is near the rally point and it is not engaged, and then forms up there.
+- **engaging** (in combat) — a unit with an enemy in its vision leaves the march and fights; where the sides fight is an
+  **engagement**. **Re-targeting** is a unit choosing a new enemy to attack: its target fell, or a better one came within
+  reach.
 - **regroup** — what happens when a Battle Round ends: survivors step back and form up across their march line, so the
   next round starts from **the kept front** ([`movement.md`](../system-design/movement.md)).
 - **result** — how a battle ends: `BATTLE WON`, `BATTLE LOST`, `BATTLE DRAWN` (`<COMMANDER> WINS` when two scripts
@@ -296,8 +310,13 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
 - **style role** — what a cell carries instead of a colour (`src/view/roles.ts`); a **reserved colour** means one thing
   (red, the player's own Nexus hurt).
 - **the three worlds** — state, the Pulse and presentation ([`architecture.md`](../system-design/architecture.md)).
-- **tick** — one step of a Battle Round's simulation; a Battle Round lasts 360 of them, thirty seconds, unless a setup
-  says otherwise.
+- **tick** — one step of a Battle Round's simulation; a Battle Round lasts 360 of them, thirty in-game seconds, unless a
+  setup says otherwise.
+- **in-game second** — 12 ticks: how long anything inside the simulation lasts is said in ticks or in-game seconds,
+  never in milliseconds.
+- **frame** — one drawing of the screen; how many a second the screen draws has nothing to do with the simulation.
+- **real time** — time on the clock, in milliseconds, for what is outside the simulation only: playback speed, effects,
+  key timing, the Build Phase's animations.
 
 ## Words that do two jobs
 
