@@ -481,22 +481,25 @@ export function createBuildState(
   experiments: Experiments = { ...defaultExperiments(), ...context.experiments },
   settings: Settings = context.settings ?? DEFAULT_SETTINGS,
 ): BuildState {
-  const start = clampToMap(cursor, context.terrain)
+  // Map-first: the Build Phase opens with the keyboard on the map, the cursor beside the player's Nexus.
+  const nexus = nexusTile(context)
+  const beside = nexus === null ? cursor : openGroundNear(context, [], nexus)
+  const start = clampToMap(beside, context.terrain)
   const opened: BuildState = {
     cursor: start,
     camera: followCursor({ x: 0, y: 0 }, start, viewport, context.terrain, marginOf(context, viewport)),
     viewport,
     armed: null,
-    returnTo: "menu",
+    returnTo: "map",
     noSpotFound: false,
-    exploreMap: false,
+    exploreMap: true,
     ack: null,
     refusedTry: null,
     handoff: null,
     // The menu, on its first entry, Explore Map (the owner: "When the build mode
     // is launched, the focus should be on the Menu, at the Explore Map option").
-    focus: "menu",
-    menuHighlight: EXPLORE_ENTRY,
+    focus: "map",
+    menuHighlight: entryOfConstruct(0),
     highlightHidden: false,
     popup: null,
     popupHighlight: 0,
@@ -634,7 +637,8 @@ export function mapMode(state: Pick<BuildState, "focus" | "committed" | "armed" 
   if (state.focus === "menu") return "menu"
   if (state.committed) return "plain"
   if (state.armed !== null) return "placing"
-  return state.exploreMap ? "explore" : "plain"
+  // Map-first: the cursor is the hover; there is no plain navigation any more.
+  return "explore"
 }
 
 /** Whether the screen is in **Explore Map**: the side panel shows what is under the cursor in place
@@ -1273,13 +1277,14 @@ function refuseOnMenu(state: BuildState): BuildState {
  *  cursor with the menu drawn beside it. Where Tab, a click on the map and finishing something begun
  *  on the map all arrive. */
 function toMap(state: BuildState): BuildState {
-  return { ...state, focus: "map", armed: null, exploreMap: false }
+  return { ...state, focus: "map", armed: null, exploreMap: true }
 }
 
 /** Finishing what the battlefield was doing — a placement, or Esc while placing or exploring: back to where
  *  it was started from (`BuildState.returnTo`), one level. */
 function backToOrigin(state: BuildState): BuildState {
-  return state.returnTo === "map" ? toMap(state) : toMenu(state)
+  // Map-first: everything starts from a tile, so everything goes back to the map.
+  return toMap(state)
 }
 
 /** The next hand-off of the keyboard from menu row `entry` to the map (`BuildState.handoff`), when
@@ -1557,11 +1562,70 @@ function openExplore(context: BuildContext, state: BuildState, from: Focus): Bui
   return spot.found ? withCursor(context, opened, spot.tile) : opened
 }
 
+/** Whether the structure under a tile is the player's own Nexus. */
+export function nexusUnder(context: BuildContext, planned: readonly PlannedPlacement[], tile: Coord): boolean {
+  const nexus = nexusTile(context)
+  const structure = structureAtTile(context, planned, tile)
+  if (nexus === null || structure === null) return false
+  return tilesOf(structure.anchor, context.registry.get(structure.contentId).footprint).some((t) => t.x === nexus.x && t.y === nexus.y)
+}
+
+/** Whether a tile is open ground: on the map, passable, with no building or unit on it, so the panel shows its
+ *  card as ground and a building could start there. */
+function openGround(context: BuildContext, planned: readonly PlannedPlacement[], tile: Coord): boolean {
+  if (!armingSpot(context, planned, ONE_TILE, tile).found) return false
+  const spot = armingSpot(context, planned, ONE_TILE, tile).tile
+  if (spot.x !== tile.x || spot.y !== tile.y) return false
+  if (structureAtTile(context, planned, tile) !== null) return false
+  const on = (entity: Readonly<{ contentId: string; anchor: Coord }>): boolean =>
+    tilesOf(entity.anchor, context.registry.get(entity.contentId).footprint).some((t) => t.x === tile.x && t.y === tile.y)
+  return !(context.field ?? []).some(on) && !(context.incoming ?? []).some(on)
+}
+
+/** The nearest open ground to a tile, ring by ring, or the tile itself when there is none near. */
+export function openGroundNear(context: BuildContext, planned: readonly PlannedPlacement[], from: Coord): Coord {
+  for (let ring = 1; ring <= 8; ring += 1) {
+    // East first, then round: the side the eye looks to from the Nexus.
+    for (let dy = -ring; dy <= ring; dy += 1) {
+      for (const dx of [ring, -ring]) {
+        const tile = { x: from.x + dx, y: from.y + dy }
+        if (openGround(context, planned, tile)) return tile
+      }
+    }
+    for (let dx = -ring + 1; dx <= ring - 1; dx += 1) {
+      for (const dy of [ring, -ring]) {
+        const tile = { x: from.x + dx, y: from.y + dy }
+        if (openGround(context, planned, tile)) return tile
+      }
+    }
+  }
+  return from
+}
+
+/**
+ * Map-first: Enter on the tile under the cursor gives the keyboard to the panel, which offers what can be
+ * done there. Open ground opens the list of buildings at once, on the last building placed (or the first);
+ * the player's Nexus is the Nexus Pulse; a building of the player's, its actions; anything else, nothing.
+ */
+function selectTile(context: BuildContext, state: BuildState): BuildState {
+  if (state.popup !== null || state.committed) return state
+  const structure = structureAtTile(context, state.planned, state.cursor)
+  if (structure !== null) {
+    if (nexusUnder(context, state.planned, state.cursor)) return context.spectating === true ? refuseSpectating(state) : openNexus(state)
+    return state
+  }
+  const first = entryOfConstruct(0)
+  const last = entryOfConstruct(Math.max(0, context.catalog.length - 1))
+  const highlight = state.menuHighlight >= first && state.menuHighlight <= last ? state.menuHighlight : first
+  return { ...toMenu(state), menuHighlight: highlight, highlightHidden: false, status: NO_STATUS }
+}
+
 /** `e`: Explore Map is a toggle — open it from wherever the keyboard is, or, open, go back one level
  *  exactly as Esc does (the owner: "Pressing [e] again, or [esc], should be
  *  equivalent"). */
 function toggleExplore(context: BuildContext, state: BuildState): BuildState {
-  if (exploring(state) && state.popup === null) return cancel(state)
+  if (exploring(state) && state.popup === null) return state
+  if (state.focus === "menu" && state.popup === null && state.armed === null) return toMap(state)
   return openExplore(context, state, state.focus)
 }
 
@@ -1651,7 +1715,9 @@ function place(context: BuildContext, state: BuildState): BuildState {
   // building armed on the map leaves the keyboard on the map in plain navigation, the cursor on what
   // was just placed; one armed from the menu goes back to the menu, with the building's row flashing
   // once, "to help bring the eye back to the building selection".
-  const back = backToOrigin(placed)
+  const footprint = context.registry.get(item.contentId).footprint
+  const next = armingSpot(context, placed.planned, footprint, state.cursor, { territory: buildRange(context, placed) })
+  const back = next.found ? withCursor(context, backToOrigin(placed), next.tile) : backToOrigin(placed)
   const entry = entryOfConstruct(state.armed as number)
   return {
     ...back,
@@ -1678,11 +1744,12 @@ function cancel(state: BuildState): BuildState {
     case "placing":
       return { ...backToOrigin(state), status: status("Cancelled.") }
     case "explore":
-      return backToOrigin(state)
     case "plain":
-      return toMenu(state)
-    case "menu":
+      // Nothing left to go back from: Esc is the pad's Start, the game menu.
       return openPopup(state, "game-menu")
+    case "menu":
+      // From the panel's rows back to the map, the cursor where it was.
+      return toMap(state)
   }
 }
 
@@ -1693,7 +1760,7 @@ function cancel(state: BuildState): BuildState {
  * keyboard there and stays, and a stray right click never opens a menu.
  */
 function goBack(state: BuildState): BuildState {
-  if (state.popup === null && (state.committed || mapMode(state) === "menu")) return state
+  if (state.popup === null && (state.committed || mapMode(state) === "explore" || mapMode(state) === "plain")) return state
   return cancel(state)
 }
 
@@ -2001,7 +2068,11 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // armed it only moves the cursor: in Explore Map the panel follows it; from the menu it arrives
       // in plain navigation with the menu still drawn, so the next click can arm a building from it.
       const moved = { ...withClickedCursor(context, state, target), focus: "map" as const }
-      if (!confirming) return moved
+      // Map-first: a second click on the tile the cursor is on, with nothing armed, is Enter: it selects it.
+      const selecting = state.focus === "map" && state.armed === null && !state.committed && target.x === state.cursor.x && target.y === state.cursor.y
+      if (selecting) return selectTile(context, toMap(state))
+      // From the panel, a click on the map goes back to the map with the cursor there.
+      if (!confirming) return state.armed === null && !state.committed ? toMap(moved) : moved
       // Placed by the mouse: back where the arming came from — for a building clicked on the menu,
       // the menu with nothing looking chosen ("get back to the menu, focused but
       // unselected").
@@ -2043,9 +2114,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     }
 
     case "open-explore":
-      // Enter/Space in plain navigation: Explore Map, begun on the map. Already open, nothing more.
-      if (mapMode(state) !== "plain") return state
-      return openExplore(context, state, "map")
+      // Map-first: Enter on a tile selects it — the panel offers what can be done there.
+      if (mapMode(state) !== "explore") return state
+      return selectTile(context, state)
 
     case "remove": {
       const lock = editLock(state)

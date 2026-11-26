@@ -29,6 +29,7 @@ import {
   missingFor,
   needsText,
   nexusPowers,
+  nexusUnder,
   pendingPicks,
   refusalText,
   remaining,
@@ -212,7 +213,12 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
     const cancelKeys = item === undefined ? "[esc]" : `[${item.hotkey}] or [esc]`
     return `Place the ${item?.label ?? "building"}: arrows move, [enter] places, ${cancelKeys} cancels.`
   },
-  explore: () => "Explore Map: arrows move, the panel shows what is here. [esc] goes back.",
+  explore: (context, state) => {
+    const structure = structureAtTile(context, state.planned, state.cursor)
+    if (nexusUnder(context, state.planned, state.cursor)) return "Your Nexus: [enter] the Nexus Pulse, [s] starts the Battle Round."
+    if (structure !== null) return "Arrows move. Its actions are on the card, each under its key."
+    return "Arrows move, [enter] builds here, [n] Nexus Pulse, [s] starts the round."
+  },
   "explore-planned": (context, state) =>
     `Planned ${plannedLabel(context, state)}: [bksp] removes it, [u] undoes the last, [esc] back.`,
   // Opened from the map, Explore Map leaves the cursor where it is — it only looks for clear ground on
