@@ -314,7 +314,9 @@ export class BuildSession {
     this.openedAt ??= now
     if (this.presenter === null) return
     this.presenter.advance(now, hold)
-    for (const command of this.presenter.due()) this.dispatch(command)
+    // The Prelude camera Experiment: the view's size when the prelude should be looked at, `null` to stay on the Nexus.
+    const reveals = setting(this.buildState, "preludeCamera") === "reveals" ? this.buildState.viewport : null
+    for (const command of this.presenter.due(reveals)) this.dispatch(command)
     this.noteVoice()
     this.noteResult()
   }

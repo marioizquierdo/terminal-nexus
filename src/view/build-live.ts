@@ -38,7 +38,7 @@
 //     card is instant;
 //   - **a popup's border moves**: timed from the frame that first showed the popup
 //     — any popup, and again whenever another replaces it — its border plays the popup's **opening**
-//     if it has one (`POPUP_OPENINGS`: the Battle Round screen's double flash, `popupFlash`), drawn
+//     if it has one (`POPUP_OPENINGS`: none today, since the Battle Round screen went; `popupFlash`), drawn
 //     every frame, and then **breathes**, slowly a little lighter and a little darker, one breath every
 //     "Popup pulse" Experiment milliseconds, from rest. The breath is the one thing here that
 //     never settles, so while it is the only thing moving the frame timer runs at `BREATH_FRAME_MS`
@@ -142,14 +142,6 @@ export function livePresentation(live: LiveFrame): LivePresentation {
  *  the copy the raid's trail leaves behind fade by more than one look. */
 const blends = (colors: ColorDepth | undefined): boolean => colors !== "monochrome"
 
-/** The opening flash as the "Battle Round flash" and "Flash strength" Experiments set it, over the
- *  view's own table for the rest (`POPUP_FLASH`: how many, the gap). */
-export const openingFlash = (state: BuildState): PopupFlash => ({
-  ...POPUP_FLASH,
-  flashMs: state.experiments.popupFlashMs,
-  peak: state.experiments.popupFlashPeak / 100,
-})
-
 /**
  * What the open popup's border plays in this frame — its opening, from
  * `POPUP_OPENINGS` and timed by `flash`, and the length of one breath — with `null` for a part this frame
@@ -160,7 +152,7 @@ export function popupBorderEffect(
   state: BuildState,
   reducedMotion: boolean,
   colors?: ColorDepth,
-  flash: PopupFlash = openingFlash(state),
+  flash: PopupFlash = POPUP_FLASH,
 ): Pick<PopupBorder, "opening" | "breathMs"> | null {
   if (state.popup === null || reducedMotion) return null
   const opening = POPUP_OPENINGS[state.popup] === "double-flash" && flash.flashMs > 0 && blends(colors) ? flash : null
@@ -337,8 +329,8 @@ const cameraAtTime = (tween: Tween<Camera>, now: number): Camera => tileAt(tween
 
 const offsetOf = (tile: Coord, camera: Camera): Point => ({ x: tile.x - camera.x, y: tile.y - camera.y })
 
-/** The tuned values the live loop times things by — and the popup opening's flash, the view's own
- *  first guess (`POPUP_FLASH`) set by the "Battle Round flash" and "Flash strength" Experiments (`openingFlash`), unless a test hands in another. */
+/** The tuned values the live loop times things by — and the popup opening's flash, the view's own table
+ *  (`POPUP_FLASH`) unless a test hands in another. */
 export type LiveTuning = Pick<
   Tuning,
   | "easeMs"
@@ -699,7 +691,7 @@ export class BannerClock {
       // The first frame is no move: the rally point arrived there, the player did not move it.
       this.moved = { at: this.moved === null ? this.shownAt : now, tile: state.cursor }
     }
-    const timing = rallyCallTiming(focusArrowMs, state.experiments.popupFlashMs, reducedMotion)
+    const timing = rallyCallTiming(focusArrowMs, state.experiments.rallyFlashMs, reducedMotion)
     const call = rallyCallAt(timing, now - this.shownAt, now - this.moved.at)
     if (reducedMotion) return { call, until: null }
     const until = call.flight !== null ? this.shownAt + timing.flightMs : call.groupEndsMs === null ? null : this.shownAt + call.groupEndsMs

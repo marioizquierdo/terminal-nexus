@@ -20,7 +20,9 @@ A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and
   opening lines. Build, press `s`: the cursor flies to the rally point in front of your base; move it or not, Enter.
   Watch both sides' arrows and the enemy's new buildings come in, then the fight. Between rounds, read what the battle
   destroyed; the game menu's `w` replays the last battle. A round that settles fast-forwards, labelled; any key
-  slows it back.
+  slows it back. The view now goes to the enemy's new buildings while they come in and back to your Nexus for the
+  fight: press `d`, find Prelude camera, and flip `enemy` (the default) against `yours` (the old view, on your Nexus).
+  Which do you want?
 - **Watch, five minutes: troops at a narrow door.** `npm run skirmish -- --load sandboxes/engage/engage-gap2-melee-vs-mix.save.json --play-to next --show 0,60,120,240,end`,
   then the same with `engage-gap2-airmix-vs-mix`: twelve troopers lose at a door two rows wide, and the same
   number with half of them in the air win. Does that read as good ground (a choice that matters) or as air too strong
@@ -96,8 +98,6 @@ Small, none blocking. What rounds on PERIMETER left unfinished moved to
 | --- | --- | --- |
 | **Army groups** (the next pull request, on the owner's word of 2026-11-26) | A side's units chained within 5 tiles (an engagement's reach), worked out about once an in-game second, the Commander their centre, the Nexus always one; front and back by the nearest enemy army group; the half-speed rule within an army group; arriving at the rally point and forming up there when not engaged; the regroup by army group. Changes every battle: measured before and after ([movement.md](../system-design/movement.md), its words; [his words](../history/feedback/2026-11-25-rally-point.md)) | medium to large |
 | **Story stops: PERIMETER and the mission runner leave the game** (the next pull request, on the owner's word of 2026-11-26) | New mechanics are built in Skirmish only; a story map either plays as a Skirmish or is deleted. The Build Phase's test base and the scripted playtest's default move from PERIMETER onto a Skirmish save; the Story row, its routes and `src/match/mission.ts` go; the Story design pages say it waits ([his words](../history/feedback/2026-11-25-rally-point.md)) | large |
-| The prelude's camera | During the prelude the camera stays on the player's Nexus, so on a large map the enemy's new buildings can come in off screen; look at them, or say where they are (from the rally point session) | small, local playtest |
-| The flash Experiments' names | "Battle Round flash" and "Flash strength" now pace the rally call, and Flash strength has no visible effect left: rename or remove (from the rally point session) | small, local playtest |
 | Map files still declare a `hold` area | Nothing reads it since the rally point replaced the stance; remove it from the map format, the maps and the docs, or give it a job | small |
 | The Save game test fails on a Mac | It types the temporary folder's path into the game, and macOS's has a capital letter the key script turns into something else; type a lower-case folder or pass the path another way | small |
 | A headless mirror runs past its rounds | `skirmish --map crossing --p1 script:steady --p2 script:steady --commanders all --play-to end` without `--rounds` ran for a day; one battle reported round 100 though the default is 8. Find why, and make a run that cannot end say so | small to medium |

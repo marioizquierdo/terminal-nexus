@@ -16,6 +16,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
+import { centreOn } from "../src/build/camera.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import { createBuildState, nexusTile, withoutScene } from "../src/build/state.ts"
 import type { BuildContext } from "../src/build/state.ts"
@@ -34,6 +35,8 @@ import { readBuildActions } from "../src/battle/index.ts"
 import { planOnRound, playedOf, skirmishLevel } from "../src/cli/skirmish-play.ts"
 import { readSave } from "../src/skirmish/save.ts"
 import { readProfiles } from "../src/skirmish/profile-files.ts"
+import { parseKeyScript } from "../src/playtest/keys.ts"
+import { playtestOpening, runBuildPlaytest } from "../src/playtest/build.ts"
 
 /** Round 1 of a Skirmish on the Crossing, nothing built by the player: the enemy's script builds its first buildings. */
 function round(): Readonly<{ context: BuildContext; resolved: ResolvedPulse; known: KnownMap }> {
@@ -183,4 +186,75 @@ test("the first seconds are marked as the last are: the light and the timer's fl
   // A fight shorter than both windows: the last seconds win from where they start.
   const short = endingTimes(4000, 4000)
   assert.equal(openingEndMs(short), short.warnMs)
+})
+
+// --- The prelude's camera (the rally point session's leftover: "during the prelude the camera stays on the player's
+// Nexus, so on a large map the enemy's new buildings can come in off screen"). The Prelude camera Experiment: the view goes
+// to the enemy's new buildings as Enter plays them, and back to the player's Nexus as the fight's first tick comes.
+//
+// Measured before and after on both maps, 8 seeds, 6 rounds each (scripted battles, 80 x 24, the prelude's steps on screen
+// at the moment it starts): the Crossing 22 of 262 (8%), the Pocket 296 of 296 (it fits the view whole); after: 262 of 262
+// and 296 of 296, the longest prelude 2500 ms both times (2026-11-26, before and after in the pull request).
+
+const VIEWPORT = buildLayout({ columns: 80, rows: 24 }, ROUND.context.terrain).viewport
+/** How many of the prelude's steps a camera shows, by each step's place in the view. */
+const stepsIn = (camera: { x: number; y: number }, steps: readonly { anchor: { x: number; y: number } }[]): number =>
+  steps.filter((step) => step.anchor.x - camera.x >= 0 && step.anchor.x - camera.x < VIEWPORT.width && step.anchor.y - camera.y >= 0 && step.anchor.y - camera.y < VIEWPORT.height).length
+
+test("the prelude's camera: to the view that shows the new buildings at Enter, back to the Nexus as the fight begins, once each", () => {
+  const nexus = ROUND.resolved.nexus
+  assert.ok(nexus !== null)
+  const home = centreOn(nexus, VIEWPORT, ROUND.context.terrain)
+  const presenter = new PulsePresenter(ROUND.resolved, undefined, { known: ROUND.known })
+  const steps = presenter.prelude.steps
+  assert.ok(steps.length > 0 && stepsIn(home, steps) < steps.length, "the Nexus's view already shows every reveal: the test proves nothing")
+  presenter.advance(0)
+  const first = presenter.due(VIEWPORT)
+  assert.equal(first.length, 1)
+  const look = first[0]!
+  assert.equal(look.kind, "look-at")
+  if (look.kind !== "look-at") return
+  assert.equal(stepsIn(centreOn(look, VIEWPORT, ROUND.context.terrain), steps), steps.length, "a reveal is off screen")
+  // Held through the reveals, then back on the Nexus once the fight's first tick comes — and not again.
+  presenter.advance(presenter.prelude.lengthMs - 1)
+  assert.deepEqual(presenter.due(VIEWPORT), [])
+  presenter.advance(presenter.prelude.lengthMs)
+  assert.deepEqual(presenter.due(VIEWPORT), [{ kind: "look-at", x: nexus.x, y: nexus.y }])
+  presenter.advance(presenter.prelude.lengthMs + 500)
+  assert.deepEqual(presenter.due(VIEWPORT), [])
+  // Replay from the top: the view goes to the reveals again.
+  presenter.apply("restart")
+  presenter.advance(0)
+  assert.deepEqual(presenter.due(VIEWPORT), [look])
+})
+
+test("the Prelude camera Experiment off, or nothing new: the view goes to the Nexus at once, as it always did", () => {
+  const nexus = ROUND.resolved.nexus!
+  const home = { kind: "look-at", x: nexus.x, y: nexus.y }
+  const stays = new PulsePresenter(ROUND.resolved, undefined, { known: ROUND.known })
+  stays.advance(0)
+  assert.deepEqual(stays.due(null), [home])
+  stays.advance(stays.prelude.lengthMs + 100)
+  assert.deepEqual(stays.due(null), [], "it looked at the Nexus again with nothing to come back from")
+  // No prelude (no map to compare with): nothing to look at, even asked to.
+  const none = new PulsePresenter(ROUND.resolved)
+  assert.equal(none.prelude.lengthMs, 0)
+  none.advance(0)
+  assert.deepEqual(none.due(VIEWPORT), [home])
+})
+
+test("the Prelude camera on the screen: the view is on the enemy's side through the prelude, on the Nexus as the fight begins; off, always on the Nexus", () => {
+  const at = playtestOpening({ at: "skirmish?seed=7" }).at
+  const steps = parseKeyScript("Esc s wait~400*3 Enter wait~100*16")
+  const enter = steps.findIndex((step) => step.label === "Enter") + 1
+  const follow = runBuildPlaytest({ steps, at })
+  const stay = runBuildPlaytest({ steps, at, experiments: { preludeCamera: "stay" } })
+  const cameras = (run: typeof follow) => run.frames.slice(enter).map((frame) => frame.state.camera)
+  const home = cameras(stay)[0]!
+  assert.ok(cameras(stay).every((camera) => camera.x === home.x && camera.y === home.y), "'yours' moved the view")
+  // Through the prelude (a second, here) the view is east of the Nexus's; after it, back where the Nexus is.
+  const during = cameras(follow)
+  assert.ok(during[0]!.x > home.x, "the view did not go to the enemy's new buildings at Enter")
+  const last = during[during.length - 1]!
+  assert.deepEqual(last, home, "the view did not come back to the Nexus for the fight")
 })
