@@ -16,6 +16,10 @@
 // given, as a building of its side still standing on the map and then thrown down with the removal's sparks
 // (`removalSchedule`). A story mission's rounds have none.
 //
+// **The camera**: the view goes to what the prelude shows (`lookAtMost`, `src/build/camera.ts`) as Enter plays it, and
+// back to the player's Nexus as the fight's first tick comes (`PulsePresenter.due`, the Prelude camera Experiment): on a
+// map wider than the view, the enemy's new buildings otherwise came in off screen.
+//
 // Presentation only: worked out from the resolved round's opening state and the Build Phase's map, it changes nothing
 // the round did — a match resolves the same with the renderer deleted. Pure in time: `preludeAt` reads only the plan
 // and the milliseconds since Enter.

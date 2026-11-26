@@ -177,6 +177,31 @@ export function centreOn(tile: Coord, viewport: Viewport, terrain: MapTerrain): 
 }
 
 /**
+ * **Looking at several tiles at once**: the tile to look at (`centreOn` it) so the view shows as many of `tiles` as it
+ * can — all of them when they fit. The candidates are the middle of the box that holds them all, then each tile in turn
+ * (the order given); the one whose view holds the most wins, the first on a tie. `null` for no tiles. How the prelude
+ * takes the view to the enemy's new buildings (`PulsePresenter.due`).
+ */
+export function lookAtMost(tiles: readonly Coord[], viewport: Viewport, terrain: MapTerrain): Coord | null {
+  const first = tiles[0]
+  if (first === undefined) return null
+  const xs = tiles.map((tile) => tile.x)
+  const ys = tiles.map((tile) => tile.y)
+  const middle: Coord = { x: Math.round((Math.min(...xs) + Math.max(...xs)) / 2), y: Math.round((Math.min(...ys) + Math.max(...ys)) / 2) }
+  let best = middle
+  let bestCount = -1
+  for (const candidate of [middle, ...tiles]) {
+    const range = visibleRange(centreOn(candidate, viewport, terrain), viewport)
+    const count = tiles.filter((tile) => tile.x >= range.firstX && tile.x <= range.lastX && tile.y >= range.firstY && tile.y <= range.lastY).length
+    if (count > bestCount) {
+      best = candidate
+      bestCount = count
+    }
+  }
+  return best
+}
+
+/**
  * One axis of an edge-zone click. `position` is the clicked tile's place in the view (0 is the first
  * column or row). Inside a zone `zone` tiles deep at either end, the tile is carried toward the
  * middle by the share of the zone the click was into: at the very edge all the way to the middle, at

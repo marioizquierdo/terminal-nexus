@@ -736,7 +736,7 @@ scripted(
 )
 
 // Settings is in sections: Display (saved), Keyboard navigation (the hold window first,
-// where [d] opens), Effects (the popup pulse and the Battle Round flash), the mission, then
+// where [d] opens), Effects (the popup pulse, the rally point flash and the prelude camera), the mission, then
 // Export settings apart at the end. Headings and blank lines are never rows.
 
 scripted(

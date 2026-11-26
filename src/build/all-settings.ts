@@ -16,7 +16,7 @@
 // described in `docs/system-design/ui-patterns.md`). Unsure whether a flash should last 220 ms or
 // 300, or whether a new behaviour should exist at all? Add an `experiment` defaulting to the
 // recommended answer, with a question he can read in Settings ("How long each flash lasts…"), and ask in
-// the pull request: "press `d`, set Battle Round flash to 300 ms, tell me which you prefer, and paste
+// the pull request: "press `d`, set Rally point flash to 300 ms, tell me which you prefer, and paste
 // the export". His export comes back as `name = value` lines; `--settings "<text>"` replays what he
 // had; his value becomes the default and the tier becomes `tuned`. The Activity Logs
 // (`src/log/activity.ts`) are the same idea for "what happened?".
@@ -88,6 +88,9 @@ type SettingSpec = Readonly<{ default: Value; unit?: Unit }> &
 
 const NEXT_ROUND = ["straight", "key", "auto"] as const
 const POWER_PICK = ["optional", "required"] as const
+
+/** Where the view stands through the prelude (`preludeCamera`): on the enemy's new buildings, or on your Nexus. */
+const PRELUDE_CAMERA = ["reveals", "stay"] as const
 
 /** How a building's units leave its roof (`roofExit`): along their route, or to the nearest open ground. */
 const ROOF_EXIT = ["route", "ground"] as const
@@ -269,27 +272,31 @@ export const ALL_SETTINGS = {
     values: [0, 1200, 2000, 3000, 4000],
     default: 2000,
   },
-  /** How long each of the Battle Round screen's two opening flashes lasts; 0 is no flash. A first
-   *  guess from the owner's note: "an initial double flash pulse, with more contrast range, that works as
-   *  a highlight". */
-  popupFlashMs: {
+  /** How long each of the three flashes lasts when the rally point is called (the banner lit, its arrows a moment
+   *  behind, then the bottom line's keys); 0 is no flash. It began as the length of the Battle Round screen's two
+   *  opening flashes, from the owner's note "an initial double flash pulse, with more contrast range, that works as a
+   *  highlight"; that screen went with the stance, and the beat stayed with the call. An old export's `popupFlashMs`
+   *  reads as this (`RENAMED_SETTINGS`, `src/build/tuning.ts`); its `popupFlashPeak` ("Flash strength", how far a popup's
+   *  opening flash brightened the border) went with the last popup that flashed. */
+  rallyFlashMs: {
     tier: "experiment",
     section: "effects",
-    label: "Battle Round flash",
-    question: "How long each of the two flashes lasts as the Battle Round screen opens, before it breathes. Off: no flash.",
+    label: "Rally point flash",
+    question: "How long each of the three flashes lasts when the rally point is called: flag, arrows, keys. Off: lit, never flashing.",
     values: [0, 150, 220, 300, 400],
     default: 220,
   },
-  /** How far each opening flash goes toward the title's colour, where the breath goes 40%. A first guess
-   *  (the owner asked for "more contrast range"). */
-  popupFlashPeak: {
+  /** Where the view stands while the prelude reveals the enemy's new buildings (`PulsePresenter.due`): on them, since
+   *  the owner's "the first thing to show ... is the enemy buildings or units that appear", or where it was, on your
+   *  Nexus, as the prelude first played (on a map wider than the view they came in off screen). First guess: on them. */
+  preludeCamera: {
     tier: "experiment",
     section: "effects",
-    label: "Flash strength",
-    question: "How far the Battle Round flash brightens the border; the everyday breath goes to 40%.",
-    unit: "percent",
-    values: [50, 65, 80, 95],
-    default: 80,
+    label: "Prelude camera",
+    question: "Where the view is as the enemy's new buildings come in. Enemy: on them, then back. Yours: it stays on your Nexus.",
+    values: PRELUDE_CAMERA,
+    names: { reveals: "enemy", stay: "yours" },
+    default: "reveals",
   },
   /** How long each arrow of the raid's intent trail takes to go a column's distance on toward what the raid goes
    *  for, a row taking twice as long — the owner's "a slow-moving line of arrows". A first guess he has not felt

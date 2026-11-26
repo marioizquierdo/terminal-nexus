@@ -7,7 +7,7 @@
 
 // Measurements held here (written before the change):
 //   - the call (F336, the movement keys' arrows pointing outward, lit after the banner): Start's focus arrow flies for
-//     the "Focus arrow" milliseconds (250), then 3 flashes, each the banner lit for the Battle Round flash's beat
+//     the "Focus arrow" milliseconds (250), then 3 flashes, each the banner lit for the Rally point flash's beat
 //     (220 ms), the four arrows lit for as long half a beat (110 ms) behind it, then 90 ms dark: a flash every
 //     110 + 220 + 90 = 420 ms, over at 250 + 3 x 420 - 90 = 1420 ms after Start; the arrows never light before the
 //     banner in a flash, and stay lit after it goes dark; each arrow stands on the side its key moves the rally
@@ -228,8 +228,8 @@ test("a rally point on a building is seen: the building lit, its glyphs kept, an
 
 // --- The call and the reminder (F326, F330) -------------------------------------------------------------
 
-/** The call's timing as the game plays it: the tuned flight, the Battle Round flash Experiment's beat. */
-const TIMING: RallyCallTiming = rallyCallTiming(TUNING.focusArrowMs, defaultExperiments().popupFlashMs, false)
+/** The call's timing as the game plays it: the tuned flight, the Rally point flash Experiment's beat. */
+const TIMING: RallyCallTiming = rallyCallTiming(TUNING.focusArrowMs, defaultExperiments().rallyFlashMs, false)
 
 /** How many times `on` turns true over `[from, to)`, a millisecond at a time — a count of flashes. */
 function flashes(from: number, to: number, on: (ms: number) => boolean): number {
@@ -305,7 +305,7 @@ test("the reminder: a second unmoved, the arrows flash three times, then the bot
 })
 
 test("reduced motion: no flight, the four arrows standing still, nothing flashing, and no frame asked for", () => {
-  const timing = rallyCallTiming(TUNING.focusArrowMs, defaultExperiments().popupFlashMs, true)
+  const timing = rallyCallTiming(TUNING.focusArrowMs, defaultExperiments().rallyFlashMs, true)
   for (const ms of [0, 100, 1000, 2500, 7000]) assert.deepEqual(rallyCallAt(timing, ms, ms), { flight: null, arrows: true, lit: null, keysBlank: false, keysLit: false, groupEndsMs: null })
   const side = bannerSide()
   keys(side, "s")

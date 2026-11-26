@@ -324,6 +324,13 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   const renamed = parseSettingsExport("battleRoundPulseMs=3000", base)
   assert.deepEqual(renamed.applied, ["popupPulseMs"])
   assert.equal(parseSettingsExport("popupPulseMs=3000", base).snapshot.experiments.popupPulseMs, renamed.snapshot.experiments.popupPulseMs)
+  // The flash Experiments of the rally point session: "Battle Round flash" is the rally call's beat now, and reads from
+  // its old name; "Flash strength" has nothing left to strengthen, and is skipped without a word.
+  const flash = parseSettingsExport("popupFlashMs=300 popupFlashPeak=95", base)
+  assert.deepEqual(flash.applied, ["rallyFlashMs"])
+  assert.equal(flash.snapshot.experiments.rallyFlashMs, 300)
+  assert.deepEqual(flash.ignored, [])
+  assert.deepEqual(flash.settled, ["popupFlashPeak"])
   // Nothing readable at all is the base, unchanged.
   assert.deepEqual(parseSettingsExport("", base).snapshot, base)
   assert.deepEqual(parseSettingsExport("= = # nothing", base).snapshot, base)
