@@ -383,7 +383,8 @@ export class PulsePresenter {
     const positions = drawn.positions
     const forces = { A: { units: 0, hp: 0 }, B: { units: 0, hp: 0 } }
     for (const entity of drawn.state.entities) {
-      if (!isMobile(this.resolved.timeline, entity.contentId)) continue
+      // What the prelude has not revealed yet is not counted either.
+      if (!isMobile(this.resolved.timeline, entity.contentId) || prelude?.hidden.has(entity.ordinal) === true) continue
       forces[entity.player].units += 1
       forces[entity.player].hp += entity.hp
     }

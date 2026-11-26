@@ -334,7 +334,8 @@ export function drawFrameLight(cells: BandCell[], layout: BuildLayout, pulse: Pu
     for (const { x, y } of border) cells.push({ band: BANDS.chrome, x, y, style })
     return
   }
-  const beam = beamFrame(pulse.times, pulse.timeMs, border.length, pulse.reducedMotion)
+  // Not through the prelude: the first seconds are the fight's, and it has not started.
+  const beam = pulse.prelude === undefined ? beamFrame(pulse.times, pulse.timeMs, border.length, pulse.reducedMotion) : null
   if (beam === null) return
   border.forEach(({ x, y }, index) => {
     const light = beamLight(beam, index)
@@ -555,7 +556,7 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
       for (const words of wrapWords(pulse.result.mission ?? "", limit - 1)) line(words, "chrome.label")
       break
     default: {
-      const lit = timerLit(pulse.times, pulse.timeMs, pulse.reducedMotion)
+      const lit = pulse.prelude === undefined && timerLit(pulse.times, pulse.timeMs, pulse.reducedMotion)
       const timer = formatTimer(timerSeconds(pulse.times, pulse.timeMs))
       // One column in from the divider, as the panel's prose is.
       const right = limit - 1
