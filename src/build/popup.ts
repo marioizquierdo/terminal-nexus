@@ -39,7 +39,7 @@ import {
   shownEntries,
 } from "./activity.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { BANNER_STANCES, BANNER_START_ROW, BANNER_TARGET_ROW, exportText, nexusPowers, pendingPicks, saveRefusal } from "./state.ts"
+import { BANNER_STANCES, BANNER_START_ROW, BANNER_TARGET_ROW, displayName, exportText, nexusPowers, pendingPicks, saveRefusal, structureAtTile, tileActions } from "./state.ts"
 import { bannerSpot, capitalised, currentBanner } from "./banner.ts"
 import type { BuildCommand, DialogLine, PopupMessage } from "./types.ts"
 
@@ -653,6 +653,8 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       } else {
         rows.push({ kind: "heading", text: "PICK" }, { kind: "text", text: "Nothing waiting.", muted: true })
       }
+      // Map-first: the Nexus's other row, Start Battle.
+      rows.push({ kind: "blank" }, { kind: "option", hotkey: START_KEY, label: "Start Battle", command: { kind: "open-battle-round" }, highlighted: state.popupHighlight === powers.pending.length })
       rows.push({ kind: "blank" }, { kind: "heading", text: "ACTIVE" })
       if (powers.active.length === 0) rows.push({ kind: "text", text: "None yet.", muted: true })
       for (const option of powers.active) {
@@ -698,6 +700,28 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       return noteSpec(context, state)
     case "banner-place":
       return bannerPlaceSpec(context, state)
+    case "building-actions": {
+      const structure = structureAtTile(context, state.planned, state.cursor)
+      const name = structure === null ? "Building" : displayName(context, structure.contentId)
+      return {
+        title: name,
+        dock: "panel",
+        rows: [
+          { kind: "blank" },
+          ...tileActions(context, state).map(
+            (row, index): PopupRow => ({
+              kind: "option",
+              hotkey: row.hotkey,
+              label: row.label,
+              command: row.command,
+              highlighted: state.popupHighlight === index,
+              ...(row.value === undefined ? {} : { tag: row.value }),
+              ...(row.refusal === undefined ? {} : { description: row.refusal }),
+            }),
+          ),
+        ],
+      }
+    }
     case "banner-stance":
       return bannerStanceSpec(context, state)
     default:

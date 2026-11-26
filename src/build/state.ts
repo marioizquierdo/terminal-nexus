@@ -1602,6 +1602,20 @@ export function openGroundNear(context: BuildContext, planned: readonly PlannedP
   return from
 }
 
+/** The rows a building of the player's under the cursor offers: its actions, and Remove while it is only planned. */
+export function tileActions(context: BuildContext, state: BuildState): readonly Readonly<{ hotkey: string; label: string; value?: string; refusal?: string; command: BuildCommand }>[] {
+  const structure = structureAtTile(context, state.planned, state.cursor)
+  if (structure === null || nexusUnder(context, state.planned, state.cursor)) return []
+  const rows = buildingActions(context, state, structure).map((row) => ({
+    hotkey: row.hotkey,
+    label: row.label,
+    ...(row.value === undefined ? {} : { value: row.value }),
+    ...(row.refusal === undefined ? {} : { refusal: row.refusal }),
+    command: { kind: "building-action", key: row.hotkey } as BuildCommand,
+  }))
+  return structure.planned ? [...rows, { hotkey: "bksp", label: "Remove", command: { kind: "remove" } as BuildCommand }] : rows
+}
+
 /**
  * Map-first: Enter on the tile under the cursor gives the keyboard to the panel, which offers what can be
  * done there. Open ground opens the list of buildings at once, on the last building placed (or the first);
@@ -1612,8 +1626,12 @@ function selectTile(context: BuildContext, state: BuildState): BuildState {
   const structure = structureAtTile(context, state.planned, state.cursor)
   if (structure !== null) {
     if (nexusUnder(context, state.planned, state.cursor)) return context.spectating === true ? refuseSpectating(state) : openNexus(state)
-    return state
+    // A building of the player's: its actions, as rows on the panel.
+    if (tileActions(context, state).length === 0) return { ...state, status: status("Nothing to do with it this round.", "warning") }
+    return pushPopup(state, "building-actions", 0)
   }
+  // A unit or anything else that is not ground: nothing to do; its card is already showing.
+  if (!openGround(context, state.planned, state.cursor) && !armingSpot(context, state.planned, ONE_TILE, state.cursor).found) return state
   const first = entryOfConstruct(0)
   const last = entryOfConstruct(Math.max(0, context.catalog.length - 1))
   const highlight = state.menuHighlight >= first && state.menuHighlight <= last ? state.menuHighlight : first
@@ -1930,7 +1948,8 @@ function exportLineCount(context: BuildContext, state: BuildState): number {
 function popupRowCount(context: BuildContext, state: BuildState): number {
   switch (state.popup) {
     case "nexus-powers":
-      return nexusPowers(context, state).pending.length
+      // The hand, then Start Battle.
+      return nexusPowers(context, state).pending.length + 1
     case "game-menu":
       return GAME_MENU_ROWS.length
     case "settings":
@@ -1945,6 +1964,8 @@ function popupRowCount(context: BuildContext, state: BuildState): number {
       return bannerOn(state) ? 2 : 1
     case "banner-stance":
       return BANNER_STANCES.length
+    case "building-actions":
+      return tileActions(context, state).length
     default:
       return 0
   }
@@ -2096,6 +2117,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // header row: a click on that row, drawn active, goes back, as Esc (and `e` for Explore Map) does,
       // and so does a click anywhere else on the panel, where the row under the click
       // was not drawn: it chooses nothing, whatever `entry` says. Either way the menu is drawn again.
+      // Map-first: a click on the panel while it shows the card under the cursor selects that tile, as Enter does.
+      if (mapMode(state) === "explore") return selectTile(context, state)
       if (cardShowing(state)) return { ...cancel(state), highlightHidden: true }
       // Otherwise a click activates what it lands on, whatever had focus: a building
       // arms at once, its ghost at the cursor; Nexus opens its popup; Explore Map opens the map.
@@ -2119,6 +2142,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return selectTile(context, state)
 
     case "remove": {
+      if (state.popup === "building-actions") return underActions(context, state, command)
       const lock = editLock(state)
       if (lock !== null) return { ...state, status: lock }
       // What the menu hides — the map cursor, and what is under it — it cannot remove.
@@ -2137,6 +2161,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     }
 
     case "building-action":
+      if (state.popup === "building-actions") return underActions(context, state, command)
       return buildingAction(context, state, command.key)
 
     case "undo": {
@@ -2167,7 +2192,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
 
 
     case "open-battle-round":
-      return openBattleRound(context, state)
+      // From the Nexus Pulse's own Start Battle row.
+      return openBattleRound(context, state.popup === "nexus-powers" ? closePopups(state) : state)
 
     case "banner-target":
       return bannerTarget(context, state)
@@ -2310,6 +2336,15 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     default:
       return state
   }
+}
+
+/** A building's action done from its rows on the panel: done as its key does on the map, and the rows stay open on
+ *  it — or, the building removed, the keyboard back on the map. */
+function underActions(context: BuildContext, state: BuildState, command: BuildCommand): BuildState {
+  const done = applyCommand(context, { ...state, popup: null, popupUnder: [] }, command)
+  const reopened: BuildState = { ...done, popup: "building-actions", popupUnder: state.popupUnder, popupHighlight: state.popupHighlight }
+  if (tileActions(context, reopened).length === 0) return { ...done, popup: null, popupUnder: [] }
+  return { ...reopened, popupHighlight: Math.min(state.popupHighlight, tileActions(context, reopened).length - 1) }
 }
 
 /** What was taken on a planned building that is going — its order given, its upgrades bought and its modes switched

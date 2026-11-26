@@ -154,6 +154,7 @@ const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
   note: null,
   "banner-place": "start",
   "banner-stance": "start",
+  "building-actions": null,
 }
 
 /**

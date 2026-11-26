@@ -327,6 +327,7 @@ export type Popup =
   | "note"
   | "banner-place"
   | "banner-stance"
+  | "building-actions"
 
 /**
  * Where a line of dialog looks, on this round's map: the tile the camera centres on, and the focus's own
