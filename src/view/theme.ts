@@ -77,7 +77,8 @@ export const CHROME_GLYPHS = {
     trailRise: "/",
     // The battle banner, where the player planted it: a pole with its flag.
     banner: "!",
-    // The rally point's call: four thin arrows round it, each pointing at it (`src/view/banner-marks.ts`).
+    // The rally point's call: the movement keys' four arrows round it, each pointing away from it the way its key
+    // moves it (`src/view/banner-marks.ts`).
     pointRight: ">",
     pointLeft: "<",
     pointDown: "v",
@@ -113,10 +114,10 @@ export const CHROME_GLYPHS = {
     trailFall: "╲",
     trailRise: "╱",
     banner: "⚑",
-    pointRight: "→",
-    pointLeft: "←",
-    pointDown: "↓",
-    pointUp: "↑",
+    pointRight: "▶",
+    pointLeft: "◀",
+    pointDown: "▼",
+    pointUp: "▲",
   },
 } as const satisfies Readonly<Record<GlyphPack, Readonly<Record<string, string>>>>
 

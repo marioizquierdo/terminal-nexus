@@ -15,13 +15,16 @@
 //   clock. Only on open plain ground, never over a glyph, like the raid's trail.
 // - **The call** (the owner, 2026-11-26: "send the cursor as usual (same effect as when starting a building) and when it
 //   arrives, show four directional arrows around the banner, and flash the banner and the arrows together (3 quick
-//   flashes should be enough)"): Start's row sends the focus arrow to it, as a building's row does (the hand-off,
-//   `build-handoff.ts`); as it lands, **four thin arrows** stand round the banner — one each side, pointing at it,
-//   faded halfway to the ground (`CALL_ARROW_FADE`, the march line's see-through look) — and they and the banner flash
-//   together three times, at the Battle Round flash's pace. On the ground-items band, under anything standing there.
+//   flashes should be enough)"; once played, F336: "arrows that represent the moevement keys, pointing outwards so it
+//   seems that is asking for pressing the keys. The could flash with a delay fromt the banner so they visually create
+//   movement"): Start's row sends the focus arrow to it, as a building's row does (the hand-off, `build-handoff.ts`);
+//   as it lands, **the movement keys' four arrows** stand round the banner, each pointing away from it the way its key
+//   moves it — `^` above, `v` below, `<` left, `>` right (`▲ ▼ ◀ ▶` in the Unicode pack, the arrow keys' own look) —
+//   bold, in the player's colour. Three times: the banner lights, the arrows light a beat behind it (`CALL_ARROW_LAG`),
+//   so the light seems to run outward, then both go dark. On the ground-items band, under anything standing there.
 // - **The reminder** (F330: "If the user doesn't move the arrow for a second, display and flash the directional arrows
 //   again, and right after flash the keys part of the text on the status bottom menu ... Do this every 5 seconds"): a
-//   second after the call, or after the last move, the same three flashes; then the bottom line's `[arrows]` flashes
+//   second after the call, or after the last move, the same three flashes, banner then arrows; then the bottom line's `[arrows]` flashes
 //   three times, blank on the off beats (`src/view/build-frame.ts`); again every five seconds.
 //
 // Every look is a pure function of two times — since it became the cursor and since it last moved (`rallyCallAt`).
@@ -46,9 +49,9 @@ export const BANNER_BEAT_MS = 500
 /** How far toward the background the march line is drawn where colour allows. */
 const LINE_FADE = 0.15
 
-/** How far toward the background the call's four arrows are drawn where colour allows: half — the owner's "50%
- *  transparent", in the one fade a glyph may take (`CellStyle.fade`); in monochrome they are plain, never bold. */
-export const CALL_ARROW_FADE = 0.5
+/** How far behind the banner the call's four arrows light, as a share of one flash's length: half a flash, so the
+ *  banner is lit alone a moment, then the arrows round it — the light moving outward (F336). */
+export const CALL_ARROW_LAG = 0.5
 
 /** How many flashes a call plays: the owner's "3 quick flashes". */
 export const CALL_FLASHES = 3
@@ -58,22 +61,33 @@ export const REMIND_AFTER_MS = 1000
 export const REMIND_EVERY_MS = 5000
 
 /** The call's timings: the flight before it (the hand-off's, the "Focus arrow" milliseconds; 0 under reduced motion),
- *  each flash's on and off beats (the "Battle Round flash" Experiment's length, the popup flash's gap), and whether
- *  motion is reduced. */
-export type RallyCallTiming = Readonly<{ flightMs: number; flashMs: number; gapMs: number; reducedMotion: boolean }>
+ *  each flash's on and off beats (the "Battle Round flash" Experiment's length, the popup flash's gap), how long the
+ *  arrows light after the banner (`lagMs`), and whether motion is reduced. */
+export type RallyCallTiming = Readonly<{ flightMs: number; flashMs: number; lagMs: number; gapMs: number; reducedMotion: boolean }>
 
 export function rallyCallTiming(focusArrowMs: number, flashMs: number, reducedMotion: boolean): RallyCallTiming {
   return {
     flightMs: reducedMotion ? 0 : Math.max(0, focusArrowMs),
     // The flash off (0) keeps the arrows still for the length the default flash would take: shown, never flashing.
     flashMs: flashMs > 0 ? flashMs : POPUP_FLASH.flashMs,
+    lagMs: flashMs > 0 ? Math.round(flashMs * CALL_ARROW_LAG) : 0,
     gapMs: flashMs > 0 ? POPUP_FLASH.gapMs : 0,
     reducedMotion,
   }
 }
 
-/** How long three flashes take: three beats on, two off between them. */
+/** One flash, from the banner lighting to the next flash: the banner's beat, the arrows' lag behind it, the gap. */
+export function flashPeriodMs(timing: RallyCallTiming): number {
+  return timing.lagMs + timing.flashMs + timing.gapMs
+}
+
+/** How long three flashes take: three periods, less the last gap. */
 export function flashGroupMs(timing: RallyCallTiming): number {
+  return CALL_FLASHES * flashPeriodMs(timing) - timing.gapMs
+}
+
+/** How long the bottom line's keys take to flash three times: three beats on, two off between them. */
+export function keysGroupMs(timing: RallyCallTiming): number {
   return CALL_FLASHES * timing.flashMs + (CALL_FLASHES - 1) * timing.gapMs
 }
 
@@ -92,9 +106,10 @@ export type RallyCall = Readonly<{ flight: number | null; arrows: boolean; lit: 
 
 const QUIET: RallyCall = { flight: null, arrows: false, lit: null, keysBlank: false, keysLit: false, groupEndsMs: null }
 
-/** Whether `localMs` into a flash group is an "on" beat. */
-function onBeat(timing: RallyCallTiming, localMs: number): boolean {
-  return localMs % (timing.flashMs + timing.gapMs) < timing.flashMs
+/** What `localMs` into a flash group lights: the banner on its beat, the arrows on the same beat `lagMs` later. */
+function flashAt(timing: RallyCallTiming, localMs: number): Readonly<{ lit: boolean; arrows: boolean }> {
+  const into = localMs % flashPeriodMs(timing)
+  return { lit: into < timing.flashMs, arrows: into >= timing.lagMs && into < timing.lagMs + timing.flashMs }
 }
 
 /**
@@ -102,9 +117,9 @@ function onBeat(timing: RallyCallTiming, localMs: number): boolean {
  * last moved (`movedMs >= shownMs`: never moved). A pure function of the two times:
  *
  *   0 ... flightMs ............ callEnd ...... quiet + 1 s ......... + group ......... + group ...... + 5 s ...
- *   | the focus arrow flies | 3 flashes |   still   | arrows: 3 flashes | keys: 3 flashes |  still   | again ...
+ *   | the focus arrow flies | 3 flashes |   still   | 3 flashes again   | keys: 3 flashes |  still   | again ...
  *
- * where `quiet` is the later of the call's end and the last move. Reduced motion: the arrows always, nothing else.
+ * where each flash lights the banner, then the arrows `lagMs` behind it, then neither; and `quiet` is the later of the call's end and the last move. Reduced motion: the arrows always, nothing else.
  */
 export function rallyCallAt(timing: RallyCallTiming, shownMs: number, movedMs: number): RallyCall {
   if (timing.reducedMotion) return { ...QUIET, arrows: true }
@@ -113,21 +128,19 @@ export function rallyCallAt(timing: RallyCallTiming, shownMs: number, movedMs: n
   const group = flashGroupMs(timing)
   const callEnd = callEndMs(timing)
   if (shownMs < callEnd) {
-    const on = onBeat(timing, shownMs - timing.flightMs)
-    return { ...QUIET, arrows: on, lit: on, groupEndsMs: callEnd }
+    return { ...QUIET, ...flashAt(timing, shownMs - timing.flightMs), groupEndsMs: callEnd }
   }
   const quiet = Math.max(callEnd, shownMs - Math.max(0, movedMs))
   const idle = shownMs - quiet
   if (idle < REMIND_AFTER_MS) return QUIET
   const into = (idle - REMIND_AFTER_MS) % REMIND_EVERY_MS
   const groupStart = shownMs - into
-  if (into < group) {
-    const on = onBeat(timing, into)
-    return { ...QUIET, arrows: on, lit: on, groupEndsMs: groupStart + group }
-  }
-  if (into < 2 * group) {
-    const on = onBeat(timing, into - group)
-    return { ...QUIET, keysBlank: !on, keysLit: on, groupEndsMs: groupStart + 2 * group }
+  if (into < group) return { ...QUIET, ...flashAt(timing, into), groupEndsMs: groupStart + group }
+  // The keys flash at the plain beat: on for a flash, off for the gap, three times.
+  const keys = keysGroupMs(timing)
+  if (into < group + keys) {
+    const on = (into - group) % (timing.flashMs + timing.gapMs) < timing.flashMs
+    return { ...QUIET, keysBlank: !on, keysLit: on, groupEndsMs: groupStart + group + keys }
   }
   return QUIET
 }
@@ -145,7 +158,7 @@ function bannerShown(input: BuildCompositionInput): Readonly<{ tile: Coord; movi
 }
 
 /** The four arrows round what the rally point stands on — a building's whole footprint, or its one tile — one each
- *  side, at its middle, pointing at it. */
+ *  side, at its middle, pointing away from it: the movement key that moves it that way. */
 export function callArrows(around: readonly Coord[]): readonly Readonly<{ tile: Coord; part: ChromePart }>[] {
   const xs = around.map((tile) => tile.x)
   const ys = around.map((tile) => tile.y)
@@ -156,10 +169,10 @@ export function callArrows(around: readonly Coord[]): readonly Readonly<{ tile: 
   const midX = Math.floor((left + right) / 2)
   const midY = Math.floor((top + bottom) / 2)
   return [
-    { tile: { x: left - 1, y: midY }, part: "pointRight" },
-    { tile: { x: right + 1, y: midY }, part: "pointLeft" },
-    { tile: { x: midX, y: top - 1 }, part: "pointDown" },
-    { tile: { x: midX, y: bottom + 1 }, part: "pointUp" },
+    { tile: { x: left - 1, y: midY }, part: "pointLeft" },
+    { tile: { x: right + 1, y: midY }, part: "pointRight" },
+    { tile: { x: midX, y: top - 1 }, part: "pointUp" },
+    { tile: { x: midX, y: bottom + 1 }, part: "pointDown" },
   ]
 }
 
@@ -199,7 +212,7 @@ export function drawBanner(cells: BandCell[], input: BuildCompositionInput, pack
     for (const arrow of callArrows(building ?? [shown.tile])) {
       if (!inBounds(context.terrain, arrow.tile) || !inView(range, arrow.tile)) continue
       const cell = cellForTile(layout, state.camera, arrow.tile)
-      cells.push({ band: BANDS.groundItems, x: cell.x, y: cell.y, cell: { glyph: chromeGlyph(pack, arrow.part), style: { fgRole: player, fade: CALL_ARROW_FADE } } })
+      cells.push({ band: BANDS.groundItems, x: cell.x, y: cell.y, cell: { glyph: chromeGlyph(pack, arrow.part), style: { fgRole: player, bold: true } } })
     }
   }
 

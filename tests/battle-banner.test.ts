@@ -6,10 +6,13 @@
 // Build Phase back as it was. And the Battle Round sends the troops there, and they hold it.
 
 // Measurements held here (written before the change):
-//   - the call: Start's focus arrow flies for the "Focus arrow" milliseconds (250), then the four arrows and the banner
-//     flash 3 times together at the Battle Round flash's beat (220 ms on, 90 off): over at 250 + 3 x 220 + 2 x 90 =
-//     1090 ms after Start;
-//   - the reminder: 1000 ms after the call ends or the rally point last moved, 3 flashes of the arrows, then 3 of the
+//   - the call (F336, the movement keys' arrows pointing outward, lit after the banner): Start's focus arrow flies for
+//     the "Focus arrow" milliseconds (250), then 3 flashes, each the banner lit for the Battle Round flash's beat
+//     (220 ms), the four arrows lit for as long half a beat (110 ms) behind it, then 90 ms dark: a flash every
+//     110 + 220 + 90 = 420 ms, over at 250 + 3 x 420 - 90 = 1420 ms after Start; the arrows never light before the
+//     banner in a flash, and stay lit after it goes dark; each arrow stands on the side its key moves the rally
+//     point to, pointing that way (`^` above, `v` below, `<` left, `>` right; `▲ ▼ ◀ ▶` in Unicode), bold;
+//   - the reminder: 1000 ms after the call ends or the rally point last moved, 3 flashes of banner and arrows, then 3 of the
 //     bottom line's keys (blank on the 2 off beats between them); again every 5000 ms while it stands unmoved; never
 //     while it keeps moving;
 //   - reduced motion: no flight, the four arrows standing, nothing flashing, no frame asked for.
@@ -35,7 +38,7 @@ import { visibleRange } from "../src/build/camera.ts"
 import { frameToText, cellAt } from "../src/view/frame.ts"
 import { BannerClock } from "../src/view/build-live.ts"
 import type { RallyCall, RallyCallTiming } from "../src/view/banner-marks.ts"
-import { CALL_ARROW_FADE, CALL_FLASHES, REMIND_AFTER_MS, REMIND_EVERY_MS, callArrows, callEndMs, flashGroupMs, rallyCallAt, rallyCallTiming } from "../src/view/banner-marks.ts"
+import { CALL_FLASHES, REMIND_AFTER_MS, REMIND_EVERY_MS, callArrows, callEndMs, flashGroupMs, keysGroupMs, rallyCallAt, rallyCallTiming } from "../src/view/banner-marks.ts"
 import { RALLY_POINT_LINE, bottomLine, rallyPointLine } from "../src/build/help.ts"
 import { chromeGlyph } from "../src/view/theme.ts"
 import { TUNING } from "../src/build/tuning.ts"
@@ -243,20 +246,31 @@ function flashes(from: number, to: number, on: (ms: number) => boolean): number 
 /** The call never moved: the rally point standing where Start put it. */
 const still = (ms: number): RallyCall => rallyCallAt(TIMING, ms, ms)
 
-test("the call: Start's focus arrow flies to the rally point, then its four arrows and the banner flash three times together", () => {
+test("the call: Start's focus arrow flies to the rally point, then three flashes, the banner lit first and the arrows after it", () => {
   assert.equal(TIMING.flightMs, 250)
-  assert.equal(callEndMs(TIMING), 1090, "the call is not 250 ms of flight and three flashes of 220 ms, 90 apart")
+  assert.equal(TIMING.lagMs, 110)
+  assert.equal(callEndMs(TIMING), 1420, "the call is not 250 ms of flight and three flashes of 110 + 220 + 90 ms, less the last gap")
   // The flight: progress from 0 to 1, nothing else.
   assert.deepEqual(still(0), { flight: 0, arrows: false, lit: null, keysBlank: false, keysLit: false, groupEndsMs: null })
   assert.equal(still(125).flight, 0.5)
-  // Three flashes, the arrows and the banner on the same beats.
+  // Three flashes of each.
   assert.equal(flashes(0, callEndMs(TIMING), (ms) => still(ms).arrows), CALL_FLASHES)
   assert.equal(flashes(0, callEndMs(TIMING), (ms) => still(ms).lit === true), CALL_FLASHES)
-  for (let ms = TIMING.flightMs; ms < callEndMs(TIMING); ms += 7) assert.equal(still(ms).lit, still(ms).arrows, `${ms} ms: the banner and the arrows out of step`)
+  // Outward: in every flash the banner lights before the arrows, and the arrows stay after it goes dark.
+  let bannerOnAt = -1
+  for (let ms = TIMING.flightMs; ms < callEndMs(TIMING); ms += 1) {
+    const now = still(ms)
+    const before = still(ms - 1)
+    if (now.lit === true && before.lit !== true) bannerOnAt = ms
+    if (now.arrows && !before.arrows) assert.equal(ms - bannerOnAt, TIMING.lagMs, `${ms} ms: the arrows did not light half a beat after the banner`)
+    if (now.arrows) assert.ok(bannerOnAt >= 0, `${ms} ms: the arrows lit before the banner`)
+  }
   // The second count: the beats are where the flash's numbers put them.
-  assert.equal(still(TIMING.flightMs + 219).arrows, true)
-  assert.equal(still(TIMING.flightMs + 220).arrows, false)
-  assert.equal(still(TIMING.flightMs + 310).arrows, true)
+  assert.deepEqual([still(250).lit, still(250).arrows], [true, false], "the banner alone first")
+  assert.deepEqual([still(250 + 110).lit, still(250 + 110).arrows], [true, true], "then both")
+  assert.deepEqual([still(250 + 220).lit, still(250 + 220).arrows], [false, true], "then the arrows alone")
+  assert.deepEqual([still(250 + 330).lit, still(250 + 330).arrows], [false, false], "then dark")
+  assert.deepEqual([still(250 + 420).lit, still(250 + 420).arrows], [true, false], "the second flash")
   // Then still, and nothing on the bottom line.
   for (let ms = callEndMs(TIMING); ms < callEndMs(TIMING) + REMIND_AFTER_MS; ms += 10) assert.deepEqual(still(ms), still(callEndMs(TIMING)), `${ms} ms`)
   assert.equal(still(callEndMs(TIMING)).arrows, false)
@@ -266,22 +280,25 @@ test("the reminder: a second unmoved, the arrows flash three times, then the bot
   assert.equal(REMIND_AFTER_MS, 1000)
   assert.equal(REMIND_EVERY_MS, 5000)
   const group = flashGroupMs(TIMING)
-  assert.equal(group, 840)
+  assert.equal(group, 1170)
+  const keysGroup = keysGroupMs(TIMING)
+  assert.equal(keysGroup, 840, "the keys flash at the plain beat: 220 on, 90 off")
   const first = callEndMs(TIMING) + REMIND_AFTER_MS
   for (const start of [first, first + REMIND_EVERY_MS, first + 2 * REMIND_EVERY_MS]) {
     assert.equal(flashes(start - 200, start + group, (ms) => still(ms).arrows), CALL_FLASHES, `${start} ms: the arrows`)
     assert.equal(flashes(start, start + group, (ms) => still(ms).keysLit || still(ms).keysBlank), 0, `${start} ms: the keys flashed with the arrows`)
-    assert.equal(flashes(start + group, start + 2 * group, (ms) => still(ms).keysLit), CALL_FLASHES, `${start} ms: the keys`)
+    assert.equal(flashes(start + group, start + group + keysGroup, (ms) => still(ms).keysLit), CALL_FLASHES, `${start} ms: the keys`)
     // Blank on the two off beats between the three flashes.
-    assert.equal(flashes(start + group, start + 2 * group, (ms) => still(ms).keysBlank), CALL_FLASHES - 1, `${start} ms: the blanks`)
-    assert.equal(flashes(start + group, start + 2 * group, (ms) => still(ms).arrows), 0, `${start} ms: the arrows with the keys`)
+    assert.equal(flashes(start + group, start + group + keysGroup, (ms) => still(ms).keysBlank), CALL_FLASHES - 1, `${start} ms: the blanks`)
+    assert.equal(flashes(start + group, start + group + keysGroup, (ms) => still(ms).arrows), 0, `${start} ms: the arrows with the keys`)
     // Then nothing until the next.
-    for (let ms: number = start + 2 * group; ms < start + REMIND_EVERY_MS; ms += 25) assert.deepEqual(still(ms), still(start + 2 * group), `${ms} ms`)
+    for (let ms: number = start + group + keysGroup; ms < start + REMIND_EVERY_MS; ms += 25) assert.deepEqual(still(ms), still(start + group + keysGroup), `${ms} ms`)
   }
   // Moved at 1.5 s, before the first reminder: it waits a second from the move.
   const moved = (ms: number): RallyCall => rallyCallAt(TIMING, ms, ms < 1500 ? ms : ms - 1500)
   assert.equal(moved(first + 10).arrows, false, "the reminder came though it had just moved")
-  assert.equal(moved(2510).arrows, true, "no reminder a second after the move")
+  assert.equal(moved(2510).lit, true, "no reminder a second after the move")
+  assert.equal(moved(2510 + TIMING.lagMs).arrows, true, "no arrows in the reminder")
   // Moving every half second, never.
   const busy = (ms: number): RallyCall => rallyCallAt(TIMING, ms, ms < callEndMs(TIMING) ? ms : ms % 500)
   assert.equal(flashes(callEndMs(TIMING), 20_000, (ms) => busy(ms).arrows || busy(ms).keysLit), 0, "a reminder while it moved")
@@ -305,32 +322,40 @@ test("the rally point's clock: from the frame it became the cursor, a move resta
   assert.equal(clock.at(side.build.state, 1000, false).until, 1000 + TIMING.flightMs, "the flight is not drawn every frame")
   assert.equal(clock.at(side.build.state, 1300, false).until, 1000 + callEndMs(TIMING))
   assert.equal(clock.at(side.build.state, 1000 + callEndMs(TIMING) + 500, false).until, null)
-  assert.equal(clock.at(side.build.state, 1000 + callEndMs(TIMING) + REMIND_AFTER_MS + 10, false).call?.arrows, true, "no reminder")
+  assert.equal(clock.at(side.build.state, 1000 + callEndMs(TIMING) + REMIND_AFTER_MS + 10, false).call?.lit, true, "no reminder")
   keys(side, RIGHT)
   const after = 1000 + callEndMs(TIMING) + REMIND_AFTER_MS + 100
   assert.equal(clock.at(side.build.state, after, false).call?.arrows, false, "a move did not restart the wait")
-  assert.equal(clock.at(side.build.state, after + REMIND_AFTER_MS + 10, false).call?.arrows, true)
+  assert.equal(clock.at(side.build.state, after + REMIND_AFTER_MS + 10, false).call?.lit, true)
   // Gone with the rally point: Esc, and the clock starts over next time.
   keys(side, ESC)
   assert.deepEqual(clock.at(side.build.state, after + 5000, false), { until: null })
 })
 
-test("drawn: four thin arrows round it, pointing at it, half faded, under anything standing; the keys blanked on the reminder's off beats", () => {
+test("drawn: the movement keys' four arrows round it, pointing outward, bold, under anything standing; the keys blanked on the reminder's off beats", () => {
   const side = bannerSide()
   keys(side, "s")
   const tile = side.build.state.cursor
   const on: RallyCall = { flight: null, arrows: true, lit: true, keysBlank: false, keysLit: false, groupEndsMs: null }
   const frame = compose(side, { banner: { pulseMs: 400, call: on } }, "truecolor")
   const around = callArrows([tile])
-  assert.deepEqual(around.map((arrow) => [arrow.tile.x - tile.x, arrow.tile.y - tile.y, chromeGlyph("ascii", arrow.part)]), [[-1, 0, ">"], [1, 0, "<"], [0, -1, "v"], [0, 1, "^"]])
+  // Each on the side its key moves the rally point to, pointing that way: left of it `<`, right `>`, above `^`, below `v`.
+  assert.deepEqual(around.map((arrow) => [arrow.tile.x - tile.x, arrow.tile.y - tile.y, chromeGlyph("ascii", arrow.part)]), [[-1, 0, "<"], [1, 0, ">"], [0, -1, "^"], [0, 1, "v"]])
   for (const arrow of around) {
     const cell = cellForTile(side.layout, side.build.state.camera, arrow.tile)
     const drawn = cellAt(frame, cell.x, cell.y)
     assert.equal(drawn.glyph, chromeGlyph("ascii", arrow.part))
-    assert.equal(drawn.style.fade, CALL_ARROW_FADE)
-    assert.equal(drawn.style.bold, undefined, "the arrows are not thin")
+    assert.equal(drawn.style.fade, undefined, "the arrows are faded")
+    assert.equal(drawn.style.bold, true, "the arrows are not bold")
   }
-  assert.deepEqual(["pointRight", "pointLeft", "pointDown", "pointUp"].map((part) => chromeGlyph("unicode", part as never)), ["→", "←", "↓", "↑"])
+  // In Unicode, the arrow keys' own solid triangles, never the thin arrows.
+  assert.deepEqual(callArrows([tile]).map((arrow) => chromeGlyph("unicode", arrow.part)), ["◀", "▶", "▲", "▼"])
+  // Monochrome reads them by weight: bold there too.
+  const mono = compose(side, { banner: { pulseMs: 400, call: on } }, "monochrome")
+  for (const arrow of around) {
+    const cell = cellForTile(side.layout, side.build.state.camera, arrow.tile)
+    assert.equal(cellAt(mono, cell.x, cell.y).style.bold, true, "monochrome: the arrows are not bold")
+  }
   // Off beat: no arrows.
   const off = compose(side, { banner: { pulseMs: 400, call: { ...on, arrows: false, lit: false } } }, "truecolor")
   for (const arrow of around) {
@@ -338,7 +363,7 @@ test("drawn: four thin arrows round it, pointing at it, half faded, under anythi
     assert.notEqual(cellAt(off, cell.x, cell.y).glyph, chromeGlyph("ascii", arrow.part))
   }
   // A still frame (no clock) shows them, so a picture says where the rally point is.
-  assert.match(frameToText(compose(side)), />!</)
+  assert.match(frameToText(compose(side)), /<!>/)
   // The keys: blank between the brackets on the off beats, inverse on the beats.
   const footer = (call: RallyCall): string => frameToText(compose(side, { banner: { pulseMs: 400, call } })).split("\n")[side.layout.footerRow] ?? ""
   assert.match(footer({ ...on, keysBlank: true }), /\[ {6}\] Set Rally Point\. \[enter\] Start battle\./)
