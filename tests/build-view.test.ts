@@ -749,7 +749,7 @@ test("Start makes the cursor the rally point on the battlefield: no popup, the f
   })
   assert.equal(built.build.state.popup, "banner-place")
   assert.doesNotMatch(built.text, /Battle Round 1|\[s\] Start\b(?! Battle)/, "a confirmation popup")
-  assert.match(built.text, />!</, "the flag between its two side arrows")
+  assert.match(built.text, /<!>/, "the flag between its two side arrows")
   assert.match(built.text, /back \[esc\]/)
   assert.equal(hint(built.context, built.build.state).text, "[arrows] Set Rally Point. [enter] Start battle.")
 })

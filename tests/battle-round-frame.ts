@@ -38,6 +38,9 @@ export type BattleRoundOptions = Readonly<{
   terminal?: Readonly<{ columns: number; rows: number }>
   /** The tile the view is centred near (clamped to the battlefield): the north-west corner unless given. */
   look?: Coord
+  /** How many times faster a settled round plays (`src/view/fast-forward.ts`): 1 unless given, so a frame seeks to
+   *  exactly the instant asked for. */
+  fastForwardSpeed?: number
 }>
 
 /**
@@ -53,7 +56,7 @@ export function battleRoundScreen(timeline: PulseTimeline, options: BattleRoundO
   const state: BuildState = { ...opened, committed: true }
   const last = timeline.states[timeline.states.length - 1]
   if (last === undefined) throw new Error("timeline holds no states")
-  const presenter = new PulsePresenter({ timeline, regroup: { state: last, paths: [], ticks: 0 }, nexus: null }, presentation)
+  const presenter = new PulsePresenter({ timeline, regroup: { state: last, paths: [], ticks: 0 }, nexus: null }, presentation, { fastForwardSpeed: options.fastForwardSpeed ?? 1 })
   // Seeking is from the top every time, by exactly `timeMs`: playback time is then `timeMs` to the bit, so a frame on a
   // tick boundary is the frame on that boundary.
   const seek = (timeMs: number): void => {

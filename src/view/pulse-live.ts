@@ -43,6 +43,8 @@ import type { RallyPlan } from "./rally-arrows.ts"
 import { rallyEndMs, rallyMarksAt, rallyPlan } from "./rally-arrows.ts"
 import type { Clash, KnownMap, PreludePlan } from "./prelude.ts"
 import { NO_PRELUDE, preludeAt, preludePlan } from "./prelude.ts"
+import type { FastForwardWindow } from "./fast-forward.ts"
+import { fastForwardStep, fastForwardWindow, settledTick } from "./fast-forward.ts"
 import type { PresentationOptions, PulseTimeline, PulseView } from "./snapshot.ts"
 
 /** A Pulse the battle engine has resolved, and the regroup that follows it — everything the screen needs to play it, built by
@@ -183,6 +185,8 @@ export class PulsePresenter {
       straight?: boolean
       replay?: boolean
       barksOf?: BarksOf
+      /** How many times faster a settled round plays (`fast-forward.ts`). Absent: the tuned value. */
+      fastForwardSpeed?: number
       /** What the Build Phase's map showed when the round began: the enemy's entities in the opening that were not on
        *  it are revealed one by one before the fight (`prelude.ts`). Absent: no reveal. */
       known?: KnownMap
@@ -213,6 +217,34 @@ export class PulsePresenter {
     this.prelude = opening === undefined || options.known === undefined ? NO_PRELUDE : preludePlan(opening, resolved.timeline.registry, options.known, resolved.clashes ?? [])
     // The arrows run from the round's first instant, the prelude included: on the presentation clock (`elapsedMs`).
     this.rally = opening === undefined ? null : rallyPlan(opening, resolved.timeline.registry, { count: TUNING.rallyArrowsCount, stopMs: this.times.stopMs + this.prelude.lengthMs })
+    // Fast forward: worked out once, from the whole resolved round.
+    this.settled = settledTick(resolved.timeline)
+    this.fastWindow = fastForwardWindow(this.settled, this.view.tickDurationMs, this.times)
+    this.fastFactor = options.fastForwardSpeed ?? TUNING.fastForwardSpeed
+  }
+
+  /** The tick from which the round has settled (`settledTick`), or `null`: it never does. */
+  readonly settled: number | null
+  /** The part of the fight that plays fast, on its own clock, or `null`: none (`fastForwardWindow`). */
+  readonly fastWindow: FastForwardWindow | null
+  /** How many times faster it plays there. */
+  private readonly fastFactor: number
+  /** A key or a click came while it played fast: normal speed for the rest of the round. */
+  private fastEnded = false
+
+  /** Whether the round is in its fast part and nothing has ended it: what the label shows. */
+  get fastForward(): boolean {
+    if (this.fastWindow === null || this.fastEnded) return false
+    const time = this.playback.presentationTimeMs - this.prelude.lengthMs
+    return time >= this.fastWindow.fromMs && time < this.fastWindow.untilMs
+  }
+
+  /** **Any key or click returns to normal speed** while it plays fast, for the rest of the round (Replay from the top
+   *  starts it over). A key before the fast part ends nothing. Whether it ended it. */
+  endFastForward(): boolean {
+    if (!this.fastForward) return false
+    this.fastEnded = true
+    return true
   }
 
   /** Where and when the player's Commander fell, in presentation time: her death's tick, at the Pulse's own pace. */
@@ -298,14 +330,24 @@ export class PulsePresenter {
     }
     const elapsed = Math.max(0, now - this.lastNow)
     this.lastNow = now
-    if (!hold) this.playback.advance(elapsed)
+    if (hold) return
+    // In the settled part of the round, the fight's clock runs `fastFactor` times as fast (`fastForwardStep`), the
+    // prelude never: its time is before the fight's.
+    const window = this.fastEnded ? null : this.fastWindow
+    const speed = this.playback.speed
+    const step = fastForwardStep(this.playback.presentationTimeMs - this.prelude.lengthMs, elapsed, speed, window, this.fastFactor)
+    this.playback.advance(step / speed)
   }
 
   /** A playback control: pause, speed, a step, or watching it again from the top. */
   apply(control: PlaybackControl): void {
     this.playback.apply(control)
-    // From the top, the camera moves are due again: the story starts over, and so does the view.
-    if (control === "restart") this.fired.clear()
+    // From the top, the camera moves are due again: the story starts over, and so does the view — and fast forward,
+    // which plays again as it did the first time.
+    if (control === "restart") {
+      this.fired.clear()
+      this.fastEnded = false
+    }
   }
 
   /**
@@ -410,7 +452,8 @@ export class PulsePresenter {
       openingHealth: this.view.openingHealth,
       ticksPerSecond: this.resolved.timeline.ticksPerSecond,
       paused: this.playback.paused,
-      speed: this.playback.speed,
+      speed: this.fastForward ? this.playback.speed * this.fastFactor : this.playback.speed,
+      ...(this.fastForward ? { fastForward: true } : {}),
       phase,
       timeMs,
       times,

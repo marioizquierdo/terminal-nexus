@@ -459,6 +459,14 @@ export const ALL_SETTINGS = {
     unit: "percent",
     default: 30,
   },
+
+  // --- Fast forward (the owner, 2026-11-25, F339) -------------------------------------------------------------
+  // "if I am playing defensive, the unit groups arrive at the rally point, and nothing happens until the round ends.
+  // The game should fast forward to the end of the round." Once a round has settled (`src/view/fast-forward.ts`), it
+  // plays this many times faster until its last seconds, labelled, any key back to normal speed (his choice).
+
+  /** How many times faster a settled Battle Round plays: the owner's "about 8x". */
+  fastForwardSpeed: { tier: "tuned", unit: "count", default: 8 },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 
 // --- Names, values and tiers, as types --------------------------------------------------------------

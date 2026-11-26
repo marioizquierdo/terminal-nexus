@@ -88,6 +88,9 @@ export type PulseFrame = Readonly<{
   prelude?: PreludeFrame
   /** Draw no map cursor this frame: the round has just begun, its prelude and rally arrows playing. */
   cursorHidden?: boolean
+  /** The round has settled and plays fast (`fast-forward.ts`): `speed` is that speed, the panel and the bottom line say
+   *  so. Absent: the round plays at the player's speed. */
+  fastForward?: boolean
 }>
 
 /** A Commander's aura as the scene draws it: the tile she is drawn on, how far it reaches in tiles — measured
@@ -371,9 +374,17 @@ const secondsOf = (pulse: PulseFrame, tick: number): string => (tick / pulse.tic
  *  "None of yours is left." */
 const cameHome = (count: number): string => (count === 0 ? "None of yours is left." : `${count} of yours hold the field.`)
 
+/** The label a settled round plays under, in the panel beside its speed (`fast-forward.ts`). */
+export const FAST_FORWARD = "Fast forward"
+
+/** The bottom line while it plays fast: why, and the way back to normal speed. Fits 80 columns. */
+export const FAST_FORWARD_LINE = `${FAST_FORWARD} - the battle has settled. Any key: normal speed.`
+
 /** The one line under the map: what the Pulse is doing now, or how it ended, in plain words. */
 export function pulseStatus(pulse: PulseFrame): StatusMessage {
   const held = pulse.paused && pulse.phase !== "home" ? "Paused. " : ""
+  // Fast forward: what is happening, and the way back (the bottom line's "the result and the way back").
+  if (pulse.fastForward === true && !pulse.paused) return status(FAST_FORWARD_LINE)
   switch (pulse.phase) {
     case "final":
       return status(`${held}The battle is about to end.`)
@@ -565,7 +576,13 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
         inverse: lit,
       })
       line(`BATTLE ROUND ${pulseNumber}`, "chrome.title", { bold: true, limit: right - timer.length - 1 })
-      line(`time left  ${pulse.speed}x${pulse.paused ? " paused" : ""}`, "chrome.label")
+      // Fast forward says so where the speed is, in the hotkey's look so it is seen; paused, it waits with the round.
+      if (pulse.fastForward === true && !pulse.paused) {
+        const lead = `time left  ${pulse.speed}x `
+        text(cells, band, column, layout.panelRow + at, lead, "chrome.label", { limit })
+        text(cells, band, column + lead.length, layout.panelRow + at, FAST_FORWARD, "chrome.hotkey", { bold: true, limit: Math.max(0, limit - lead.length) })
+        at += 1
+      } else line(`time left  ${pulse.speed}x${pulse.paused ? " paused" : ""}`, "chrome.label")
     }
   }
   gap()

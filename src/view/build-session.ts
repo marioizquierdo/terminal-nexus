@@ -155,6 +155,9 @@ export type BuildSessionOptions = Readonly<{
    * settled it beside her).
    */
   barksOf?: BarksOf
+  /** How many times faster a settled Battle Round plays (`src/view/fast-forward.ts`): the tuned value unless a test,
+   *  reading its screens at instants of the round's own clock, hands it 1. */
+  fastForwardSpeed?: number
 }>
 
 /**
@@ -224,6 +227,8 @@ export class BuildSession {
   private readonly captureScreen: (() => string) | null
   /** Where a Commander's lines come from (`BuildSessionOptions.barksOf`); `undefined`: her army's. */
   private readonly barksOf: BarksOf | undefined
+  /** `BuildSessionOptions.fastForwardSpeed`; `undefined`: the tuned value. */
+  private readonly fastForwardSpeed: number | undefined
   /** The raid last foreseen, and the round and plan it was foreseen on. */
   private foreseen: Readonly<{ context: BuildContext; planned: BuildState["planned"]; banner: BuildState["banner"]; raid: RaidForecast }> | null = null
 
@@ -258,6 +263,7 @@ export class BuildSession {
     this.captureScreen = options.captureScreen ?? null
     this.keep = options.keep ?? ((context, card) => ({ ...context, kept: [...(context.kept ?? []), card] }))
     this.barksOf = options.barksOf
+    this.fastForwardSpeed = options.fastForwardSpeed
     this.recordDialog(null)
   }
 
@@ -335,6 +341,8 @@ export class BuildSession {
     // A playback control belongs to the Pulse's clock, not to the state: handed on like a quit. Pause has
     // nothing to pause once the result stands — and no row is drawn for it there — so it is not handed on.
     if (command.kind === "pulse") {
+      // A driver's playback control is a key pressed: it returns a fast-forwarding round to normal speed too.
+      this.endFastForward()
       const over = this.presenter?.phase() === "home"
       if (!(over && command.control === "toggle")) this.presenter?.apply(command.control)
       this.log.log("build.command", { command: command.kind })
@@ -606,6 +614,11 @@ export class BuildSession {
     this.openedAt = this.now ?? null
   }
 
+  /** A fast-forwarding round back to normal speed for the rest of it (`PulsePresenter.endFastForward`), logged. */
+  private endFastForward(): void {
+    if (this.presenter?.endFastForward() === true) this.log.log("build.command", { command: "normal-speed" })
+  }
+
   /** A command from a key or a click, kept with its time for a note — not the note's own keys, which a replay would
    *  open the note again with. */
   private press(command: BuildCommand): void {
@@ -687,6 +700,7 @@ export class BuildSession {
       replay: true,
       ...(this.lastKnown === undefined ? {} : { known: this.lastKnown }),
       ...(this.barksOf === undefined ? {} : { barksOf: this.barksOf }),
+      ...(this.fastForwardSpeed === undefined ? {} : { fastForwardSpeed: this.fastForwardSpeed }),
     })
     this.replaying = true
     this.resultLogged = true
@@ -713,6 +727,7 @@ export class BuildSession {
       autoNextMs: setting(this.buildState, "nextRound") === "auto" ? TUNING.autoNextRoundMs : null,
       straight: setting(this.buildState, "nextRound") === "straight",
       ...(this.barksOf === undefined ? {} : { barksOf: this.barksOf }),
+      ...(this.fastForwardSpeed === undefined ? {} : { fastForwardSpeed: this.fastForwardSpeed }),
     })
     this.resultLogged = false
     this.voiced = new Set()
@@ -741,6 +756,8 @@ export class BuildSession {
     const event = decodeKeyEvent(key)
     if (event === null) return
     const mouse = parseMouseEvent(event.key)
+    // Fast forward: any key pressed, or any click, returns the round to normal speed; the key then does what it does.
+    if ((mouse === null && event.phase !== "release") || mouse?.press === true) this.endFastForward()
     if (mouse === null) {
       this.handleKeyEvent(event.key, event.phase ?? (this.reportsReleases() ? "press" : null), timing.now)
       return
