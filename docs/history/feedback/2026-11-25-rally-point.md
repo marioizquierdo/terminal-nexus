@@ -317,3 +317,90 @@ one line with the refund. Whether the Build Phase should warn about building bes
 **Built**, every point: one area, one refusal and one route (`src/match/rally.ts`); the default rally point in the
 battle rules (`src/battle/rally.ts`), so the `skirmish` command plays it too; the field named `rally`; no release; the
 Battle banner Experiment and its old popup deleted; the stale lines rewritten; Watch last battle on `w`.
+## The fourth round, 2026-11-26
+
+### F336 — arrows that ask for the keys
+
+> The arrows around the banner are tiny and pointing at the banner. I mean arrows that represent the moevement keys,
+> pointing outwards so it seems that is asking for pressing the keys. The could flash with a delay fromt the banner so
+> they visually create movement. The idea is that when a player starts a battle round, they may not realize they can
+> move the banner, so this aid tries to make that clear.
+
+**Scheduled.**
+
+### F337 — the regroup faces the enemy; army groups
+
+> there was a bug [a picture]. At the end of round 2, the units retreated to the bottom of the map, instead of standing
+> behind the banner. I think since we simplified how the banner behaves, then we have to infer if they need to regroup
+> behind it or on top of it. Please explore the best way to represent this. The idea is that if units are in conflict,
+> they should retreat and regroup so when the next battle round begins, they are better possitioned to battle. The
+> formation should be facing the enemy, not necesarily the lines towards the banner. This may also count for unit
+> formation, the rule that says a unit with more targeting priority moves at half speed to allow the melee units move
+> to the front, that should be relative to the closest enemy army. I think we defined some rules to identify army
+> groups (I think we called them battalions or something like that?), perhaps this is a good time to re-define that
+> concept, maybe based on density and if their enemy commander is on a cluster then the commander represents the center
+> of the group. The enemy nexus is always a group. Offensive buildings also count as units on a single group. As units
+> move during the battle round, the groups could be re-defined, but it doesn't have to be on every frame, every second
+> or so should be enough. Once the key groups are identified, along with the mission targets (the enemy nexus), then it
+> should be easier to define what is "on front" or "on the back". Armies move towards the banner, but face the enemy.
+> Feel free to grill this with me if I am not making sense. I also need to get used to our vocabulary to describe the
+> intended behavior, that I am myself discovering as I playtest (if this is not obvious, please encode it on the
+> development docs).
+
+> Army is the whole set of units, Army group is a cluster of units that can fight together. We already defined
+> something similar during the skirmish milestone, in order to report the results of a battle round [...] I don't want
+> to make a new definition, we should use the same one. We are polishing the concept of army group, that can be used to
+> report a battle engagement and also to aim units during the battle round when marching or re-grouping into fomation.
+> Army, Army group, Army group formation, re-grouping, marching (towards the rally point), rally point (banner is the
+> visual representation of the rally point), engaging in combat, re-targeting. All should be properly explained on the
+> glossary of the toop movement spec. For the battle simluation, we need to make sure that the in-game times are
+> properly identified: differentiate tick, frame, and a second (which is a "in-game second"), we should refer to real
+> time durations specifically, usually outside of the simiulation.
+
+**Partly built, partly scheduled.** Cause: between rounds a side formed its ranks across the line from its Commander to
+its target, and the target is now the rally point, so a Commander beside or past it turned the ranks sideways or
+backwards. Asked (2026-11-26): now, the regroup forms up on the rally point (or falls back to it), facing the enemy,
+and the words go into the glossary and the troop movement page; **army groups** (named so by him; the same 5-tile reach
+as an engagement) are built as the next pull request. Fast-forward speeds up, labelled; an army group forms up on its
+rally point, or back to it.
+
+### F338 — the troops always march to the rally point
+
+> Another round, my troops ignored the rally point and staid back in my base. That is not acceptable; if the UX shows
+> that I can place the banner, then the units should march towards the new location. Note that the march direction is
+> not strict. If they cannot reach the location, they will attack the buildings on the way, or walk around and attack
+> things they find. We don't allow placing the rally point on a rock, but even if we did, the units should still walk
+> towards the intended location. Units should know when their group already arrived at the banner, and change into
+> formation (which means they don't need to be exactly at the banner location, only the group needs to be close to it)
+> when there are no battle engagement.
+
+**Scheduled.** The arrival and forming up by group waits for army groups.
+
+### F339 — fast-forward a settled round
+
+> During the first rounds, if I am playing defensive, the unit groups arrive at the rally point, and nothing happens
+> until the round ends. The game should fast forward to the end of the round. We may be able to identify this by
+> calculating the end state of the round, and comparing with it each second to see if the units are very close to that
+> state (e.g. no active conflict engagements and half units at the exact destination, other units within 1 tile, and no
+> more than 2 units within 2 tiles), then the game can fast fowrward to the end of the battle. Later when we have
+> workers, they are ignored from the final location because they would keep moving and collecting, but that can also
+> be fast forward as long as the player can see all the collected resources. Please think about this mechanic and see
+> how to implement it on this PR as well.
+
+**Scheduled.** Speeds up to about 8x, labelled; any key returns to normal speed (his choice).
+
+### F340 — no warning beside enemy troops
+
+> Building next to enemy troops -- no need to warn, it is obvious from the battlefield state.
+
+**Answered**: no warning.
+
+### F341 — balance waits
+
+> Pocket -- no bias to record yet. Let's not worry about balance for now, we are focusing on the UX
+
+### F342 — the rally point starts at 30%
+
+> Rally point at start: 30% looks good
+
+**Built**: Rally point start's default is 30.

@@ -448,8 +448,8 @@ export const ALL_SETTINGS = {
   // front of the base so I can form an army." A Skirmish's rally point starts this far along the way from the
   // player's Nexus to the enemy's (an open question between his two numbers; 100 is the enemy Nexus as before).
 
-  /** Where a Skirmish's rally point starts each battle, as a share of the way from your Nexus to the enemy's. First
-   *  guess: 20, between the owner's 10 and 30. */
+  /** Where a Skirmish's rally point starts each battle, as a share of the way from your Nexus to the enemy's. The owner,
+   *  2026-11-25 after playing it: "30% looks good". */
   rallyStart: {
     tier: "experiment",
     section: "mission",
@@ -457,7 +457,7 @@ export const ALL_SETTINGS = {
     question: "Where the rally point starts: this share of the way from your Nexus to the enemy's; 100 is their Nexus.",
     values: [10, 20, 30, 100],
     unit: "percent",
-    default: 20,
+    default: 30,
   },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 

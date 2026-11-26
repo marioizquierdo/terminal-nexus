@@ -83,8 +83,8 @@ test("ENEMY_NEXUS: the troops march on the enemy's Nexus and stand at it", { tim
 test("no rally point: the default in front of the base, the tile the Skirmish screen starts on", { timeout: 60_000 }, () => {
   const round = roundWith(undefined)
   const { there, of, area } = gathered(round)
-  assert.deepEqual(round.report.sides.A.rally, { x: 18, y: 14 })
-  assert.deepEqual(area, { x: 17, y: 13, width: 3, height: 3 })
+  assert.deepEqual(round.report.sides.A.rally, { x: 24, y: 14 })
+  assert.deepEqual(area, { x: 23, y: 13, width: 3, height: 3 })
   assert.ok(of > 0 && there * 2 >= of, `only ${there} of ${of} fighting units stand in front of the base`)
   const { context } = screenRound(null)
   assert.deepEqual(context.bannerDefault?.tile, round.report.sides.A.rally, "the screen's default rally point is not the battle's")
@@ -92,13 +92,13 @@ test("no rally point: the default in front of the base, the tile the Skirmish sc
 
 test("a rally point the troops cannot stand on is refused and said; they rally at the default", { timeout: 60_000 }, () => {
   const offMap = roundWith({ x: 500, y: 3 })
-  assert.deepEqual(offMap.report.sides.A.rally, { x: 18, y: 14 })
+  assert.deepEqual(offMap.report.sides.A.rally, { x: 24, y: 14 })
   assert.ok(offMap.report.sides.A.refused.some((line) => line.startsWith("rally point at 500,3: off the battlefield")), offMap.report.sides.A.refused.join("; "))
   // The Crossing's ridge: rock down the middle column.
   const rock = roundWith({ x: 35, y: 0 })
-  assert.deepEqual(rock.report.sides.A.rally, { x: 18, y: 14 })
+  assert.deepEqual(rock.report.sides.A.rally, { x: 24, y: 14 })
   assert.ok(rock.report.sides.A.refused.some((line) => line.startsWith("rally point at 35,0: rock")), rock.report.sides.A.refused.join("; "))
-  assert.match(roundLines(rock.report).join("\n"), /rally point 18,14/u)
+  assert.match(roundLines(rock.report).join("\n"), /rally point 24,14/u)
 })
 
 test("a build file names its rally point, and says what is wrong with one it cannot read", () => {
@@ -210,7 +210,7 @@ test("the Skirmish screen hands its rally point to the round, and it stays place
 
 test("the rally point unmoved is the battle's own default: the screen's plan names none", () => {
   const defaulted = screenRound(null)
-  assert.deepEqual(defaulted.context.bannerDefault?.tile, { x: 18, y: 14 })
+  assert.deepEqual(defaulted.context.bannerDefault?.tile, { x: 24, y: 14 })
   assert.equal(buildActionsOf(defaulted.context, defaulted.state).rally, undefined)
   // Rally point start at 100: no default on screen, the enemy Nexus named.
   const far = { ...defaulted.context }

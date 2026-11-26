@@ -129,7 +129,7 @@ test("a round played from a Build Phase places exactly the buildings the player 
   assert.deepEqual(played.report.sides.A.refused, [])
   assert.equal(played.report.sides.A.kept, context.nexusDraft[0]?.name)
   // The rally point starts in front of the base (Rally point start, 20%): the troops gather there and hold it.
-  assert.deepEqual(played.report.sides.A.rally, { x: 18, y: 14 }, "the rally point is not in front of the base")
+  assert.deepEqual(played.report.sides.A.rally, { x: 24, y: 14 }, "the rally point is not in front of the base")
   assert.equal(resolved.mission?.round, 1)
   assert.equal(resolved.mission?.of, 8)
   assert.equal(resolved.enemy, "enemy")
