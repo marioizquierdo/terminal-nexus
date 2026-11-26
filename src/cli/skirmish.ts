@@ -31,7 +31,7 @@
 // the round about to play, the battle stops at that round's Build Phase and prints the slot's brief.
 //
 // The battle:
-//   --map <id|file>          a new battle's map: crossing, pocket, or a map file (its rows, nexus and hold by slot)
+//   --map <id|file>          a new battle's map: crossing, pocket, or a map file (its rows, and its nexus by slot)
 //   --p1-commander, --p2-commander <id>    a new battle's Commanders: vasse, averno, dob (vasse against dob)
 //   --seed <n>, --ticks <n>  a new battle's seed (1; up to 999999) and how many ticks a Battle Round lasts (360)
 //   --load <file>            a save to carry on from, at its Build Phase; it keeps its map, Commanders and seed

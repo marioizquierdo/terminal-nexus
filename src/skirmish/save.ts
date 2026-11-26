@@ -82,8 +82,9 @@ export type SlotSetup = Readonly<{ commander?: string; controller: Controller; o
 
 /**
  * A map drawn in full inside a save, as `BattleMap` is but by slot. `legend` names the ground each character of the rows
- * is (`.` open, `#` rock, `*` a deposit unless given), and `nexus` and `hold` say where each slot's Nexus stands and
- * its troops hold: a sandbox, whose `start` places the Nexuses, may leave them out.
+ * is (`.` open, `#` rock, `*` a deposit unless given), and `nexus` says where each slot's Nexus stands: a sandbox,
+ * whose `start` places the Nexuses, may leave it out. (An old map's `hold`, where a side's troops held before the rally
+ * point replaced the stance, is no longer read.)
  */
 export type SaveMap = Readonly<{
   id: string
@@ -92,7 +93,6 @@ export type SaveMap = Readonly<{
   rows: readonly string[]
   legend?: Readonly<Record<string, TerrainId>>
   nexus?: Readonly<Record<Slot, Coord>>
-  hold?: Readonly<Record<Slot, TargetArea>>
 }>
 
 /** Everything chosen before round 1. */
@@ -173,14 +173,13 @@ export function controllerProblem(controller: Controller, profiles: Profiles = N
 /** A save's map as the battle reads it: a built-in one by id, or one drawn in full, its slots turned to sides. */
 export function battleMapOf(map: SaveSetup["map"]): string | BattleMap {
   if (typeof map === "string") return map
-  if (map.nexus === undefined || map.hold === undefined) throw new Error(`map "${map.id}" says no Nexus or hold for its slots: a battle needs both`)
+  if (map.nexus === undefined) throw new Error(`map "${map.id}" says no Nexus for its slots: a battle needs one each`)
   return {
     id: map.id,
     name: map.name ?? map.id,
     notes: map.notes ?? "",
     rows: map.rows,
     nexus: { A: map.nexus.p1, B: map.nexus.p2 },
-    hold: { A: map.hold.p1, B: map.hold.p2 },
   }
 }
 
@@ -280,11 +279,11 @@ export function newSetup(given: Readonly<Partial<Omit<SaveSetup, "slots">> & { s
 // --- Reading -----------------------------------------------------------------------------------------------------------
 
 
-/** The problems with a map drawn in full. A sandbox's (`started`) may leave out where the Nexuses stand and its
- *  troops hold, and may name ground the battle does not draw. */
+/** The problems with a map drawn in full. A sandbox's (`started`) may leave out where the Nexuses stand, and may name
+ *  ground the battle does not draw. */
 function mapProblems(map: unknown, started: boolean): string[] {
   if (typeof map === "string") return BATTLE_MAPS[map] === undefined ? [`setup.map: no map "${map}" (${Object.keys(BATTLE_MAPS).join(", ")}), or draw one in full`] : []
-  if (!isObject(map)) return ["setup.map: a map's id, or a map drawn in full ({ id, name, rows, legend?, nexus, hold })"]
+  if (!isObject(map)) return ["setup.map: a map's id, or a map drawn in full ({ id, name, rows, legend?, nexus })"]
   const problems: string[] = []
   if (typeof map["id"] !== "string") problems.push("setup.map.id: a name for the map")
   if (map["name"] !== undefined && typeof map["name"] !== "string") problems.push("setup.map.name: the map's name for a person")
@@ -297,14 +296,11 @@ function mapProblems(map: unknown, started: boolean): string[] {
       problems.push(`setup.map.legend: a battle the battle plays draws its map in ${Object.keys(MAP_LEGEND).join(" ")}; another legend is for a sandbox's start`)
     }
   }
-  for (const part of ["nexus", "hold"] as const) {
-    const value = map[part]
-    if (started && value === undefined) continue
+  const nexus = map["nexus"]
+  if (!(started && nexus === undefined)) {
     for (const slot of SLOTS) {
-      const at = isObject(value) ? value[slot] : undefined
-      if (!isObject(at) || !isWhole(at["x"]) || !isWhole(at["y"]) || (part === "hold" && (!isWhole(at["width"]) || !isWhole(at["height"])))) {
-        problems.push(`setup.map.${part}.${slot}: ${part === "nexus" ? "{ x, y }, its Nexus's north-west tile" : "{ x, y, width, height }, where its troops hold"}`)
-      }
+      const at = isObject(nexus) ? nexus[slot] : undefined
+      if (!isObject(at) || !isWhole(at["x"]) || !isWhole(at["y"])) problems.push(`setup.map.nexus.${slot}: { x, y }, its Nexus's north-west tile`)
     }
   }
   if (problems.length === 0 && !started) {
