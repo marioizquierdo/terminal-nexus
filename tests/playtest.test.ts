@@ -3,13 +3,15 @@
 // No Chromium here — the pictures are the script's business; what is tested is that a script does
 // what it says.
 
+import { testBase } from "./starter-fixture.ts"
+import { STARTER_LEVEL } from "../src/cli/starter.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { ESC } from "./build-helpers.ts"
-import { DEFENCE_KEYS } from "./pulse-helpers.ts"
+import { DEFENCE_KEYS, testLevel } from "./pulse-helpers.ts"
 
 
 test("key names map to the bytes a real terminal sends", () => {
@@ -27,13 +29,17 @@ test("a repeat, a comment and a mouse click parse into separate steps", () => {
   assert.deepEqual(steps[4], { kind: "mouse", label: "rclick@4,5", button: 2, target: { kind: "cell", column: 4, row: 5 } })
 })
 
+/** The Build Phase tests' base (a Barracks standing beside the Nexus, a menu of four: tests/starter-fixture.ts), played
+ *  as the starter map's Skirmish. */
+const BASE = { context: testBase(), play: STARTER_LEVEL.play }
+
 test("an unknown key name fails loudly instead of becoming some other key", () => {
   assert.throws(() => parseKeyScript("Down Dwn"), /unknown key "Dwn"/)
 })
 
 test("the owner's menu flow — Down three times, then Space four times — plans two hatcheries", () => {
   // Nexus, Explore, Barracks, Hatchery: the menu gained an Explore entry under Nexus (2026-09-27).
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("Down*3 Space*4") })
+  const run = runBuildPlaytest({ ...BASE, scenes: false, steps: parseKeyScript("Down*3 Space*4") })
   assert.equal(run.frames.length, 8, "the opening screen plus one frame per key")
   const states = run.frames.map((frame) => frame.state)
   // Arming from the menu moves focus to the battlefield; placing sends it back to the menu.
@@ -55,7 +61,7 @@ test("a click on a tile goes through the mouse adapter at wherever that tile is 
   // Pick a Nexus power (which closes its popup), arm Barracks by its digit, then click the same tile twice: the first click moves the cursor
   // there, the second places — south of the standing Barracks, inside the build range. The first power dealt gives
   // no credits (only War Chest does): 100 less the Barracks's 40.
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("n 1 1 click:26,13 click:26,13") })
+  const run = runBuildPlaytest({ ...BASE, scenes: false, steps: parseKeyScript("n 1 1 click:26,13 click:26,13") })
   const last = run.frames[run.frames.length - 1]!
   assert.equal(last.state.planned.length, 1)
   assert.match(frameToText(last.frame), /Barracks placed \(credits: 60\)/)
@@ -92,15 +98,13 @@ test("a scripted playtest plays a Battle Round on the script's own clock and sho
   const plan = `${DEFENCE_KEYS} s s`
   // Quarter-second frames, so the half-second cease fire is never stepped over.
   // Next round on manual, so the ending's last phase, the result, stays to be seen (the default goes straight on).
-  const run = runBuildPlaytest({ scenes: false, experiments: { nextRound: "key" }, steps: parseKeyScript(`${plan} wait~250*104`) })
+  const run = runBuildPlaytest({ scenes: false, experiments: { nextRound: "key" }, at: { kind: "level", level: testLevel(), round: 1 }, steps: parseKeyScript(`${plan} wait~250*104`) })
   const texts = run.frames.map((frame) => frameToText(frame.frame))
   const started = texts.findIndex((text) => text.includes("battle round"))
   assert.ok(started > 0, "the script never reached the Pulse")
   // The frame right after the second `s` is the Pulse's own first moment, already looking at the Nexus. (The clock is
-  // how long this battle runs: 15 seconds since the Barracks's wave comes out over its roof, 14 with it set down round
-  // the Barracks and the raid heading for the Nexus, 24 when the raid stood behind the ridge before routes, and 14 once an army
-  // sorted itself on the march by half speed and its Commander led nothing, and 15 once a unit kept the target it holds.)
-  assert.match(texts[started]!, /^\| BATTLE ROUND 1 +0:15 /m)
+  // how long the test battle runs with this plan: 17 seconds, its raid beaten by the Turrets and the squads.)
+  assert.match(texts[started]!, /^\| BATTLE ROUND 1 +0:17 /m)
   // Centred on the Nexus's own tile (the position readout that once said so is gone).
   const first = run.frames[started]!.state
   assert.deepEqual(first.cursor, { x: 18, y: 10 })

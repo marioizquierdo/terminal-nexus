@@ -157,7 +157,7 @@ test("a turret's card shows its attack: how hard it hits, then its range as one 
 test("a unit that fights hand to hand says melee for its range; one that shoots says its range as one number", () => {
   for (const [contentId, melee] of [
     ["unit.citizen.trooper", true],
-    ["unit.ravel.raider", true],
+    ["unit.ravel.runner", true],
     ["unit.citizen.marksman", false],
     ["unit.citizen.vasse", false],
   ] as const) {
@@ -264,7 +264,7 @@ const EVERY_CARD: readonly (readonly [string, (side: Side) => void])[] = [
     keys(side, "3", ENTER, "e")
     moveTo(side, OPEN_GROUND)
   }],
-  ...["unit.citizen.vasse", "unit.citizen.trooper", "unit.citizen.marksman", "unit.ravel.raider", "unit.ravel.runner"].map(
+  ...["unit.citizen.vasse", "unit.citizen.trooper", "unit.citizen.marksman", "unit.ravel.slinger", "unit.ravel.runner"].map(
     (contentId) => [`exploring the incoming ${contentId}`, (side: Side) => exploreIncoming(side, contentId)] as const,
   ),
 ]

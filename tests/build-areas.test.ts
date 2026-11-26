@@ -218,67 +218,9 @@ test("in monochrome both still show, by their glyphs alone: the range's dots and
   assert.match(text, /\.\.\./, "the range's ground is dotted densely")
 })
 
-test("the raid's trail stays as built: a building armed draws neither dots nor strokes over its marks", () => {
-  const side = buildSide({ cursor: STARTER_START_CURSOR, startPulse, nextRound, foresee })
-  const raid = side.build.raid() ?? []
-  assert.ok(raid.length > 0, "PERIMETER's first round brings a raid")
-  const marks = raid.flatMap((group) => (group.target === null ? [] : trailMarks(group.path, group.target.tiles))).map((mark) => mark.tile)
-  const before = compose(side)
-  keys(side, "3")
-  // A Turret whose reach crosses the trail, close to the Barracks it goes for.
-  moveTo(side, { x: 27, y: 7 })
-  const armed = compose(side)
-  const inView = (tile: Coord): boolean => {
-    const { camera, viewport } = side.build.state
-    return tile.x >= camera.x && tile.x < camera.x + viewport.width && tile.y >= camera.y && tile.y < camera.y + viewport.height
-  }
-  let compared = 0
-  for (const tile of marks.filter(inView)) {
-    if (tile.x === side.build.state.cursor.x && tile.y === side.build.state.cursor.y) continue
-    assert.equal(at(side, armed, tile).glyph, at(side, before, tile).glyph, `the trail mark at ${tile.x},${tile.y} was drawn over`)
-    compared += 1
-  }
-  assert.ok(compared >= 4, `only ${compared} trail marks were in view`)
-})
-
-test("at 80x24 and on a wide terminal, the frame keeps its size and its glyphs, armed and refused", () => {
-  for (const terminal of [MINIMUM, WIDE]) {
-    for (const glyphPack of ["ascii", "unicode"] as const) {
-      const side = buildSide({ cursor: STARTER_START_CURSOR, terminal })
-      keys(side, "3")
-      for (const tile of [side.build.state.cursor, { x: 31, y: 10 }]) {
-        moveTo(side, tile)
-        const frame = compose(side, { glyphPack })
-        assert.equal(frame.width, terminal.columns)
-        assert.equal(frame.height, terminal.rows)
-        assert.equal(offendingGlyph(frame), null, `${terminal.columns}x${terminal.rows} ${glyphPack}`)
-        const footer = frameToText(frame).split("\n")[side.layout.footerRow] ?? ""
-        assert.ok(footer.length <= terminal.columns)
-      }
-    }
-  }
-})
+// --- A unit's reach, explored ---------------------------------------------------------------------------------
 
 const STROKES = ["-", "|", "/", "\\"]
-
-test("the build range's dots give way along the raid's trail's whole way, as a reach does: a tile of the way draws the same armed or not", () => {
-  const side = buildSide({ cursor: STARTER_START_CURSOR, startPulse, nextRound, foresee })
-  const glyphsOnTheWay = (): string[] => {
-    const frame = compose(side)
-    const way = [...trailTiles({ raid: side.build.raid(), state: side.build.state } as Parameters<typeof trailTiles>[0])]
-    return way.map((key) => {
-      const [x, y] = key.split(",").map(Number) as [number, number]
-      return `${key} ${at(side, frame, { x, y }).glyph}`
-    })
-  }
-  const unarmed = glyphsOnTheWay()
-  assert.ok(unarmed.length > 0, "no trail to give way to")
-  keys(side, "3")
-  assert.ok(buildRange(side.context, side.build.state).has({ x: 27, y: 9 }), "the build range does not reach the trail")
-  assert.deepEqual(glyphsOnTheWay(), unarmed)
-})
-
-// --- A unit's reach, explored ---------------------------------------------------------------------------------
 
 /** The cells of a frame that are a reach's strokes in `role`, dim. */
 const strokesIn = (frame: ReadonlyCellFrame, role: string): number =>
@@ -317,24 +259,21 @@ test("exploring a unit that shoots past the tiles touching it shows its reach; o
   moveTo(side, marksman.anchor)
   assert.equal(strokesIn(compose(side), "chrome.hotkey"), drawn)
 
-  // Round 3: the raid brings slingers. Their reach is drawn in the same colour — the raid's own would read as more
-  // of its trail, whose diagonal steps are the same strokes, dim in the raid's colour.
-  const third = buildSide({ cursor: STARTER_START_CURSOR, context: openRound(DEFAULT_LEVEL, 3), startPulse, nextRound, foresee })
+  // The enemy's: Dob Hunter's army arriving by his Nexus brings slingers. Their reach is drawn in the same colour.
+  const third = buildSide({ cursor: STARTER_START_CURSOR, context: testBase() })
   const coming = third.context.incoming ?? []
-  // A reach gives way along the trail's whole way, wherever its moving arrows are, so it never flickers as they pass.
-  const trail = new Set((third.build.raid() ?? []).flatMap((group) => (group.target === null ? [] : group.path)).map((tile) => `${tile.x},${tile.y}`))
-  // The open ground off the trail round a slinger's reach, where its strokes go: the slinger with the most.
-  const ringOf = (anchor: Coord) => reachOutline(anchor, ONE, 4).filter(({ tile }) => open(third, tile) && !trail.has(`${tile.x},${tile.y}`))
+  // The open ground round a slinger's reach, where its strokes go: the slinger with the most.
+  const ringOf = (anchor: Coord) => reachOutline(anchor, ONE, 4).filter(({ tile }) => open(third, tile))
   const slinger = coming.filter((entity) => entity.contentId === "unit.ravel.slinger").sort((a, b) => ringOf(b.anchor).length - ringOf(a.anchor).length)[0]
-  const raider = coming.find((entity) => entity.contentId === "unit.ravel.raider")
-  assert.ok(slinger !== undefined && raider !== undefined, "round 3 brings no slinger and no raider")
+  const raider = coming.find((entity) => entity.contentId === "unit.ravel.runner")
+  assert.ok(slinger !== undefined && raider !== undefined, "the enemy brings no slinger and no runner")
   keys(third, "e")
   moveTo(third, slinger.anchor)
   const theirs = compose(third)
   const ring = ringOf(slinger.anchor)
   assert.ok(ring.length >= 3, `only ${ring.length} tiles of the slinger's reach are open ground`)
   for (const { tile } of ring) assert.equal(at(third, theirs, tile).style.fgRole, "chrome.hotkey", `${tile.x},${tile.y}`)
-  assert.equal(strokesIn(theirs, "chrome.hotkey"), ring.length, "a stroke was drawn off the outline, or over the trail")
+  assert.equal(strokesIn(theirs, "chrome.hotkey"), ring.length, "a stroke was drawn off the outline")
   moveTo(third, raider.anchor)
-  assert.equal(strokesIn(compose(third), "chrome.hotkey"), 0, "a raider showed a reach")
+  assert.equal(strokesIn(compose(third), "chrome.hotkey"), 0, "a runner, who fights hand to hand, showed a reach")
 })

@@ -178,27 +178,11 @@ test("Skirmish, New game and Enter leave the menu without quitting and open a ba
   assert.ok(stdout.written.includes(MOUSE_REPORTING_OFF), "the menu left mouse reporting on")
 })
 
-test("activating Story leaves the top-level menu for its own placeholder screen", async () => {
-  const story = TOP_LEVEL_ITEMS.find((item) => item.id === "story")
-  assert.ok(story)
-  assert.notEqual(story!.disabled, true, "Story should not be a dimmed stub - it gets a real screen")
-  const { stdout, exits } = await menuSession((input) => {
-    input.emit("data", Buffer.from(story!.hotkey))
-  })
-  assert.deepEqual(exits, [], "a placeholder screen should not exit the application")
-  assert.ok(stdout.written.includes("Story is not built yet"), "no honest placeholder message was ever drawn")
-  assert.ok(stdout.written.includes("story"), "the subtitle never switched away from the top-level menu")
-  assert.ok(stdout.written.includes("Back"), "the placeholder screen has no way back")
-  // The top-level menu's own other items are gone from the *current* frame - this is a different
-  // screen, not a notice pinned to the one the player was already looking at. (`written`'s full
-  // history still has them, from the very first frame drawn before any key was pressed at all.)
-  // Exit's own word, read from the menu, and first shown to be drawn at all: the hard-coded "[4] Exit"
-  // this used to look for could never be found in the terminal's bytes — a colour change sits between
-  // the hotkey and the label — so its absence proved nothing, and About taking the 4 made that plain.
-  const exitItem = TOP_LEVEL_ITEMS.find((item) => item.id === "exit")
-  assert.ok(exitItem)
-  assert.ok(stdout.written.includes(exitItem!.label), "Exit was never drawn, so its absence proves nothing")
-  assert.ok(!stdout.lastWrite.includes(exitItem!.label), "the top-level menu's own items are still on screen")
+test("the top-level menu has no Story row: Story waits until Skirmish is solid", async () => {
+  // The owner, 2026-11-26: Story stops; it returns as a scripting layer over a Skirmish.
+  assert.deepEqual(TOP_LEVEL_ITEMS.map((item) => item.label), ["Skirmish", "Settings", "About", "Exit"])
+  const { stdout } = await menuSession(() => {})
+  assert.ok(!stdout.written.includes("Story"), "Story is drawn on the title menu")
 })
 
 test("a non-TTY launch prints one line and no escape sequences, and needs no signal to end", async () => {

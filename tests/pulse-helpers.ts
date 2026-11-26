@@ -9,8 +9,9 @@ import type { BuildSession } from "../src/view/build-session.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
 import { nexusTile, remaining, withoutScene } from "../src/build/state.ts"
 import type { FieldEntity, StandingStructure } from "../src/build/types.ts"
-import type { LevelPlay } from "../src/cli/levels.ts"
+import type { LevelPlay, PlayableLevel } from "../src/cli/levels.ts"
 import { starterContext } from "../src/cli/starter.ts"
+import { testBase } from "./starter-fixture.ts"
 import { keepPower } from "../src/cli/skirmish-play.ts"
 import { timelineOf } from "../src/cli/timeline.ts"
 import { fallen, openingState, regroup, standDown } from "../src/match/index.ts"
@@ -25,10 +26,10 @@ import { MINIMUM, buildSide, clickCell, compose, screenText } from "./build-help
 
 export { MINIMUM }
 
-/** The build menu's rows, by index: Vasse's army's order. */
-export const HATCHERY = 0
-export const TURRET = 1
-export const BARRACKS = 2
+/** The test base's build menu's rows, by index (`testBase`, tests/starter-fixture.ts). */
+export const BARRACKS = 0
+export const HATCHERY = 1
+export const TURRET = 2
 
 export type Spot = readonly [index: number, x: number, y: number]
 
@@ -154,20 +155,23 @@ export type Played = Readonly<{
 }>
 
 /**
- * The starter map's context as the placeholder Pulse was played on it: a Barracks standing beside the Nexus, buildings
- * that spawn nothing (as before buildings made units), and nothing arriving — the test battle sets down its own squads
- * and raid.
+ * The test base (a Barracks standing beside the Nexus, tests/starter-fixture.ts) as the placeholder Pulse was played
+ * on it: buildings that spawn nothing (as before buildings made units), and the test battle's own squads and raid
+ * arriving for `setup`.
  */
-export function placeholderContext(): BuildContext {
-  const context = starterContext()
-  return {
-    ...withoutScene(context),
-    catalog: context.catalog.map(({ spawns: _spawns, ...item }) => item),
-    // The Barracks the starter map had standing beside the Nexus, whose build range the defence plan is placed in.
-    standing: [...context.standing, { contentId: "structure.citizen.barracks", anchor: { x: 25, y: 10 } }],
-    incoming: [],
-    field: [],
-  }
+export function placeholderContext(setup: TestSetup = {}): BuildContext {
+  const context = testBase()
+  // Round 1's squads and raid, shown arriving where the battle sets them down, as the Build Phase shows what is coming.
+  const opened = openingState({
+    terrain: context.terrain,
+    registry: context.registry,
+    structures: context.standing.map((structure) => ({ contentId: structure.contentId, anchor: structure.anchor })),
+    setup: { seed: SEED, pulseTicks: ROUND_TICKS, forces: forcesOf(setup) },
+  })
+  const incoming = opened.entities
+    .filter((entity) => context.registry.get(entity.contentId).layer === "units")
+    .map((entity) => ({ contentId: entity.contentId, anchor: entity.anchor, player: entity.player, tick: 0, intent: null }))
+  return { ...withoutScene(context), catalog: context.catalog.map(({ spawns: _spawns, ...item }) => item), incoming, field: [] }
 }
 
 /** A session on the starter map, opening on the Nexus as the game does, playing the test battle for a setup (the
@@ -179,7 +183,7 @@ export function newSession(
 ): Omit<Played, "pulse"> {
   const mission = testPlay(setup)
   const { build, context, layout } = buildSide({
-    context: placeholderContext(),
+    context: placeholderContext(setup),
     cursor: STARTER_START_CURSOR,
     terminal: size,
     startPulse: mission.startPulse,
@@ -239,4 +243,19 @@ export function atHome(played: Pick<Played, "build">): void {
   assert.ok(pulse !== null, "there is no Pulse on screen")
   played.build.advance(0)
   played.build.advance(pulse.prelude.lengthMs + pulse.times.homeMs + 100)
+}
+
+/** The test battle as a level the game's screens open (`runBuildPhase`'s and the scripted playtest's `at`): its first
+ *  round the placeholder context, played by `testPlay`. */
+export function testLevel(setup: TestSetup = {}): PlayableLevel {
+  const play = testPlay(setup)
+  return {
+    id: "test-battle",
+    story: "test",
+    title: "The test battle",
+    rounds: setup.rounds ?? 2,
+    route: "skirmish?load=test-battle.save.json",
+    play: { ...play, foresee: () => [] },
+    firstRound: (scrollMargin, extra = {}) => ({ ...placeholderContext(setup), ...(scrollMargin === undefined ? {} : { scrollMargin }), ...extra }),
+  }
 }
