@@ -82,6 +82,8 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **engagement** — units of both sides fighting in one place: it starts at a first hit, takes in every hit within 5
   tiles of one already in it, and ends after 5 seconds with no hit there. Each has where and when, damage and losses by
   side, and the units engaged by side ([`battles.md`](../system-design/battles.md)).
+- **fast forward** — a Battle Round that has settled (no hit to its end, the units close to where they end) played
+  faster until its last seconds, labelled; any key returns it to normal speed ([`ui-patterns.md`](../system-design/ui-patterns.md)).
 - **faction** — the side a Commander belongs to, with its Nexus, units and buildings: the whole pool an army fields a
   few of. Citizen and Ravel are built.
 - **formation** — the order an army marches in (flankers, melee, ranged; then by class); also how build actions set

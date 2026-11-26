@@ -602,9 +602,10 @@ Start Battle Round (`s`, or the menu's Start row) sends the focus arrow from its
 last or on the round's default, and centres the camera on it. No panel opens.
 - **The default** in a Skirmish is in front of your base: the **Rally point start** Experiment's share of the way from
   your Nexus to the enemy's (20% by default; 100 is the enemy Nexus), on open ground. Placing it back there keeps it.
-- **The call**: as the focus arrow lands, four thin arrows stand round the flag, or round the building it is on, half
-  faded and pointing at it, and they and the flag flash three times (the Battle Round flash's beat). Reduced motion:
-  no flight, the arrows stand still, nothing flashes.
+- **The call**: as the focus arrow lands, the movement keys' four arrows stand round the flag, or round the building
+  it is on, each pointing away from it the way its key moves it (`^ v < >`; `▲ ▼ ◀ ▶` with Unicode symbols), bold in the
+  player's colour. Three times the flag lights, then the arrows a moment after it, then both go dark, so the light seems
+  to run outward and asks for the keys. Reduced motion: no flight, the arrows stand still, nothing flashes.
 - **The bottom line** says `[arrows] Set Rally Point. [enter] Start battle.` and names no place. A refused spot (rock,
   ground with no footing, no way there from your Nexus round the rock) says only why, and Enter does nothing there.
 - **The reminder**: left unmoved for a second, the arrows flash again, then the line's keys flash (`[      ]` on the off
@@ -624,6 +625,12 @@ last or on the round's default, and centres the camera on it. No panel opens.
   the placement animation, nearest their Nexus first, 200 ms apart (`src/view/prelude.ts`), and a clash (both sides on
   the same ground) plays first, thrown down with the removal sparks. The round's timer starts after it: from Enter to
   the fight's first tick takes at most 2.7 seconds, none with nothing new. (GUIDANCE — `tests/prelude.test.ts`)
+- **Fast forward**: once a round has settled (no hit of either side to its end, and the units close to where they end:
+  at least half exactly there, the rest within a tile, no more than two within two tiles; checked once an in-game
+  second), it plays at the `fastForwardSpeed` tuned value (8x) until its last seconds, the panel saying `Fast forward`
+  beside the speed and the bottom line why and the way back. Any key or click returns it to normal speed for the rest of
+  the round, and the key still does its own work; Replay plays it fast again. Never in the fight's first or last
+  seconds, the prelude or the result. Presentation only. (GUIDANCE — `tests/fast-forward.test.ts`)
 - **The fight's first seconds** take the same light round the map's border and timer flash as its last.
 - **Straight on** (the **Next round** Experiment, `straight` by default): when a round's fight stops and the battle goes
   on, the next Build Phase opens at once, its opening showing the survivors regroup; no result to close. A battle won or

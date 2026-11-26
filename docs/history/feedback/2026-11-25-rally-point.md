@@ -326,8 +326,8 @@ Battle banner Experiment and its old popup deleted; the stale lines rewritten; W
 > they visually create movement. The idea is that when a player starts a battle round, they may not realize they can
 > move the banner, so this aid tries to make that clear.
 
-**Scheduled.**
-
+**Built.** The movement keys' arrows stand round the flag pointing outward (`▲ ▼ ◀ ▶` with Unicode symbols), bold; the
+flag lights, then the arrows half a beat later, three times, so the light runs outward.
 ### F337 — the regroup faces the enemy; army groups
 
 > there was a bug [a picture]. At the end of round 2, the units retreated to the bottom of the map, instead of standing
@@ -387,8 +387,9 @@ rally point, or back to it.
 > be fast forward as long as the player can see all the collected resources. Please think about this mechanic and see
 > how to implement it on this PR as well.
 
-**Scheduled.** Speeds up to about 8x, labelled; any key returns to normal speed (his choice).
-
+**Built.** Checked once an in-game second from the last hit: at least half the units exactly where they end, the rest
+within a tile, at most two within two tiles. From there to the last seconds it plays at 8x, `Fast forward` beside the
+speed; any key returns to normal speed and still does its own work.
 ### F340 — no warning beside enemy troops
 
 > Building next to enemy troops -- no need to warn, it is obvious from the battlefield state.
