@@ -44,6 +44,13 @@ prototype behind the Battle banner Experiment:
       [his words](../history/feedback/2026-11-25-rally-point.md)): the bottom line says it all, nothing on the map but
       the line; the line goes through buildings, round rock only; the arrows once, five seconds in, for both sides, the
       flag as they arrive; it starts in front of the base (Rally point start).
+- [ ] **The rally point replaces the stance** (the owner's third round,
+      [his words](../history/feedback/2026-11-25-rally-point.md)): a plan's `rally` is a tile or `HOME_NEXUS` /
+      `ENEMY_NEXUS`, the scripts place theirs, the troops hold it; one area, one route, one default in the battle rules.
+- [ ] **Placing it, and the moment before the battle**: the cursor travels there, four arrows flash round it; Esc and
+      Backspace go back; the bottom line names the two actions and reminds the waiting player; Enter sends both sides'
+      arrows at once and reveals the enemy's new buildings one by one before the fight; its first seconds are marked.
+- [ ] **Buildings cancelled between rounds** found and fixed.
 - [ ] The battle scripts place a banner, so a kept front has an answer: a script whose front is beaten holds or falls
       back.
 - [ ] **Strategic, measured**: over seeds, a script that plants well beats the same script planting at the default, and

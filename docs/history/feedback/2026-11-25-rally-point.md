@@ -200,3 +200,119 @@ dozen tiles ahead of the Nexus and short of the ridge.
 > Besides that, I think the whole banner placement is looking good.
 
 > Yeah, let's try those changes for now.
+
+## The third round, 2026-11-26
+
+### F324 — the enemy places its rally point too; the stance goes
+
+> enemy script: we have to change this, even if it is a deep refactor. We no longer implement Defensive or Offensive
+> stands on the banner. Before, the enemy could just declare "offensive", but now they have to place the banner. It
+> should be easy, instead of defensive, the script places the banner at the home nexus. Instead of offensive, they
+> place the banner on the enemy nexus. This is a new operation on the battle interface, that is recorded on the build
+> phase for that player. The values to place a rally point should be a map placement object, that could be
+> coordinates, or a constant to declare subjective spots like ENEMY_NEXUS and HOME_NEXUS (those are the ones that the
+> scripts can use), and later when we implement map hostpots, it could be one of those locations, or a specific player
+> base, etc.
+
+**Scheduled.** Read with the review's point that stance and rally point say the same thing twice: the build actions'
+stance goes, and a `rally` takes its place, a tile or `HOME_NEXUS` / `ENEMY_NEXUS`; the troops gather there and hold
+it (the Rally point Experiment settles on hold, so nothing releases a side mid-round any more).
+
+### F325 — Story stops; Skirmish is where the game grows
+
+> We should cleanup the story missions. They were preliminary tests, now we are leaning into skirmish mode as the main
+> one. We are stopping story mission development, please note that for now we will develop all the new mechanics on
+> skirmish, and story maps have to translate and migrate to use the same as in skirmish, or otherwise delete those maps
+> (it's not worth complicating for now). When skirmish mode is complete, and all the gameplay is properly defined, and
+> we have at least a few decent commander armies, then we can start building the story mode for real, by adding an
+> extra layer of scripting on top.
+
+**Scheduled** as the next pull request, on his word (asked 2026-11-26: PERIMETER is the starter map under some forty
+test files and the scripted playtest's default opening). Until then, nothing new is built for missions.
+
+### F326 — the eye drawn by the cursor, then four arrows and three flashes
+
+> About the arrows effect that goes from the origin (home nexus) to the placed rally point: The initial circle effect
+> that closes into the banner is TOO INTENSE, the effect needs to happen faster, and with thinner icons that should
+> also be 50% transparent; a little movement/flash/sparkle on that area is all that is needed   to bring the eye's
+> attention. Actually don't make a circle, instead, send the cursor as usual (same effect as when starting a building)
+> and when it arrives, show four directional arrows around the battner, andflash the banner and the arrows together (3
+> quick flashes should be enough).
+
+**Scheduled.**
+
+### F327 — what already reads well
+
+> The line is good, skipping over ally buildings looks good, and marking the building/nexus when selected also looks
+> good. Placing with the mouse works well. Going to the menu and back goes to the build phase again, that makes sene.
+
+### F328 — Esc and Backspace go back; Enter begins
+
+> Canceling (esc/backspace) in the middle of the banner placement should go back to the build mode, pressing enter
+> begins the battle.
+
+**Scheduled.**
+
+### F329 — the bottom line: the two actions, no place names
+
+> The status bar at the bottom should show the available acctions: "[arrows] Set Rally Point. [enter] Start battle."
+> There's no need to label every location (your base, enemy nexus, etc.).
+
+**Scheduled.**
+
+### F330 — a reminder when the player waits
+
+> If the user doesn't move the arrow for a second, display and flash the directional arrows again, and right after
+> flash the keys part of the text on the status bottom menu ("[arrows] Set Rally Point." => "[      ] Set Rally
+> Point.") (3 quick flash as usual, or whatever is the default for the flash effect) Doing it in succession, the banner
+> arrows first, and then the keys at the bottom of the text, should bring the player attention. Do this every 5
+> seconds.
+
+**Scheduled.**
+
+### F331 — Enter: the arrows at once, for both sides
+
+> When the user presses enter, that sets the location for the banner and the battle phase begins. The line effect
+> should not wait 5 seconds, it should happen right away. The lines  are removed, the cursor goes away, and the same
+> effect that happens now sending 3 arrows towards the banner should happen inmediately, for both players. The banner
+> can stay for a second like it does now, then goes away.
+
+**Scheduled.**
+
+### F332 — the enemy's new buildings revealed, one by one
+
+> This is also the time when the UI would show the new buildings that the enemy has placed. If you can do this now,
+> please go ahead. During the build mode, the player cannot see it, but right before the battle starts, the enemy
+> script plans the move and places the banner, so the first thing to show then the rally point is placed is the enemy
+> buildings or unites that appear: they should appear with the cool building placement animarion, and do it one by
+> one, starting from the ones that were placed closer to the nexus, in quick succession (e.g. one every 200 ms). If
+> there is a building conflict, it is resolved here with the right animation. Then the battle can officially start!
+
+**Scheduled.**
+
+### F333 — the battle's first seconds marked as its last are
+
+> During the first few seconds of the battle, the UI could use the same effect as during the last few seconds (when
+> the nexus pulse is about to stop the battle).
+
+**Scheduled.**
+
+### F334 — buildings cancelled between rounds
+
+> I exprienced a bug, it seems some buildings were canceled at the end of battle/beginning of the next build phase;
+> but I'm pretty sure I placed them at the right location. Perhaps you can see this on the replay save file.
+
+**Scheduled.** No save or note was written on his machine (only `settings.json`, all defaults), so it is reproduced
+by play.
+
+### F335 — a review of the branch (pasted by the owner)
+
+> Two ways to release a rally point inside a round [...] The route line is worked out twice [...] The rally point's
+> area is worked out twice [...] A game rule sits in the command-line code [...] Defaults disagree between the two
+> doors [...] A new public field uses the old word [...] The same mapping appears three times [...] Stale text [...]
+> Settle the Battle banner Experiment and delete the old popup [...] Stance and rally point are now two ways to say
+> where the troops go [...] The "Replay last battle" item sits on `[b]` in the game menu.
+
+**Scheduled**, every point: one release path (none: hold only), one route walk, one area, the default rally point in
+the battle rules so the `skirmish` command plays it too, the field named `rally`, the stale lines, the Battle banner
+Experiment settled and its old popup deleted, the stance folded into the rally point (F324), and Replay off `b`.

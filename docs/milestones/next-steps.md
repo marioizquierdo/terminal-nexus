@@ -94,6 +94,7 @@ Small, none blocking. What rounds on PERIMETER left unfinished moved to
 
 | Item | Why | Size |
 | --- | --- | --- |
+| **Story stops: PERIMETER and the mission runner leave the game** (the next pull request, on the owner's word of 2026-11-26) | New mechanics are built in Skirmish only; a story map either plays as a Skirmish or is deleted. The Build Phase's test base and the scripted playtest's default move from PERIMETER onto a Skirmish save; the Story row, its routes and `src/match/mission.ts` go; the Story design pages say it waits ([his words](../history/feedback/2026-11-25-rally-point.md)) | large |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see [`portability.md`](../system-design/portability.md) |
 | The curve levels' empty-base walk is guarded once | The tests of a level's layout now walk it with its battles undecided, so a change to how battles play cannot fail them. Whether a base with nothing built lives to the last round (what a route to a later round plays) is one check over every level, which says how low the Nexus fell each round: at worst 210 of 400, on Averno's level in round 4. If it tips, shape what an empty base faces on that level (a lighter round-4 raid, or a free defender), not the rules | small |
 | `src/cli/pulse-run.ts` still exports PERIMETER's mission connection for seven tests | The game no longer uses it; the tests can reach the mission another way | small |
