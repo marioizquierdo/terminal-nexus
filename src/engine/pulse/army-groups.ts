@@ -169,8 +169,11 @@ export function nearestEnemyGroup<T extends Body>(group: ArmyGroup<T>, groups: r
   let bestGap = Number.POSITIVE_INFINITY
   let bestCentre = Number.POSITIVE_INFINITY
   const from = centreMiddle(group)
+  const box = boxOf(group)
   for (const other of groups) {
     if (other.player === group.player) continue
+    // Cheap first: the gap between their boxes is never more than the gap between their bodies.
+    if (boxGap(box, boxOf(other)) > bestGap) continue
     const gap = gapBetween(group, other)
     const centre = halfDistance(from, centreMiddle(other))
     if (gap < bestGap || (gap === bestGap && centre < bestCentre)) {
@@ -180,6 +183,35 @@ export function nearestEnemyGroup<T extends Body>(group: ArmyGroup<T>, groups: r
     }
   }
   return best
+}
+
+type Box = Readonly<{ left: number; right: number; top: number; bottom: number }>
+const boxes = new WeakMap<ArmyGroup, Box>()
+
+/** The box round every member of a group, worked out once. */
+function boxOf(group: ArmyGroup): Box {
+  let box = boxes.get(group)
+  if (box === undefined) {
+    let left = Number.POSITIVE_INFINITY
+    let right = Number.NEGATIVE_INFINITY
+    let top = Number.POSITIVE_INFINITY
+    let bottom = Number.NEGATIVE_INFINITY
+    for (const member of group.members) {
+      const each = footprintBox(member.anchor, member.definition.footprint)
+      left = Math.min(left, each.left)
+      right = Math.max(right, each.right)
+      top = Math.min(top, each.top)
+      bottom = Math.max(bottom, each.bottom)
+    }
+    box = { left, right, top, bottom }
+    boxes.set(group, box)
+  }
+  return box
+}
+
+/** The battlefield's distance between two boxes, a row counting two columns: 0 when they overlap. */
+function boxGap(a: Box, b: Box): number {
+  return Math.max(0, b.left - a.right, a.left - b.right) + 2 * Math.max(0, b.top - a.bottom, a.top - b.bottom)
 }
 
 /** The middle of a rally point's area, in half tiles. */
@@ -210,6 +242,8 @@ export class TickArmyGroups {
   private readonly byOrdinal = new Map<number, ArmyGroup<Actor>>()
   private readonly nearest = new Map<ArmyGroup<Actor>, ArmyGroup<Actor> | null>()
   private readonly slots = new Map<ArmyGroup<Actor>, ReadonlyMap<number, Coord>>()
+  private readonly arrivals = new Map<ArmyGroup<Actor>, boolean>()
+  private readonly lines = new Map<ArmyGroup<Actor>, Line | null>()
 
   constructor(context: TickContext) {
     this.context = context
@@ -237,9 +271,12 @@ export class TickArmyGroups {
   forwardOf(actor: Actor): number | null {
     const group = this.groupOf(actor)
     if (group === undefined) return null
-    const enemy = this.enemyOf(group)
-    if (enemy === null) return null
-    const line = quarterLine(centreMiddle(group), centreMiddle(enemy))
+    let line = this.lines.get(group)
+    if (line === undefined) {
+      const enemy = this.enemyOf(group)
+      line = enemy === null ? null : quarterLine(centreMiddle(group), centreMiddle(enemy))
+      this.lines.set(group, line)
+    }
     if (line === null) return null
     return forwardOfLine(line, middleOf(actor.anchor, actor.definition.footprint))
   }
@@ -266,6 +303,15 @@ export class TickArmyGroups {
   /** Whether `group` has arrived at its side's rally point: its centre within `ARMY_GROUP_REACH` of it and no member
    *  with an enemy in its vision. A Nexus never arrives; a side with no rally point has none to arrive at. */
   arrived(group: ArmyGroup<Actor>): boolean {
+    let known = this.arrivals.get(group)
+    if (known === undefined) {
+      known = this.arrivedNow(group)
+      this.arrivals.set(group, known)
+    }
+    return known
+  }
+
+  private arrivedNow(group: ArmyGroup<Actor>): boolean {
     if (group.nexus) return false
     const area = this.context.targets[group.player]
     if (area === undefined) return false
