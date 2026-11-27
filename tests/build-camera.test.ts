@@ -17,6 +17,8 @@ import {
   fitViewport,
   followCursor,
   isGated,
+  lookAtMost,
+  centreOn,
   visibleRange,
 } from "../src/build/camera.ts"
 import type { Camera, Viewport } from "../src/build/camera.ts"
@@ -205,4 +207,32 @@ test("clampToMap: the cursor can never leave the battlefield, however far a jump
     x: STARTER_TERRAIN.width - 1,
     y: STARTER_TERRAIN.height - 1,
   })
+})
+
+test("lookAtMost: the view that shows the most of some tiles: all of them when they fit, else the most, the first on a tie", () => {
+  const terrain = plainTerrain(72, 40)
+  const view: Viewport = { width: 49, height: 18 }
+  // How many of the tiles a look shows, counted two ways: by the visible range, and by each tile's place in the view.
+  const shown = (tiles: readonly { x: number; y: number }[], look: { x: number; y: number }): number => {
+    const range = visibleRange(centreOn(look, view, terrain), view)
+    const byRange = tiles.filter((tile) => tile.x >= range.firstX && tile.x <= range.lastX && tile.y >= range.firstY && tile.y <= range.lastY).length
+    const camera = centreOn(look, view, terrain)
+    const byOffset = tiles.filter((tile) => tile.x - camera.x >= 0 && tile.x - camera.x < view.width && tile.y - camera.y >= 0 && tile.y - camera.y < view.height).length
+    assert.equal(byRange, byOffset, "the two counts differ")
+    return byRange
+  }
+  assert.equal(lookAtMost([], view, terrain), null, "a look at nothing")
+  // A group that fits is all in view, however it sits: the middle of its box, a corner of the map included.
+  const fits = [{ x: 57, y: 12 }, { x: 62, y: 17 }, { x: 61, y: 9 }]
+  assert.equal(shown(fits, lookAtMost(fits, view, terrain)!), 3)
+  const corner = [{ x: 71, y: 39 }, { x: 66, y: 35 }]
+  assert.equal(shown(corner, lookAtMost(corner, view, terrain)!), 2)
+  // A group wider than the view: the view with the most, never fewer than any single tile's view would show.
+  const wide = [{ x: 3, y: 10 }, { x: 10, y: 10 }, { x: 14, y: 12 }, { x: 68, y: 10 }]
+  const best = Math.max(...wide.map((tile) => shown(wide, tile)))
+  assert.equal(shown(wide, lookAtMost(wide, view, terrain)!), best)
+  assert.equal(best, 3)
+  // A tie goes to the earlier tile: two lone tiles too far apart to share a view.
+  const apart = [{ x: 60, y: 10 }, { x: 5, y: 10 }]
+  assert.deepEqual(lookAtMost(apart, view, terrain), apart[0])
 })

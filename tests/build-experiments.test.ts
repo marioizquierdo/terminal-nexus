@@ -89,7 +89,7 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   assert.match(text, /SETTINGS/)
   assert.match(text, /KEYBOARD NAVIGATION - experiments/)
   // In order, group by group: keyboard navigation — how far an arrow and Shift go, how often a held key
-  // moves, then the terminal's own two (the hold window and key releases) — the popup pulse (every popup's) and the Battle Round flash, and the mission's next round, Vasse's health,
+  // moves, then the terminal's own two (the hold window and key releases) — the popup pulse (every popup's), the rally point flash and the prelude camera, and the mission's next round, Vasse's health,
   // the build range, her aura, whether a Nexus power must be picked and the way units come off a roof. (Her voice in
   // battle was settled beside her.)
   assert.deepEqual(
@@ -103,8 +103,8 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
       "holdWindowMs",
       "keyReleases",
       "popupPulseMs",
-      "popupFlashMs",
-      "popupFlashPeak",
+      "rallyFlashMs",
+      "preludeCamera",
       "nextRound",
       "buildRange",
       "powerPick",

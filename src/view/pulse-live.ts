@@ -21,7 +21,7 @@ import { auraOf } from "../engine/abilities/index.ts"
 import type { Barks } from "../armies/barks.ts"
 import type { BuildCommand, CommanderAbsence } from "../build/types.ts"
 import type { Camera, Viewport, VisibleRange } from "../build/camera.ts"
-import { visibleRange } from "../build/camera.ts"
+import { lookAtMost, visibleRange } from "../build/camera.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { Coord } from "../engine/geometry/types.ts"
 import type { RegroupResult } from "../match/types.ts"
@@ -152,9 +152,9 @@ export class PulsePresenter {
    *  timings are the owner's tuned ones and fixed for a Pulse, so they are worked out once. */
   readonly times: EndingTimes
   private lastNow: number | null = null
-  /** The commands already sent this run, so each is sent once: the camera's `start` and `end`, and the
-   *  move on to the next round. */
-  private fired = new Set<"start" | "end" | "next">()
+  /** The commands already sent this run, so each is sent once: the camera's `start` (`reveals`: to the prelude's new
+   *  buildings), `fight` (back from them, as the fight's first tick comes) and `end`, and the move on to the next round. */
+  private fired = new Set<"start" | "reveals" | "fight" | "end" | "next">()
 
   /** How long after the result appears the next round begins on its own, or `null`: it waits for the
    *  player (the Next round Experiment). */
@@ -356,8 +356,13 @@ export class PulsePresenter {
    * What the Pulse asks of the screen now: to centre on the player's Nexus when it starts, and again when
    * its last seconds begin (or the stop, when there is no warning) — "the camera is centred at the nexus",
    * so the next Build Phase starts where the base is. Each once per run.
+   *
+   * **The prelude's camera**: given the view's size (`reveals`, the Prelude camera Experiment on), a round with a
+   * prelude starts by looking at the view that shows the most of the enemy's new buildings (`lookAtMost`), as they
+   * come in, and goes back to the Nexus as the fight's first tick comes. Given `null`, or with nothing new, the view
+   * goes to the Nexus at once, as it always did.
    */
-  due(): BuildCommand[] {
+  due(reveals: Viewport | null = null): BuildCommand[] {
     const commands: BuildCommand[] = []
     // Straight on: the next Build Phase begins as the fight stops, its opening showing the survivors regroup.
     if (this.straight && !this.fired.has("next") && this.timeMs >= this.times.stopMs) {
@@ -376,6 +381,18 @@ export class PulsePresenter {
     const look: BuildCommand = { kind: "look-at", x: nexus.x, y: nexus.y }
     if (!this.fired.has("start")) {
       this.fired.add("start")
+      const opening = this.resolved.timeline.states[0]
+      const reveal =
+        reveals === null || opening === undefined ? null : lookAtMost(this.prelude.steps.map((step) => step.anchor), reveals, opening.terrain)
+      if (reveal === null) commands.push(look)
+      else {
+        this.fired.add("reveals")
+        commands.push({ kind: "look-at", x: reveal.x, y: reveal.y })
+      }
+    }
+    // The prelude over: the view goes back to the Nexus, where the fight is seen from.
+    if (this.fired.has("reveals") && !this.fired.has("fight") && this.elapsedMs >= this.prelude.lengthMs) {
+      this.fired.add("fight")
       commands.push(look)
     }
     if (!this.fired.has("end") && this.timeMs >= (this.times.warnMs ?? this.times.stopMs)) {

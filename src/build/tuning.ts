@@ -84,6 +84,9 @@ const RETIRED_EXPERIMENTS = [
   "tapTopStep",
   "holdLongMs",
   "holdLongStep",
+  // The popup border's opening flash strength: no popup opens with a flash any more (`POPUP_OPENINGS`), so nothing
+  // read it; the flash's length stayed as the rally call's (`rallyFlashMs`).
+  "popupFlashPeak",
 ] as const
 
 /**
@@ -109,4 +112,6 @@ export const SETTLED_EXPERIMENTS: ReadonlySet<string> = new Set<string>([
 export const RENAMED_SETTINGS: Readonly<Record<string, SettingName>> = {
   battleRoundPulseMs: "popupPulseMs",
   capability: "colors",
+  // The Battle Round flash became the rally call's beat when the Battle Round screen's opening went.
+  popupFlashMs: "rallyFlashMs",
 }

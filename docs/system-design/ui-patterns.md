@@ -492,9 +492,9 @@ uses it rather than a new blend.
   and a little darker, a smooth breath whose length is the "Popup pulse" Experiment (0 stops the breath only).
   Only the border moves, never the title, text or shadow. A popup can also have an **opening** that plays
   once from the moment it opens, then gives way to the breath from rest (*Motion and transitions*); which
-  popup has which is a table in the view (`POPUP_OPENINGS`). Today only the Battle Round screen has one, a
-  **double flash** (the "Battle Round flash" and "Flash strength" Experiments). Everything is still under
-  reduced motion and in monochrome. (RULE — `tests/build-breath.test.ts`)
+  popup has which is a table in the view (`POPUP_OPENINGS`). Today none has one (the Battle Round screen's
+  **double flash** went with the screen; the rally call's three flashes are the "Rally point flash" Experiment's).
+  Everything is still under reduced motion and in monochrome. (RULE — `tests/build-breath.test.ts`)
 - **A message is a popup with nothing to choose**: a title and wrapped text, closed only by Esc, `x`, a
   right click or a click outside, over whatever was open. For a warning to read once and act on later
   (`BuildState.message`, `messageSpec`). (RULE — `tests/build-popups.test.ts`)
@@ -624,7 +624,10 @@ last or on the round's default, and centres the camera on it. No panel opens.
   Nexus to its rally point, each flag showing for a second; the enemy's new buildings and units come in one by one with
   the placement animation, nearest their Nexus first, 200 ms apart (`src/view/prelude.ts`), and a clash (both sides on
   the same ground) plays first, thrown down with the removal sparks. The round's timer starts after it: from Enter to
-  the fight's first tick takes at most 2.7 seconds, none with nothing new. (GUIDANCE — `tests/prelude.test.ts`)
+  the fight's first tick takes at most 2.7 seconds, none with nothing new. **The view goes to them**: the Prelude
+  camera Experiment (`enemy` by default) takes the view at Enter to the one that shows the most of what is new (all of
+  it when it fits, `lookAtMost`), and back to your Nexus as the fight's first tick comes; `yours` keeps it on your Nexus,
+  where the new buildings of a map wider than the view came in off screen. (GUIDANCE — `tests/prelude.test.ts`)
 - **Fast forward**: once a round has settled (no hit of either side to its end, and the units close to where they end:
   at least half exactly there, the rest within a tile, no more than two within two tiles; checked once an in-game
   second), it plays at the `fastForwardSpeed` tuned value (8x) until its last seconds, the panel saying `Fast forward`

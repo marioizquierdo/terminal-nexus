@@ -11,15 +11,13 @@ import type { Side } from "./types.ts"
 import crossing from "../../maps/crossing.map.json" with { type: "json" }
 import pocket from "../../maps/pocket.map.json" with { type: "json" }
 
-/** A battle map: its picture, where each Nexus stands (the anchor of its footprint, its north-west tile), and where a
- *  side holding its ground gathers. */
+/** A battle map: its picture, and where each Nexus stands (the anchor of its footprint, its north-west tile). */
 export type BattleMap = Readonly<{
   id: string
   name: string
   notes: string
   rows: readonly string[]
   nexus: Readonly<Record<Side, Coord>>
-  hold: Readonly<Record<Side, TargetArea>>
 }>
 
 const TERRAIN: Readonly<Record<string, TerrainId>> = { ".": "terrain.plain", "#": "terrain.rock", "*": "terrain.deposit" }
@@ -41,14 +39,13 @@ export function battleTerrain(map: BattleMap): MapTerrain {
 }
 
 /** A map file (`maps/<id>.map.json`): the picture and, by slot (`p1` west is side A, `p2` east is side B), where each
- *  Nexus stands and where its troops hold. The same shape a Skirmish save draws a map in. */
+ *  Nexus stands. The same shape a Skirmish save draws a map in. */
 type MapFile = Readonly<{
   id: string
   name: string
   notes: string
   rows: readonly string[]
   nexus: Readonly<Record<"p1" | "p2", Coord>>
-  hold: Readonly<Record<"p1" | "p2", TargetArea>>
 }>
 
 /** A map file as the battle reads it, by side. */
@@ -58,7 +55,6 @@ const fromFile = (file: MapFile): BattleMap => ({
   notes: file.notes,
   rows: file.rows,
   nexus: { A: file.nexus.p1, B: file.nexus.p2 },
-  hold: { A: file.hold.p1, B: file.hold.p2 },
 })
 
 /**

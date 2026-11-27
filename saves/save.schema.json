@@ -84,21 +84,6 @@
                       "$ref": "#/$defs/tile"
                     }
                   }
-                },
-                "hold": {
-                  "type": "object",
-                  "required": [
-                    "p1",
-                    "p2"
-                  ],
-                  "properties": {
-                    "p1": {
-                      "$ref": "#/$defs/area"
-                    },
-                    "p2": {
-                      "$ref": "#/$defs/area"
-                    }
-                  }
                 }
               }
             }

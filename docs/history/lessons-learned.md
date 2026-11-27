@@ -735,6 +735,13 @@ default failed only when an agent ran the whole suite. A default is read in more
 A tally on the Crossing with no `--rounds` ran for over a day: one mirror battle went on to round 100. Give every
 measurement `--rounds` and a time limit, and kill a run that passes it.
 
+### A reveal is not shown until it is on screen
+
+The prelude's tests counted the enemy's reveals, their order and their timing, and all passed while on the Crossing at
+80 × 24 nearly all of them came in off screen: the view stayed on the player's Nexus and the map is wider than the view
+(22 of 262 reveals in view; the Pocket, which fits whole, 296 of 296). A test of an effect that is meant to be seen
+asks where the camera is: count what is inside the view when it plays, on the map that is wider than the view.
+
 ### `git checkout <file>` undoes everything uncommitted in it
 
 Undoing a probe edit (a bad line put in to test the validator) with `git checkout` also threw away a whole uncommitted
