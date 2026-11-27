@@ -475,9 +475,16 @@ export function regroup(state: MatchState, registry: ContentRegistry, sides?: Re
     }
   }
   // Two main fronts that face each other along one axis are held `FRONT_GAP` clear columns apart, each giving back half.
+  // They face each other only when each side's main army group faces the other's: two armies back to back (one at the
+  // enemy's Nexus, the other raiding its base) are half a map apart, not overlapping, and neither gives ground.
   const mainA = groups.find((group) => group.player === "A")
   const mainB = groups.find((group) => group.player === "B")
-  if (mainA !== undefined && mainB !== undefined && mainA.line.axis === mainB.line.axis && mainA.line.way === -mainB.line.way) {
+  const rallyOf = (player: PlayerId): Coord | null => sideLines.get(player)?.rally ?? null
+  const armyA = mainGroupOf(endGroups, "A", rallyOf("A"))
+  const armyB = mainGroupOf(endGroups, "B", rallyOf("B"))
+  const fronting =
+    armyA === undefined || armyB === undefined || (nearestEnemyGroup(armyA, endGroups) === armyB && nearestEnemyGroup(armyB, endGroups) === armyA)
+  if (fronting && mainA !== undefined && mainB !== undefined && mainA.line.axis === mainB.line.axis && mainA.line.way === -mainB.line.way) {
     // The fronts' own coordinates on the axis, and the clear columns between them (negative when they overlap).
     const between = -(mainA.front + mainB.front) - 1
     if (between < FRONT_GAP) {

@@ -168,6 +168,22 @@ test("reinforcement units: one that can reach the main army group in time joins 
   assert.ok(at(orphan.ordinal).x <= 8 && Math.abs(at(orphan.ordinal).y - 10) <= 4, `the marksman with no building stands at ${JSON.stringify(at(orphan.ordinal))}, not by its Nexus`)
 })
 
+test("two armies back to back, each at the other's base, keep their ground: neither is pushed home to hold the fronts apart", () => {
+  // Side A's army stands at B's Nexus (its rally point), B's raids A's base: half a map apart, each facing the other's
+  // Nexus. The rule that holds two facing fronts 6 columns apart once read them as overlapping and walked A 22 columns
+  // back toward home between rounds (found playing round 4 of the Crossing's example save).
+  const forces: Force[] = [
+    { player: "A", muster: { x: 49, y: 10 }, units: [TROOPER, TROOPER, TROOPER, TROOPER, MARKSMAN, MARKSMAN] },
+    { player: "B", muster: { x: 10, y: 10 }, units: [TROOPER, TROOPER, TROOPER, TROOPER, MARKSMAN, MARKSMAN] },
+  ]
+  const opened = stateOf(forces)
+  const result = regroup({ ...opened, targets: { A: { x: 54, y: 8, width: 5, height: 4 }, B: { x: 1, y: 8, width: 5, height: 4 } } }, FIXTURE_REGISTRY)
+  const xs = (player: Side): number[] => units(result.state, player).map((entity) => entity.anchor.x)
+  // A stays within a few columns of where it stood (it steps back from B's Nexus, nothing more); B likewise at A's base.
+  assert.ok(Math.min(...xs("A")) >= 40, `A walked home: ${xs("A")}`)
+  assert.ok(Math.max(...xs("B")) <= 19, `B walked home: ${xs("B")}`)
+})
+
 test("the regroup faces the main army group's nearest enemy army group: a lone turret north of the rally point turns the ranks north", () => {
   const TURRET = "structure.bench.beamturret"
   const forces: Force[] = [{ player: "A", muster: { x: 30, y: 12 }, units: [TROOPER, TROOPER, TROOPER, MARKSMAN, MARKSMAN, MARKSMAN] }]
