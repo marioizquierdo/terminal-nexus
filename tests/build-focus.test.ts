@@ -4,9 +4,11 @@
 // the cursor, and finishing going back to where it began. Driven through raw bytes into the real
 // adapters where an adapter is what is being claimed, and through commands where the reducer is.
 
+import { STARTER_LEVEL } from "../src/cli/starter.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { STARTER_CATALOG, STARTER_START_CURSOR } from "../src/build/catalog.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
+import { STARTER_CATALOG, testBase } from "./starter-fixture.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { tilesOf } from "../src/engine/geometry/coords.ts"
 import type { MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
@@ -16,7 +18,6 @@ import type { BuildContext } from "../src/build/state.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, anchorForCursor, armingSpot, entryOfConstruct, legalityAt, menuEntries, nexusTile } from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { TUNING } from "../src/build/tuning.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { cellAt } from "../src/view/frame.ts"
@@ -97,7 +98,7 @@ test("the top bar and the bottom bar run the whole width — the divider stops a
 
 test("a battlefield shorter than the panel still closes directly under its last row", () => {
   const small: MapTerrain = { width: 20, height: 10, tiles: new Array<TerrainId>(200).fill("terrain.plain") }
-  const side = buildSide({ context: { ...starterContext(), terrain: small, standing: [] } })
+  const side = buildSide({ context: { ...testBase(), terrain: small, standing: [] } })
   const { layout } = side
   const frame = compose(side)
   assert.equal(layout.mapBox.bottom, layout.origin.row + 10)
@@ -322,7 +323,7 @@ test("a run of the same building lays each one a free tile from the last, never 
   const width = 30
   const height = 10
   const context: BuildContext = {
-    ...starterContext(),
+    ...testBase(),
     terrain: { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") },
     standing: [
       { contentId: "structure.citizen.nexus", anchor: { x: 0, y: 3 } },
@@ -367,7 +368,7 @@ test("a run of the same building lays each one a free tile from the last, never 
 // --- Where arming puts the cursor ------------------------------------------------------
 
 test("arming puts the preview where the cursor is whenever the building fits there", () => {
-  const context = starterContext()
+  const context = testBase()
   for (const item of STARTER_CATALOG) {
     assert.deepEqual(armingSpot(context, [], footprintOf(item.contentId), { x: 40, y: 20 }), { tile: { x: 40, y: 20 }, found: true })
   }
@@ -385,7 +386,7 @@ test("arming puts the preview where the cursor is whenever the building fits the
 })
 
 test("where it does not fit, the nearest spot within reach that leaves a free tile, then one that touches", () => {
-  const context = starterContext()
+  const context = testBase()
   const side = buildSide()
   // The owner's flow: place a Barracks, press its key again — the cursor is on the new one.
   keys(side, TAB, "1", ENTER, "1")
@@ -409,7 +410,7 @@ test("where it does not fit, the nearest spot within reach that leaves a free ti
   const height = 3
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.rock")
   for (let x = 0; x < width; x += 1) tiles[1 * width + x] = "terrain.plain"
-  const corridor: BuildContext = { ...starterContext(), terrain: { width, height, tiles }, standing: [] }
+  const corridor: BuildContext = { ...testBase(), terrain: { width, height, tiles }, standing: [] }
   const planned = [{ ordinal: 1, contentId: "structure.bench.beamturret", anchor: { x: 3, y: 1 } }]
   assert.deepEqual(armingSpot(corridor, planned, footprintOf("structure.bench.beamturret"), { x: 3, y: 1 }), { tile: { x: 5, y: 1 }, found: true })
   const full = [0, 1, 2, 4, 5, 6, 7].map((x, index) => ({ ordinal: index + 2, contentId: "structure.bench.beamturret", anchor: { x, y: 1 } }))
@@ -423,7 +424,7 @@ test("sideways is cheaper than up or down, and ties go the same way every time: 
   const width = 11
   const height = 11
   const open: BuildContext = {
-    ...starterContext(),
+    ...testBase(),
     terrain: { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") },
     standing: [],
   }
@@ -453,7 +454,7 @@ test("sideways is cheaper than up or down, and ties go the same way every time: 
 })
 
 test("never chosen from the last building placed: the spot is nearest the cursor, wherever the last one went", () => {
-  const side = buildSide({ context: { ...starterContext(), allotment: 1000 } })
+  const side = buildSide({ context: { ...testBase(), allotment: 1000 } })
   keys(side, TAB, "3", ENTER) // a Turret at the cursor, which stays on it
   side.build.run([{ kind: "move-cursor", dx: 8, dy: -5 }]) // away, on open ground north of the Barracks, in the build range
   keys(side, "3")
@@ -468,7 +469,7 @@ test("with nothing in reach, arming steps one tile right and down, drawn as the 
   const height = 30
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.rock")
   tiles[10 * width + 10] = "terrain.plain"
-  const solid: BuildContext = { ...starterContext(), terrain: { width, height, tiles }, standing: [] }
+  const solid: BuildContext = { ...testBase(), terrain: { width, height, tiles }, standing: [] }
   assert.deepEqual(armingSpot(solid, [], footprintOf("structure.citizen.barracks"), { x: 10, y: 10 }), { tile: { x: 11, y: 11 }, found: false })
   // Room for a Barracks one tile beyond reach does not count; from four tiles nearer it does.
   const far = [...tiles]
@@ -506,9 +507,9 @@ test("with nothing in reach, arming steps one tile right and down, drawn as the 
 })
 
 test("the cursor opens on the Nexus, and the first building armed finds the nearest good spot around it", () => {
-  const context = starterContext()
+  const context = testBase()
   assert.deepEqual(nexusTile(context), STARTER_START_CURSOR)
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("1") })
+  const run = runBuildPlaytest({ context, play: STARTER_LEVEL.play, scenes: false, steps: parseKeyScript("1") })
   assert.deepEqual(run.frames[0]?.state.cursor, STARTER_START_CURSOR)
   const armed = run.frames[1]?.state
   assert.ok(armed !== undefined)

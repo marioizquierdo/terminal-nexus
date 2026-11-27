@@ -7,7 +7,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { STARTER_CATALOG } from "../src/build/catalog.ts"
+import { STARTER_CATALOG, testBase } from "./starter-fixture.ts"
 import {
   CARD_HEADER_ROW,
   CREDITS_ROW,
@@ -22,7 +22,6 @@ import {
 } from "../src/build/layout.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, menuEntries, remaining, startEntry } from "../src/build/state.ts"
 import type { ConstructItem } from "../src/build/types.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import type { RowAck } from "../src/view/build.ts"
 import type { Cell } from "../src/view/frame.ts"
 import { cellAt } from "../src/view/frame.ts"
@@ -123,14 +122,14 @@ test("the map draws its deposits with the very glyph the credits line uses", () 
 
 test("a building row the panel is too short for is neither drawn nor a click target", () => {
   // Three more buildings than the floor's panel holds between Nexus and Start Battle Round.
-  const floor = buildLayout(MINIMUM, starterContext().terrain)
+  const floor = buildLayout(MINIMUM, testBase().terrain)
   const room = menuFloor(floor) - (floor.panelRow + CREDITS_ROW + 1) + 1
   const long: ConstructItem[] = Array.from({ length: room + 3 }, (_, index) => ({
     ...(STARTER_CATALOG[index % STARTER_CATALOG.length] as ConstructItem),
     label: `Row ${index + 1}`,
     hotkey: String((index + 1) % 10),
   }))
-  const side = buildSide({ context: { ...starterContext(), catalog: long } })
+  const side = buildSide({ context: { ...testBase(), catalog: long } })
   const { layout } = side
   const lines = constructLines(layout, long)
   assert.ok(lines.length < long.length, "the floor's panel holds every row: the test needs a longer list")

@@ -3,6 +3,10 @@
 **Status:** PLANNED
 **Depends on:** Milestone 3 (the game menu hands off here), Milestone 17 (Skirmish: a mission is a Skirmish setup with a script); and Skirmish played by people, the owner's friends first (2026-11-11)
 
+> **Waits with Story** (the owner, 2026-11-26, [his words](../history/feedback/2026-11-25-rally-point.md)): Story returns as
+> a scripting layer over a Skirmish once Skirmish and a few Commander Armies are solid. PERIMETER, the mission runner and
+> the story files left the game; this plan is kept for that return, and anything it calls built was built before then.
+
 Re-cut on 2026-11-11 for Story ([`story.md`](../game-design/story.md)): a Commander's story is missions in order, and
 what a player collects carries from one to the next. This milestone builds the screen and the record that carry it.
 

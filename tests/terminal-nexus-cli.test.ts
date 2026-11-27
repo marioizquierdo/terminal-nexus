@@ -32,7 +32,7 @@ test("--help prints usage and exits zero without needing a terminal at all", () 
   const result = runTerminalNexus(["--help"])
   assert.equal(result.status, 0)
   assert.match(result.stdout, /terminal-nexus/)
-  assert.match(result.stdout, /Skirmish, Story, Settings, About, Exit/)
+  assert.match(result.stdout, /Skirmish, Settings, About, Exit/)
 })
 
 test("an unknown --colors is a clear error, not a silent fallback", () => {
@@ -53,10 +53,10 @@ test("an argument the game does not read is refused before any screen, and a rem
   const old = runTerminalNexus(["--build-phase"])
   assert.equal(old.status, 2)
   assert.equal(old.stdout, "")
-  assert.equal(old.stderr, "terminal-nexus: --build-phase is gone: --at 'story?mission=vasse-test-1' opens its Build Phase.\nterminal-nexus --help lists every option.\n")
+  assert.equal(old.stderr, "terminal-nexus: --build-phase is gone: --at 'skirmish?load=saves/starter.save.json' opens its Build Phase.\nterminal-nexus --help lists every option.\n")
   const several = runTerminalNexus(["--spike", "--fast", "sandboxes/rules/melee-kill.save.json"])
   assert.equal(several.status, 2)
-  assert.match(several.stderr, /--spike is gone: --at 'story\?mission=vasse-test-1'/)
+  assert.match(several.stderr, /--spike is gone: --at 'skirmish\?load=saves\/starter\.save\.json'/)
   assert.match(several.stderr, /unknown option --fast\./)
   assert.match(several.stderr, /unexpected "sandboxes\/rules\/melee-kill\.save\.json"\./)
   // A retired option says what changed, its value refused with it.
@@ -74,17 +74,15 @@ test("an unknown --theme is a clear error", () => {
   assert.match(result.stderr, /unknown theme/)
 })
 
-test("--at reaches the screen loop its route names: a story mission and a Skirmish the Build Phase, a title menu place the menu", () => {
+test("--at reaches the screen loop its route names: a Skirmish the Build Phase, a title menu place the menu", () => {
   // Same rule as a plain launch: no terminal, no escape sequences, one line — the screen loop's own, which is how
   // this shows which loop the route reached.
   for (const [route, loop] of [
-    ["story?mission=vasse-test-1&round=2", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
-    ["story?mission=vasse-test-1", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
+    ["skirmish?load=saves/starter.save.json", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
     ["settings", /^terminal-nexus needs an interactive terminal for its menu\.$/],
     ["skirmish", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
     ["skirmish?seed=7", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
     ["skirmish?load=saves/crossing-round-4.save.json", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
-    ["story", /^terminal-nexus needs an interactive terminal for its menu\.$/],
     ["", /^terminal-nexus needs an interactive terminal for its menu\.$/],
   ] as const) {
     const result = runTerminalNexus(["--at", route])
@@ -96,19 +94,19 @@ test("--at reaches the screen loop its route names: a story mission and a Skirmi
 })
 
 test("a route that is not a place is refused before any screen, every problem at once, naming what exists", () => {
-  const result = runTerminalNexus(["--at", "story?mission=nowhere&round=9&colour=red"])
+  const result = runTerminalNexus(["--at", "skirmish?seed=lots&colour=red"])
   assert.equal(result.status, 2)
   assert.equal(result.stdout, "")
-  assert.match(result.stderr, /--at "story\?mission=nowhere&round=9&colour=red" is not a place in the game:/)
-  assert.match(result.stderr, /story takes no colour: it reads mission and round/)
-  assert.match(result.stderr, /no mission "nowhere": the missions are vasse-test-1 \(/)
+  assert.match(result.stderr, /--at "skirmish\?seed=lots&colour=red" is not a place in the game:/)
+  assert.match(result.stderr, /skirmish takes no colour: it reads load, seed/)
+  assert.match(result.stderr, /seed must be a whole number from 0 to 999999, not "lots"/)
   const place = runTerminalNexus(["--at", "nowhere"])
   assert.equal(place.status, 2)
-  assert.match(place.stderr, /no place named "nowhere": the places are menu, skirmish, story, settings and about/)
-  // An old note's route says what replaced it.
-  const old = runTerminalNexus(["--at", "campaign?level=vasse-test-1"])
+  assert.match(place.stderr, /no place named "nowhere": the places are menu, skirmish, settings and about/)
+  // An old note's route says what to use now.
+  const old = runTerminalNexus(["--at", "story?mission=vasse-test-1"])
   assert.equal(old.status, 2)
-  assert.match(old.stderr, /campaign is Story now: story, or story\?mission=vasse-test-1/)
+  assert.match(old.stderr, /Story waits until Skirmish is solid: skirmish starts one battle/)
   assert.doesNotMatch(place.stderr + place.stdout, new RegExp(ESC))
 })
 
@@ -125,13 +123,12 @@ test("--help documents --at with every place and level, and the one tuning flag"
   // find is a flag nobody can try.
   const result = runTerminalNexus(["--help"])
   assert.match(result.stdout, /--at <route>/)
-  for (const place of ["menu", "story", "settings", "about"]) assert.match(result.stdout, new RegExp(`^ +${place} +the`, "m"))
+  for (const place of ["menu", "settings", "about"]) assert.match(result.stdout, new RegExp(`^ +${place} +the`, "m"))
   assert.match(result.stdout, /^ +skirmish +a Skirmish/m)
-  assert.match(result.stdout, /--at 'story\?mission=vasse-test-1'/)
-  assert.match(result.stdout, /--at 'story\?mission=vasse-test-1&round=3'/)
+  assert.match(result.stdout, /--at 'skirmish\?load=saves\/starter\.save\.json'/)
   assert.match(result.stdout, /--load <file>/)
   assert.match(result.stdout, /--p1 <who>, --p2 <who>/)
-  assert.match(result.stdout, /vasse-test-1 +Perimeter, rounds 1 to 3/)
+  assert.doesNotMatch(result.stdout, /story|mission/iu)
   assert.match(result.stdout, /--scroll-margin/)
   assert.match(result.stdout, /jumpStep=12&reducedMotion=true/)
 })
@@ -160,16 +157,16 @@ test("--load opens a save at its Build Phase, with --p1 and --p2 as the skirmish
   assert.equal(unknown.status, 2)
   assert.match(unknown.stderr, /--p2 script:aggro: no script or profile "aggro"/u)
   // --p1 and --p2 are a Skirmish's; --load and --at are two ways to say where.
-  const story = runTerminalNexus(["--at", "story?mission=vasse-test-1", "--p2", "script:rush"])
-  assert.equal(story.status, 2)
-  assert.match(story.stderr, /name who plays a Skirmish's slots/u)
+  const menu = runTerminalNexus(["--at", "settings", "--p2", "script:rush"])
+  assert.equal(menu.status, 2)
+  assert.match(menu.stderr, /name who plays a Skirmish's slots/u)
   const both = runTerminalNexus(["--at", "settings", "--load", "saves/crossing-round-4.save.json"])
   assert.equal(both.status, 2)
   assert.match(both.stderr, /give one of them/u)
 })
 
 test("a nonsense --scroll-margin is a clear error, not a silently ignored flag", () => {
-  const result = runTerminalNexus(["--at", "story?mission=vasse-test-1", "--scroll-margin", "wide"])
+  const result = runTerminalNexus(["--at", "skirmish?seed=1", "--scroll-margin", "wide"])
   assert.notEqual(result.status, 0)
   assert.match(result.stderr, /--scroll-margin must be an integer/)
 })

@@ -3,8 +3,8 @@
 // of it. `tests/web.test.ts` runs this once under Node and once bundled for a browser inside a sandbox
 // with no Node features at all, and the two answers must be identical.
 
+import { testBase } from "./starter-fixture.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { openBattle } from "../src/skirmish/opening/open.ts"
@@ -46,7 +46,7 @@ export function sameness(opening: BattleOpening): Sameness {
     pulseFrames.push(print(screen.frameAt(time, "truecolor")))
   }
 
-  const context = starterContext()
+  const context = testBase()
   const layout = buildLayout({ columns: 80, rows: 24 }, context.terrain)
   const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })
   const buildFrames = [print(composeBuildFrame({ context, state: build.state, layout }, "truecolor"))]

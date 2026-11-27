@@ -26,7 +26,7 @@ A step up or down takes twice as many ticks.
 Rates are rational, never floating point; `tests/rules.test.ts` reproduces the table at all eight rates.
 
 **The battle engine has no real-time loop**, and **resolution speed is independent of logical time** (RULE —
-`tests/playback.test.ts`, `tests/pulse-run.test.ts`). It may resolve 12 ticks in a microsecond or
+`tests/playback.test.ts`, `tests/skirmish-play.test.ts`). It may resolve 12 ticks in a microsecond or
 over an hour. The renderer maps logical time onto wall-clock time by itself; playback speed, pause
 and stepping change when a tick is shown, never what a tick does. Presentation targets **30 frames
 per second**, which is 2.5 frames per tick — deliberately not an integer, because effects sample
@@ -413,7 +413,7 @@ map take a third of a frame at most, and a battle's stop far sooner ([`movement.
 condition keyed on the id `structure.citizen.nexus` broke the moment the second faction existed. Anything a
 faction calls its Nexus declares itself one, and the rules read the flag.
 
-A match alternates (RULE — `tests/pulse-run.test.ts`, `tests/mission.test.ts`):
+A match alternates (RULE — `tests/skirmish-play.test.ts`, `tests/battle.test.ts`):
 
 - **Build Phase** — hidden, simultaneous, turn-based, untimed planning from the same public resolved
   state;
@@ -441,7 +441,7 @@ hidden until reveal.
 
 At Pulse start plans reveal together and valid construction becomes operational. Workers pick jobs,
 producers attempt recipes, actors move and fight automatically. Playback controls cannot change the
-result (RULE — `tests/pulse-run.test.ts`).
+result (RULE — `tests/skirmish-play.test.ts`).
 
 **At Pulse end every survivor stays on the battlefield and regroups** (RULE — the owner, 2026-10-26: "double down the RTS
 style, leaving troops on the map"; `src/match/regroup.ts`, `tests/regroup.test.ts`, `tests/kept-front.test.ts`). The
@@ -512,7 +512,7 @@ a Commander may be given, proven on a test-only Commander who sits one round out
 
 What is built is that cadence, for the Commanders in `armies/`. A unit is a Commander by a content flag (`commander`) that only the rules between rounds read: the battle engine sees a unit like any other, so she fights and dies by the ordinary rules and nothing in a Pulse brings her back. When she falls, the round loop carries an absence beside the state (whose, which, the round she fell in, the round she is due); as that round begins, after the regroup and before its Build Phase, the Nexus sets her down on the free tile nearest her side's Nexus: a new body at full health. "May replicate" is taken as "does", as the story's third mission reads it ("the next restores her"); a side with no Nexus standing has nowhere to restore her, so her absence goes on until it has one. At a Pulse's end she regroups with her army, in the middle of her rank.
 
-A mission brings its Commander once (`src/mission/validate.ts` refuses a second arrival, or two of her), and the Commander it brings for the player is its story's (`src/armies/load.ts` refuses another). How much she can take is her army's data (80 for Vasse). Her skill, By the Book, is an ability the battle engine keeps (above); its strength is an Experiment while it is tuned (**By the Book**). Where she goes is her side's: where a level names a target for the player's troops she heads there with them, fights what comes within reach and stands with them (a side's target, above). Holding a post waits (posts, in the backlog).
+A battle sets each side's Commander down once, with her starting package (`src/battle/round-opening.ts`). How much she can take is her army's data (80 for Vasse). Her skill, By the Book, is an ability the battle engine keeps (above); its strength is an Experiment while it is tuned (**By the Book**). Where she goes is her side's: where a level names a target for the player's troops she heads there with them, fights what comes within reach and stands with them (a side's target, above). Holding a post waits (posts, in the backlog).
 
 ### 2.2 Structures
 
@@ -602,8 +602,8 @@ that building alone, a mode, an order for one round ([`commander-armies.md`](../
 changes between rounds). Nexus powers are
 content-defined legal actions or passive rules that execute through validated engine commands.
 
-**The Nexus Pulse** (RULE — `src/armies/deal.ts`, `src/cli/pulse-run.ts`, `tests/nexus-draft.test.ts`): the
-Commander Army's own Nexus power pool — a subset of the faction's, built as what a level offers (`src/armies/`) —
+**The Nexus Pulse** (RULE — `src/armies/deal.ts`, `src/battle/`, `tests/nexus-draft.test.ts`): the
+Commander Army's own Nexus power pool — a subset of the faction's, her army's arsenal (`src/armies/`) —
 dealt as a small hand as every round opens, before its Build Phase: three powers by a schedule of rarities, War
 Chest (the owner's testing tool) beside them, of which the player keeps one, or for now none. Which rarity each card
 is comes from the round's schedule (the game's `DEFAULT_SCHEDULE`, or a level's own, which may name a power to make
@@ -632,7 +632,7 @@ and `reveal` are designed and not built ([`commander-armies.md`](../game-design/
 population cap, not a second currency. Nexus energy is a state readout, not something a player
 spends.
 
-**Credits every round** (RULE — `src/cli/pulse-run.ts`, `src/armies/curve.ts`, `tests/mission-loop.test.ts`; the
+**Credits every round** (RULE — `src/battle/`, `src/armies/curve.ts`, `tests/skirmish-play.test.ts`; the
 owner, 2026-10-15). What a Build Phase did not spend carries over, and each round after the first adds the power
 curve's credits for it — 120 in round 2, 140 in round 3, up to 430 from round 9 ([`commander-armies.md`](../game-design/commander-armies.md),
 the expected power curve); a level gives round 1's. The same in every mode: until workers gather, this is how a

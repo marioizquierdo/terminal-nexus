@@ -11,6 +11,7 @@
 //   4. the page's keys are the scripted playtest's keys — one table of what a terminal sends;
 //   5. its direct links are the game's routes — `#at=`, the mode buttons and a demo's `at` read what `--at` reads.
 
+import { testBase } from "./starter-fixture.ts"
 import assert from "node:assert/strict"
 import { readFileSync, readdirSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
@@ -19,7 +20,6 @@ import { runInNewContext } from "node:vm"
 
 import { EventEmitter } from "node:events"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import { KEYBOARD_POP, KEYBOARD_PUSH, KEYBOARD_QUERY, encodeKeyEvent } from "../src/terminal/key-events.ts"
 import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
@@ -123,7 +123,7 @@ if (RUNTIME_IS_BUN) {
 // --- 3. The same characters and colours as the terminal -------------------------------------------
 
 function buildFrame(script: readonly string[]): ReadonlyCellFrame {
-  const context = starterContext()
+  const context = testBase()
   const layout = buildLayout({ columns: 80, rows: 24 }, context.terrain)
   const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })
   for (const name of script) build.handleData(keyBytes(name), layout)
@@ -309,14 +309,14 @@ test("the page plays a terminal that reports key events: it answers, keeps the f
 
 test("#at= opens a route, whole: a part runs to the next part the page knows, not to the next &", () => {
   // As a person writes it: the route's own ? = and &, then a settings text with its own & and =, then keys.
-  const address = readAddress("#at=story?mission=vasse-test-1&round=2&settings=nextRound=auto&jumpStep=12&keys=Esc n 1")
-  assert.deepEqual(address, { at: "story?mission=vasse-test-1&round=2", settings: "nextRound=auto&jumpStep=12", keys: "Esc n 1" })
+  const address = readAddress("#at=skirmish?map=pocket&seed=2&settings=nextRound=auto&jumpStep=12&keys=Esc n 1")
+  assert.deepEqual(address, { at: "skirmish?map=pocket&seed=2", settings: "nextRound=auto&jumpStep=12", keys: "Esc n 1" })
   const at = parseRoute(address.at ?? "")
-  assert.equal(at.kind === "level" ? `${at.level.id} ${at.round}` : at.kind, "vasse-test-1 2")
+  assert.equal(at.kind === "skirmish" ? `${at.map} ${at.seed}` : at.kind, "pocket 2")
   // Percent-encoded, as an address often is, and in any order.
-  assert.deepEqual(readAddress("#keys=Esc%20n%201&at=story%3Fmission%3Dvasse-test-1%26round%3D3"), {
+  assert.deepEqual(readAddress("#keys=Esc%20n%201&at=skirmish%3Fmap%3Dpocket%26seed%3D3"), {
     keys: "Esc n 1",
-    at: "story?mission=vasse-test-1&round=3",
+    at: "skirmish?map=pocket&seed=3",
   })
   // The addresses the page always took still read as they did.
   assert.deepEqual(readAddress("#settings=raid%3Dprobe%20crew%3Dsome"), { settings: "raid=probe crew=some" })
@@ -325,7 +325,7 @@ test("#at= opens a route, whole: a part runs to the next part the page knows, no
   // Nothing it knows: nothing asked. A lone % is kept as written rather than lost.
   assert.deepEqual(readAddress(""), {})
   assert.deepEqual(readAddress("#somewhere"), {})
-  assert.deepEqual(readAddress("#at=story?mission=100%"), { at: "story?mission=100%" })
+  assert.deepEqual(readAddress("#at=skirmish?seed=100%"), { at: "skirmish?seed=100%" })
   // The first of a repeated part counts.
   assert.deepEqual(readAddress("#at=about&at=settings"), { at: "about" })
 })
@@ -346,10 +346,12 @@ test("every checked-in demo is one the page can follow: its route, its keys, and
     assert.ok(demos.length > 0, `${file} has no demos`)
     for (const demo of demos) if (demo.at !== undefined) parseRoute(demo.at)
   }
-  // A demo may open a level at a round; one whose route is not a place, or is on the title menu with keys, is refused.
-  const round2 = checkDemos([{ label: "Round 2", try: "-", at: "story?mission=vasse-test-1&round=2", keys: "Esc" }], "demos.json")
-  assert.equal(round2[0]?.at, "story?mission=vasse-test-1&round=2")
-  assert.throws(() => checkDemos([{ label: "x", try: "-", at: "story?mission=nowhere" }], "demos.json"), /demos\.json: demo 1's at: .*no mission "nowhere"/u)
+  // A demo may open a save the page carries; one whose route is not a place, a save it does not carry, or is on the
+  // title menu with keys, is refused.
+  const round4 = checkDemos([{ label: "Round 4", try: "-", at: "skirmish?load=saves/crossing-round-4.save.json", keys: "Esc" }], "demos.json")
+  assert.equal(round4[0]?.at, "skirmish?load=saves/crossing-round-4.save.json")
+  assert.throws(() => checkDemos([{ label: "x", try: "-", at: "skirmish?load=mine.save.json" }], "demos.json"), /opens a save file the page does not carry/u)
+  assert.throws(() => checkDemos([{ label: "x", try: "-", at: "story?mission=vasse-test-1" }], "demos.json"), /demos\.json: demo 1's at: .*Story waits until Skirmish is solid/u)
   assert.throws(() => checkDemos([{ label: "x", try: "-", at: "settings", keys: "Down" }], "demos.json"), /is on the title menu: its keys and settings are for a Build Phase/u)
   assert.throws(() => checkDemos([{ label: "x", try: "-", keys: "Dwn" }], "demos.json"), /demo 1's keys: unknown key "Dwn"/u)
   // A settings text this build would skip is a mistake in a demo: it would open with the default and say nothing.

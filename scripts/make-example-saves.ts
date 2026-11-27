@@ -8,7 +8,8 @@
 import { writeFileSync } from "node:fs"
 import { briefOf, playRound, SCRIPTED } from "../src/battle/index.ts"
 import type { SaveSetup } from "../src/skirmish/save.ts"
-import { battleOf, newSetup, saveOf, saveText, SIDE_OF } from "../src/skirmish/save.ts"
+import { battleOf, newSetup, readSave, saveOf, saveText, SIDE_OF } from "../src/skirmish/save.ts"
+import { readFileSync } from "node:fs"
 
 type Example = Readonly<{ file: string; name: string; notes: string; setup: SaveSetup; played?: number; scripts?: readonly [string, string] }>
 
@@ -34,12 +35,27 @@ const EXAMPLES: readonly Example[] = [
     setup: newSetup({ map: "crossing", seed: 2, slots: { p1: { controller: "script:balanced" }, p2: { commander: "vasse", controller: "script:rush" } } }),
   },
   {
+    // The starter map is drawn in full in its own save and kept as it is: only its setup's other fields are written here.
+    file: "starter",
+    name: "The starter map",
+    notes:
+      "The Build Phase's test base: a battlefield larger than the largest viewport on both axes, so scrolling is unavoidable, with walls, a crater and a chain of rock to scroll round. Vasse against a Dob who builds nothing. The scripted playtest opens here, and most Build Phase tests start from it.",
+    setup: { ...newSetup({ seed: 1, slots: { p2: { controller: "script:idle" } } }), map: starterMap() },
+  },
+  {
     file: "pocket-short",
     name: "A short battle on the Pocket",
     notes: "Four rounds on the small map, the bases close enough to build into each other's reach: a playtest that fits in ten minutes.",
     setup: newSetup({ map: "pocket", seed: 5, rounds: 4, slots: { p1: { commander: "averno" }, p2: { controller: "script:rush" } } }),
   },
 ]
+
+/** The starter map as its save draws it: the picture is the save's own, never made here. */
+function starterMap(): SaveSetup["map"] {
+  const read = readSave(readFileSync(new URL("../saves/starter.save.json", import.meta.url), "utf8"))
+  if (read.save === null) throw new Error(`saves/starter.save.json: ${read.problems.join("; ")}`)
+  return read.save.setup.map
+}
 
 for (const example of EXAMPLES) {
   let state = battleOf({ format: "terminal-nexus.save/1", setup: example.setup })

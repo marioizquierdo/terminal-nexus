@@ -4,7 +4,7 @@
 // page's `#at=` links and a demo's `at`.
 //
 //   menu                                    the title menu; an empty route is this one
-//   settings   about   story                the title menu's own screens
+//   settings   about                        the title menu's own screens
 //   skirmish                                a Skirmish on the defaults, on a seed the game chooses, as its title menu row starts one
 //   skirmish?seed=1234                      ... on that seed
 //   skirmish?map=pocket&p2=script:agro&p2-commander=averno&modifiers=fast-rounds&seed=7
@@ -15,16 +15,11 @@
 //                                           the rounds and the modifiers may change)
 //   skirmish?setup                          the title menu's Skirmish screen: New game, Load game
 //   skirmish?setup=new   skirmish?setup=load   New game's setup, or Load game's list of saves
-//   story?mission=vasse-test-1              that mission's Build Phase, at its first round
-//   story?mission=vasse-test-1&round=3      ... at round 3: a Battle Round, counted from 1 as the screen counts
-//
-// **A route counts Battle Rounds, from 1**, as the screen does: the owner settled the word (2026-10-04, "let's
-// settle in Battle Rounds"), so there is one way to name a round.
 //
 // **A broken route is refused whole, with every problem at once**, each naming what was written and what exists
-// instead: the places, a place's query names, the missions, a mission's rounds. Names are read whatever their case
-// and may be percent-encoded, as an address's are; a mission's id and a file's name are matched exactly. The places
-// the Skirmish milestone renamed (`campaign`, `challenge`) are refused with the route that replaced them.
+// instead: the places, a place's query names, a value it cannot take. Names are read whatever their case and may be
+// percent-encoded, as an address's are; a file's name is matched exactly. The places that are gone (`campaign`,
+// `challenge`, and `story` since Story stopped) are refused with the route to use now.
 //
 // **Adding a place is one entry in `PLACES`**: what it opens, the query names it reads, where they lead, and the
 // routes it names (which `--help`, the routing page's table and the test that opens every route all read). A
@@ -32,21 +27,19 @@
 // type makes the type checker name every place that has to learn it.
 //
 // Pure: no terminal, no file, no clock — a Skirmish's route says what to open (a seed, a file), and the host opens it
-// (`./skirmish-open.ts`). It knows the levels (`./levels.ts`), which is why it lives in the application shell rather
-// than beside the title menu.
+// (`./skirmish-open.ts`). It knows what a level is (`./levels.ts`), which is why it lives in the application shell
+// rather than beside the title menu.
 
 import type { PlayableLevel } from "./levels.ts"
-import { DEFAULT_LEVEL, LEVELS, levelById } from "./levels.ts"
 import type { SkirmishAsk } from "../skirmish/ask.ts"
 import { ASK_WORDS, askWords, readAsk } from "../skirmish/ask.ts"
 
 /** The title menu's places: each opens one of its screens. */
-export type TitlePlace = "menu" | "story" | "settings" | "about" | "skirmish" | "new-game" | "load-game"
+export type TitlePlace = "menu" | "settings" | "about" | "skirmish" | "new-game" | "load-game"
 
 /** The route each title menu place is written as: its own name, or a Skirmish screen's `skirmish?setup...`. */
 const TITLE_ROUTES: Readonly<Record<TitlePlace, string>> = {
   menu: "menu",
-  story: "story",
   settings: "settings",
   about: "about",
   skirmish: "skirmish?setup",
@@ -55,8 +48,8 @@ const TITLE_ROUTES: Readonly<Record<TitlePlace, string>> = {
 }
 
 /**
- * Where a route leads: a place on the title menu; a level's Build Phase at one of its rounds (a story mission's, or a
- * Skirmish a host has opened); or **a Skirmish to open** — on the seed the route names or one the game chooses from
+ * Where a route leads: a place on the title menu; a level's Build Phase at one of its rounds (a Skirmish a host has
+ * opened); or **a Skirmish to open** — on the seed the route names or one the game chooses from
  * the clock, which a route never reads, or the save file it names, which a route never reads either. The host opens
  * it (`openSkirmish`, `./skirmish-open.ts`) into a level, with the slots its command line names.
  */
@@ -106,37 +99,6 @@ const titlePlace = (place: TitlePlace, opens: string): Place => ({
   routes: () => [place],
 })
 
-/** A mission as a problem names it: its id, its title and its rounds. */
-const describeLevel = (level: PlayableLevel): string => `${level.id} (${level.title}, rounds 1 to ${level.rounds})`
-
-/** `story`: the Story screen, or with a mission, that mission's Build Phase at a round. */
-function story(query: Query, problems: string[]): Destination | null {
-  const id = query.get("mission")
-  const round = query.get("round")
-  if (id === undefined) {
-    if (round !== undefined) {
-      problems.push(`a round needs a mission: ${DEFAULT_LEVEL_ROUTE}&round=2`)
-      return null
-    }
-    return { kind: "title", place: "story" }
-  }
-  const level = levelById(id)
-  if (level === undefined) {
-    problems.push(`no mission "${id}": the missions are ${LEVELS.map(describeLevel).join(", ")}`)
-    return null
-  }
-  if (round !== undefined && !/^\d+$/u.test(round)) {
-    problems.push(`round must be a whole number, not "${round}"`)
-    return null
-  }
-  const counted = round === undefined ? 1 : Number(round)
-  if (counted < 1 || counted > level.rounds) {
-    problems.push(`mission "${level.id}" has rounds 1 to ${level.rounds}, not ${counted}`)
-    return null
-  }
-  return { kind: "level", level, round: counted }
-}
-
 /** `skirmish`: a new Skirmish on the defaults, on the seed given or one the game chooses, set up as its words ask
  *  (`readAsk`, the reader the `skirmish` command's flags go through); or a save file, at its Build Phase; or with
  *  `setup`, the setup screen. */
@@ -165,7 +127,8 @@ export function skirmishRoute(ask: SkirmishAsk): string {
 
 /** The places the Skirmish milestone renamed, each with what replaced it: a pasted note says where to go now. */
 const RENAMED: Readonly<Record<string, string>> = {
-  campaign: "campaign is Story now: story, or story?mission=vasse-test-1",
+  campaign: "campaign is retired: skirmish starts one battle (skirmish?seed=1234)",
+  story: "Story waits until Skirmish is solid: skirmish starts one battle (skirmish?seed=1234)",
   challenge: "Challenge runs are retired: skirmish starts one battle (skirmish?seed=1234)",
 }
 
@@ -174,7 +137,7 @@ const RENAMED: Readonly<Record<string, string>> = {
  * here.**
  */
 export const PLACES: Readonly<Record<string, Place>> = {
-  menu: titlePlace("menu", "the title menu: Skirmish, Story, Settings, About, Exit"),
+  menu: titlePlace("menu", "the title menu: Skirmish, Settings, About, Exit"),
   skirmish: {
     opens: "a Skirmish on the defaults (a seed chosen or given), a save file, or with setup its setup screen",
     // The words the `skirmish` command takes (`ASK_WORDS`), and the setup screen.
@@ -186,18 +149,6 @@ export const PLACES: Readonly<Record<string, Place>> = {
     flags: ["setup"],
     resolve: skirmish,
     routes: () => ["skirmish", "skirmish?seed=1", "skirmish?load=saves/crossing-round-4.save.json", "skirmish?setup", "skirmish?setup=new", "skirmish?setup=load"],
-  },
-  story: {
-    opens: "the Story screen; with a mission, that mission's Build Phase at a round",
-    query: {
-      mission: "the mission's id",
-      round: "the Battle Round to open at, counted from 1 as the screen counts; 1 unless given",
-    },
-    resolve: story,
-    routes: () => [
-      "story",
-      ...LEVELS.flatMap((level) => Array.from({ length: level.rounds }, (_, index) => formatRoute({ kind: "level", level, round: index + 1 }))),
-    ],
   },
   settings: titlePlace("settings", "the title menu's Settings screen"),
   about: titlePlace("about", "the title menu's About screen: who made the game, and which build this is"),
@@ -287,16 +238,14 @@ export function formatRoute(destination: Destination): string {
     return skirmishRoute(ask)
   }
   // A Skirmish names its own route: its seed, or its file.
-  if (destination.level.route !== undefined) return destination.level.route
-  const round = destination.round === 1 ? "" : `&round=${destination.round}`
-  return `story?mission=${destination.level.id}${round}`
+  return destination.level.route
 }
 
-/** Every route the game has, place by place, each mission at each of its rounds. */
+/** Every route the game has, place by place. */
 export function allRoutes(): readonly string[] {
   return PLACE_NAMES.flatMap((name) => PLACES[name]?.routes() ?? [])
 }
 
-/** The default mission's route, which opens its first round: where a demo and the scripted playtest open when
- *  nothing names a place. */
-export const DEFAULT_LEVEL_ROUTE = formatRoute({ kind: "level", level: DEFAULT_LEVEL, round: 1 })
+/** The starter map's Skirmish (`saves/starter.save.json`, `./starter.ts`): where a demo and the scripted playtest open
+ *  when nothing names a place. */
+export const DEFAULT_LEVEL_ROUTE = "skirmish?load=saves/starter.save.json"

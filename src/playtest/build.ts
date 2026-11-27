@@ -1,7 +1,5 @@
-// A scripted playtest of the Build Phase: a story mission's screen (`--at story?mission=<id>&round=<n>`,
-// PERIMETER's first round unless told otherwise) or a Skirmish's (`--at skirmish?seed=<n>`, `--load <file>`), driven
-// by a key script through the
-// real adapters, with every step's frame kept. No terminal, no clock, no capture race — the frames are
+// A scripted playtest of the Build Phase: a Skirmish's screen (`--at skirmish?seed=<n>`, `--load <file>`; in process,
+// the starter map's first round unless told otherwise), driven by a key script through the real adapters, with every step's frame kept. No terminal, no clock, no capture race — the frames are
 // composed in-process by the very function the live screen presents (`composeBuildFrame`), so step N's
 // frame is exactly what a player would see after pressing step N's key.
 //
@@ -16,11 +14,11 @@ import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../view/build-session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { nexusTile } from "../build/state.ts"
-import type { MissionPlay } from "../cli/pulse-run.ts"
 import { readLaunch } from "../cli/launch.ts"
 import type { LaunchText } from "../cli/launch.ts"
 import type { LevelPlay } from "../cli/levels.ts"
-import { DEFAULT_LEVEL, openRound } from "../cli/levels.ts"
+import { openRound } from "../cli/levels.ts"
+import { DEFAULT_LEVEL } from "../cli/starter.ts"
 import { DEFAULT_LEVEL_ROUTE, RouteError, formatRoute } from "../cli/route.ts"
 import type { LevelDestination } from "../cli/route.ts"
 import { openSkirmish } from "../cli/skirmish-open.ts"
@@ -61,17 +59,15 @@ export type BuildPlaytestOptions = Readonly<{
   /** Experiments to open with instead of this build's defaults — an imported export's. */
   experiments?: Partial<Experiments>
   /**
-   * The story level and round to open (`--at story?mission=<id>&round=<n>`, `playtestOpening`): that round
-   * as a player who builds nothing reaches it (`openRound`), the rounds before it played with this run's
-   * settings and Experiments, and its rounds played on its own mission. PERIMETER's first round unless given;
-   * `context` and `play`, when given, win.
+   * The battle and round to open (`playtestOpening`): that round as a player who builds nothing reaches it
+   * (`openRound`), the rounds before it played with this run's settings and Experiments. The starter map's first
+   * round (`DEFAULT_LEVEL`, `saves/starter.save.json`) unless given; `context` and `play`, when given, win.
    */
   at?: LevelDestination
   context?: BuildContext
-  /** The mission the rounds are played on, when it is not the level's own: another mission's or a test
-   *  map's `startPulse`, `nextRound` and, to see its raid's intent, `foresee` (`missionPlay`), with
-   *  `context` its first round. */
-  play?: Pick<MissionPlay, "startPulse"> & Pick<LevelPlay, "nextRound"> & Partial<Pick<MissionPlay, "foresee" | "keep">> & Partial<Pick<LevelPlay, "resume">>
+  /** How the rounds are played, when it is not the level's own: another battle's `startPulse`, `nextRound` and
+   *  the rest, with `context` its first round. */
+  play?: Pick<LevelPlay, "startPulse" | "nextRound"> & Partial<Pick<LevelPlay, "foresee" | "keep" | "resume">>
   /**
    * Where Save game writes a name with no folder of its own: the game's saves folder (`savesFolder`) unless given. A
    * name with a folder (`tmp/mine`) is written there, from the working folder, as the game writes it.
@@ -86,7 +82,7 @@ export type BuildPlaytestOptions = Readonly<{
    */
   keyReleases?: boolean
   /** Whether a round that opens with a scene plays it in the dialog first, as the game does — on unless
-   *  said otherwise, so a script starts where a player starts: PERIMETER's intro (`Esc` skips it). */
+   *  said otherwise, so a script starts where a player starts: a loaded save's line (`Esc` skips it). */
   scenes?: boolean
   /** The run's Activity Logs and the clock they read, when a longer run (`./game.ts`) shares them across screens. */
   activity?: ActivityLog
@@ -236,7 +232,6 @@ export class BuildDriver {
       ...(play.keep === undefined ? {} : { keep: play.keep }),
       ...(play.resume === undefined ? {} : { resume: play.resume }),
       onSave: saver.onSave,
-      // Another mission's raid is its own to foresee: PERIMETER's is not drawn over it.
       ...(play.foresee === undefined ? {} : { foresee: play.foresee }),
       captureScreen: () => frameToText(this.compose()),
       onNote: (moment: NoteMoment) => {
@@ -348,7 +343,7 @@ export function gameOpening(
     }
   }
   // Told nowhere, the scripted playtest starts from a save, as testing the battle does (the Skirmish milestone): the
-  // Crossing's new battle, Vasse against Dob Hunter, seed 7. A mission is opened by its route.
+  // Crossing's new battle, Vasse against Dob Hunter, seed 7.
   const told = skirmish.load !== undefined || text.at !== undefined
   const opened = playtestOpening(text, keysFrom, told ? skirmish : { ...skirmish, load: PLAYTEST_SAVE })
   return { start: opened.at, steps: opened.steps, ...(opened.settings === undefined ? {} : { settings: opened.settings }) }
@@ -356,8 +351,8 @@ export function gameOpening(
 
 /**
  * Where a scripted playtest opens and what it starts from (`runBuildPlaytest`'s `at` and `steps`), read from its
- * command line's texts as the game reads its own (`src/cli/launch.ts`): PERIMETER's first round unless `at` names
- * another, or `skirmish.load` a save file (the game's `--load`), with `skirmish.slots` who plays each slot (`--p1`,
+ * command line's texts as the game reads its own (`src/cli/launch.ts`): the starter map's first round unless `at`
+ * names another, or `skirmish.load` a save file (the game's `--load`), with `skirmish.slots` who plays each slot (`--p1`,
  * `--p2`). Refused, with every problem said, when the route is not a place, a key the script names does not exist
  * (`keysFrom` says where the script came from), the save cannot be opened, or the place is on the title menu: a
  * scripted playtest plays a Build Phase. `skirmish.now` is the clock a seedless `skirmish` takes its seed from.

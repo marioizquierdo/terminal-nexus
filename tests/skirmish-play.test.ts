@@ -7,6 +7,7 @@
 // Re-pinned from the retired Challenge run's tests (tests/run-play.test.ts): the same screen, a battle on it, now one
 // battle on the defaults rather than a run of three with a small army and drafts between them.
 
+import { STARTER_LEVEL, starterContext } from "../src/cli/starter.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
@@ -319,10 +320,12 @@ test("Save game on the screen writes the file the player names, and opening it w
 })
 
 test("Save game is dimmed where nothing can be saved, and refused at the Battle Round", { timeout: 60_000 }, () => {
-  const run = runBuildPlaytest({ steps: parseKeyScript("Esc Esc v") })
+  // A round no Skirmish names a file for (`saveName`): a test's own, as the screen still draws one.
+  const { saveName: _name, ...unsaved } = starterContext()
+  const run = runBuildPlaytest({ context: unsaved, play: STARTER_LEVEL.play, steps: parseKeyScript("Esc Esc v") })
   const menu = frameToText(run.frames[2]!.frame)
   assert.match(menu, /\[v\] Save game/u)
-  assert.equal(run.frames[3]!.state.popup, "game-menu", "Save game opened on a story mission")
+  assert.equal(run.frames[3]!.state.popup, "game-menu", "Save game opened on a round with nothing to save")
   assert.equal(run.frames[3]!.state.status.text, "Only a Skirmish can be saved.")
   const skirmish = runBuildPlaytest({ steps: parseKeyScript("Esc s s Esc v"), at: playtestOpening({ at: "skirmish?seed=1" }).at })
   assert.equal(skirmish.frames[skirmish.frames.length - 1]!.state.status.text, "Save game waits for the next Build Phase.")

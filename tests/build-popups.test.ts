@@ -4,6 +4,7 @@
 // and the top bar's right end saying what Esc does, in place of every popup's own `[esc]`. Driven through raw bytes into the
 // real adapters where an adapter is what is claimed, and through the reducer where the reducer is.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EXPERIMENT_FIELDS, defaultExperiments, stepExperiment } from "../src/build/experiments.ts"
@@ -26,7 +27,6 @@ import type { RestartFieldSpec } from "../src/build/settings.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
 import { applyBuildCommand, createBuildState } from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import { chromeGlyph } from "../src/view/theme.ts"
@@ -230,7 +230,7 @@ function withMessage(context: BuildContext, under: "game-menu" | null): BuildSta
 }
 
 test("a message popup: a title and its text, nothing to choose, closed by Esc or a click outside and nothing else", () => {
-  const context = starterContext()
+  const context = testBase()
   const layout = buildLayout(MINIMUM, context.terrain)
   const state = withMessage(context, null)
   // Its shape: a title, and text wrapped in as many lines as it needs — no option anywhere.
@@ -548,7 +548,7 @@ test("no popup carries [esc] in its border, and its corner is no click target", 
     assert.deepEqual(side.build.state, before, `${JSON.stringify(steps)}: a click on the popup's corner did something`)
   }
   // The message popup too.
-  const context = starterContext()
+  const context = testBase()
   const layout = buildLayout(MINIMUM, context.terrain)
   const state = withMessage(context, null)
   const popup = placePopup(layout, popupSpec(context, state) as PopupSpec)
@@ -558,14 +558,14 @@ test("no popup carries [esc] in its border, and its corner is no click target", 
 })
 
 test("the Nexus Pulse popup says when a Commander who sits rounds out is back, and never a round already past", () => {
-  const context = starterContext()
+  const context = testBase()
   const state = { ...createBuildState(context, { x: 0, y: 0 }, { width: 49, height: 18 }), popup: "nexus-powers" as const }
   const out = (number: number, returnsInRound: number) =>
     (popupSpec({ ...context, round: { number, of: 3 }, absent: [{ player: "A", contentId: "unit.citizen.vasse", fellInRound: 1, returnsInRound }] }, state)?.rows ?? [])
       .filter((row) => row.kind === "text")
       .map((row) => ("text" in row ? row.text : ""))[0]
   assert.equal(out(2, 3), "Vasse is out; back for round 3.")
-  assert.equal(out(2, 4), "Vasse is out for the mission.")
+  assert.equal(out(2, 4), "Vasse is out for the battle.")
   // Due back and still out: the Nexus had nowhere to set her down.
   assert.equal(out(3, 2), "Vasse is out; nowhere to return to.")
 })

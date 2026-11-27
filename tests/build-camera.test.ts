@@ -22,7 +22,7 @@ import {
   visibleRange,
 } from "../src/build/camera.ts"
 import type { Camera, Viewport } from "../src/build/camera.ts"
-import { starterTerrain } from "../src/build/catalog.ts"
+import { starterTerrain } from "./starter-fixture.ts"
 import type { MapTerrain, TerrainId } from "../src/engine/geometry/types.ts"
 
 const STARTER_TERRAIN = starterTerrain()

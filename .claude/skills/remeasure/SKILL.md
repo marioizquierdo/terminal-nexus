@@ -18,8 +18,8 @@ the change can move:
 | The change | Run |
 | --- | --- |
 | Presentation only: a screen, an effect, a colour, a key | Nothing. The tests and the `playtest` skill. |
-| A number on one unit or building: health, damage, cost, a timer | A sandbox it fights in, played by the `skirmish` command before and after (the `skirmish` skill), then `measure who <content id>` on the levels it stands in; the quick spec's duels if a Commander's army fields it |
-| A new unit kind or ability | A sandbox that shows it (the `skirmish` skill), a battle with it in an army, then `measure who <content id>`; the quick spec's duels if an army fields it |
+| A number on one unit or building: health, damage, cost, a timer | A sandbox it fights in, played by the `skirmish` command before and after (the `skirmish` skill), then its events read from that battle's log; the quick spec's duels if a Commander's army fields it |
+| A new unit kind or ability | A sandbox that shows it (the `skirmish` skill), a battle with it in an army, its events read from the log; the quick spec's duels if an army fields it |
 | A battle engine rule on movement, routes or targeting | The engage and route sandboxes before and after (`skirmish --load <sandbox> --play-to next --log-level info`, `diff` the logs; read target switches, idle and stalled units, not only who won), the quick spec, the full spec's maps (`--spec full --parts saves`), and `measure formations` if it touches how units leave their buildings; the full spec's duels too when it changes how a common unit chooses or moves (the quick spec plays the balanced player alone, and only a rush showed the runner as a backliner emptying Dob's front) |
 | A power-curve change: the Nexus, supply, credits, income, a tier, the Nexus Pulse's hand | The full spec, then retire what it supersedes ("Retire what it supersedes") |
 

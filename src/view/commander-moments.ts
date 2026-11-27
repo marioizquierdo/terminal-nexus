@@ -95,7 +95,7 @@ export function appearing(context: BuildContext): Readonly<{ contentId: string; 
 }
 
 /** The line she says as she appears, or `null`: none written for the moment, or the round's scene opens on her
- *  speaking already (PERIMETER's first round), which says it for her. */
+ *  speaking already (a scene with a line of hers), which says it for her. */
 export function appearanceLine(context: BuildContext): string | null {
   const now = appearing(context)
   if (now === null) return null

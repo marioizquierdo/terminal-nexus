@@ -14,7 +14,8 @@ import { currentCard } from "../src/build/card.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import type { BuildState } from "../src/build/state.ts"
 import { createBuildState, remaining, withoutScene } from "../src/build/state.ts"
-import { DEFAULT_LEVEL } from "../src/cli/levels.ts"
+import { barracksLevel } from "./starter-fixture.ts"
+const DEFAULT_LEVEL = barracksLevel()
 import type { ContentRegistry } from "../src/content/index.ts"
 import { FIXTURE_REGISTRY, baseContentId, fittedId } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/engine/events/types.ts"
@@ -87,9 +88,9 @@ test("the Activity logs record each action taken and taken back, by building, la
   assert.deepEqual(
     logged.map((entry) => [entry.props["action"], entry.props["kind"], entry.props["taken"], entry.props["credits"]]),
     [
-      ["Production line", "upgrade", true, 85],
-      ["Production line", "upgrade", false, 100],
-      ["Hold production", "order", true, 100],
+      ["Production line", "upgrade", true, 135],
+      ["Production line", "upgrade", false, 150],
+      ["Hold production", "order", true, 150],
     ],
   )
 })
@@ -116,7 +117,7 @@ test("removing or undoing a planned building takes what was bought on it with it
   const side = buildSide({ cursor: STARTER_START_CURSOR, context: withoutScene(DEFAULT_LEVEL.firstRound()) })
   const start = remaining(side.build.round, side.build.state)
   // A Barracks placed south of the Nexus, then explored and given its production line.
-  keys(side, "1", ENTER)
+  keys(side, "3", ENTER)
   const placed = side.build.state.planned[0]
   assert.ok(placed !== undefined, "the Barracks was not placed")
   exploreAt(side, placed.anchor)
@@ -222,7 +223,7 @@ test("a mode switched on the screen stays switched the round after, and switchin
   const context = withoutScene(DEFAULT_LEVEL.firstRound())
   const side = buildSide({ cursor: STARTER_START_CURSOR, context })
   // A Turret placed, explored, and switched to Units first (its modes are `v` and `b`, after its upgrade's `c`).
-  keys(side, "3", ENTER)
+  keys(side, "2", ENTER)
   const turret = side.build.state.planned[0]
   assert.ok(turret !== undefined, "the Turret was not placed")
   exploreAt(side, turret.anchor)
@@ -261,7 +262,7 @@ test("a mode switched on the screen stays switched the round after, and switchin
 })
 
 test("a scripted playtest: Explore Map onto the Barracks, buy its production line, watch its wave of five, and read it on its card the round after", { timeout: 120_000 }, () => {
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("e Right*4 c s s wait~1000*30 Enter click:26,10 Enter") })
+  const run = runBuildPlaytest({ scenes: false, at: { kind: "level", level: DEFAULT_LEVEL, round: 1 }, steps: parseKeyScript("e Right*4 c s s wait~1000*30 Enter click:26,10 Enter") })
   const texts = run.frames.map((frame) => frameToText(frame.frame))
   const bought = texts[6] ?? ""
   assert.match(bought, /\[c\] Production line +undo/u)
@@ -276,7 +277,7 @@ test("a scripted playtest: Explore Map onto the Barracks, buy its production lin
   assert.deepEqual(grew, [5], `the wave did not come as five: ${JSON.stringify(yours)}`)
   // Round 2: the standing Barracks's card says what it carries.
   const last = texts[texts.length - 1] ?? ""
-  assert.match(last, /round 2 of 3/u)
+  assert.match(last, /round 3 of 8/u)
   assert.match(last, /UPGRADE +Production line/u)
   assert.match(last, /WAVE +5 troopers at 5s/u)
 })

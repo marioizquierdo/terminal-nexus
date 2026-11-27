@@ -1,15 +1,14 @@
 // Measuring battles the same way before and after a rule changes (docs/system-design/measurement.md): the spec of
 // what is played (`spec.ts`), the battles themselves (`suites.ts`), a battle's record (`battle.ts`), and the plain
-// words a measurement says (`summary.ts`); a spec split into processes and merged back (`merge.ts`); and what one
-// unit did in each round of each Story level (`who.ts`). `runSpec` plays a whole spec; the command around it
-// (`bin/measure.ts`) reads the maps, keeps time and writes the result down.
+// words a measurement says (`summary.ts`); and a spec split into processes and merged back (`merge.ts`). `runSpec`
+// plays a whole spec; the command around it (`bin/measure.ts`) reads the maps, keeps time and writes the result down.
+// Story's levels were a third part until Story stopped (the owner, 2026-11-26); a record written before still reads.
 
-import type { PlayableLevel } from "../cli/levels.ts"
 import type { BattleOpening } from "../skirmish/opening/types.ts"
 import type { MeasureSpec } from "./spec.ts"
 import { playerPairs } from "./spec.ts"
-import type { DuelMeasure, LevelMeasure, SaveMeasure } from "./suites.ts"
-import { measureDuel, measureLevel, measureSave } from "./suites.ts"
+import type { DuelMeasure, SaveMeasure } from "./suites.ts"
+import { measureDuel, measureSave } from "./suites.ts"
 
 export * from "./battle.ts"
 export * from "./formations.ts"
@@ -17,13 +16,11 @@ export * from "./merge.ts"
 export * from "./spec.ts"
 export * from "./suites.ts"
 export { luckByCards, summaryLines } from "./summary.ts"
-export * from "./who.ts"
 
 export type SpecInputs = Readonly<{
   /** The maps to play, already read. */
   saves: readonly BattleOpening[]
-  levels: readonly PlayableLevel[]
-  /** Which parts to play: any of "saves", "duels", "levels". */
+  /** Which parts to play: any of "saves", "duels". */
   parts: ReadonlySet<string>
   /** Told of each battle as it is played, for a line on the console. */
   progress?: (line: string) => void
@@ -32,7 +29,6 @@ export type SpecInputs = Readonly<{
 export type SpecResult = Readonly<{
   saves: readonly SaveMeasure[]
   duels: readonly DuelMeasure[]
-  levels: readonly LevelMeasure[]
   /** Every tick played, for the time a tick took. */
   ticks: number
 }>
@@ -42,7 +38,6 @@ export function runSpec(spec: MeasureSpec, inputs: SpecInputs): SpecResult {
   const say = inputs.progress ?? (() => {})
   const saves: SaveMeasure[] = []
   const duels: DuelMeasure[] = []
-  const levels: LevelMeasure[] = []
   let ticks = 0
   if (inputs.parts.has("saves")) {
     const maps = inputs.saves.filter((opening) => spec.saves === "all" || opening.id.startsWith("route-"))
@@ -77,16 +72,5 @@ export function runSpec(spec: MeasureSpec, inputs: SpecInputs): SpecResult {
       }
     }
   }
-  if (inputs.parts.has("levels")) {
-    const chosen = spec.levels.length === 0 ? inputs.levels : inputs.levels.filter((level) => spec.levels.includes(level.id))
-    for (const level of chosen) {
-      for (const plan of spec.plans) {
-        const run = measureLevel(level, plan)
-        ticks += run.rounds.reduce((sum, round) => sum + round.battle.ticks, 0)
-        levels.push(run)
-        say(`level ${level.id} "${plan.name}": ${run.ended.verdict} in round ${run.ended.round}`)
-      }
-    }
-  }
-  return { saves, duels, levels, ticks }
+  return { saves, duels, ticks }
 }

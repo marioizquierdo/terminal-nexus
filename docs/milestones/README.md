@@ -47,7 +47,9 @@ player plays from the title screen, and the place every change is seen.
 
 **How the project grows, from 2026-11-11, reviewed 2026-11-12** ([the owner's words](../history/feedback/2026-11-11-game-modes.md),
 [the review](../history/feedback/2026-11-12-skirmish-saves.md)): through Skirmish, not through missions. PERIMETER is
-no longer the testing map, and no Story mission is built for now. In order:
+no longer the testing map, and no Story mission is built for now; since 2026-11-26 Story waits outright: PERIMETER and the
+mission runner left the game, and Story returns as a scripting layer over a Skirmish once Skirmish and a few Commander
+Armies are solid ([his words](../history/feedback/2026-11-25-rally-point.md)). In order:
 
 1. **Skirmish: setup and save files** (17): set up by map and slots, saved and loaded at a Build Phase, played headless
    by an agent round by round. Every later step is tested from a save, which is what spares Mario's playtime.

@@ -25,9 +25,13 @@ import { bannerLines, bannerOrder, bannerSpot, currentBanner, defaultBanner, str
 import type { BuildCommand } from "../src/build/types.ts"
 import type { Coord } from "../src/engine/geometry/types.ts"
 import { starterContext } from "../src/cli/starter.ts"
-import { startPulse } from "../src/cli/pulse-run.ts"
-import { PERIMETER } from "../src/armies/index.ts"
-import { resolveMissionPulse, withRallyTarget } from "../src/match/index.ts"
+import { startPulse } from "../src/cli/starter.ts"
+import { withRallyTarget } from "../src/match/index.ts"
+import { playRound } from "../src/battle/index.ts"
+import { battleOf } from "../src/skirmish/save.ts"
+import type { SaveFile } from "../src/skirmish/save.ts"
+import type { MatchState } from "../src/engine/state/types.ts"
+import starterSave from "../saves/starter.save.json" with { type: "json" }
 import type { RallyOrder } from "../src/match/index.ts"
 import { bottomLineText, buildSide, clickPanelRow, clickTile, compose, keys, screenText } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
@@ -49,7 +53,7 @@ const RIGHT = "\u001b[C"
 const UP = "\u001b[A"
 const ESC = "\u001b"
 
-/** PERIMETER's first round, as the game opens it; `experiments` sets some. */
+/** The starter map's first round, as the game opens it; `experiments` sets some. */
 function bannerSide(experiments: BuildContext["experiments"] = {}, context: Partial<BuildContext> = {}): BuildSide {
   const opened: BuildContext = { ...starterContext(), ...context, experiments: { ...experiments } }
   return buildSide({ context: opened, cursor: STARTER_START_CURSOR, startPulse })
@@ -69,7 +73,7 @@ test("Start Battle Round makes the cursor the rally point at once: no panel, no 
   assert.equal(popupSpec(side.build.round, state), null, "a panel opened")
   const banner = currentBanner(side.build.round, state)
   assert.equal(banner.isDefault, true)
-  assert.equal(banner.name, "the line")
+  assert.equal(banner.name, "ground in front of your base")
   assert.deepEqual(state.cursor, banner.tile, "the cursor did not go to the rally point")
   const text = screenText(side)
   assert.match(text, /\[s\] Start Battle Round/, "the menu is not kept")
@@ -395,34 +399,30 @@ test("the rally point's bottom line is its two actions, or why not, and fits the
 
 // --- The match: the banner drives the battle ----------------------------------------------------------
 
-/** PERIMETER's first Pulse, on its own map with nothing built, with `banner` or none. */
-function perimeterPulse(banner?: RallyOrder) {
-  const context = starterContext()
-  return resolveMissionPulse({
-    mission: PERIMETER,
-    terrain: context.terrain,
-    registry: context.registry,
-    pulse: 1,
-    carried: null,
-    structures: context.standing.map((structure) => ({ contentId: structure.contentId, anchor: structure.anchor })),
-    ...(banner === undefined ? {} : { banner }),
+/** The starter map's first Battle Round, nothing built, side A's rally point the 3 x 3 round `tile` or the default:
+ *  every state of it, and the last. */
+function starterPulse(tile?: Readonly<{ x: number; y: number }>) {
+  const states: MatchState[] = []
+  playRound(battleOf(starterSave as unknown as SaveFile), { A: { build: [], ...(tile === undefined ? {} : { rally: tile }) }, B: { build: [] } }, (state) => {
+    states.push(state)
   })
+  return { states, final: states[states.length - 1] as MatchState }
 }
 
-const NORTH_EAST: RallyOrder = { side: "A", area: { x: 29, y: 4, width: 3, height: 3 }, name: "ground near the line" }
+const NORTH_EAST: RallyOrder = { side: "A", area: { x: 29, y: 6, width: 3, height: 3 }, name: "ground near the wall" }
 
-test("a rally point is the side's target for the whole round, in place of the level's: nothing releases it", () => {
-  const without = perimeterPulse()
-  const held = perimeterPulse(NORTH_EAST)
+test("a rally point is the side's target for the whole round, in place of the default: nothing releases it", () => {
+  const without = starterPulse()
+  const held = starterPulse({ x: 30, y: 7 })
   assert.deepEqual(held.states[0]?.targets?.A, NORTH_EAST.area)
   assert.deepEqual(held.final.targets?.A, NORTH_EAST.area)
   assert.ok(held.states.every((state) => state.targets?.A !== undefined && state.targets.A.x === NORTH_EAST.area.x && state.targets.A.y === NORTH_EAST.area.y), "the rally point was let go mid-round")
   assert.notDeepEqual(without.states[0]?.targets?.A, NORTH_EAST.area)
   // Twice the same: deterministic.
-  assert.deepEqual(perimeterPulse(NORTH_EAST).final, held.final)
+  assert.deepEqual(starterPulse({ x: 30, y: 7 }).final, held.final)
 })
 
-test("no banner leaves the targets as the mission set them", () => {
+test("no banner leaves the targets as they were set", () => {
   const targets = { A: { x: 1, y: 2, width: 3, height: 4 } }
   assert.equal(withRallyTarget(targets, undefined), targets)
   assert.deepEqual(withRallyTarget(targets, NORTH_EAST), { A: NORTH_EAST.area })

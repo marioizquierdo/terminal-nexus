@@ -645,74 +645,8 @@ scripted(
   { keys: "s wait~20000 wait~20000 Enter s wait~20000 wait~20000", expect: "Setup screen", load: "saves/pocket-short.save.json", slots: { p1: "script:agro" } },
 )
 
-// The early Battle Round shots (`pulse-start`, `pulse-fight` and the rest) were taken against a placeholder Pulse that
-// PERIMETER's raid replaced; they are no longer made. The shots that follow are on PERIMETER.
-
-// A round, keys only: the Reserve Fund (30 more credits), buildings by digit and two clicks on their
-// tile, then [s] and [s] to start. The strong plan holds PERIMETER; nothing built loses it in round 3.
-const ROUND_1_STRONG = "n 1 3 click:24,8 click:24,8 3 click:25,7 click:25,7 2 click:20,13 click:20,13 s s"
-const ROUND_2_STRONG = "n 1 3 click:27,8 click:27,8 s s"
-const ROUND_3_STRONG = "n 1 3 click:20,8 click:20,8 s s"
-const NOTHING_BUILT = "n 1 s s"
-// Long enough for any round to reach its result (a round is at most 30 seconds, and the ending about 2).
-const TO_RESULT = "wait~20000 wait~20000"
-const STRONG_TO_ROUND_2 = `${ROUND_1_STRONG} ${TO_RESULT} Enter`
-const STRONG_TO_ROUND_3 = `${STRONG_TO_ROUND_2} ${ROUND_2_STRONG} ${TO_RESULT} Enter`
-
-scripted(
-  "mission-round-1",
-  "PERIMETER, round 1 of 3: the raid at the ridge, a trail round it to the Barracks it goes for first, and the panel saying how many, of what, from where and when",
-  { keys: "n 1", expect: "goes for your Barracks" },
-)
-
-scripted(
-  "mission-incoming-card",
-  "Explore Map over an incoming runner of the raid: what it is, when it arrives, and what it means to do",
-  { keys: "n 1 e click:41,0", expect: "Probe the line at the" },
-)
-
-scripted(
-  "mission-round-1-result",
-  "Round 1's result: the fight's own headline, then where the mission stands, and [enter] Next round where Pause was",
-  { keys: `${ROUND_1_STRONG} ${TO_RESULT}`, expect: "Next round" },
-)
-
-scripted(
-  "mission-round-2",
-  "Build Phase 2: the Turrets and the Hatchery stand, the survivors are home, the credits not spent carry over, and the second round's raid waits at the ridge",
-  { keys: STRONG_TO_ROUND_2, expect: "round 2 of 3" },
-)
-
-scripted(
-  "mission-battle-round-2",
-  "Round 2's Battle Round screen, in the mission's own words",
-  { keys: `${STRONG_TO_ROUND_2} n 1 s`, expect: "Battle Round 2" },
-)
-
-scripted(
-  "mission-complete",
-  "Round 3 held: MISSION COMPLETE, the perimeter held - and [enter] Play again",
-  { keys: `${STRONG_TO_ROUND_3} ${ROUND_3_STRONG} ${TO_RESULT}`, expect: "MISSION COMPLETE" },
-)
-
-scripted(
-  "mission-failed",
-  "Nothing built: the Nexus falls in round 3 - MISSION FAILED, and why",
-  { keys: `${NOTHING_BUILT} ${TO_RESULT} Enter ${NOTHING_BUILT} ${TO_RESULT} Enter ${NOTHING_BUILT} ${TO_RESULT}`, expect: "MISSION FAILED" },
-)
-
-scripted(
-  "mission-experiments",
-  "d over a Battle Round opens Settings at the mission's Experiments, Next round first",
-  { keys: `${ROUND_1_STRONG} wait~3000 d`, expect: "Next round" },
-)
-
-scriptedGif("mission-next-round", {
-  // A round's result, then Enter: the next round's Build Phase, on what the last one left.
-  keys: `${ROUND_1_STRONG} ${TO_RESULT} Enter`,
-  expect: "round 2 of 3",
-  delayMs: 700,
-})
+// The mission shots (`mission-round-1` and the rest) were taken on PERIMETER, which left the game when Story stopped
+// (2026-11-26); a Skirmish's are above.
 
 // Settings (Mario, 2026-09-28): the game menu's [s] — the player's own settings first, then the
 // Experiments, which [d] opens straight at.
@@ -821,8 +755,8 @@ function live(name, caption, { cols = 80, rows = 24, args = "--colors truecolor 
     String(cols),
     "-y",
     String(rows),
-    // `--keys Esc`: past round 1's intro before the first frame, so these shots open where they always did.
-    `./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --keys Esc ${args}`,
+    // `--keys Esc`: past the opening lines before the first frame.
+    `./bin/terminal-nexus.ts --load saves/starter.save.json --keys Esc ${args}`,
   ])
   waitFor(
     repoRoot,

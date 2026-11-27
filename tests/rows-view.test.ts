@@ -3,6 +3,7 @@
 // range and a building's reach are the rules' own answers drawn; her voice's "near" is
 // her aura's reach; and the raid's trail and the raid panel's bearing read a slope the way the screen shows it.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { auraOf } from "../src/engine/abilities/index.ts"
@@ -13,7 +14,6 @@ import { buildLayout, cellForTile, tileAtCell } from "../src/build/layout.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { buildRange } from "../src/build/state.ts"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/engine/events/types.ts"
 import { ROW_DISTANCE, footprintWithin, tileDistance, tileSteps } from "../src/engine/geometry/coords.ts"
@@ -45,7 +45,7 @@ function field(): BuildContext {
   const width = 40
   const height = 20
   const tiles = new Array<TerrainId>(width * height).fill("terrain.plain")
-  return { ...starterContext(), terrain: { width, height, tiles }, standing: [{ contentId: NEXUS, anchor: { x: 10, y: 8 } }], field: [], incoming: [], allotment: 1000 }
+  return { ...testBase(), terrain: { width, height, tiles }, standing: [{ contentId: NEXUS, anchor: { x: 10, y: 8 } }], field: [], incoming: [], allotment: 1000 }
 }
 
 /** Moves the map cursor onto `tile` and asserts it got there. */
@@ -71,7 +71,7 @@ function extent(tiles: readonly Coord[]): Readonly<{ width: number; height: numb
 // --- A tile is one column wide ------------------------------------------------------------------------------
 
 test("a tile is drawn one column wide at every size the game is played at", () => {
-  const { terrain } = starterContext()
+  const { terrain } = testBase()
   for (const terminal of [MINIMUM, MAXIMUM, WIDE, { columns: 200, rows: 60 }]) {
     const layout = buildLayout(terminal, terrain)
     const camera = { x: 0, y: 0 }

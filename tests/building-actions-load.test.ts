@@ -7,13 +7,13 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { ARMIES, ARMY_FILES, ArmyError, applyEffect, loadArmies } from "../src/armies/index.ts"
 import type { Loadout } from "../src/armies/index.ts"
-import { STARTER_CATALOG, constructItem } from "../src/build/catalog.ts"
+import { constructItem } from "../src/build/catalog.ts"
+import { STARTER_CATALOG } from "./starter-fixture.ts"
 import type { ConstructItem } from "../src/build/types.ts"
 import type { LoadWorld } from "../src/armies/index.ts"
-import { MAPS } from "../src/build/maps.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 
-const WORLD: LoadWorld = { registry: FIXTURE_REGISTRY, maps: MAPS }
+const WORLD: LoadWorld = { registry: FIXTURE_REGISTRY }
 const BARRACKS = "structure.citizen.barracks"
 const TURRET = "structure.bench.beamturret"
 

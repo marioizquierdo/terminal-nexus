@@ -117,14 +117,14 @@ function clickOn(item: MenuItem, index: number): string {
 
 const BACK: MenuItem = { id: "back", hotkey: "1", label: "Back" }
 
-test("About is on the top-level menu just above Exit, and Exit's digit moved from 4 to 5", () => {
+test("About is on the top-level menu just above Exit, under 3, and Exit under 4 since the Story row went", () => {
   assert.equal(ABOUT.label, "About")
   assert.equal(TOP_LEVEL_ITEMS.indexOf(EXIT), ABOUT_INDEX + 1, "About is not directly above Exit")
-  assert.equal(ABOUT.hotkey, "4")
-  assert.equal(EXIT.hotkey, "5")
+  assert.equal(ABOUT.hotkey, "3")
+  assert.equal(EXIT.hotkey, "4")
   assert.deepEqual(
     TOP_LEVEL_ITEMS.map((item) => item.hotkey),
-    ["1", "2", "3", "4", "5"],
+    ["1", "2", "3", "4"],
     "the digits are no longer one sequence in walking order",
   )
 })
@@ -245,8 +245,6 @@ test("the title menu logs one session.start and a schema-valid menu.select for e
   menu.send(itemNamed("settings").hotkey)
   menu.send("4") // Settings' reduced-motion row
   menu.send(ESC) // back, which is not a pick
-  menu.send(itemNamed("story").hotkey)
-  menu.send("\r") // Enter on Story's Back
   menu.stdout.emit("resize") // the browser page's window changed shape, the terminal did not
   menu.stdout.columns = 100
   menu.stdout.emit("resize")
@@ -265,8 +263,6 @@ test("the title menu logs one session.start and a schema-valid menu.select for e
     ["about", "back"],
     ["top", "settings"],
     ["settings", "reducedMotion"],
-    ["top", "story"],
-    ["story", "back"],
     ["top", "exit"],
   ])
   const resizes = entries.filter((entry) => entry.event === "session.resize").map((entry) => entry.props)

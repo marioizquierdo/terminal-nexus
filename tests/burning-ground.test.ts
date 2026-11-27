@@ -18,7 +18,7 @@ import { DEFAULT_PRESENTATION, cellAt, createView, frameToText, offendingGlyph, 
 import type { PulseTimeline, ReadonlyCellFrame } from "../src/view/index.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
-import { DEFAULT_LEVEL } from "../src/cli/levels.ts"
+import { DEFAULT_LEVEL } from "../src/cli/starter.ts"
 import { cellForTile } from "../src/build/layout.ts"
 import { battleRoundScreen } from "./battle-round-frame.ts"
 import type { BattleRoundScreen } from "./battle-round-frame.ts"

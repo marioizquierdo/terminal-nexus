@@ -15,8 +15,7 @@ import { setting } from "../src/build/all-settings.ts"
 import { defaultExperiments } from "../src/build/experiments.ts"
 import { hint } from "../src/build/help.ts"
 import { currentCard, wavesStat } from "../src/build/card.ts"
-import { STARTER_CATALOG, STARTER_STANDING } from "../src/build/catalog.ts"
-import { starterContext } from "../src/cli/starter.ts"
+import { STARTER_CATALOG, STARTER_STANDING, testBase } from "./starter-fixture.ts"
 import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, EXPLORE_ROW, NEXUS_ROW, menuEntryRow, menuFloor, startRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
 import { cardEntry, cardShowing, entryOfConstruct, remaining } from "../src/build/state.ts"
@@ -158,7 +157,7 @@ test("a turret's card shows its attack: how hard it hits, then its range as one 
 test("a unit that fights hand to hand says melee for its range; one that shoots says its range as one number", () => {
   for (const [contentId, melee] of [
     ["unit.citizen.trooper", true],
-    ["unit.ravel.raider", true],
+    ["unit.ravel.runner", true],
     ["unit.citizen.marksman", false],
     ["unit.citizen.vasse", false],
   ] as const) {
@@ -214,7 +213,7 @@ test("a building's build range is one number: now for one standing, for next rou
   // every build range offered.
   const far = { x: 34, y: 18 }
   const apart = buildSide({
-    context: starterContext(undefined, { standing: [...STARTER_STANDING, { contentId: "structure.citizen.barracks", anchor: far }] }),
+    context: testBase(undefined, { standing: [...STARTER_STANDING, { contentId: "structure.citizen.barracks", anchor: far }] }),
   })
   keys(apart, "e")
   moveTo(apart, far)
@@ -265,7 +264,7 @@ const EVERY_CARD: readonly (readonly [string, (side: Side) => void])[] = [
     keys(side, "3", ENTER, "e")
     moveTo(side, OPEN_GROUND)
   }],
-  ...["unit.citizen.vasse", "unit.citizen.trooper", "unit.citizen.marksman", "unit.ravel.raider", "unit.ravel.runner"].map(
+  ...["unit.citizen.vasse", "unit.citizen.trooper", "unit.citizen.marksman", "unit.ravel.slinger", "unit.ravel.runner"].map(
     (contentId) => [`exploring the incoming ${contentId}`, (side: Side) => exploreIncoming(side, contentId)] as const,
   ),
 ]

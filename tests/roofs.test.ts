@@ -226,26 +226,32 @@ test("a building that falls with units on its roof leaves them standing where th
   }
 })
 
-test("in PERIMETER's first round with the defence plan, every unit that walks out over a roof stays out", async () => {
-  const { STARTER_STANDING, starterTerrain } = await import("../src/build/catalog.ts")
+test("in a first round with the defence plan, every unit that walks out over a roof stays out", async () => {
+  const { starterTerrain } = await import("./starter-fixture.ts")
   const { defaultValue } = await import("../src/build/all-settings.ts")
-  const { resolveMissionPulse, spawningRegistry } = await import("../src/match/index.ts")
-  const { PERIMETER, PERIMETER_LEVEL } = await import("../src/armies/index.ts")
-  const spawns = Object.fromEntries(PERIMETER_LEVEL.offer.buildings.flatMap((card) => (card.spawns === undefined ? [] : [[card.structure, card.spawns] as const])))
+  const { openingState, spawningRegistry } = await import("../src/match/index.ts")
+  const { ARMIES } = await import("../src/armies/index.ts")
+  const { resolvePulse } = await import("../src/engine/pulse/index.ts")
+  const spawns = Object.fromEntries((ARMIES.arsenals["vasse"]?.buildings ?? []).flatMap((card) => (card.spawns === undefined ? [] : [[card.structure, card.spawns] as const])))
   const registry = spawningRegistry(FIXTURE_REGISTRY, spawns, defaultValue("firstWave") * 12)
-  // Two Barracks of the player's side by side with the map's, which they may now touch.
-  const run = resolveMissionPulse({
-    mission: PERIMETER,
+  // Three Barracks side by side, which may touch, beside the starter map's Nexus, and Vasse's starting package ahead.
+  const initialState = openingState({
     terrain: starterTerrain(),
     registry,
-    pulse: 1,
-    carried: null,
-    structures: [...STARTER_STANDING, { contentId: BARRACKS, anchor: { x: 22, y: 10 } }, { contentId: BARRACKS, anchor: { x: 25, y: 12 } }, { contentId: "structure.citizen.depot", anchor: { x: 29, y: 12 } }],
+    structures: [
+      { contentId: "structure.citizen.nexus", anchor: { x: 17, y: 10 } },
+      { contentId: BARRACKS, anchor: { x: 25, y: 10 } },
+      { contentId: BARRACKS, anchor: { x: 22, y: 13 } },
+      { contentId: BARRACKS, anchor: { x: 25, y: 12 } },
+      { contentId: "structure.citizen.depot", anchor: { x: 29, y: 12 } },
+    ],
+    setup: { seed: 7, pulseTicks: 360, forces: [{ player: "A", muster: { x: 34, y: 12 }, units: ["unit.citizen.vasse", TROOPER, TROOPER, TROOPER, "unit.citizen.marksman", "unit.citizen.marksman"] }] },
   })
-  // (A Supply Depot beside them: the Nexus's 12 places hold a wave back, and a battle where an army sorts itself on the
-  // march kills nobody in time to make room. This test is about the roofs, not the supply.)
+  const states: MatchState[] = []
+  const run = resolvePulse({ initialState, registry, pulseTicks: 360, seed: 7, watch: (state) => states.push(state) })
+  // (A Supply Depot beside them: the Nexus's 12 places hold a wave back. This test is about the roofs, not the supply.)
   assert.ok(trained(run.events).length >= 8, "the Barracks did not all send their waves")
-  assert.deepEqual(neverClimbsBack({ registry, states: [...run.states], events: [...run.events] }), [])
+  assert.deepEqual(neverClimbsBack({ registry, states, events: [...run.events] }), [])
 })
 
 test("the way off the roof: along the route a wave crosses a block's roofs; the nearest way it steps straight down", () => {

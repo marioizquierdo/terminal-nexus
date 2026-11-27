@@ -3,6 +3,10 @@
 **Status:** PLANNED
 **Depends on:** Milestone 6 (events fire during the Battle Round), Milestone 4 (the Story menu is a plausible home for artifact entries)
 
+> **Waits with Story** (the owner, 2026-11-26, [his words](../history/feedback/2026-11-25-rally-point.md)): Story returns as
+> a scripting layer over a Skirmish once Skirmish and a few Commander Armies are solid. PERIMETER, the mission runner and
+> the story files left the game; this plan is kept for that return, and anything it calls built was built before then.
+
 This is the real mechanism, not a placeholder. An earlier plan deferred cutscenes to plain printed
 text, reasoning that a full system built for one mission's briefing would be a framework built for one
 use. That reasoning was sound for the scope it was written against. The scope has changed, and the

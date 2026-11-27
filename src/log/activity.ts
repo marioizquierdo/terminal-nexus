@@ -36,7 +36,7 @@ export const ACTIVITY_EVENTS = {
       columns: { type: "number", description: "The terminal's width in columns." },
       rows: { type: "number", description: "The terminal's height in rows." },
       colors: { type: "string", description: "The colour depth drawn with, as --colors names it: monochrome, color256 or truecolor." },
-      at: { type: "string", description: "The route the screen opened at: menu, settings, story?mission=vasse-test-1&round=2.", optional: true },
+      at: { type: "string", description: "The route the screen opened at: menu, settings, skirmish?seed=7.", optional: true },
     },
   },
   "session.resize": {
@@ -59,9 +59,9 @@ export const ACTIVITY_EVENTS = {
     defaultLevel: "info",
     description: "A row picked on the title menu or one of its screens.",
     props: {
-      screen: { type: "string", description: "The screen the row is on: top, settings, story, about." },
-      item: { type: "string", description: "The row's id: story, settings, about, exit, back, ..." },
-      route: { type: "string", description: "The route the row opens, when it opens a place: settings, story.", optional: true },
+      screen: { type: "string", description: "The screen the row is on: top, settings, about, skirmish." },
+      item: { type: "string", description: "The row's id: skirmish, settings, about, exit, back, ..." },
+      route: { type: "string", description: "The route the row opens, when it opens a place: settings, about.", optional: true },
     },
   },
   "build.command": {
@@ -223,7 +223,7 @@ export const ACTIVITY_EVENTS = {
     props: {
       name: { type: "string", description: "Who, by the name the screen gives her: Vasse." },
       round: { type: "number", description: "The Battle Round she fell in." },
-      back: { type: "number", description: "The round the Nexus Pulse restores her at the start of; 0 when that is past the mission's last round." },
+      back: { type: "number", description: "The round the Nexus Pulse restores her at the start of; 0 when that is past the battle's last round." },
     },
   },
   "commander.out": {
@@ -232,7 +232,7 @@ export const ACTIVITY_EVENTS = {
     props: {
       name: { type: "string", description: "Who, by the name the screen gives her." },
       round: { type: "number", description: "The round that opened without her." },
-      back: { type: "number", description: "The round she is back for; 0 when that is past the mission's last round." },
+      back: { type: "number", description: "The round she is back for; 0 when that is past the battle's last round." },
     },
   },
   "commander.restored": {
@@ -311,7 +311,7 @@ export const ACTIVITY_FILTERS: readonly LogFilter[] = [
   // first filter reaches it. Remove it once answered.
   {
     name: "Commander",
-    question: "The Commander's life across the mission: each Battle Round, when she fell, the rounds she sat out and when the Nexus Pulse restored her.",
+    question: "The Commander's life across the battle: each Battle Round, when she fell, the rounds she sat out and when the Nexus Pulse restored her.",
     level: "info",
     events: ["pulse.start", "pulse.end", "commander.fell", "commander.out", "commander.restored"],
   },

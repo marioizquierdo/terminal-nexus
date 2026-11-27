@@ -1,20 +1,19 @@
-// How what a level offers becomes what the Build Phase offers — its build menu and its Nexus Pulse's hand — and the
-// starter content the screen opens on: what PERIMETER, the first level of Vasse's story, offers.
+// How what a side is offered becomes what the Build Phase offers: its build menu and its Nexus Pulse's hand.
 //
-// What can be built and drafted is not chosen here: it is the level's offer (`src/armies`), everything its
-// story has unlocked by then. The starter map is the map table's (`./maps.ts`), re-exported here so the
-// screens keep reading it where they always have.
+// What can be built and drafted is not chosen here: it is the side's army (`src/armies`, `src/battle/`).
 
-import { PERIMETER_LEVEL, creditsOf } from "../armies/index.ts"
+import { creditsOf } from "../armies/index.ts"
 import type { BuildingCard, Offer } from "../armies/types.ts"
 import { CARD_TEXT } from "../content/cards.ts"
 import type { ConstructItem, NexusPowerOption } from "./types.ts"
 
-export { STARTER_EDGE_STYLE, STARTER_MAP_SIZE, STARTER_STANDING, STARTER_START_CURSOR, starterTerrain } from "./maps.ts"
+/** Where the Build Phase's cursor opens when the round names no Nexus to open on: the starter map's Nexus, its centre
+ *  tile (`saves/starter.save.json`; a test holds the two together). */
+export const STARTER_START_CURSOR = { x: 18, y: 10 } as const
 
 /**
- * An offer's build menu: its buildings in the order they were unlocked, each row's digit its place in that
- * order (a level that unlocks a building puts it after the ones already there, so no hotkey moves). A row's
+ * An offer's build menu: its buildings in order, each row's digit its place in that order (a building a Nexus power
+ * adds goes after the ones already there, so no hotkey moves). A row's
  * label is the building's card title, so a building says the same about itself wherever it is named
  * (`src/content/cards.ts`). A building that makes units carries what it spawns, as its army's card says.
  */
@@ -48,13 +47,3 @@ export function nexusDraftOf(offer: Pick<Offer, "powers">): NexusPowerOption[] {
     card,
   }))
 }
-
-/** What the Build Phase can spend its credits on: the buildings PERIMETER offers. */
-export const STARTER_CATALOG: readonly ConstructItem[] = constructMenu(PERIMETER_LEVEL.offer)
-
-/** What the player has to spend: PERIMETER's credits. How a resource is *earned* is the worker-economy
- *  milestone's; this is an opening allotment and nothing more. */
-export const STARTER_ALLOTMENT = PERIMETER_LEVEL.offer.credits
-
-/** Every Nexus power PERIMETER offers, in its order: what a hand is dealt from. */
-export const STARTER_NEXUS_DRAFT: readonly NexusPowerOption[] = nexusDraftOf(PERIMETER_LEVEL.offer)

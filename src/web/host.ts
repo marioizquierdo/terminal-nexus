@@ -156,10 +156,10 @@ let running: Promise<number> | null = null
 let switching = false
 let shift = false
 /** The screen running, and the route it opened at when it is a place in the game: the key bar shows the
- *  screen's keys, and the settings box's button starts a story level over at the same round. */
+ *  screen's keys, and the settings box's button starts its Build Phase over at the same place. */
 let shown: Readonly<{ screen: Screen; route?: string }> = { screen: "build" }
 /**
- * Settings text to start a story level with — from `#settings=` in the address, a demo, or the text box's
+ * Settings text to start a Build Phase with — from `#settings=` in the address, a demo, or the text box's
  * "Start the Build Phase with these". Its player settings apply for this visit without being saved,
  * as `--settings` does in a terminal; changing one in the game's Settings saves them all.
  */
@@ -211,7 +211,7 @@ const noter: Noter = {
 
 /**
  * Stops the screen running, if any, and shows `screen` as the one starting: its mode button pressed — Menu for
- * any place on the title menu, Build Phase for any story level and round, a replay for itself — its keys on
+ * any place on the title menu, Build Phase for any battle, a replay for itself — its keys on
  * the bar, and `notes` under the screen. `route` is where a place in the game opened.
  */
 async function switchTo(screen: Screen, route: string | null, notes: readonly string[]): Promise<void> {
@@ -255,7 +255,7 @@ function canvasFor(settings: Settings): CanvasBackend {
 }
 
 /** `loop` as the screen running, said under the screen when it ends — or, for one that could not open at all (a
- *  round its level's mission ends before), why. */
+ *  round its battle ends before), why. */
 function track(loop: Promise<number>): void {
   running = loop
   void loop.then(
@@ -290,7 +290,7 @@ function shippedSave(path: string): string {
  * which the page has no files to read.
  */
 async function startAt(at: string | undefined, from: string, demo?: Demo): Promise<void> {
-  // A demo with no route opens PERIMETER's first round, as demos always have; the page itself a Skirmish.
+  // A demo with no route opens the starter map's first round; the page itself the Crossing's new battle.
   const { launch, problems } = readLaunch(
     { at, settings: imported ?? undefined, keys: demo !== undefined ? demo.keys : readAddress(window.location.hash).keys },
     demo !== undefined ? DEFAULT_LEVEL_ROUTE : PAGE_START,

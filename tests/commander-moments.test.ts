@@ -7,10 +7,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import vasse from "../armies/vasse/army.json" with { type: "json" }
-import { ARMY_FILES, ArmyError, STORY_FILES, loadArmies } from "../src/armies/index.ts"
-import type { PlayableLevel } from "../src/cli/levels.ts"
-import { levelById } from "../src/cli/levels.ts"
-import { MAPS } from "../src/build/maps.ts"
+import { ARMY_FILES, ArmyError, loadArmies } from "../src/armies/index.ts"
+import { commanderFallsLevel } from "./commander-fixture.ts"
 import { popupSpec } from "../src/build/popup.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { createBuildState, nexusTile } from "../src/build/state.ts"
@@ -44,7 +42,7 @@ const VASSE = "unit.citizen.vasse"
 function problemsWith(change: object): readonly string[] {
   const changed = { ...vasse, commander: { ...vasse.commander, ...change } }
   try {
-    loadArmies({ armies: ARMY_FILES.map((file) => (file === vasse ? changed : file)), stories: STORY_FILES }, { registry: FIXTURE_REGISTRY, maps: MAPS })
+    loadArmies({ armies: ARMY_FILES.map((file) => (file === vasse ? changed : file)) }, { registry: FIXTURE_REGISTRY })
     return []
   } catch (error) {
     assert.ok(error instanceof ArmyError, String(error))
@@ -52,20 +50,21 @@ function problemsWith(change: object): readonly string[] {
   }
 }
 
-/** The cadence level, from its first round, as a player who builds nothing, with the keys given. */
+/** The Skirmish she falls in (`commanderFallsLevel`), from its round 2, as a player who builds nothing, with the keys
+ *  given after the loaded save's line is read past. */
 function cadence(keys: string): BuildPlaytest {
   // Next round on manual: these walks read the result before Enter (the default goes straight on).
-  return runBuildPlaytest({ steps: parseKeyScript(keys), experiments: { nextRound: "key" }, at: { kind: "level", level: levelById("vasse-test-2") as PlayableLevel, round: 1 } })
+  return runBuildPlaytest({ steps: parseKeyScript(`Esc ${keys}`), experiments: { nextRound: "key" }, at: { kind: "level", level: commanderFallsLevel(), round: 1 } })
 }
 
-/** Two rounds of the cadence level played through, nothing built and no power picked: the Battle Round's result
- *  stands at the end of each, and Enter goes on; round 2 opens on the Nexus Pulse restoring her, which Esc closes. */
+/** Two rounds of it played through, nothing built and no power picked: the Battle Round's result stands at the end
+ *  of each, and Enter goes on; round 3 opens on the Nexus Pulse restoring her, which Esc closes. */
 const TWO_ROUNDS = "s s wait~1000*24 Enter Esc s s wait~1000*24 Enter"
 
-/** Her tile as PERIMETER's first round opens: she arrives beside the Nexus with the squads. */
+/** Her tile as the starter map's first round opens: she arrives beside the Nexus with her troops. */
 function herTile(context: BuildContext) {
   const her = (context.incoming ?? []).find((entity) => entity.contentId === VASSE)
-  assert.ok(her !== undefined, "she does not arrive in PERIMETER's first round")
+  assert.ok(her !== undefined, "she does not arrive in the first round")
   return her.anchor
 }
 
@@ -85,8 +84,10 @@ test("as a level begins she appears beside the Nexus a moment after the round op
   const context = starterContext()
   const now = appearing(context)
   assert.deepEqual(now, { contentId: VASSE, at: herTile(context), moment: "appears" })
-  // PERIMETER's first round opens on her own words in the dialog, which say it for her.
-  assert.equal(appearanceLine(context), null)
+  // A round whose scene has her speaking says it there; the starter map's opening lines are the game's own, so she
+  // says hers as she appears.
+  assert.equal(appearanceLine({ ...context, scene: [{ speaker: "Vasse", side: "A", unit: VASSE, text: "By the book.", focus: null }] }), null)
+  assert.ok((commanderArt(VASSE)?.lines.appears ?? []).includes(appearanceLine(context) as string))
   const quiet = { ...context, scene: [] }
   assert.ok((commanderArt(VASSE)?.lines.appears ?? []).includes(appearanceLine(quiet) as string), "her line is not one of her own")
   // Not on the map for the first moment, then there.
@@ -195,7 +196,7 @@ test("the Nexus Pulse popup says what it did for her: restored, or out and when 
   )
 })
 
-test("the Activity Logs record her life across the mission, under the Commander filter", () => {
+test("the Activity Logs record her life across the battle, under the Commander filter", () => {
   const run = cadence(TWO_ROUNDS)
   const filter = ACTIVITY_FILTERS.find((each) => each.name === "Commander")
   assert.ok(filter !== undefined)
@@ -203,8 +204,8 @@ test("the Activity Logs record her life across the mission, under the Commander 
   assert.deepEqual(
     story.filter(([event]) => String(event).startsWith("commander.")),
     [
-      ["commander.fell", { name: "Vasse", round: 1, back: 2 }],
-      ["commander.restored", { name: "Vasse", round: 2 }],
+      ["commander.fell", { name: "Vasse", round: 2, back: 3 }],
+      ["commander.restored", { name: "Vasse", round: 3 }],
     ],
   )
   assert.deepEqual(

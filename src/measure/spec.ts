@@ -2,7 +2,7 @@
 // measured before a rule changed and one measured after it compare like with like.
 
 import { BATTLE_ROUND_TICKS, BATTLE_ROUNDS } from "../battle/types.ts"
-import type { DuelMeasure, LevelMeasure, LevelPlan, SaveMeasure } from "./suites.ts"
+import type { DuelMeasure, LevelMeasure, SaveMeasure } from "./suites.ts"
 
 export type MeasureSpec = Readonly<{
   name: string
@@ -28,9 +28,6 @@ export type MeasureSpec = Readonly<{
      *  the duels, for one of several processes (`jobsOf`, `src/measure/merge.ts`). */
     west?: readonly string[]
   }>
-  /** Story levels (missions) by id (empty: every level), each played by every plan. */
-  levels: readonly string[]
-  plans: readonly LevelPlan[]
 }>
 
 /** The players a spec's duels set against each other for one of its scripted players, side A's name and side B's, in
@@ -56,23 +53,12 @@ export function pairingIndex(duels: MeasureSpec["duels"], players: Readonly<{ A:
   return null
 }
 
-const BARRACKS = "structure.citizen.barracks"
-const DEPOT = "structure.citizen.depot"
-
-/** The plans every Story level is played by: building nothing, and a base that trains a defence each round. */
-export const LEVEL_PLANS: readonly LevelPlan[] = [
-  { name: "nothing built", buys: [[]] },
-  { name: "a defended base", buys: [[BARRACKS, DEPOT]] },
-]
-
 /** The whole spec: what a step that changes routes is measured by. */
 export const FULL_SPEC: MeasureSpec = {
   name: "full",
   seeds: [1, 2, 3, 4, 5, 6],
   saves: "all",
   duels: { map: "crossing", rounds: BATTLE_ROUNDS, pulseTicks: BATTLE_ROUND_TICKS, commanders: ["vasse", "averno", "dob"], players: ["balanced", "rush", "turtle"] },
-  levels: [],
-  plans: LEVEL_PLANS,
 }
 
 /** A quick look while working: two seeds, one player, the route saves. */
@@ -105,7 +91,8 @@ export type Measurement = Readonly<{
   msPerTick: number | null
   saves: readonly SaveMeasure[]
   duels: readonly DuelMeasure[]
-  levels: readonly LevelMeasure[]
+  /** Story's levels, each played by a plan: only in a record written before Story stopped (2026-11-26). */
+  levels?: readonly LevelMeasure[]
 }>
 
 /** A measurement from its file's text. One written before the sandboxes (the records kept in

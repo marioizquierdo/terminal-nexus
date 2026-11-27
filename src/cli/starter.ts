@@ -1,51 +1,29 @@
-// A level's first round, ready for the Build Phase: its mission laid on its map, offering what its story has
-// unlocked by then, with its credits — and the default level's, PERIMETER's, which most tests start from.
+// The starter map's Skirmish: the Build Phase's test base, and where the scripted playtest and a demo open when nothing
+// names a place. A save like any other (`saves/starter.save.json`): Vasse, played by a person, against a Dob who builds
+// nothing, on a battlefield larger than the largest viewport on both axes, so scrolling is unavoidable.
 //
-// The level is its story's army's (`src/armies`); its map is the map table's (`src/build/maps.ts`); what it
-// offers becomes the build menu and the Nexus Pulse's hand in `src/build/catalog.ts`. Assembling them into round 1
-// needs the mission (`./pulse-run.ts`), which reaches the battle engine, and `src/build` may never do that
-// (`tests/architecture.test.ts`) — so the assembly lives here, in the application shell, beside the other half of
-// the mission's connection. The levels the game opens by id are `./levels.ts`.
+// It was PERIMETER's first round, a story mission, until Story stopped (the owner, 2026-11-26): new mechanics are built
+// in Skirmish only, so the screen most tests start from is a Skirmish's.
 
-import { constructMenu, nexusDraftOf } from "../build/catalog.ts"
-import { MAPS } from "../build/maps.ts"
 import type { BuildContext } from "../build/state.ts"
-import type { Level } from "../armies/index.ts"
-import { ARMIES, PERIMETER_LEVEL } from "../armies/index.ts"
+import type { SaveFile } from "../skirmish/save.ts"
+import starterSave from "../../saves/starter.save.json" with { type: "json" }
+import type { PlayableLevel } from "./levels.ts"
+import { skirmishLevel } from "./skirmish-play.ts"
 
-import { missionPlay } from "./pulse-run.ts"
+/** The starter map's save file, as the game reads it. */
+export const STARTER_SAVE_FILE = "saves/starter.save.json"
 
-/** Round 1 of the default level (PERIMETER, Vasse's first), on the starter map, with what it offers. */
+/** The starter map's Skirmish, as the screens open it: what the game opens when nothing names a place. */
+export const STARTER_LEVEL: PlayableLevel = skirmishLevel(starterSave as unknown as SaveFile, { file: STARTER_SAVE_FILE })
+
+/** Round 1's Build Phase of the starter map's Skirmish. */
 export function starterContext(scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
-  return levelContext(PERIMETER_LEVEL, scrollMargin, extra)
+  return STARTER_LEVEL.firstRound(scrollMargin, extra)
 }
 
-/** Round 1 of a level: its mission on its map, its build menu and Nexus power pool what its story has
- *  unlocked by then (the mission deals round 1's hand from the pool), and its credits. */
-export function levelContext(level: Level, scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
-  const map = MAPS[level.map]
-  // The loader refused any level whose map the table does not have, so this is a level from elsewhere.
-  if (map === undefined) throw new Error(`level "${level.id}" is played on the map "${level.map}", which the game does not have`)
-  return missionPlay(level.mission).firstRound({
-    terrain: map.terrain(),
-    // The armies' content: what a building that carries an upgrade or a mode resolves by (`fittedId`).
-    registry: ARMIES.registry,
-    catalog: constructMenu(level.offer),
-    standing: map.standing,
-    allotment: level.offer.credits,
-    nexusDraft: nexusDraftOf(level.offer),
-    powerPool: level.offer.powers,
-    ...(level.offer.schedule === undefined ? {} : { powerSchedule: level.offer.schedule }),
-    buildingCards: [...level.offer.buildings, ...level.offer.addable],
-    edgeStyle: map.edgeStyle,
-    ...commanderOf(level),
-    ...(scrollMargin === undefined ? {} : { scrollMargin }),
-    ...extra,
-  })
-}
+/** The screen's connections to it, as `BuildSession` takes them. */
+export const { startPulse, nextRound, foresee, keep } = STARTER_LEVEL.play
 
-/** The level's Commander as the Commander panel shows her: its story's. */
-function commanderOf(level: Level): Pick<BuildContext, "commander"> {
-  const commander = ARMIES.stories.find((story) => story.id === level.story)?.commander
-  return commander === undefined ? {} : { commander: { contentId: commander.unit, name: commander.name, portrait: commander.portrait } }
-}
+/** What the game opens when nothing names a place: the starter map's Skirmish. */
+export const DEFAULT_LEVEL: PlayableLevel = STARTER_LEVEL

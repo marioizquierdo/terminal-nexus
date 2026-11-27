@@ -1,15 +1,14 @@
 // Measuring a change the same way every time (docs/system-design/measurement.md, the `remeasure` skill): a spec
 // split into processes and merged back writes down what one process would have, in the same order; parts of two
-// builds are never merged; the summary counts the duels over early; and what one unit did in a battle is read from
-// its events, side by side.
+// builds are never merged; the summary counts the duels over early; and a record written before Story stopped
+// still reads.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import { levelById } from "../src/cli/levels.ts"
 import type { Measurement, MeasureSpec, SpecResult } from "../src/measure/index.ts"
-import { jobsOf, LEVEL_PLANS, measureLevel, measureSave, measureUnit, mergeMeasurements, readMeasurement, runSpec, summaryLines, tallyUnit } from "../src/measure/index.ts"
+import { jobsOf, measureSave, mergeMeasurements, readMeasurement, runSpec, summaryLines } from "../src/measure/index.ts"
 import { REPO_ROOT, loadSandbox, playSandbox } from "./helpers.ts"
 
 const TINY: MeasureSpec = {
@@ -17,8 +16,6 @@ const TINY: MeasureSpec = {
   seeds: [1, 2],
   saves: "routes",
   duels: { map: "pocket", rounds: 2, pulseTicks: 240, commanders: ["vasse", "dob"], players: ["balanced", "rush"] },
-  levels: [],
-  plans: LEVEL_PLANS,
 }
 
 const written = (result: SpecResult, build = "abc1234"): Measurement => ({
@@ -29,13 +26,12 @@ const written = (result: SpecResult, build = "abc1234"): Measurement => ({
   msPerTick: 1,
   saves: result.saves,
   duels: result.duels,
-  levels: result.levels,
 })
 
 test("a spec split into jobs and merged back is what one process plays, in the same order, whatever order the parts come in", { timeout: 120_000 }, async () => {
   const saves = [await loadSandbox("route-dead-end.save.json")]
   const parts = new Set(["saves", "duels"])
-  const whole = runSpec(TINY, { saves, levels: [], parts })
+  const whole = runSpec(TINY, { saves, parts })
   const jobs = jobsOf(TINY, parts)
   assert.deepEqual(
     jobs.map((job) => job.label),
@@ -47,7 +43,7 @@ test("a spec split into jobs and merged back is what one process plays, in the s
   )
   const played = jobs.map((job) => {
     const share: MeasureSpec = { ...TINY, seeds: job.seeds, duels: { ...TINY.duels, players: job.players, west: job.west } }
-    return written(runSpec(share, { saves, levels: [], parts: new Set(job.parts) }))
+    return written(runSpec(share, { saves, parts: new Set(job.parts) }))
   })
   const merged = mergeMeasurements([...played].reverse(), TINY)
   assert.deepEqual(merged.duels, whole.duels)
@@ -57,7 +53,7 @@ test("a spec split into jobs and merged back is what one process plays, in the s
 })
 
 test("parts measured on two builds are never merged into one result", () => {
-  const empty: SpecResult = { saves: [], duels: [], levels: [], ticks: 0 }
+  const empty: SpecResult = { saves: [], duels: [], ticks: 0 }
   assert.throws(() => mergeMeasurements([written(empty), written(empty, "def5678")], TINY), /build/u)
   assert.throws(() => mergeMeasurements([], TINY), /nothing to merge/u)
 })
@@ -68,28 +64,3 @@ test("the summary says how many duels were over by the end of rounds 1, 2 and 3,
   assert.match(summaryLines(measurement).join("\n"), /over by the end of round 1: 1, round 2: 4, round 3: 44/u)
 })
 
-test("what one kind of unit did is read from the battle's events, for each side it stood on", async () => {
-  const resolved = await playSandbox("route-crowd.save.json")
-  const states = [resolved.run.initialState, resolved.run.finalState]
-  const troopers = tallyUnit(states, resolved.run.events, "unit.citizen.trooper")
-  assert.equal(troopers.A?.stood, 8)
-  assert.equal(troopers.B, null, "no trooper stood on the other side")
-  const record = measureSave(resolved.opening, resolved.opening.seed).battle
-  assert.equal(troopers.A?.damage, record.sides.A.dealt, "every hit side A landed was a trooper's")
-  assert.ok((troopers.A?.hits ?? 0) > 0 && (troopers.A?.firstHit ?? -1) >= (record.sides.A.firstContact ?? 0))
-  // The bench Nexus does not shoot: it stood, and did nothing.
-  const nexus = tallyUnit(states, resolved.run.events, "structure.bench.nexus")
-  assert.deepEqual(nexus.B, { stood: 1, shots: 0, hits: 0, damage: 0, kills: 0, firstHit: null })
-  assert.equal(nexus.A, null)
-})
-
-test("what a unit did in a story level is told round by round, every round the level played", { timeout: 120_000 }, () => {
-  const level = levelById("vasse-test-2")
-  const plan = LEVEL_PLANS[0]
-  assert.ok(level !== undefined && plan !== undefined)
-  const unit = measureUnit(level, plan, "structure.citizen.nexus")
-  const played = measureLevel(level, plan)
-  assert.deepEqual(unit.ended, played.ended)
-  assert.equal(unit.rounds.length, played.rounds.length)
-  assert.ok(unit.rounds.every((round) => round.sides.A?.stood === 1), "the player's Nexus stands every round")
-})
