@@ -12,7 +12,7 @@ version of the design beyond git.
 - [`lore.md`](game-design/lore.md) — the universe, the Nexuses, the factions, voice and visual language. Read before writing any fiction.
 - [`game-modes.md`](game-design/game-modes.md) — Skirmish, Story and Versus: why Skirmish comes first, every way a Skirmish is set up, how each mode is tested. Reach for it to place a change in a mode.
 - [`commander-armies.md`](game-design/commander-armies.md) — the shape of a playable army: parts, tech tree, power curve, the Nexus Pulse's dealing, faction rules and the three Commanders. Reach for it when designing or changing an army or a Nexus power.
-- [`story.md`](game-design/story.md) — a Commander's story, what a mission is as data, Vasse's story and PERIMETER, cutscenes, testing a mission. Reach for it when touching a mission or a story file.
+- [`story.md`](game-design/story.md) — a Commander's story, what a mission is as data, Vasse's story and PERIMETER, cutscenes, testing a mission: Story's design, waiting until Skirmish is solid. Reach for it when Story returns.
 - [`play-strategies.md`](game-design/play-strategies.md) — advice on playing a Build Phase well, read by a model player in its brief; add an entry when a measured battle teaches one.
 - [`scripted-opponent.md`](game-design/scripted-opponent.md) — raids, intentions and the opponent planner to come (working design). Reach for it when a mission's enemy or a planner changes.
 - [`ascii-art-references.md`](game-design/ascii-art-references.md) — where to learn terminal art. Reach for it before drawing.
@@ -26,10 +26,10 @@ version of the design beyond git.
 - [`testing.md`](system-design/testing.md) — unit tests and verifiers and the layer each belongs at, verifying through the `skirmish` command, what the suite proves.
 - [`replay-format.md`](system-design/replay-format.md) — the unbuilt replay file design (GUIDANCE).
 - [`portability.md`](system-design/portability.md) — what a host must provide to run the game elsewhere (working design).
-- [`army-authoring.md`](system-design/army-authoring.md) — how to write an army, a Commander, a Nexus power, an ability and a story as data: the file structure, the conventions, the checklist for a new Commander, and what a modder can do today.
+- [`army-authoring.md`](system-design/army-authoring.md) — how to write an army, a Commander, a Nexus power and an ability as data: the file structure, the conventions, the checklist for a new Commander, and what a modder can do today.
 - [`battles.md`](system-design/battles.md) — the battle, the battle a Skirmish plays: how its rounds play, the brief a player reads and the plan it answers with, formations, and what its numbers can say.
 - [`skirmish-saves.md`](system-design/skirmish-saves.md) — how a Skirmish is set up (map, slots and controllers, goal, modifiers), saved and loaded at a Build Phase, and opened the same way by the screen and the `skirmish` command, whose manual is the comment [`src/cli/skirmish.ts`](../src/cli/skirmish.ts) opens with; a battlefield set up by hand (sandboxes) and what it leaves out, spectating and playtest notes; one vocabulary for the screen, the save file, the command line and the routes.
-- [`measurement.md`](system-design/measurement.md) — how a battle is measured, so results before and after a rule change compare: a battle's record, the route saves, battles and story missions played, seeds, how a result is written down and retired when it goes stale, and the `measure` command.
+- [`measurement.md`](system-design/measurement.md) — how a battle is measured, so results before and after a rule change compare: a battle's record, the route saves, battles played, seeds, how a result is written down and retired when it goes stale, and the `measure` command.
 - [`movement.md`](system-design/movement.md) — troop movement: the seven rules a player should be able to predict, then where an army goes, banners (an idea), spawning, the three states (march, battle, retreat), formation, targeting and attacking, breaching, workers, the machinery underneath, what is still to smooth, and strategies.
 - [`routing.md`](system-design/routing.md) — how a place in the game is named and reached: routes, `--at`, the title menu's rows and the browser page's links.
 

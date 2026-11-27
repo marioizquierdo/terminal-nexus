@@ -2,12 +2,12 @@
 // A scripted playtest: press keys on a screen of the game without a terminal, and get back what the
 // screen showed after every key — as text, as PNGs, and as an animated GIF.
 //
-//   node scripts/playtest.mjs --keys "Esc Down Down Space*4"          # Esc skips PERIMETER's intro
+//   node scripts/playtest.mjs --keys "Esc Down Down Space*4"          # Esc skips the opening lines
 //   node scripts/playtest.mjs --keys "Esc n 1 n Tab S-Left*3 Enter" --png final
 //   node scripts/playtest.mjs --file my-flow.keys --gif --name hatchery-run
 //   node scripts/playtest.mjs --keys "Esc 1 click:24,13 click:24,13" --print all
 //   node scripts/playtest.mjs --keys "Esc n 1 1 Enter" --activity Interactions   # what it logged
-//   node scripts/playtest.mjs --at "story?mission=vasse-test-1&round=3" --png final   # round 3, no keys
+//   node scripts/playtest.mjs --load saves/crossing-round-4.save.json --png final   # round 4, no keys
 //   node scripts/playtest.mjs --at "skirmish?seed=1" --keys "Esc n 1 1 Enter"         # a Skirmish
 //   node scripts/playtest.mjs --load tmp/mine.save.json --p2 script:rush               # a save, at its Build Phase
 //
@@ -50,10 +50,8 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
                        Crossing, Vasse against Dob Hunter, seed 7, on its opening lines (Esc skips)
   --file <path>        the same, from a file; # starts a comment
   --at <route>         where to open, as the game's --at takes it: a title menu screen ("menu",
-                       "skirmish?setup=new", "skirmish?setup=load"), a story mission at a round,
-                       "story?mission=vasse-test-1&round=3" (round counts Battle Rounds from
-                       1, as the screen does; a later round is reached as a player who builds
-                       nothing reaches it), or a Skirmish, "skirmish?seed=1" (Vasse against
+                       "skirmish?setup=new", "skirmish?setup=load"), or a Skirmish,
+                       "skirmish?seed=1" (Vasse against
                        Dob Hunter's balanced script on the Crossing). The script follows the
                        game from screen to screen: New game's Start opens its battle, a
                        result's [m] goes back to the setup screen. With --at, --load or

@@ -49,7 +49,7 @@ planning the other side as the player plans theirs. When the gameplay has a good
 up and saved; units that counter each other; a narrow worker economy; a Skirmish worth showing, ending with friends;
 then agent players, further content and Nexus powers, and a deeper planner if friends ask for one
 ([the milestones](../milestones/README.md)). **Story is built after that**, one Commander's
-story at a time. PERIMETER is no longer where changes are tested.
+story at a time, as a scripting layer over a Skirmish (2026-11-26). PERIMETER, its first mission, left the game until then.
 
 **Fun before polish** (the owner, 2026-11-12). Friends play when the owner says the basic game is fun — at the earliest
 when "A Skirmish worth showing" (Milestone 20) ends: comfortable to play, the banner a real decision, what the enemy did readable, a battle
@@ -141,15 +141,21 @@ script against script, an agent planning round by round, the playtest pressing k
 each is [`testing.md`](../system-design/testing.md), verifying through the `skirmish` command.
 
 A Skirmish is the default place to see a change: the browser page and the playtest script open on a save, and the
-Build Phase pictures of a battle start from one. PERIMETER is opened only for a change about missions.
+Build Phase pictures of a battle start from one; the Build Phase's tests and the scripted playtest's own default start
+from the starter map's save (`saves/starter.save.json`).
 
-## 4. Story
+## 4. Story — waits
+
+**Story waits** (the owner, 2026-11-26, [his words](../history/feedback/2026-11-25-rally-point.md)): new mechanics are
+built in Skirmish only; Story returns as a scripting layer on top of a Skirmish once Skirmish is complete, its gameplay
+defined, and a few Commander Armies are decent. PERIMETER, the mission runner and the Story row of the title menu left
+the game; [`story.md`](story.md) keeps the design for that return.
 
 A Commander's story, the same shape for every Commander: a tutorial, three or four technology missions whose
 collections carry forward, an endless stand scored until the Nexus falls, and a final battle ([`story.md`](story.md)
 is the design).
 
-**A mission exists only inside Story** (RULE — settled 2026-11-11, held in code since the Skirmish milestone's rename); any mission still opens directly for testing by its route ([`story.md`](story.md)).
+**A mission exists only inside Story** (RULE — settled 2026-11-11); when Story returns, any mission opens directly for testing by a route ([`story.md`](story.md)).
 
 Story comes after Skirmish has been played by people, because every mission is a Skirmish setup plus a script and words:
 a mission built before the battle is fun would be built twice.

@@ -1,11 +1,11 @@
 # Terminal Nexus — measurement
 
-_How a battle is measured, so that a result taken before a rule changes and one taken after compare like with like: what a battle's record holds, which battles are played, over which seeds, how a result is written down, what the numbers can say, how Story levels are played, and the command. Every unmarked statement is GUIDANCE._
+_How a battle is measured, so that a result taken before a rule changes and one taken after compare like with like: what a battle's record holds, which battles are played, over which seeds, how a result is written down, what the numbers can say, and the command. Every unmarked statement is GUIDANCE._
 
 **Where to measure what.** The game's gameplay and balance are measured in Skirmish (the duels below, and the
 `skirmish` command), the ground that tests the real game: the Nexus, credits, rounds, who wins. A sandbox measures one
-rule on a slice of the battlefield ([sandboxes and trials](skirmish-saves.md)). Story levels are played by fixed plans only so a rule change is seen
-on them too; they serve Story's puzzles and intros, built on what Skirmish settles (section 7). How to start a change
+rule on a slice of the battlefield ([sandboxes and trials](skirmish-saves.md)). Story's levels were a third part until
+Story stopped (the owner, 2026-11-26; section 7). How to start a change
 from its measurement is in `DEVELOPMENT.md`, "Developing and testing a change".
 
 The owner, 2026-10-20, when pathfinding was planned: "We should also invalidate the older maps and the data we have
@@ -17,7 +17,7 @@ and no current document states them as fact. This page is the spec every later r
 ## 1. What a battle's record holds
 
 **One record for every battle, from its states and events alone** (RULE — `src/measure/battle.ts`,
-`tests/measure.test.ts`). A sandbox, a mission's round and a duel's round are recorded the same way, by
+`tests/measure.test.ts`). A sandbox and a duel's round are recorded the same way, by
 whatever rule the battle engine walks by. For the battle: the ticks it ran, who won, and why it ended (a Nexus fell, a side
 was wiped out, time ran out). For each side:
 
@@ -59,15 +59,13 @@ was wiped out, time ran out). For each side:
   each slot seated with `script:<player>`, every round played by `playOn`, `src/skirmish/play.ts`), so what a
   measurement says of a battle is what `skirmish --p1 script:<player> --p2 script:<player> --play-to end` plays.
   Every map is played the way the `skirmish` command plays it (`playSandboxRound`, `src/skirmish/sandbox-round.ts`).
-- **Every Story level** played to its end by two fixed plans, **nothing built** and **a defended base**, each round
-  recording its battle (section 7).
 
 ## 3. Seeds and specs
 
-| Spec | Seeds | Maps | Duel players | Levels |
-| --- | --- | --- | --- | --- |
-| `full` | 1 to 6 | every map | balanced, rush, turtle | every level, both plans |
-| `quick` | 1 and 2 | the route saves | balanced | every level, both plans |
+| Spec | Seeds | Maps | Duel players |
+| --- | --- | --- | --- |
+| `full` | 1 to 6 | every map | balanced, rush, turtle |
+| `quick` | 1 and 2 | the route saves | balanced |
 
 The full spec is what a power-curve change or a step that changes routes is measured by; the quick one is for a look
 while working. Which to play for which kind of change is the `remeasure` skill's first table.
@@ -97,16 +95,14 @@ procedure, is the [`remeasure`](../../.claude/skills/remeasure/SKILL.md) skill.
 
 **Played in parallel, written down as one** (`src/measure/merge.ts`, `tests/measure-process.test.ts`). `--jobs N`
 plays a spec as up to N processes at once (each scripted player's duels for each Commander on side A on each seed,
-since one seed's duels can take several times another's; the missions; the maps) and merges what they wrote in
+since one seed's duels can take several times another's; the maps) and merges what they wrote in
 the order one process plays it, so the file holds the same battles in the same order either way; it records how many
 processes played at once, since a tick takes longer on a loaded machine. `measure merge <file>... --out <file>` does
 the same for parts played by hand with `--parts`, `--players`, `--west` (the Commanders on side A) and `--seeds`, and
 refuses parts of two builds, two specs or two sets of rules.
 
-**What one unit did** (`src/measure/who.ts`): `measure who <content id> [--plan nothing|defended|both]
-[--levels <id>,<id>]` plays the missions by the plans and says, for each round, that unit's or building's hits
-on the enemy, their damage, its kills and the second of its first hit, on each side it stood. It is what a sentence
-that tells the owner to watch something happen in a round is checked against.
+**What one unit did** in a battle is read from its events in the `skirmish` command's log of a sandbox or a battle
+(the `skirmish` skill): what a sentence that tells the owner to watch something happen in a round is checked against.
 
 ## 5. When a measurement goes stale
 
@@ -126,8 +122,8 @@ measurement file with no row in the index.
 ## 6. What the numbers say, and what they cannot
 
 - **Plain words first.** The summary says, per sandbox, how often side A won, how long a run took, when A first
-  struck and how long units stood blocked; per pair of Commanders, who won; for mirrors, how often each end won; for
-  each level and plan, the verdict, the round it ended, the rounds its Commander fell and what it lost.
+  struck and how long units stood blocked; per pair of Commanders, who won; for mirrors, how often each end won. A
+  record written before Story stopped also says, for each of its levels and plans, how it ended.
 - **How soon duels end**: how many were over by the end of rounds 1, 2 and 3. An opening that ends a match is what
   the Nexus's own shot was built against.
 - **The catch-up measure** (Commander Armies' last step): of the duels where the two sides' first two kept cards
@@ -151,34 +147,13 @@ measurement file with no row in the index.
 - **A tick's time is the machine's.** It compares two runs on one machine, played the same way (one process, or the
   same number side by side), never two machines.
 
-## 7. Story levels and the curve planner
+## 7. Story levels, retired
 
-Story levels are scripted missions: Story's puzzles and intros, built on the battle Skirmish tests. Balance and
-gameplay are not settled on them, which is why the duels carry that weight and a level is measured only to see a rule
-change reach it. Their code lives with the command-line layer (`src/cli/levels.ts`, `src/cli/curve-measure.ts`) and
-`src/measure/` imports from it (a type and the planner): a layering break, known and accepted for now.
-
-- **A level** (`PlayableLevel`, `src/cli/levels.ts`): the mission a route's `story?mission=<id>` names, with its
-  rounds, its first Build Phase and how a round's Pulse starts and the next round opens (`levelById`, `openRound`).
-  `LEVELS` is every level of every shipped story, in story order. A Skirmish is also a `PlayableLevel` for the screen,
-  but only story levels are in that list, and only they are measured here.
-- **The curve planner** (`planRound`, `src/cli/curve-measure.ts`): a scripted player's Build Phase. A `CurvePlan` lists
-  what it buys round by round (content ids of the build menu's rows; the last list serves every later round) and the
-  tile `near` it builds. In turn it takes the next row on the round's list that the level's menu offers, that is
-  unlocked and that the round's credits afford, places it on the legal tile nearest `near` (a row counts two columns),
-  and goes on until nothing fits. A row the menu does not offer or has not unlocked is skipped without a word.
-- **The two fixed plans** (`LEVEL_PLANS`, `src/measure/spec.ts`): *nothing built*, and *a defended base* (a Barracks and a
-  Supply Depot each round, as far as the credits go), each near the centre of the level's Nexus. `measureLevel`
-  (`src/measure/suites.ts`) plays a level by one: plan, start the Pulse, record the round's battle, open the next
-  round. It says how the level ended: the round, and the mission's verdict (`won` or `lost`; `none` when the rounds ran
-  out with the mission undecided; `unplayed` when no round ran).
-- **The curve level** (`vasse-test-3`, six rounds; `measureCurve`, `src/cli/curve-measure.ts`, played by
-  `tests/curve-level.test.ts` and `tests/averno.test.ts`, never by `measure run`): the same loop, counting each round's
-  army by the round that bought its units. A unit's strength is its health times its damage a tick, the Commander
-  left out since she is not bought; a unit counts for the round its building was bought, or, with no building, the
-  round it first stood. The number to watch is the opening's share: what the first three rounds bought, of the last
-  round's army. What the design expects of it and what was measured are in
-  [`commander-armies.md`](../game-design/commander-armies.md), the expected power curve.
+Story's levels were played by two fixed plans (`measure run --parts levels`), one unit's work was told round by round
+over them (`measure who`), and the power curve was counted on a six-round test level (`src/cli/curve-measure.ts`).
+All of it left with Story (the owner, 2026-11-26): the duels carry gameplay and balance, and a record written before
+still reads (`levels` in it is optional, `src/measure/spec.ts`). When Story returns as a scripting layer over a
+Skirmish, its missions are measured as Skirmishes.
 
 ## 8. The battles the tests pin
 
@@ -190,12 +165,8 @@ the failures):
 | Test | What it claims |
 | --- | --- |
 | `tests/aid-station.test.ts` | the Aid Station's battle and the bench medic's hash the same every run |
-| `tests/commander.test.ts` | the Commander's level, round by round, whatever she sits out |
-| `tests/production.test.ts` | PERIMETER's first round with the Barracks's wave |
-| `tests/pulse-run.test.ts` | the first placeholder Pulse's winning plan: its hashes, its length, and that it wins |
+| `tests/commander.test.ts` | the Commander's fixture (she falls in round 1), round by round, whatever she sits out |
+| `tests/production.test.ts` | the starter map's first round with the Barracks's wave and a raid of runners |
 | `tests/rows.test.ts` | the battle with the most rules in it (the Citizens against the Ravels) |
-| `tests/curve-level.test.ts` | the curve level by its plans: the opening's share of the last army |
-| `tests/averno.test.ts` | Averno beside Vasse: they read apart within two rounds, by who falls |
-| `tests/mission.test.ts`, `tests/mission-loop.test.ts` | PERIMETER: who wins and loses it with which plan |
-| `tests/lifecycle-build-phase.test.ts`, `tests/playtest.test.ts` | how long PERIMETER's first round runs with the defence plan, on the clock the screen shows |
+| `tests/lifecycle-build-phase.test.ts`, `tests/playtest.test.ts` | how long the test battle's first round runs with the defence plan, on the clock the screen shows (`tests/pulse-helpers.ts`) |
 | `tests/fairness.test.ts`, `tests/route-saves.test.ts` | mirrors split evenly between the two ends; the route saves are walked |

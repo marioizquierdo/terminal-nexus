@@ -3,6 +3,10 @@
 **Status:** PLANNED
 **Depends on:** Milestones 2 through 9 (every mechanism this milestone exercises for real)
 
+> **Waits with Story** (the owner, 2026-11-26, [his words](../history/feedback/2026-11-25-rally-point.md)): Story returns as
+> a scripting layer over a Skirmish once Skirmish and a few Commander Armies are solid. PERIMETER, the mission runner and
+> the story files left the game; this plan is kept for that return, and anything it calls built was built before then.
+
 This is where Milestones 4 and 9, both built against a first mission with nothing yet to show, fill in.
 The Story menu's progress, army and enemy-intel panels and the cutscene mechanism are tested here
 against a second mission. That is their intended second use: extract a framework only after two real
@@ -166,7 +170,7 @@ settled by the pathfinding milestone.
   round a step. A room of 1 leaves a Barracks's corners open, corner to corner. The room shows only while a
   building is armed.
 - Her round-opening line rarely fits now that first contact comes sooner: the moments that matter more come first.
-- The tests' shared PERIMETER plan (`STRONG`, `tests/mission.test.ts`) puts a Turret (22,7) outside the build
+- The tests' shared PERIMETER plan (`STRONG`, the retired mission test) puts a Turret (22,7) outside the build
   range at every value; the tests skip the placement check, so the plan could not be placed in the game as written.
 - The raid's trail is the second animation that never settles, beside a popup's breath: the screen redraws five
   to seven times a second while it moves. Moving arrows may strengthen the worry, in the backlog, that lanes of arrows read as a tower defence.

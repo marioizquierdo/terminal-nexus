@@ -111,7 +111,7 @@ Commander, starting units and structures, blueprints and a tech tree, upgrades, 
 Specials, bounded against its faction's pools (same document). The match, the Pulse, and every
 renderer see an army; none of them ever sees a faction.
 
-**An army is data, not code** (RULE — `armies/`, `stories/`, `src/armies/`, `tests/armies.test.ts`). The files, every
+**An army is data, not code** (RULE — `armies/`, `src/armies/`, `tests/armies.test.ts`). The files, every
 field, how armies stack and the checklist for a new Commander are in [`army-authoring.md`](army-authoring.md); the
 shape is this. **An army sees what it and the armies it requires bring, and nothing else.** A unit or a structure is
 written in an army's `content` as data (stats, footprint, card text, glyph) with the engine's defaults filled in
@@ -119,7 +119,7 @@ written in an army's `content` as data (stats, footprint, card text, glyph) with
 loader (`src/armies/load.ts`, pure) refuses a broken army with every problem at once and freezes what it hands the
 game. A Commander's arsenal is her own army and her faction chain: she deals and builds only from those, and a
 card another Nexus slips into her hand is marked `from` that faction. The battle engine never reads an army; it reads content definitions, each side's own. The game reads only the armies
-and stories `src/shipped.ts` lists: there is no mod loader looking for folders on disk.
+`src/shipped.ts` lists: there is no mod loader looking for folders on disk.
 
 Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,
 radius, restoration, regroup anchor — over inheritance. **Exceptional behaviour is an ability kind** (RULE —

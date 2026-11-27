@@ -6,21 +6,28 @@ mission brings, and how a mission is authored and tested. [`game-modes.md`](game
 Skirmish and Versus. Mechanical definitions and schemas are Apache-2.0; the story, characters, mission text and ASCII
 art are CC BY-SA 4.0. Unmarked statements are GUIDANCE._
 
+> **Story waits** (the owner, 2026-11-26, [his words](../history/feedback/2026-11-25-rally-point.md)): new mechanics are built in Skirmish only, and Story
+> returns as a scripting layer over a Skirmish once Skirmish and a few Commander Armies are solid. PERIMETER, the
+> mission runner, the story files and the Story row of the title menu left the game then; this page keeps the design for
+> that return. Where it says "built" or names code (`src/mission/`, `stories/`, the retired mission test), it describes
+> what was built before Story stopped, findable in git history.
+
 ## 1. What Story is
 
 **Story is a Commander's story, played as missions in order.** It teaches the game one mechanic at a time, tells the
 world through each Commander, and ends on an epic. It is judged on three things: a player comes out of it able to play a
 Skirmish well, the world feels real, and the last battle feels earned.
 
-**A mission exists only inside Story** (RULE, owned by [`game-modes.md`](game-modes.md)): a mission is a Skirmish's setup with a script, words and a goal. **Any mission opens directly for testing**, by its route (`story?mission=<id>`, [`routing.md`](../system-design/routing.md)), with no story played before it.
+**A mission exists only inside Story** (RULE, owned by [`game-modes.md`](game-modes.md)): a mission is a Skirmish's setup with a script, words and a goal. **Any mission will open directly for testing**, by a route, with no story played before it (the `story?mission=<id>` route was retired with Story's stop, [`routing.md`](../system-design/routing.md)).
 
 **Story is built after Skirmish has been played by people** (the owner's friends first, 2026-11-11), one mission at a time. A mission pulls in exactly the systems it needs; nothing here
 is built until a milestone step asks for it, and the mission list below is direction, not a count the game owes. Built
-today: PERIMETER, Vasse's first mission, and three test levels in her story's file, which Averno's story replays with
-him (`stories/vasse/story.json`, `stories/averno/story.json`; the code's word for a mission's entry there is *level*).
+until Story stopped (2026-11-26): PERIMETER, Vasse's first mission, and three test levels in her story's file, which
+Averno's story replayed with him (`stories/vasse/story.json`, `stories/averno/story.json`; the code's word for a
+mission's entry there was *level*). None of it is in the game now.
 
-**RULE — the first complete single-player direction is Vasse's story** (`stories/vasse/story.json`, PERIMETER, its
-first level; `tests/mission.test.ts`).
+**The first complete single-player direction is Vasse's story** (GUIDANCE while Story waits; it was a RULE held by
+`stories/vasse/story.json` and the retired mission test).
 
 ## 2. The shape of a Commander's story
 
@@ -88,7 +95,7 @@ whether they are the lore's Ancient Originals ([`lore.md`](lore.md)) is a writin
 
 **Save slots** (GUIDANCE; Milestone 4 starts on a flat record and the save system waits on the replay format). A player may keep more than one story in progress and start another at any time, so progress is **per slot**, each slot naming its Commander. That is more than the flat checked-in unlock list of the open question about the shape of an unlock record (Q31) assumes, so the Story menu has to design the difference rather than discover it.
 
-**RULE — there is no upfront Commander-choice screen** (`src/cli/menu.ts`, whose main menu has no Commander choice; `tests/title-menu-story-screen.test.ts`). The start is deliberately controlled: Vasse first, then Averno and Dob Hunter once the first mission is done. A new player starts Vasse's mission 1 directly — it is the whole first-time experience. Completing it (its main goal, not the bonus goal) unlocks Averno and Dob Hunter as two new rows on the Story menu, each starting *their own* mission 1 on the same map. The choice belongs to the Story menu as an unlock like any other, not to the main menu. Skirmish is different: there the player picks any Commander from the start.
+**RULE — there is no upfront Commander-choice screen** (`src/cli/menu.ts`, whose main menu has no Commander choice; the retired title-menu-story-screen test). The start is deliberately controlled: Vasse first, then Averno and Dob Hunter once the first mission is done. A new player starts Vasse's mission 1 directly — it is the whole first-time experience. Completing it (its main goal, not the bonus goal) unlocks Averno and Dob Hunter as two new rows on the Story menu, each starting *their own* mission 1 on the same map. The choice belongs to the Story menu as an unlock like any other, not to the main menu. Skirmish is different: there the player picks any Commander from the start.
 
 ## 3. What a mission is
 
@@ -135,7 +142,7 @@ A scene is a trigger like any other (section 3.1), not a special slot; there is 
 
 ### 3.1 Mission time, rounds, and triggers
 
-**A mission is a sequence of rounds driven by triggers** (RULE): as many rounds as its design wants, and a trigger is a condition and a list of actions, the way the original StarCraft editor declares them. The holders are `src/mission/types.ts` (the shapes), `src/mission/validate.ts` (every reference checked before a tick runs), `src/match/mission.ts` (the trigger runner), `tests/mission.test.ts` and `tests/mission-loop.test.ts`. The engine's own loop already alternates without limit ([`pulse.md`](../system-design/pulse.md)); this section is how a mission drives it.
+**A mission is a sequence of rounds driven by triggers** (RULE): as many rounds as its design wants, and a trigger is a condition and a list of actions, the way the original StarCraft editor declares them. The holders are `src/mission/types.ts` (the shapes), `src/mission/validate.ts` (every reference checked before a tick runs), `src/match/mission.ts` (the trigger runner), the retired mission test and the retired mission-loop test. The engine's own loop already alternates without limit ([`pulse.md`](../system-design/pulse.md)); this section is how a mission drives it.
 
 **Mission time.** A simulation moment is addressed as a round and a tick, `{ pulse, tick }` in the code, where `pulse` counts rounds. Phase boundaries are mission events: `mission.start`, `build.start`, `pulse.start`, `pulse.end`, `mission.end`, each carrying the round number. A Battle Round may be **scripted** — no player plan; the player watches — which is what an intro is when "enemies arrive and take position" should be *seen moving* rather than described. A scripted Battle Round is still an ordinary one: seeded, deterministic, in the replay, hash-checked.
 
@@ -154,7 +161,7 @@ Built today: `spawn`, `target`, `commitPlan`, `win` and `lose`, and in the prese
 
 **A mission's lines are data, and the dialog shows them** (RULE — `src/mission/scene.ts`, `src/mission/validate.ts`, `tests/dialog.test.ts`). `say: { speaker, side?, text, focus? }` runs only at `build.start`: as that round's Build Phase opens, its lines play in the dialog at the bottom of the screen ([`ui-patterns.md`](../system-design/ui-patterns.md), the dialog), one at a time, the camera on each line's focus (a unit, a group or a region). A speaker is a unit the mission brings — Vasse's name, side and `@` come from her content — or a name off the battlefield, as Corvane is. Validation refuses, by name, a line anywhere but `build.start`, an empty speaker or text, a line too long for the box at 80 × 24, a structure as speaker, and any speaker or focus the mission does not bring by that round. The trigger runner never reads them, so a mission's states hash the same with and without its lines. The round a Commander is restored opens on one line in the game's own voice, looking at her. Not built: `card`, `bark`, `effect`, a timeout, a scripted Battle Round.
 
-**RULE — simulation actions are validated intents that are part of the hashed inputs; presentation actions never touch state** (`src/mission/validate.ts`, `tests/mission.test.ts`: "validation refuses every broken shape by name, and reports them all at once"; "a whole mission is the same mission every run"). A Battle Round may be scripted and is still an ordinary one. The trigger runner applies the simulation band at tick 0 and between two ticks, beside the battle engine and without changing it; the battle engine's own door for intents (the narrow hook in [`content.md`](../system-design/content.md)) is unbuilt.
+**RULE — simulation actions are validated intents that are part of the hashed inputs; presentation actions never touch state** (`src/mission/validate.ts`, the retired mission test: "validation refuses every broken shape by name, and reports them all at once"; "a whole mission is the same mission every run"). A Battle Round may be scripted and is still an ordinary one. The trigger runner applies the simulation band at tick 0 and between two ticks, beside the battle engine and without changing it; the battle engine's own door for intents (the narrow hook in [`content.md`](../system-design/content.md)) is unbuilt.
 
 The two bands keep the three-worlds rule ([`architecture.md`](../system-design/architecture.md)) intact under scripting: only the Pulse mutates state, and the presentation half of a trigger rides on the events the simulation half emits. A `spawn` at `{ pulse: 1, tick: 0 }` shows up in the log as a spawn event like any other; the `card` and `say` that introduce the spawned raid are drawn off that event, and a viewer with reduced motion, a skipped intro, or a monochrome terminal ends the intro on **exactly the same battlefield**, because the state half ran whether or not the presentation half was watched.
 
@@ -403,11 +410,11 @@ Story's tools should allow humans and agents to:
 
 Many useful editors may be literal ASCII arrays, TypeScript definitions, command-line validators, and a shared preview TUI. A polished drag-and-drop editor is not required to make the pipeline powerful.
 
-**How a mission is tested today** (RULE for what is built):
+**How a mission was tested before Story stopped** (a starting point for its return):
 
-- **Headless**: `tests/mission.test.ts` and `tests/mission-loop.test.ts` play a mission's rounds through the trigger
-  runner and assert its result and its hash; `src/measure/` measures a level over seeds the same way before and after a
-  rule changes ([`measurement.md`](../system-design/measurement.md)).
-- **On screen**: open the mission by its route, any round of it (`./bin/terminal-nexus.ts --at
-  'story?mission=vasse-test-1&round=2'`), or press keys on it with the playtest script (`node scripts/playtest.mjs`).
-- **Validation**: a mission the loader refuses is refused by name, every problem at once (`src/mission/validate.ts`).
+- **Headless**: the retired mission test and the retired mission-loop test played a mission's rounds through the trigger
+  runner and asserted its result and its hash; `src/measure/` measured a level over seeds the same way before and after
+  a rule changed.
+- **On screen**: a mission opened by its route at any round (`story?mission=vasse-test-1&round=2`), and the playtest
+  script pressed keys on it.
+- **Validation**: a mission the loader refused was refused by name, every problem at once (`src/mission/validate.ts`).

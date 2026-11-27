@@ -785,3 +785,13 @@ rewrite of the same file; a backup taken before the probe saved it. Probe on a c
   named the skirmish tally while its after step compared with `measure compare`, which reads only `measure run` files;
   and the "Waiting on Mario" list read as the agent's own work. Each editor had made its own page right; only a reader
   crossing the pages found the seam.
+
+- **A tally run beside the test suite can die without a word** (2026-11-26, the Story cleanup). The `skirmish` command
+  ran alongside `check-repository.sh` (which runs the suite) and ended with exit 194 and no output; the empty file
+  diffed as a changed tally. Run a before-and-after tally alone, check its exit code, and read the file before
+  comparing it.
+
+- **A test base laid on a real mode keeps a hundred tests' geometry.** When PERIMETER left, the Build Phase tests lost
+  their standing Barracks and their four-building menu. Laying both on the Skirmish round in one fixture
+  (`tests/starter-fixture.ts`) took ~140 failures to ~40, and what remained were tests that really did depend on the
+  mission: those got Skirmish fixtures of their own. Reach for the fixture before rewriting coordinates.

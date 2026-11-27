@@ -31,26 +31,24 @@ node bin/measure.ts run --spec quick --jobs 4
 
 # terminal-nexus — the game. No map: the title menu, or the place a route names (--help lists them).
 ./bin/terminal-nexus.ts                                                      # the title menu
-./bin/terminal-nexus.ts --at settings                                        # a title menu screen: settings, about, story
+./bin/terminal-nexus.ts --at settings                                        # a title menu screen: settings, about
 ./bin/terminal-nexus.ts --at 'skirmish?setup=new'                           # the setup screen: map, Commanders, who plays, Start
 ./bin/terminal-nexus.ts --at 'skirmish?setup=load'                          # Load game: the saves folder, then saves/
 ./bin/terminal-nexus.ts --at 'skirmish?seed=7'                              # a Skirmish: Vasse against Dob Hunter's balanced script
 ./bin/terminal-nexus.ts --load mine.save.json --p2 script:rush              # a save (Esc, Save game), another script in p2
 ./bin/terminal-nexus.ts --load saves/mirror-vasse.save.json                 # both slots scripts: spectating
 ./bin/terminal-nexus.ts --note ~/.terminal-nexus/notes/<note>.note.json     # a playtest note (!), at its moment
-./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1'                   # PERIMETER's Build Phase
-./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1&round=3'           # its round 3, no keys to walk there
-./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --settings "$(pbpaste)"   # start from a pasted settings export (or 'jumpStep=12&reducedMotion=true')
-./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --keys "Esc n 1 1 Enter"  # open already in a state (Esc skips the intro)
+./bin/terminal-nexus.ts --load saves/starter.save.json                       # the starter map: the Build Phase's test base
+./bin/terminal-nexus.ts --load saves/crossing-new.save.json --settings "$(pbpaste)"   # start from a pasted settings export (or 'jumpStep=12&reducedMotion=true')
+./bin/terminal-nexus.ts --load saves/crossing-new.save.json --keys "Esc n 1 1 Enter"  # open already in a state (Esc skips the opening lines)
 
 bun scripts/build-web.mjs                                             # the browser playtest page
 ```
 
 **A route** names a place in the game the way a web address names a page, without the site: the place, then `?` and
-`name=value` pairs joined by `&`. The title menu's places are `menu`, `settings`, `about`, `story` and the Skirmish screens
+`name=value` pairs joined by `&`. The title menu's places are `menu`, `settings`, `about` and the Skirmish screens
 (`skirmish?setup`, `skirmish?setup=new`, `skirmish?setup=load`); a Skirmish is `skirmish`, `skirmish?seed=<n>` or
-`skirmish?load=<file>`; a mission is `story?mission=<id>`, with `&round=<n>` counting Battle Rounds from 1 as the screen
-does. Quote a route on a command line, since the shell reads `?` and `&` itself. The same routes serve the game's `--at`,
+`skirmish?load=<file>` (Story's `story?mission=<id>` waits with Story). Quote a route on a command line, since the shell reads `?` and `&` itself. The same routes serve the game's `--at`,
 the scripted playtest's `--at`, the browser page's `#at=` and a demo's `at`; each title menu row names the route it opens; a route that is not a place is refused with
 every problem at once and what exists instead. The grammar and its table, where adding a place is one entry, are
 `src/cli/route.ts`; a route is read with the settings text and the key script as one launch, the same way for all four
@@ -222,7 +220,6 @@ node scripts/playtest.mjs --keys "Esc n 2 s s wait~1000*20"                # a B
 node scripts/playtest.mjs --at skirmish?setup=new --keys "1 3 s Esc s"     # the setup screen: the Pocket, both scripts, watched
 node scripts/playtest.mjs --load saves/crossing-round-4.save.json --png final   # round 4 as it opens
 node scripts/playtest.mjs --note ~/.terminal-nexus/notes/note-20261112-153012.note.json   # a note, at its moment
-node scripts/playtest.mjs --at 'story?mission=vasse-test-1&round=3' --png final   # a mission's round 3, for a mission change
 ```
 
 Output goes to `.playtest/`, which git ignores, and so does every capture script's. **Pictures are not
@@ -250,7 +247,7 @@ claude.ai page on a pull request only when a change must be played to be judged.
 settings, the Activity Logs), and `--demos <file>` adds a button per demo, each opening the game at a route from a key
 script with given settings and saying what to try (`scripts/build-web.mjs` describes the file; a bad route or key script
 fails the build; keep a pull request's file in `scripts/demos/` until its question is answered). A copy on disk opens
-wherever its address says: `#at=story?mission=vasse-test-1&round=3`, with `&settings=` and `&keys=` after it. A claude.ai
+wherever its address says: `#at=skirmish?map=pocket&seed=3`, with `&settings=` and `&keys=` after it. A claude.ai
 link cannot carry an address with `=` in it, so a published page opens at a place through a demo.
 
 **Skirmishes put two armies against each other** (`npm run skirmish -- ...`, the `skirmish` skill): each round both
@@ -269,7 +266,7 @@ npm run skirmish -- --map crossing --p1 build: --p2 build: --seed 11 --save .pla
 [`measurement.md`](docs/system-design/measurement.md), the [`remeasure`](.claude/skills/remeasure/SKILL.md) skill),
 written down as one JSON file per run and compared in plain words. Play only what the change can move, with the one
 question it must answer; mark what a power-curve change supersedes; check every sentence that tells Mario where to look
-against the events (`measure who <content id>`) before writing it.
+against the events (the `skirmish` command's log) before writing it.
 
 ```bash
 node bin/measure.ts run --spec quick --jobs 4 --question "<what it must answer>"   # a look while working
