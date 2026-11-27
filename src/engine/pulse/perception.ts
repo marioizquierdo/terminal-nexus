@@ -1,5 +1,6 @@
 // 3. Perception (phase order in pulse.md). Who each actor sees, and who it decides to fight or flee.
 
+import { TickArmyGroups } from "./army-groups.ts"
 import type { ContentDef } from "../../content/types.ts"
 import { lineOf } from "../../content/types.ts"
 import { directionOf, ROW_DISTANCE } from "../geometry/coords.ts"
@@ -237,6 +238,8 @@ function freshChoice(context: TickContext, actor: Actor, released: number | null
 }
 
 export function perception(context: TickContext): void {
+  // The tick's army groups, from where everyone stands as perception begins: what the march and the slots read.
+  context.armyGroups = new TickArmyGroups(context)
   // Each actor chooses among what it can see (the nearest, then the one it holds, the weakest, a draw).
   const choices: Choice[] = []
   for (const actor of context.actors) {

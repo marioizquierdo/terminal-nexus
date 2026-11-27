@@ -135,16 +135,49 @@ test("two sides in contact step back and form up with a gap between their fronts
   for (const a of units(result.state, "A")) for (const b of units(result.state, "B")) assert.ok(tileDistance(a.anchor, b.anchor) > FRONT_GAP)
 })
 
-test("survivors far behind the front form a group of their own where they stand, rather than walking up", () => {
+test("reinforcement units: one that can reach the main army group in time joins its ranks; one that cannot falls back beside the building that trained it", () => {
+  // The owner, 2026-11-26: "Reinforcement units should re-treat and re-group to the nearest group if they can reach it
+  // (within the given regrouping time). But otherwise they should fall-back to the spawning location, so they will join
+  // the next wave of spawned units." Side A's main army group, three troopers on its rally point; a trooper 8 columns
+  // behind it (beyond an army group's reach, a few seconds' walk); a marksman back by a Barracks, too far to walk up in
+  // the 8 seconds left after the step back; a marksman with no building of its own left, as far.
+  const BARRACKS = "structure.bench.barracks"
   const forces: Force[] = [
     { player: "A", muster: { x: 40, y: 10 }, units: [TROOPER, TROOPER, TROOPER] },
-    { player: "A", muster: { x: 8, y: 4 }, units: [MARKSMAN, MARKSMAN] },
+    { player: "A", muster: { x: 31, y: 10 }, units: [TROOPER] },
+    { player: "A", muster: { x: 10, y: 3 }, units: [MARKSMAN] },
+    { player: "A", muster: { x: 10, y: 17 }, units: [MARKSMAN] },
   ]
-  const result = regroup(stateOf(forces), FIXTURE_REGISTRY)
-  const behind = result.paths.filter((path) => path.contentId === MARKSMAN)
-  for (const path of behind) {
-    assert.ok(path.slot !== null && path.slot.x < 40 - BEHIND, `${path.contentId} formed near home, at ${JSON.stringify(path.slot)}`)
+  const opened = stateOf(forces, [...NEXUSES, { contentId: BARRACKS, player: "A", anchor: { x: 6, y: 2 } }])
+  const barracks = opened.entities.find((entity) => entity.contentId === BARRACKS) as EntityState
+  const trainedHere = opened.entities.find((entity) => entity.contentId === MARKSMAN && entity.anchor.y < 10) as EntityState
+  const orphan = opened.entities.find((entity) => entity.contentId === MARKSMAN && entity.anchor.y > 10) as EntityState
+  const state: MatchState = {
+    ...opened,
+    targets: { A: { x: 39, y: 9, width: 3, height: 3 } },
+    entities: opened.entities.map((entity) => (entity.ordinal === trainedHere.ordinal ? { ...entity, home: barracks.ordinal } : entity)),
   }
+  const result = regroup(state, FIXTURE_REGISTRY)
+  const at = (ordinal: number): Coord => (result.state.entities.find((entity) => entity.ordinal === ordinal) as EntityState).anchor
+  const troopers = units(result.state, "A").filter((entity) => entity.contentId === TROOPER)
+  // The near one walked up and stands in the ranks, the four troopers one formation on the rally point.
+  assert.ok(troopers.every((entity) => entity.anchor.x >= 36), `troopers at ${troopers.map((entity) => `${entity.anchor.x},${entity.anchor.y}`)}`)
+  // The far ones fell back: beside the Barracks that trained one (within 3 tiles of its body), and to its Nexus the other.
+  const nearBarracks = Math.min(...[0, 1, 2].flatMap((dx) => [0, 1].map((dy) => Math.abs(at(trainedHere.ordinal).x - (6 + dx)) + 2 * Math.abs(at(trainedHere.ordinal).y - (2 + dy)))))
+  assert.ok(nearBarracks <= 3, `the marksman trained at the Barracks stands at ${JSON.stringify(at(trainedHere.ordinal))}`)
+  assert.ok(at(orphan.ordinal).x <= 8 && Math.abs(at(orphan.ordinal).y - 10) <= 4, `the marksman with no building stands at ${JSON.stringify(at(orphan.ordinal))}, not by its Nexus`)
+})
+
+test("the regroup faces the main army group's nearest enemy army group: a lone turret north of the rally point turns the ranks north", () => {
+  const TURRET = "structure.bench.beamturret"
+  const forces: Force[] = [{ player: "A", muster: { x: 30, y: 12 }, units: [TROOPER, TROOPER, TROOPER, MARKSMAN, MARKSMAN, MARKSMAN] }]
+  const opened = stateOf(forces, [...NEXUSES, { contentId: TURRET, player: "B", anchor: { x: 30, y: 2 } }])
+  const result = regroup({ ...opened, targets: { A: { x: 29, y: 11, width: 3, height: 3 } } }, FIXTURE_REGISTRY)
+  const ys = (contentId: string): number[] => units(result.state, "A").filter((entity) => entity.contentId === contentId).map((entity) => entity.anchor.y)
+  // The turret, 8 rows north (16 by the battlefield's distance), is nearer than B's Nexus 25 columns east: north is forward.
+  // Ranks four wide: the three troopers and a marksman in front, two marksmen a rank behind; no marksman ahead of a trooper.
+  assert.ok(Math.max(...ys(TROOPER)) <= Math.min(...ys(MARKSMAN)) && Math.max(...ys(MARKSMAN)) > Math.max(...ys(TROOPER)), `troopers at rows ${ys(TROOPER)}, marksmen at ${ys(MARKSMAN)}`)
+  for (const entity of units(result.state, "A")) assert.equal(entity.facing, "n", `${entity.contentId} faces ${entity.facing}`)
 })
 
 test("the regroup is a pure function of the round's end: the same state gives the same walks and the same state", () => {
@@ -309,11 +342,14 @@ test("the regroup of a played battle round is pinned, on Node and on Bun", { tim
   // regroup, the battle engine, the scripts or the armies moves it, and says so. (Moved when an army came to sort itself on the
   // march by half speed, the Commander a regular troop, and the regroup's ranks went by the same priority list; and again when a unit came to keep the target it holds
   // until it falls: commitment; and when the stance gave way to the rally point: balanced holds round its own Nexus; and
-  // when the regroup came to form up on the rally point, or fall back to it, facing the enemy army: F337.)
-  assert.equal(pathsHash(result), "31a1548c69eff9d4")
+  // when the regroup came to form up on the rally point, or fall back to it, facing the enemy army: F337; and when army
+  // groups came: the main army group forms up facing its nearest enemy army group, reinforcement units join it or fall
+  // back to their building, and the round before played by army groups.)
+  assert.equal(pathsHash(result), "f8a48f3900fcc0bc")
   // Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
-  // And again when the stance gave way to the rally point, and when the regroup came to face the enemy (the paths hash above says why).
-  assert.equal(hashState(result.state), "d74ad83bfe72b896ffc75e985ac17fec88f334953d1643594261b676bd8b6e2c")
+  // And again when the stance gave way to the rally point, when the regroup came to face the enemy, and when army groups
+  // came (the paths hash above says why).
+  assert.equal(hashState(result.state), "f2502bb55b6a4c623794536fefd1774994e2527b12379b734f85d6cc2c9c65fe")
 })
 
 test("the round's end settled where everyone stands: the regroup's first frame, what a match that is over keeps", () => {

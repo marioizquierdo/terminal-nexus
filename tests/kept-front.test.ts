@@ -251,7 +251,9 @@ test("the Build Phase draws the units a planned building stands on walking out, 
 })
 
 test("a Skirmish's round ends without a walk home, and the next Build Phase holds the regroup's walks", { timeout: 120_000 }, () => {
-  const balanced = scriptedPlayer("balanced") as Player
+  // A side that attacks, so its survivors have a walk back to their rally point: since army groups an army that held at
+  // home formed up there mid-round, on the very slots the regroup gives it, and has nowhere to walk.
+  const balanced = scriptedPlayer("rush") as Player
   const skirmish = newSkirmishLevel(1)
   const planned = scriptedRound(withoutScene(skirmish.firstRound()), balanced, skirmish.play)
   const resolved = skirmish.play.startPulse(planned.context, planned.state)

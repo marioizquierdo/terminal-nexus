@@ -24,6 +24,7 @@ import { fleeTrigger } from "./perception.ts"
 import { insideArea, targetFor } from "./target.ts"
 import { burnsOn, onPatch } from "./burning.ts"
 import { makingWay } from "./make-way.ts"
+import { armyGroupsFor } from "./army-groups.ts"
 
 /** Where a mover heads: a unit's footprint — an enemy's, or a wounded ally's for a healer — to stand where its attack
  *  reaches it; its side's target; or, for a unit leaving a roof the nearest way (`roofExit`), the nearest ground wholly
@@ -32,6 +33,8 @@ export type RouteGoal =
   | Readonly<{ kind: "unit"; target: Actor; reach: Reach }>
   | Readonly<{ kind: "area"; area: TargetArea }>
   | Readonly<{ kind: "ground"; toward: Coord }>
+  /** A slot in its army group's formation, once the group has arrived at its rally point (`army-groups.ts`). */
+  | Readonly<{ kind: "slot"; anchor: Coord }>
 
 /** The reach a unit's goal is measured by: what its attack reaches, or touching, for a unit with no attack. */
 export function reachOf(actor: Actor): Reach {
@@ -45,7 +48,9 @@ const goalKey = (goal: RouteGoal): string =>
     ? `unit:${goal.target.ordinal}@${goal.target.anchor.x},${goal.target.anchor.y}:${goal.reach.kind === "touch" ? `t${goal.reach.steps}` : `w${goal.reach.radius}`}`
     : goal.kind === "area"
       ? `area:${goal.area.x},${goal.area.y},${goal.area.width},${goal.area.height}`
-      : "off the roofs"
+      : goal.kind === "slot"
+        ? `slot:${goal.anchor.x},${goal.anchor.y}`
+        : "off the roofs"
 
 /**
  * What a step onto ground an enemy building stands on weighs, when a unit works out which building to break
@@ -392,7 +397,9 @@ function fieldOver(context: TickContext, ground: Ground, weights: Uint8Array | n
       ? goalsNear(ground, actor.definition.footprint, goal.target.anchor, goal.target.definition.footprint, goal.reach)
       : goal.kind === "area"
         ? goalsInside(ground, actor.definition.footprint, goal.area as Area)
-        : offTheRoofs(context, ground, actor)
+        : goal.kind === "slot"
+          ? [goal.anchor]
+          : offTheRoofs(context, ground, actor)
   return new DistanceField(ground, goals, weights ?? undefined, patches)
 }
 
@@ -449,7 +456,14 @@ function ownPurposeOf(context: TickContext, actor: Actor, target: Actor | null):
     // No enemy within reach: a fighting unit of a side with a target heads for it, and stands once it is inside
     // (`target.ts`). Anything else with nothing to go for holds, as it always has.
     const area = targetFor(context, actor)
-    if (area === null || insideArea(actor, area)) return { kind: "stand" }
+    if (area === null) return { kind: "stand" }
+    // Its army group has arrived at the rally point: it forms up, walking to its slot and standing on it.
+    const slot = armyGroupsFor(context).slotOf(actor)
+    if (slot !== null) {
+      if (slot.x === actor.anchor.x && slot.y === actor.anchor.y) return { kind: "stand" }
+      return offTheRoofFirst(context, actor, { kind: "walk", goal: { kind: "slot", anchor: slot } })
+    }
+    if (insideArea(actor, area)) return { kind: "stand" }
     return offTheRoofFirst(context, actor, { kind: "walk", goal: { kind: "area", area } })
   }
   if (actor.definition.behavior === "flee") {
@@ -467,6 +481,6 @@ function ownPurposeOf(context: TickContext, actor: Actor, target: Actor | null):
 function offTheRoofFirst(context: TickContext, actor: Actor, walk: Extract<Purpose, { kind: "walk" }>): Purpose {
   if (!onRoof(context, actor) || roofExitOf(context, actor) !== "ground") return walk
   const goal = walk.goal
-  const toward = goal.kind === "unit" ? goal.target.anchor : goal.kind === "area" ? { x: goal.area.x, y: goal.area.y } : goal.toward
+  const toward = goal.kind === "unit" ? goal.target.anchor : goal.kind === "area" ? { x: goal.area.x, y: goal.area.y } : goal.kind === "slot" ? goal.anchor : goal.toward
   return { kind: "walk", goal: { kind: "ground", toward } }
 }

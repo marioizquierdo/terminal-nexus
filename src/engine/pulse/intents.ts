@@ -82,7 +82,8 @@ function plans(context: TickContext): Plan[] {
     if (goal.kind === "area") {
       const toward = areaGoal(actor.anchor, actor.definition.footprint, goal.area, maskForActor(context, actor))
       planned.push({ actor, heading: "toward", toward, route: goal, area: goal.area })
-    } else if (goal.kind === "ground") planned.push({ actor, heading: "toward", toward: goal.toward, route: goal, area: null })
+    } else if (goal.kind === "slot") planned.push({ actor, heading: "toward", toward: goal.anchor, route: goal, area: null })
+    else if (goal.kind === "ground") planned.push({ actor, heading: "toward", toward: goal.toward, route: goal, area: null })
     else planned.push({ actor, heading: "toward", toward: movementGoal(actor, goal.target), route: goal, area: null })
   }
   return planned

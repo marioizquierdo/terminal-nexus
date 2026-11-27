@@ -34,7 +34,7 @@ export function makingWay(context: TickContext, actor: Actor, target: Actor | nu
   if (purpose.kind === "walk") {
     // Already on its way: off the roofs the nearest way first, facing where it was going.
     const goal = purpose.goal
-    const toward = goal.kind === "unit" ? goal.target.anchor : goal.kind === "area" ? { x: goal.area.x, y: goal.area.y } : goal.toward
+    const toward = goal.kind === "unit" ? goal.target.anchor : goal.kind === "area" ? { x: goal.area.x, y: goal.area.y } : goal.kind === "slot" ? goal.anchor : goal.toward
     return { kind: "walk", goal: { kind: "ground", toward } }
   }
   if (midWindup(actor, target)) return purpose

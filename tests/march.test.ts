@@ -186,7 +186,10 @@ function pair(rows: readonly string[], width = 70): BattleOpening {
   }
 }
 
-test("a ranged unit walks at half speed while a melee ally marches in its sight, and at full speed alone", () => {
+test("a ranged unit walks at half speed until the melee ally of its army group is ahead of it, then just behind it, and at full speed alone", () => {
+  // The owner, 2026-11-26 (F337): the half-speed rule acts within an army group, "ahead" meaning nearer its nearest
+  // enemy army group. A marksman level with a trooper waits for it to step ahead, then walks at its own pace a column
+  // behind it: the ranks close up, where the rule by sight left the marksman a vision (6 columns) behind.
   const alone = playMap(pair(["m"]))
   const together = playMap(pair(["m", "t"]))
   const marksman = (run: ReturnType<typeof playMap>): number => (run.states[0] as MatchState).entities.find((entity) => entity.contentId === "unit.citizen.marksman")?.ordinal as number
@@ -194,16 +197,20 @@ test("a ranged unit walks at half speed while a melee ally marches in its sight,
   // Alone, every step of the marksman takes the beat of its rate: 4 ticks across.
   const free = gapsOf(stepTicks(alone.states, marksman(alone), 60))
   assert.ok(free.length >= 10 && free.every((gap) => gap === 4), `alone: ${free}`)
-  // Beside a trooper, each takes twice that, and it never stops; the trooper walks on at its own pace.
-  const slow = gapsOf(stepTicks(together.states, marksman(together), 28))
-  assert.ok(slow.length >= 2 && slow.every((gap) => gap >= 8 && gap <= 9), `slowed: ${slow}`)
+  // Level with the trooper, its first step comes late: it waits on half speed until the trooper has stepped ahead.
+  const first = stepTicks(together.states, marksman(together), 40)[0] as number
+  const trooperFirst = stepTicks(together.states, trooper(together), 40)[0] as number
+  assert.ok(first > trooperFirst, `marksman first stepped at ${first}, the trooper at ${trooperFirst}`)
+  // The trooper is never slowed, and from then on the marksman stays level with it or behind, never more than two
+  // columns: level, it waits again.
   const quick = gapsOf(stepTicks(together.states, trooper(together), 40))
   assert.ok(quick.length >= 8 && quick.every((gap) => gap === 4), `trooper: ${quick}`)
-  // The trooper outwalks it beyond its sight (6 columns), and from then on it walks at its own pace again.
-  const later = gapsOf(stepTicks(together.states, marksman(together), 200))
-  assert.ok(later.slice(-5).every((gap) => gap === 4), `later: ${later}`)
-  const end = together.states.at(-1) as MatchState
-  assert.ok((end.entities.find((entity) => entity.ordinal === trooper(together)) as EntityState).anchor.x > (end.entities.find((entity) => entity.ordinal === marksman(together)) as EntityState).anchor.x)
+  const x = (state: MatchState, ordinal: number): number => (state.entities.find((entity) => entity.ordinal === ordinal) as EntityState).anchor.x
+  for (let tick = first; tick < Math.min(200, together.states.length); tick += 1) {
+    const state = together.states[tick] as MatchState
+    const gap = x(state, trooper(together)) - x(state, marksman(together))
+    assert.ok(gap >= 0 && gap <= 2, `tick ${tick}: the trooper ${gap} columns ahead`)
+  }
 })
 
 test("equals never slow each other, a lower unit never slows a higher one, and a unit with no place slows no one", () => {
@@ -257,20 +264,24 @@ test("march-commander: the Commander is a regular troop - the troopers pass her,
   const contact = firstStrike(events, "A", "trooper")
   const arrival = states[contact] as MatchState
   const vasse = of(arrival, "A", "unit.citizen.vasse")[0] as EntityState
-  // At contact her troopers are ahead of her and her marksmen (range 6, a lower priority than her 4) behind her.
-  assert.ok(Math.min(...xs(of(arrival, "A", "unit.citizen.trooper"))) > vasse.anchor.x, `troopers ${xs(of(arrival, "A", "unit.citizen.trooper"))}, Vasse ${vasse.anchor.x}`)
-  assert.ok(Math.max(...xs(of(arrival, "A", "unit.citizen.marksman"))) < vasse.anchor.x, `marksmen ${xs(of(arrival, "A", "unit.citizen.marksman"))}, Vasse ${vasse.anchor.x}`)
+  // At contact her troopers are ahead of her and her marksmen (range 6, a lower priority than her 4) behind her: none
+  // of either further than level, since the ranks march closed up (the half-speed rule within an army group, F337), and
+  // where they reach the Nexus a trooper walking round it can come level with her.
+  assert.ok(Math.min(...xs(of(arrival, "A", "unit.citizen.trooper"))) >= vasse.anchor.x, `troopers ${xs(of(arrival, "A", "unit.citizen.trooper"))}, Vasse ${vasse.anchor.x}`)
+  assert.ok(Math.max(...xs(of(arrival, "A", "unit.citizen.marksman"))) <= vasse.anchor.x, `marksmen ${xs(of(arrival, "A", "unit.citizen.marksman"))}, Vasse ${vasse.anchor.x}`)
   // The flanker, first in the list, outwalks everyone and strikes first.
   assert.ok(firstStrike(events, "A", "flanker") < contact, "the flanker did not arrive first")
   // Nobody waits for her: before contact no trooper stands still, whatever she does (steps of 4 ticks, or 8 while the
-  // flanker is in their sight), and she herself walks at 8 while a trooper is in hers, never stopping.
+  // flanker of their army group is not yet ahead of them, 9 with a turn aside in it), and she herself walks at 8 while
+  // a trooper is level with her, never stopping.
   for (const trooper of of(start, "A", "unit.citizen.trooper")) {
     const gaps = gapsOf(stepTicks(states, trooper.ordinal, contact - 8))
-    assert.ok(gaps.length > 20 && Math.max(...gaps) <= 8, `${trooper.id}: gaps ${gaps}`)
+    assert.ok(gaps.length > 20 && Math.max(...gaps) <= 9, `${trooper.id}: gaps ${gaps}`)
   }
   const hers = gapsOf(stepTicks(states, (of(start, "A", "unit.citizen.vasse")[0] as EntityState).ordinal, contact - 8))
   assert.ok(hers.some((gap) => gap >= 8), `Vasse was never slowed: ${hers}`)
-  assert.ok(Math.max(...hers) <= 9 + 8, `Vasse stopped: ${hers}`)
+  // At most two slowed steps' time: a slowed step, held up once more while a trooper swaps past her on her row.
+  assert.ok(Math.max(...hers) <= 9 + 9, `Vasse stopped: ${hers}`)
   assert.equal(states.at(-1)?.outcome?.winner, "A")
 })
 
@@ -318,6 +329,24 @@ test("march-mirror: two mirrored armies sort themselves and march at each other,
   const swaps = (player: "A" | "B"): number => events.filter((event) => event.kind === "march.made-way" && event.entity.startsWith(`${player}:`)).length
   assert.ok(swaps("A") > 0)
   assert.equal(swaps("A"), swaps("B"))
+})
+
+test("army-group-forms-up: an army group that arrives at its rally point forms up in ranks facing the enemy, melee in front, and stands", async () => {
+  const { states, events } = await play("army-group-forms-up")
+  const end = states.at(-1) as MatchState
+  const xsOf = (contentId: string): number[] => xs(of(end, "A", contentId))
+  const troopers = xsOf("unit.citizen.trooper")
+  const marksmen = xsOf("unit.citizen.marksman")
+  const mortar = xsOf("unit.citizen.mortar")
+  // The rally point is 22-24 across, 6-8 down: its middle column, 23, is the front rank's; B's Nexus is east.
+  assert.equal(Math.max(...troopers), 23, `troopers at ${troopers}`)
+  assert.equal(troopers.filter((x) => x === 23).length, 5, `a front rank of five troopers: ${troopers}`)
+  assert.ok(Math.max(...marksmen) <= Math.min(...troopers), `troopers ${troopers}, marksmen ${marksmen}`)
+  assert.ok(Math.max(...mortar) < Math.min(...marksmen), `marksmen ${marksmen}, mortar ${mortar}`)
+  // The second count: formed up, they stand. Nobody stepped in the last five seconds, nobody pressed on another.
+  const last = events.filter((event) => event.kind === "entity.moved").reduce((latest, event) => Math.max(latest, event.tick), 0)
+  assert.ok(last < end.tick - 60, `still moving at tick ${last} of ${end.tick}`)
+  assert.ok(!events.some((event) => event.kind === "move.blocked" && event.tick > last))
 })
 
 test("a march with its sides' names swapped is the same march: nothing favours A for being A", async () => {

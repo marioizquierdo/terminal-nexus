@@ -330,8 +330,9 @@ test("a wave's survivors stay on the battlefield; the regroup and the next openi
   // The fourth of each wave comes late: round 1 now leaves one more survivor (the army sorts itself on the march and its
   // Commander leads nothing, so the fight is played differently), and the Nexus's 12 places hold the last trooper of each
   // wave back until a unit of the army falls (a wave the army's supply holds back, above). Where the fourth of each wave comes
-  // moved again (85 and 226) once a unit kept the target it holds to its fall: the army loses its units on other ticks.
-  assert.deepEqual(ticksOf(second.events), [60, 60, 60, 85, 180, 180, 180, 226])
+  // moved again (85 and 226) once a unit kept the target it holds to its fall: the army loses its units on other ticks;
+  // and again (60 and 229) when army groups came: round 2 opens with a unit fewer, so the first wave comes whole.
+  assert.deepEqual(ticksOf(second.events), [60, 60, 60, 60, 180, 180, 180, 229])
 })
 
 test("PERIMETER's first round with the Barracks's wave hashes the same on every run and on both runtimes", () => {
@@ -356,4 +357,5 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
 // A unit that can reach no enemy came to look further afield for one it can, and to wait a second beside the fight before
 // it walks on round it: this round is byte for byte what it was.
 // Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
-const PINNED_ROUND_1 = "77d33ac77f7767d5ee6b649524d50471c0084f2df1e6ea835dfeb55a92e75826"
+// Pinned again when army groups came: the half-speed rule within an army group, ahead meaning nearer its nearest enemy army group, and an army group that arrives at its rally point forming up there.
+const PINNED_ROUND_1 = "df104a4be6a84c15b994a56376850e4481f846e0992b07089634b87baae7e418"

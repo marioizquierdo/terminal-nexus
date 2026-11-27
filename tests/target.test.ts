@@ -85,30 +85,25 @@ test("a unit turns from its side's target on what comes within its reach, and ne
   assert.ok(!followsTarget(FIXTURE_REGISTRY.get("structure.bench.beamturret")))
 })
 
-test("the first to arrive fill the target, the rest gather beside them, and then nobody presses: no step, no blocked claim", () => {
-  // Six troopers and a target two tiles wide: two inside, four gathered round, and from then on still. The raid's
-  // runner in the far corner keeps the battle going and is never within anyone's reach.
+test("an army group that arrives at its target forms up on it in ranks facing the enemy, and then nobody presses: no step, no blocked claim", () => {
+  // Six troopers and a target two tiles wide; B's Nexus, the nearest enemy army group, to the east (and a little north).
+  // Their army group's centre comes within 5 tiles of the target with no enemy in sight: it has arrived (the owner,
+  // 2026-11-26, F338), and each walks to its slot. Ranks of four and two (about twice as wide as deep), the front rank
+  // on the target's middle column (of its two, the one further back: x 12), the second two columns behind it, facing
+  // east; from then on still. This replaced the rule that filled the target and gathered the rest beside it.
   const area = { x: 12, y: 5, width: 2, height: 1 }
   const squad: Placed[] = [[2, 3, TROOPER], [2, 4, TROOPER], [2, 5, TROOPER], [2, 6, TROOPER], [2, 7, TROOPER], [3, 5, TROOPER]]
   const { states, events } = run({ A: squad, B: [[22, 0, "structure.ravel.nexus"]] }, area, 240)
   const last = states.at(-1) as MatchState
   const troops = last.entities.filter((entity) => entity.player === "A")
-  assert.equal(troops.filter((entity) => inside(area, entity.anchor.x, entity.anchor.y)).length, 2, "the target is not full")
-  // Every one inside, or beside one who is gathered, step by step out from the target.
-  const gathered = new Set(troops.filter((entity) => inside(area, entity.anchor.x, entity.anchor.y)).map((entity) => entity.ordinal))
-  for (let grew = true; grew; ) {
-    grew = false
-    for (const entity of troops) {
-      if (gathered.has(entity.ordinal)) continue
-      if (!troops.some((other) => gathered.has(other.ordinal) && Math.abs(other.anchor.x - entity.anchor.x) + Math.abs(other.anchor.y - entity.anchor.y) === 1)) continue
-      gathered.add(entity.ordinal)
-      grew = true
-    }
-  }
-  assert.equal(gathered.size, troops.length, "some stand apart from the others")
+  const columns = troops.map((entity) => entity.anchor.x).sort((a, b) => a - b)
+  assert.deepEqual(columns, [10, 10, 12, 12, 12, 12], `not in ranks: ${troops.map((entity) => `${entity.anchor.x},${entity.anchor.y}`)}`)
+  // Each rank stands across the line, a row apart, round the target's row.
+  const front = troops.filter((entity) => entity.anchor.x === 12).map((entity) => entity.anchor.y).sort((a, b) => a - b)
+  assert.deepEqual(front, [3, 4, 5, 6])
   const settled = events.filter((event) => event.kind === "entity.moved").reduce((latest, event) => Math.max(latest, event.tick), 0)
   assert.ok(settled < 120, `still moving at tick ${settled}`)
-  assert.ok(!events.some((event) => event.kind === "move.blocked" && event.tick > settled), "a gathered unit kept pressing on the others")
+  assert.ok(!events.some((event) => event.kind === "move.blocked" && event.tick > settled), "a formed unit kept pressing on the others")
 })
 
 test("a building of the side standing in its target is where they gather round, rather than press on it", () => {

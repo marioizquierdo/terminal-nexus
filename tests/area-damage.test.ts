@@ -381,10 +381,12 @@ test("battles with a bomber and with burning ground resolve to the same hashes o
   // Both moved when every map came to give each side that fights a goal: the bomber's side heads for where the block
   // stands, falling by the same tick; the mortar heads for the west end of its strip above the block's target, so its
   // first shell lands two columns sooner (its walker moved up two to meet the fire) and the block falls by tick 200.
+  // The mortar's moved when army groups came: the block, its army group arrived at its target before the first shell,
+  // starts toward its ranks and stands a row looser when the fire lands, so one trooper outlives the round (tick 240).
   const pins: Readonly<Record<string, readonly [string, string, number]>> = {
     // Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
     "bomber-crowd.save.json": ["9b104563dd7074af500d0185e98f657b90231dacce47f525e2e38039204675c8", "68819c077dd11333e70771ca4a4b8834f6693062ac0fccdb9f45a29db3c1e9b5", 37],
-    "mortar-burning-ground.save.json": ["aa8904bed25690b40e5d07d5161d81e33530ddb3540c66237a8c6d6f3ab06be1", "03efa2d64ed413f94453bd758d687ade00ca5985fe8876bc61f7ecb7a8644dbf", 200],
+    "mortar-burning-ground.save.json": ["2867deeb281260dc044f1bc8542a811f836a4c25bd25bb5acb43ce71d65359aa", "25d0bf08886a87621ded239eb5e22256db34e8d1934234225d8f5331c3fd01d2", 240],
   }
   for (const [name, [stateHash, eventsHash, ticks]] of Object.entries(pins)) {
     const first = await playSandbox(name)

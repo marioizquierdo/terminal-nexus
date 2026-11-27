@@ -262,9 +262,10 @@ test("the bench medic, the one healer before buildings could heal, heals exactly
 // of its own, where the station's side stands, carried in the state; its events are the same battle's.
 // Pinned again when a building in a sandbox came to train as its card says: the sandbox's Barracks became the bench's Practice Barracks, which trains nothing, so the battle is the same one under another content id.
 // Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
+// Pinned again when army groups came: the half-speed rule within an army group, ahead meaning nearer its nearest enemy army group, and an army group that arrives at its rally point forming up there: the raid's walk to the station's side moved.
 const PINNED_AID_STATION = [
-  "a25356649ec349628e3fbe9d3fd140f2fcd40656e844430d19b7865ead032f75",
-  "ab9bdcca53a9dc31d9e60e9cf0c852f530aa23e906a70ff55db674a0fa73e168",
+  "dfe8d59c7d659139b0358075c2ded057bb85efd9408205335fa7b747babe3c85",
+  "465833054e11a9c0cfeb4aa80d634d5430071020bd0eaaec066744998041e3d0",
 ]
 // Its state's hash was the one from before the Aid Station, its events' pinned again when a unit among equally near
 // enemies came to keep the one it holds, then take the weakest (no side wins by where it stands): the same battle,
@@ -275,9 +276,10 @@ const PINNED_AID_STATION = [
 // Both pinned again when every map came to give each side that fights a goal: each side heads for where the other
 // stands rather than for the nearest enemy anywhere, so the walks changed, not what the medic heals.
 // Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
+// Pinned again when army groups came: the half-speed rule within an army group, ahead meaning nearer its nearest enemy army group, and an army group that arrives at its rally point forming up there: the walks changed, not what the medic heals.
 const PINNED_MEDIC = [
-  "bb9e83b0d2844a315679c46bcc0cba7f0abc583175cefa7867841bb4ba90942a",
-  "dc9b825b8e849ac633808f0120b503f8661020c99aced784fcffe96934a02a78",
+  "3ce96d0a3d1e82430fb79ff4d4a7e7a816cf248c30e17c7faa849ba9d1f1b1ce",
+  "568183d507c428223a18968ca6b7d3502f0c5cb721642e2fefab0c73f180b4f9",
 ]
 
 // --- How a heal looks ----------------------------------------------------------------------------------

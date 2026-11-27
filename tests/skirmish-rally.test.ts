@@ -3,6 +3,7 @@
 // and with none the default in front of its base, the tile the Skirmish screen starts on. Each rule is checked by
 // counting where the units stand on the battlefield as the round ends; the report's `rally` is the second count.
 
+import { ARMY_GROUP_REACH } from "../src/engine/pulse/army-groups.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { buildLayout } from "../src/build/layout.ts"
@@ -280,6 +281,11 @@ test("a rally point the enemy builds shut that round is still marched to: half t
   const area = (start as unknown as MatchState).targets?.A as TargetArea
   assert.deepEqual(area, { x: 62, y: 12, width: 5, height: 4 }, "not the Nexus and a ring of one")
   const fighters = (final as unknown as MatchState).entities.filter((entity) => entity.player === "A" && followsTarget((registry as ContentRegistry).get(entity.contentId)))
-  const there = fighters.filter((entity) => at(area, entity.anchor)).length
+  // At it: within an army group's reach of the area (5 tiles, a row counting two), the default in front of their base
+  // being forty columns west. Since army groups the troops march closed up and breach the Stashes on the ring's west
+  // side together, so most end a tile or two short of the ring itself, fighting at it.
+  const near = (tile: Readonly<{ x: number; y: number }>): boolean =>
+    Math.max(area.x - tile.x, 0, tile.x - (area.x + area.width - 1)) + 2 * Math.max(area.y - tile.y, 0, tile.y - (area.y + area.height - 1)) <= ARMY_GROUP_REACH
+  const there = fighters.filter((entity) => near(entity.anchor)).length
   assert.ok(fighters.length > 0 && there * 2 >= fighters.length, `only ${there} of ${fighters.length} fighting units reached the rally point`)
 })
