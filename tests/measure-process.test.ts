@@ -63,4 +63,3 @@ test("the summary says how many duels were over by the end of rounds 1, 2 and 3,
   const measurement = readMeasurement(readFileSync(file, "utf8"))
   assert.match(summaryLines(measurement).join("\n"), /over by the end of round 1: 1, round 2: 4, round 3: 44/u)
 })
-

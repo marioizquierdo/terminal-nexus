@@ -1,0 +1,83 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Army group: a lone turret beside the rally point turns its ranks toward it",
+  "notes": "The army-group-forms-up field, with a lone turret of B's to the north of A's rally point: out of every unit's vision and reach, but nearer A's army group (the smallest gap, body to body) than B's Nexus to the east. A building that shoots is an army group of its own, so when A's army group arrives it forms up facing north: the front rank on the rally point's middle row, the ranks behind it to the south. Done when, at the round's end, no marksman stands further north than a trooper and the mortar is furthest south, and nobody has stepped in the last five seconds: measured from the rally point, the turret and B's Nexus never swap places as the ranks form.",
+  "setup": {
+    "map": {
+      "id": "army-group-faces-turret",
+      "rows": [
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................"
+      ]
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 600,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":1,"y":5},
+      "rows": [
+        "      m   t",
+        "",
+        "   t      m  u",
+        "",
+        "n     t  m",
+        "",
+        "   t      m",
+        "",
+        "      t   t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"},
+        "m": {"content":"unit.citizen.marksman"},
+        "u": {"content":"unit.citizen.mortar"},
+        "n": {"content":"structure.bench.nexus"}
+      },
+      "target": {"x":22,"y":9,"width":3,"height":3}
+    },
+    "p2": {
+      "at": {"x":23,"y":1},
+      "rows": [
+        "r",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "                      n"
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"},
+        "r": {"content":"structure.bench.beamturret"}
+      }
+    }
+  }
+}

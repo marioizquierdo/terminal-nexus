@@ -20,14 +20,15 @@ discovering as I playtest." These are the words this page and its tests use, eac
 | Word | What it means here |
 | --- | --- |
 | **Army** | Every unit a side has on the battlefield, its Commander included |
-| **Army group** | A side's units each within 5 tiles of another in it, chained: the engagement's reach, so the round's report and the troops' aiming share one rule. Worked out about once an in-game second. Its centre is the Commander when she is in it, else the unit nearest its middle; the Nexus is always one; a building that shoots joins the one within reach. Designed; built in the pull request after the rally point's |
-| **Front, back** | Toward and away from the army group's nearest enemy army group |
-| **Army group formation** | Its ranks across the line to its nearest enemy army group, the priority list front to back (below); the half-speed rule acts within an army group, "ahead" meaning nearer that enemy |
+| **Army group** | A side's units each within 5 tiles of another in it, chained: the engagement's reach, so the round's report and the troops' aiming share one rule. Its members are the side's units that fight (an attack, or a place in the formation), on the ground or in the air, and its buildings that shoot; a worker or a building that only trains is in none. Worked out every tick from where everyone stands as the tick begins (`src/engine/pulse/army-groups.ts`). Its centre is the Commander when she is in it, else the unit nearest its middle; each Nexus is an army group of its own |
+| **Front, back** | Toward and away from the army group's **nearest enemy army group**: the one with a member nearest one of its own (the smallest gap, body to body); a lone building that shoots is one |
+| **Army group formation** | Its ranks across the line to its nearest enemy army group, the priority list front to back (below); the half-speed rule acts within an army group, "ahead" meaning nearer that enemy along the formation's axis |
 | **Rally point** | Where a side's troops head and hold for a Battle Round (below); the **banner** is its flag on screen |
-| **Marching** | Walking toward the rally point, keeping the formation, facing the enemy. An army group has **arrived** when its centre is near the rally point and it is not engaged; then it forms up there |
+| **Marching** | Walking toward the rally point, keeping the formation, facing the enemy. An army group has **arrived** when its centre is within 5 tiles of the rally point and it is not **engaged** (no member has an enemy in its vision or stands where an enemy's attack reaches it); then each of its units walks to its slot in the army group formation on the rally point |
 | **Engaging** | A unit with an enemy in its vision leaves the march and fights; where the sides fight is an **engagement** |
 | **Re-targeting** | A unit choosing a new enemy to attack: its target fell, or a better one came within reach |
-| **Regrouping** | Between rounds: each side steps back out of its fights and forms up on its rally point, or falls back to it if it fought past it, its front rank facing the enemy |
+| **Regrouping** | Between rounds: each side steps back out of its fights and its main army group (the one nearest its rally point) forms up on the rally point, or falls back to it if it fought past it, its front rank facing its nearest enemy army group |
+| **Reinforcement unit** | A unit of a side outside its main army group. Between rounds it joins the main army group's ranks if it can walk there in the regroup's time, and otherwise falls back beside the building that trained it (its own Nexus when that building is gone), to come out with its next wave |
 | **Tick, in-game second** | One simulation step; 12 ticks are an in-game second. Durations inside the battle are said in these |
 | **Frame, real time** | One drawing of the screen; milliseconds on the clock, for what is outside the simulation only (playback speed, effects, key timing) |
 
@@ -50,8 +51,10 @@ Everything below adds up to seven rules:
 5. **A troop sticks to its enemy** until it falls, and lets go only after 2½ seconds of not being able to strike it. If
    its enemy is walled in it lets go at once for the nearest one it can reach, looking further off than its sight if it
    must; with none it keeps the one it has and stands as near as it can get.
-6. **The formation sorts itself on the march**: flankers in front, then melee, then ranged, shorter range before longer.
-   A troop that should be further back walks at half speed while one that should be ahead of it is in its vision.
+6. **The formation sorts itself on the march, and forms up at the rally point**: flankers in front, then melee, then
+   ranged, shorter range before longer. A troop that should be further back walks at half speed while one of its army
+   group that should be ahead of it is not; once its army group arrives at the rally point with no fight in reach, it
+   stands in ranks there, facing the nearest enemy army group.
 7. **Buildings are walked round until there is no way round; then the troops breach** the fewest buildings in the way.
    Rock is never broken. Workers never fight: they run.
 
@@ -68,10 +71,12 @@ same battle every time. **Then the Nexus calls a pause.** Nothing fights or trai
 Phase the survivors regroup on the map while the player builds:
 
 - **2 seconds stepping back**: a unit in a fight walks toward its own Nexus.
-- **6 seconds forming up** on its side's rally point, or falling back to it if it fought past it, in ranks by the
-  formation's order (below), the front rank facing the enemy: the middle of the enemy's fighting units nearest the
-  rally point (those within 5 tiles of the nearest), else the enemy's Nexus. A side short of its rally point forms where
-  it stands and marches on next round.
+- **6 seconds forming up**: the side's main army group (the one nearest its rally point) forms up on the rally point,
+  or falls back to it if it fought past it, in ranks by the formation's order (below), the front rank facing its
+  nearest enemy army group. A side short of its rally point forms where it stands and marches on next round. Each
+  reinforcement unit joins those ranks if it can walk there in the time left, and otherwise falls back beside the
+  building that trained it (the owner, 2026-11-26: "they should fall-back to the spawning location, so they will join
+  the next wave of spawned units").
 - **2 seconds standing formed**, while the slowest walk in.
 
 The regroup is worked out from how the round ended alone, never from what the player does, so a scripted battle plays
@@ -188,9 +193,11 @@ another unit with higher priority is in vision range."
 Units with no attack (workers) and flyers keep no place; a unit with no attack whose content names a type, the Ravel
 bomber (a flanker that bursts instead of striking), has the place of its type, at range 0.
 
-**The rule, passive and only on the march**: a marching unit walks at **half speed** while a marching ally of higher
-priority is in its vision. Nothing else. A marksman near a trooper slows, the trooper walks on, and the marksman settles
-about its vision behind; a mortar settles behind the marksmen. Units of equal priority never slow each other. Because
+**The rule, passive and only on the march**: a marching unit walks at **half speed** while a marching ally **of its
+army group** of higher priority is not ahead of it, ahead meaning nearer the army group's nearest enemy army group
+along the formation's axis (the owner, 2026-11-26: the rule "should be relative to the closest enemy army"). Nothing
+else. A marksman level with a trooper slows, the trooper steps ahead, and the marksman walks on just behind it; a mortar
+settles behind the marksmen. The ranks march closed up, where the rule by sight left the ranged a vision behind. Units of equal priority never slow each other. Because
 the rule only slows, never stops, an army sorts itself on the move instead of standing still while the front passes,
 and no unit can wait on itself. In a lane one tile wide the slower unit cannot be stepped round: a unit held up by an
 ally of lower priority that marches in front of it **swaps tiles with it** (`march.made-way`), the slower stepping back
@@ -203,9 +210,18 @@ Averno, melee) and slows and is slowed like anyone. She does not lead the march.
 pace, and an ally already in battle slows no one; so as the front stops to fight, the ranged behind it walk up into
 range at full speed, and the line forms on its own as melee closes and guns stop at their reach.
 
-**Between rounds the regroup forms the same order** (`src/match/regroup.ts`): on the rally point, or back to it, in
-ranks across the line from the rally point to the nearest enemy army, the priority list front to back. Army groups will
-make that each group's nearest enemy army group.
+**Forming up at the rally point** (`src/engine/pulse/army-groups.ts`, the owner, 2026-11-26: "Units should know when
+their group already arrived at the banner, and change into formation"). Once an army group has arrived (above), each of
+its units walks to its slot and stands on it: the front rank on the rally point's middle (on a building, a Nexus
+included, the ring just in front of it), facing the enemy army group nearest the rally point (measured from the rally point,
+which stands still, so the troops' own steps never swing the ranks between two enemies about as far off), rounded to a
+quarter (east, west, north or south), each rank about twice as wide as it is deep, the next two columns (or rows) behind. The ranks are laid out
+again only when a member joins or leaves or that enemy moves into another quarter, so they hold still while an enemy
+column walks in. An engaged army group does not form up: it fights, or holds where it stands.
+
+**Between rounds the regroup forms the same ranks** (`src/match/regroup.ts`, the layout shared,
+`src/engine/pulse/formation.ts`): the main army group on the rally point, or back to it, across the line to its nearest
+enemy army group, the priority list front to back; an army that formed up mid-round is already on its slots.
 
 **Flankers go behind the enemy's line.** A flanker chooses first among the enemies in its vision that are not melee — a
 shooter, another flanker, a building that shoots — the nearest it can walk to; with none, it chooses as every unit

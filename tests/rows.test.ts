@@ -544,7 +544,8 @@ test("the battle with the most rules in it resolves the same way on every run, a
 // Pinned again when a unit came to keep the target it holds until it falls, or goes 30 ticks unable to strike it
 // (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
 // Pinned again when the state's grid field came to be named terrain: the same battle, hashed under the new name.
-const PINNED_BATTLE = ["b97634f9a666c47c908d55c7736eb2bce334f621a7bed14afd0e34477071124d", "979be6f7659a0466feee9dc505760481aed9293a0849a6aeeaa94b78982e21a0"] as const
+// Pinned again when army groups came: the half-speed rule within an army group, ahead meaning nearer its nearest enemy army group, and an army group that arrives at its rally point forming up there.
+const PINNED_BATTLE = ["c5134eb3e2aee77a9ca517a9d6a7fce10305a88bb62dd1efe11a8dc95f39663d", "fb380f47d61af5398c954cd7ef3c2f46a764a080146f337b6062b5460950538b"] as const
 
 test("every reach the content and the Experiments offer is a whole number of rows, 1, which is touching, or even, and so is every reach the rules work out from them", () => {
   // A reach of R covers R / 2 rows up and down, rounded down, so an odd reach above 1 buys a column at each end of

@@ -1,0 +1,73 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Army group: arrives at its rally point and forms up in ranks facing the enemy",
+  "notes": "An open field. Side A's mixed army (six troopers, four marksmen, a mortar), scattered and with the shooters in front, marches on its rally point in the middle of the field; B has only its Nexus, far east, the nearest enemy army group. Once the army group's centre is within 5 tiles of the rally point and nobody sees an enemy, it has arrived: each unit walks to its slot, the front rank on the rally point's middle, facing east. Done when, at the round's end, the troopers' front rank stands on the rally point's middle column, no marksman stands further east than a trooper, and the mortar stands behind every marksman.",
+  "setup": {
+    "map": {
+      "id": "army-group-forms-up",
+      "rows": [
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................"
+      ]
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 600,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":1,"y":2},
+      "rows": [
+        "      m   t",
+        "",
+        "   t      m  u",
+        "",
+        "n     t  m",
+        "",
+        "   t      m",
+        "",
+        "      t   t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"},
+        "m": {"content":"unit.citizen.marksman"},
+        "u": {"content":"unit.citizen.mortar"},
+        "n": {"content":"structure.bench.nexus"}
+      },
+      "target": {"x":22,"y":6,"width":3,"height":3}
+    },
+    "p2": {
+      "at": {"x":45,"y":7},
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"}
+      }
+    }
+  }
+}

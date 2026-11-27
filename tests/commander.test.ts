@@ -162,11 +162,12 @@ test("the named fixture is the same every run, and on both runtimes, whatever sh
 // The three rounds as the rules play them: By the Book guarding her, the five runners making sure she falls in round 1,
 // her line beating them after, and every rule a Battle Round walks by. Round 1 is the same whatever she sits out; from
 // round 2 on, Vasse, back beside the Nexus, fights in it. These were the Story level "The Commander falls" until Story
-// stopped (the owner, 2026-11-26), and were pinned again then, on the fixture's own forces.
+// stopped (the owner, 2026-11-26), and were pinned again then, on the fixture's own forces. Round 3 pinned again when
+// army groups came: her line, formed up on its rally point, meets the runners in ranks.
 const PINNED_ROUNDS = [
   "8871d42bd6a375666a33c69f11e14cde1efd81aa6706c71e89153d922eb013c9",
   "8ba190515824db73a2eeac634ba2b027ac59c73c3e3b10f27522da78c431aa02",
-  "060edf5f8097c21a73b88467e717e3533988bb3bd78d7ad5f38b05fc3beb1f3b",
+  "daebcf507541a8d69f73d2ea333985dc7c9a9e62e69c21a728174824a0c649dc",
 ]
 
 // The same three rounds with a test-only Vasse who sits one round out: the rule as it stood before Vasse came back at

@@ -299,7 +299,10 @@ function firstLineShowing(side: BuildSide): SpokenLine {
 }
 
 test("a round she fights: she speaks a few times, in order, each line hers, and the enemy breaking last when it breaks", () => {
-  const side = fighting()
+  // The round she falls in: since army groups her troopers' ranks keep Dob Hunter's runners off her in the round she
+  // only fights (`commanderFightsLevel`), where she says her first line and nothing more; found wounded in their way,
+  // she is hurt and falls, and says so.
+  const side = fighting({}, false, commanderFallsLevel())
   const spoken = spokenIn(side.build)
   assert.ok(spoken.length >= 2 && spoken.length <= VOICE.perRound + CUTS_IN.size, `she says ${spoken.length} lines`)
   const barks = ARMIES.commanders.find((commander) => commander.unit === VASSE)?.barks ?? {}

@@ -18,11 +18,13 @@ A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and
 - **Play, about fifteen minutes: the rally point and the prelude** (from your three rounds on it).
   `./bin/terminal-nexus.ts --map crossing --p1-commander vasse --p2-commander vasse --p2 script:steady`, Esc skips the
   opening lines. Build, press `s`: the cursor flies to the rally point in front of your base; move it or not, Enter.
-  Watch both sides' arrows and the enemy's new buildings come in, then the fight. Between rounds, read what the battle
-  destroyed; the game menu's `w` replays the last battle. A round that settles fast-forwards, labelled; any key
-  slows it back. The view now goes to the enemy's new buildings while they come in and back to your Nexus for the
-  fight: press `d`, find Prelude camera, and flip `enemy` (the default) against `yours` (the old view, on your Nexus).
-  Which do you want?
+  Watch both sides' arrows and the enemy's new buildings come in, then the fight. Since army groups, an army that
+  reaches its rally point with no fight in reach forms up there in ranks facing the nearest enemy (melee in front,
+  ranged behind), and between rounds stragglers too far from it fall back to the building that trained them: do the
+  ranks read as an army holding ground? Between rounds, read what the battle destroyed; the game menu's `w` replays the
+  last battle. A round that settles fast-forwards, labelled; any key slows it back. The view now goes to the enemy's
+  new buildings while they come in and back to your Nexus for the fight: press `d`, find Prelude camera, and flip
+  `enemy` (the default) against `yours` (the old view, on your Nexus). Which do you want?
 - **Watch, five minutes: troops at a narrow door.** `npm run skirmish -- --load sandboxes/engage/engage-gap2-melee-vs-mix.save.json --play-to next --show 0,60,120,240,end`,
   then the same with `engage-gap2-airmix-vs-mix`: twelve troopers lose at a door two rows wide, and the same
   number with half of them in the air win. Does that read as good ground (a choice that matters) or as air too strong
@@ -96,7 +98,6 @@ Small, none blocking. What rounds on PERIMETER left unfinished is in
 
 | Item | Why | Size |
 | --- | --- | --- |
-| **Army groups** (the next pull request, on the owner's word of 2026-11-26) | A side's units chained within 5 tiles (an engagement's reach), worked out about once an in-game second, the Commander their centre, the Nexus always one; front and back by the nearest enemy army group; the half-speed rule within an army group; arriving at the rally point and forming up there when not engaged; the regroup by army group. Changes every battle: measured before and after ([movement.md](../system-design/movement.md), its words; [his words](../history/feedback/2026-11-25-rally-point.md)) | medium to large |
 | What only missions fed, still in the view | Story stopped (2026-11-26), and nothing draws these now: the raid forecast (its panel, trail and troops' target, `src/view/raid-panel.ts`, `src/view/troops-post.ts`), a mission's verdict on the result (`MISSION COMPLETE`), the round's own words (`BuildContext.roundText`) and named places (`landmarks`), and the word *mission* in the view's types (`MissionRound`, `MissionEnding`, Settings' `mission` section id). Remove them, or keep them for Story's return and say so | small to medium |
 | Map files still declare a `hold` area | Nothing reads it since the rally point replaced the stance; remove it from the map format, the maps and the docs, or give it a job | small |
 | The Save game test fails on a Mac | It types the temporary folder's path into the game, and macOS's has a capital letter the key script turns into something else; type a lower-case folder or pass the path another way | small |

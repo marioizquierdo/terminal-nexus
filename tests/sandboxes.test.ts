@@ -436,25 +436,17 @@ test("target-head-engage-stand: a side with a target heads for it, fights what c
   assert.ok(runnerDied !== undefined, "the runner lived")
   // The Nexus in the far corner is never within reach of the target or the way there: nobody goes for it.
   assert.ok(!run.events.some((event) => event.kind === "attack.launched" && event.target === "B:nexus#6"), "the squad went for the raid's Nexus")
-  // And there: every one of them inside the target or beside one who is, none of them moving for the last two
+  // And there: their army group arrives and forms up on the target (F338), facing its nearest enemy army group, the
+  // raid's Nexus to the south (more down than across, a row counting two): the three troopers the front rank on the
+  // target's middle row, two columns apart, the marksman a rank behind them, none of them moving for the last two
   // seconds, none of them pressing on another.
   const squad = run.finalState.entities.filter((entity) => entity.player === "A")
   assert.equal(squad.length, 4)
-  const inside = (entity: (typeof squad)[number]): boolean =>
-    entity.anchor.x >= 15 && entity.anchor.x <= 17 && entity.anchor.y >= 2 && entity.anchor.y <= 4
-  const gathered = new Set(squad.filter(inside).map((entity) => entity.ordinal))
-  assert.ok(gathered.size >= 3, `only ${gathered.size} of the squad stand inside the target`)
-  for (let grew = true; grew; ) {
-    grew = false
-    for (const entity of squad) {
-      if (gathered.has(entity.ordinal)) continue
-      if (squad.some((other) => gathered.has(other.ordinal) && Math.abs(other.anchor.x - entity.anchor.x) + Math.abs(other.anchor.y - entity.anchor.y) === 1)) {
-        gathered.add(entity.ordinal)
-        grew = true
-      }
-    }
-  }
-  assert.equal(gathered.size, squad.length, "some of the squad stand away from the target")
+  const troopers = squad.filter((entity) => entity.contentId === "unit.citizen.trooper")
+  const marksman = squad.find((entity) => entity.contentId === "unit.citizen.marksman")
+  assert.deepEqual(troopers.map((entity) => entity.anchor.y), [3, 3, 3], `troopers ${troopers.map((entity) => `${entity.anchor.x},${entity.anchor.y}`)}`)
+  assert.deepEqual(troopers.map((entity) => entity.anchor.x).sort((a, b) => a - b), [14, 16, 18])
+  assert.equal(marksman?.anchor.y, 1, "the marksman is not a rank behind")
   const late = run.pulseTicks - 2 * TICKS_PER_SECOND
   assert.ok(!run.events.some((event) => (event.kind === "entity.moved" || event.kind === "move.blocked") && event.tick > late && event.entity.startsWith("A:")), "the squad was still moving at the end")
   assert.deepEqual([run.finalState.outcome?.winner, run.finalState.outcome?.reason], [null, "tick-limit"])

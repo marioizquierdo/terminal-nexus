@@ -6,14 +6,16 @@
 
 import type { DomainEvent } from "../../engine/events/types.ts"
 import { tileDistance } from "../../engine/geometry/coords.ts"
+import { ARMY_GROUP_REACH } from "../../engine/pulse/army-groups.ts"
 import type { Coord } from "../../engine/geometry/types.ts"
 import type { MatchState } from "../../engine/state/types.ts"
 import type { Side } from "../types.ts"
 import type { Composition, RoundContext } from "./context.ts"
 import type { Tracker } from "./index.ts"
 
-/** How near a hit must be to one already in an engagement to belong to it, in tiles (a row counting two). */
-export const ENGAGEMENT_REACH = 5
+/** How near a hit must be to one already in an engagement to belong to it, in tiles (a row counting two): an army
+ *  group's reach (`ARMY_GROUP_REACH`), so the round's report and the troops' aiming share one rule. */
+export const ENGAGEMENT_REACH = ARMY_GROUP_REACH
 /** How long an engagement lasts with no hit in it before it is over: 5 seconds, at 12 ticks a second. */
 export const ENGAGEMENT_QUIET = 60
 

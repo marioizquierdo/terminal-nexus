@@ -10,9 +10,10 @@
 // *retreats* when it runs (a worker from a threat).
 //
 // **The formation's one rule.** A unit that is marching, and walking, takes half speed while a marching and walking
-// ally of strictly higher priority (`formationRank`, content/types.ts: flanker, melee, ranged; shorter range first;
-// tank, fighter, support, siege) is within its vision (`vision`, for now): it accrues movement credit on every second
-// tick only (`accrueSlowedCredit`, movement.ts). Nothing else: it never stops, equal priority never slows, and a unit
+// ally of its army group (`army-groups.ts`) of strictly higher priority (`formationRank`, content/types.ts: flanker,
+// melee, ranged; shorter range first; tank, fighter, support, siege) is not ahead of it, ahead meaning nearer the army
+// group's nearest enemy army group along the formation's axis (the owner, 2026-11-26, F337): it accrues movement credit
+// on every second tick only (`accrueSlowedCredit`, movement.ts). Nothing else: it never stops, equal priority never slows, and a unit
 // in battle neither slows nor is slowed, so the ranged walk up into range at full speed behind a front that has stopped
 // to fight. Because it only slows, an army sorts itself on the move and no unit can wait on itself. The Commander is a
 // regular troop: she slows and is slowed by her own priority, and leads nothing.
@@ -37,6 +38,7 @@ import { purposeOf } from "./routes.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { onRoof, resolveTarget, within } from "./shared.ts"
 import { visionOf } from "./target.ts"
+import { armyGroupsFor } from "./army-groups.ts"
 
 /** What a unit is doing this tick, as its movement goes (movement.md, the three states): it marches when it has no enemy
  *  to turn to, is in battle when it walks to an enemy or fights one, and retreats when it runs. */
@@ -208,34 +210,32 @@ function nearestOn(field: DistanceField, anchor: Coord, body: Footprint): number
 
 /**
  * Which of a side's marchers walk at half speed this tick: one with a place in the formation (`formationRank`: not a
- * flyer, not a unit with no attack, not one still on its own roof, which steps off first) while a marching ally of strictly
- * higher priority stands within its vision (`vision`, measured as range is: a row counting two columns). Each
- * against the positions the tick began with. `ranks` is given each placed marcher's priority.
+ * flyer, not a unit with no attack, not one still on its own roof, which steps off first) while a marching ally **of its
+ * army group** of strictly higher priority is not ahead of it — ahead meaning nearer the army group's nearest enemy army
+ * group (`TickArmyGroups.forwardOf`; the owner, 2026-11-26, F337: the half-speed rule "should be relative to the
+ * closest enemy army"). Once every ally that should be in front of it is, it walks at full speed, so the ranks close up:
+ * the ranged walk just behind the melee. Each against the positions the tick began with. `ranks` is given each placed
+ * marcher's priority.
  */
 function slowedAmong(context: TickContext, marchers: readonly Actor[], ranks: Map<number, number>): number[] {
-  type Member = Readonly<{ actor: Actor; rank: number; vision: number }>
+  type Member = Readonly<{ actor: Actor; rank: number; forward: number | null; group: unknown }>
+  const groups = armyGroupsFor(context)
   const members: Member[] = []
   for (const actor of marchers) {
     const rank = formationRank(actor.definition)
     // A unit still on its own roof keeps no place yet: it steps off first, so the building has room for the next.
     if (rank === null || onRoof(context, actor)) continue
-    members.push({ actor, rank, vision: visionOf(actor.definition) })
+    members.push({ actor, rank, forward: groups.forwardOf(actor), group: groups.groupOf(actor) })
     ranks.set(actor.ordinal, rank)
   }
   if (members.length < 2) return []
   const first = Math.min(...members.map((member) => member.rank))
   const slowed: number[] = []
   for (const member of members) {
-    if (member.rank === first) continue
-    const sees = members.some(
-      (ally) =>
-        ally.rank < member.rank &&
-        // Cheap first: two bodies far apart on the battlefield are never within sight.
-        Math.abs(ally.actor.anchor.x - member.actor.anchor.x) <= member.vision + 8 &&
-        Math.abs(ally.actor.anchor.y - member.actor.anchor.y) <= member.vision / 2 + 8 &&
-        within(member.actor, ally.actor, member.vision),
-    )
-    if (sees) slowed.push(member.actor.ordinal)
+    if (member.rank === first || member.group === undefined || member.forward === null) continue
+    const forward = member.forward
+    const waits = members.some((ally) => ally.group === member.group && ally.rank < member.rank && ally.forward !== null && ally.forward <= forward)
+    if (waits) slowed.push(member.actor.ordinal)
   }
   return slowed
 }
