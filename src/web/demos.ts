@@ -8,9 +8,9 @@
 //
 //   label     the button's name
 //   try       what to try once it opens, shown under the screen
-//   at        where it opens, as a route (`src/cli/route.ts`): `story?mission=vasse-test-1&round=2` opens that
-//             round without a key script walking to it, `skirmish?seed=7` a Skirmish; PERIMETER's first round unless
-//             given (the page itself opens on a Skirmish, but a demo written before that still opens where it did)
+//   at        where it opens, as a route (`src/cli/route.ts`): `skirmish?seed=7` a new Skirmish,
+//             `skirmish?load=saves/crossing-round-4.save.json` a save at its Build Phase; the starter map's first round
+//             (`saves/starter.save.json`) unless given
 //   keys      a key script played first, as `--keys` takes it — on a Build Phase only
 //   settings  a settings text to start with, as `--settings` takes it — on a Build Phase only
 //
@@ -22,6 +22,7 @@ import { parseSettingsExport } from "../build/settings-export.ts"
 import { LAUNCH_PARTS, readLaunch } from "../cli/launch.ts"
 import type { LaunchText } from "../cli/launch.ts"
 import { DEFAULT_LEVEL_ROUTE } from "../cli/route.ts"
+import { SHIPPED_SAVES } from "../skirmish/shipped-players.ts"
 import { DEFAULT_SETTINGS } from "../settings/types.ts"
 
 export type Demo = Readonly<{ label: string; try: string }> & LaunchText
@@ -47,8 +48,10 @@ export function checkDemos(list: unknown, source: string): readonly Demo[] {
     if (launch.destination.kind === "title" && (keys !== undefined || settings !== undefined)) {
       throw new Error(`${which}'s at, "${at}", is on the title menu: its keys and settings are for a Build Phase`)
     }
-    if (launch.destination.kind === "skirmish" && launch.destination.load !== undefined) {
-      throw new Error(`${which}'s at, "${at}", opens a save file, which the page has no files to read: give a seed`)
+    // The page has no files to read but the example saves it carries (`saves/`).
+    const load = launch.destination.kind === "skirmish" ? launch.destination.load : undefined
+    if (load !== undefined && !SHIPPED_SAVES.has(load.replace(/^\.\//u, ""))) {
+      throw new Error(`${which}'s at, "${at ?? DEFAULT_LEVEL_ROUTE}", opens a save file the page does not carry: give a seed, or one of ${[...SHIPPED_SAVES.keys()].join(", ")}`)
     }
     // A route or a key script the page cannot read would open the Build Phase at its beginning and say nothing.
     const [problem] = problems

@@ -511,7 +511,7 @@ function commanderRows(context: BuildContext): PopupRow[] {
             ? `${commanderName(absence.contentId)} is out; nowhere to return to.`
             : of === undefined || absence.returnsInRound <= of
               ? `${commanderName(absence.contentId)} is out; back for round ${absence.returnsInRound}.`
-              : `${commanderName(absence.contentId)} is out for the mission.`,
+              : `${commanderName(absence.contentId)} is out for the battle.`,
         muted: true,
       }),
     ),

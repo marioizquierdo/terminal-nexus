@@ -41,10 +41,10 @@ or to the end, with a levelled report and ASCII pictures. **`measure`** plays ma
 before and after a change.
 
 The game has three modes ([the game modes](docs/game-design/game-modes.md)): **Skirmish**, one battle against a scripted
-Commander Army; **Story**, a Commander's story of missions; and **Versus**, later. Skirmish on the menu starts one battle
+Commander Army; **Story**, a Commander's story of missions, which waits until Skirmish is solid; and **Versus**, later. Skirmish on the menu starts one battle
 against Dob Hunter's scripted army; Esc then Save game keeps it in a file, and `--load <file>` opens it again. `--at` opens any place in the game by its route, written like a web address without the
-site (`--help` lists them). The playable part is the **Build Phase** of PERIMETER, Vasse's first
-mission, opened with `--at 'story?mission=vasse-test-1'`, and at any of its rounds with `&round=2`:
+site (`--help` lists them). The playable part is a Skirmish's **Build Phase**, here on the starter map, opened with
+`--at 'skirmish?load=saves/starter.save.json'`:
 
 - A map bigger than the screen, in a closed rectangle whose sides show where there is more map. The
   cursor scrolls the view, and the view slides.
@@ -61,8 +61,7 @@ mission, opened with `--at 'story?mission=vasse-test-1'`, and at any of its roun
 
 Start Battle Round runs the battle, the **Battle Round**: the unmodified rules engine resolves the plan you built. You
 watch it with a countdown, a score and a feed of events, and you can pause, change speed, step and
-watch again. The first mission, **PERIMETER**, is three Battle Rounds, with the raid arriving in each.
-After each round there is a result, and Next round opens the next Build Phase on what survived.
+watch again. A Skirmish lasts up to eight Battle Rounds. After each round there is a result, and Next round opens the next Build Phase on what survived.
 
 Not built yet: the Skirmish setup screen, an economy, Story beyond its first mission, and sound. The
 [milestones](docs/milestones/README.md) say what comes next.
@@ -86,11 +85,11 @@ have no runtime dependency, so the game and the `skirmish` command work from a c
 Make your terminal **at least 80 x 24** — bigger is fine — then:
 
 ```bash
-npm run terminal-nexus              # the menu: Skirmish, Story, Settings, About, Exit
+npm run terminal-nexus              # the menu: Skirmish, Settings, About, Exit
 npm run terminal-nexus -- --at 'skirmish?seed=7'                      # a Skirmish on seed 7
 npm run terminal-nexus -- --load mine.save.json                       # a saved Skirmish, at its Build Phase
 npm run terminal-nexus -- --load saves/mirror-vasse.save.json         # two scripts, watched
-npm run terminal-nexus -- --at 'story?mission=vasse-test-1'           # PERIMETER: the Build Phase and the Battle Round
+npm run terminal-nexus -- --at 'skirmish?load=saves/starter.save.json'  # the starter map: a map bigger than the screen
 npm run terminal-nexus -- --at settings                                # any screen of the title menu
 ```
 

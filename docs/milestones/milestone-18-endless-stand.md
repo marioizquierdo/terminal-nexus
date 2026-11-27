@@ -4,6 +4,10 @@
 **Depends on:** Milestone 17 (Skirmish: the battle a mission is built on), Milestone 7 (the economy the stand asks the
 player to balance), Milestone 4 (a story to end in it)
 
+> **Waits with Story** (the owner, 2026-11-26, [his words](../history/feedback/2026-11-25-rally-point.md)): Story returns as
+> a scripting layer over a Skirmish once Skirmish and a few Commander Armies are solid. PERIMETER, the mission runner and
+> the story files left the game; this plan is kept for that return, and anything it calls built was built before then.
+
 The owner, 2026-11-11 ([his words](../history/feedback/2026-11-11-game-modes.md)): "a final endless wave where the
 player needs to balance collecting resources with proper upgrades, with holding on the enemy, with taking into
 strategical points, and basically hit the highest score possible up to the point that their nexus is taken. And at that

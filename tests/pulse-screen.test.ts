@@ -186,7 +186,7 @@ test("the timer counts down the seconds left to the last shot, and its last seco
 test("a lost Pulse and a timed-out one say so plainly, and a round with nobody of the player's left says that", () => {
   // Nothing built: the squads and the Nexus's own shots wipe the first raid out (the owner, 2026-10-21: the Nexus
   // fights back). A force wiped out with its Nexus standing playing on to the end is the mission's own test, with a
-  // raid the Nexus cannot stop alone (tests/mission.test.ts).
+  // raid the Nexus cannot stop alone.
   const nothing = play()
   atHome(nothing)
   assert.match(screenText(nothing), /^\| VICTORY /m)

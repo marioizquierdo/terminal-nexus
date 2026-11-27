@@ -6,12 +6,12 @@
 //
 // No Node import: `tests/web-helpers.ts` bundles this for a browser.
 
+import { testBase } from "./starter-fixture.ts"
 import type { Camera } from "../src/build/camera.ts"
 import { buildLayout, cellForTile } from "../src/build/layout.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { createBuildState, withoutScene } from "../src/build/state.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import type { Coord } from "../src/engine/geometry/types.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
@@ -50,7 +50,7 @@ export type BattleRoundOptions = Readonly<{
  */
 export function battleRoundScreen(timeline: PulseTimeline, options: BattleRoundOptions = {}): BattleRoundScreen {
   const presentation = options.presentation ?? DEFAULT_PRESENTATION
-  const context: BuildContext = { ...withoutScene(starterContext()), terrain: timeline.terrain, registry: timeline.registry }
+  const context: BuildContext = { ...withoutScene(testBase()), terrain: timeline.terrain, registry: timeline.registry }
   const layout = buildLayout(options.terminal ?? { columns: 80, rows: 24 }, timeline.terrain)
   const opened = createBuildState(context, options.look ?? { x: 0, y: 0 }, layout.viewport)
   const state: BuildState = { ...opened, committed: true }

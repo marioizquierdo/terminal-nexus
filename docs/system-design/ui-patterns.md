@@ -175,8 +175,8 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   from or last saved to, or a new name by its setup (`vasse-dob-1234-round-3`). Every key a file's name can hold types
   into it, `x` and `q` included, Space types `-`, Backspace takes a character off, Enter saves and Esc goes back to the
   game menu. Saved, the popups close and the bottom line says where; a write that fails says why and leaves the name to
-  change. **Saving happens only at a Build Phase**: the row is dimmed on a story mission ("Only a Skirmish can be
-  saved.") and refused once the plan is locked in for the Battle Round; the save holds the battle as the Build Phase
+  change. **Saving happens only at a Build Phase**: the row is dimmed on a round no Skirmish names a file for
+  ("Only a Skirmish can be saved.") and refused once the plan is locked in for the Battle Round; the save holds the battle as the Build Phase
   opened and the plan so far, and loading it returns to exactly that screen. (RULE — `tests/skirmish-play.test.ts`)
 
 ## Menu rows
@@ -187,12 +187,12 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   (RULE — `tests/build-start.test.ts`)
 - **Every row shows its hotkey** as `[x]` in the hotkey colour; the bracket carries it in monochrome.
   (RULE — `tests/title-menu-view.test.ts`, `tests/build-menu.test.ts`)
-- **A title-menu screen that only has words to show** — Story's placeholder, About — has one row,
+- **A title-menu screen that only has words to show** — About — has one row,
   `[1] Back`, where the rows start, with its words below it: headings bold, text wrapped at words to a
   comfortable reading width, a quiet line (the build) dimmed. Esc goes back too, and the highlight comes
   back to the row that opened it. It keeps a Back row, unlike a Build Phase popup, because the title menu
   has no top bar naming Esc and every action must be reachable with Up, Down and Enter alone.
-  (RULE — `tests/title-menu-about-screen.test.ts`, `tests/title-menu-story-screen.test.ts`)
+  (RULE — `tests/title-menu-about-screen.test.ts`)
 - **Skirmish** (`[1]`, the first row: the owner, 2026-11-11, "the center stone for game design and testing") opens
   ***the Skirmish screen***: `[1] New game`, `[2] Load game`, `[3] Back` (the route `skirmish?setup`). The round a battle
   opens on starts with a dialog in the game's own voice: the map, the seed, who against whom and how the other side
@@ -259,7 +259,7 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   so no hotkey moves when it opens and the tree's state is always in sight (the owner, 2026-10-15: locked buildings
   shown "with what they need"). Pressing it is refused — "Garrison is locked: it needs a Barracks standing." — and
   its row's hint says what it is and what it needs: "Needs a Barracks standing: it unlocks the round after." A
-  building opens the round after what it needs is placed, once it stands. (RULE — `tests/curve-level.test.ts`)
+  building opens the round after what it needs is placed, once it stands. (RULE — `tests/build-holds-menu.test.ts`)
 - **Timing lives in the live loop, never the reducer**: the reducer records an acknowledgement with a
   sequence number (`BuildState.ack`) and `src/view/build-live.ts` shows it from the frame that first
   sees it. Still frames carry none. (RULE — `tests/build-menu.test.ts`, `tests/build-card.test.ts`)
@@ -304,14 +304,14 @@ title screen's menu.
   from (a compass point from the Nexus, as the map is drawn: a row weighs as two columns, `inColumns`), its kinds, and what it targets first (`targets your
   Barracks`). They are information, not rows: nothing to highlight or click. Short of room they drop the
   kinds, then whole groups (`+2 more`), and a count is never split from its kind. Drawn with the menu,
-  so it fades when a card covers it. (RULE — `tests/raid-view.test.ts`)
-- ***Your troops' target*** (a named pattern; the owner: "predictable where your troops are moving"): under
+  so it fades when a card covers it. (Waits with Story: was RULE — the retired raid-view test.)
+- ***Your troops' target*** (waits with Story, as the raid's panel does; a named pattern; the owner: "predictable where your troops are moving"): under
   the raid, in the player's colour, `YOUR TROOPS` / `10 head for the line` — how many, those standing as the
   round starts and those its buildings' waves will bring, then the place by the level's name for it. Where,
   never the way. On the map its four corners are marked, dim in the player's colour (`+` in ASCII), on open
   ground only, under the raid's trail. Never at the cost of a whole raid group: short of room the raid's
   groups drop their kinds first, then the troops' lines go. Not during a battle, not on a committed plan.
-  (RULE — `tests/raid-view.test.ts`, `tests/intent.test.ts`)
+  (was RULE — the retired raid-view test, the retired intent test, retired with Story)
 - ***Spectating*** (a named pattern; the owner, 2026-11-12: "Both sides computer-controlled gives a special spectator
   UI: only explore the map and start the next round"): with no player at the screen (`BuildContext.spectating`), the
   menu is only `[e] Explore Map` and `[s] Start next round` — no Nexus Pulse row, no credits line, no buildings — and
@@ -336,7 +336,7 @@ title screen's menu.
   Nexus, and `[n] Nexus Pulse` says how many are active. A round after the first opens on the bottom line's "The
   Nexus Pulse deals a new hand: [n]." When the Pulse brought the Commander back, or could not yet, its popup opens
   on `COMMANDER` and says so first (`Vasse restored beside the Nexus.`, or `Vasse is out; back for round 3.`). (RULE — `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`,
-  `tests/mission-loop.test.ts`)
+  `tests/commander-screen.test.ts`)
 
 ### Cards
 
@@ -440,7 +440,7 @@ loop times the rest. (RULE — `tests/build-handoff.test.ts`)
   in monochrome — and not at all under reduced motion, under a popup, or with the trail out of view. The
   breath starts at rest on the first frame that shows the popup, and every still frame draws it at rest; the
   trail starts again from the still trail whenever it starts to move. (RULE — `tests/build-breath.test.ts`,
-  `tests/raid-view.test.ts`, `tests/build-motion.test.ts`)
+  `tests/build-motion.test.ts`)
 - **An opening plays once, then gives way.** An element can open with a short, stronger effect
   that overrides its ambient one: the **popup opening**, today the Battle Round screen's **double
   flash**. It is drawn at the full frame rate, ends at rest, and hands over to the breath from rest, so
@@ -710,8 +710,9 @@ last or on the round's default, and centres the camera on it. No panel opens.
   player's own; a unit does not, whoever's it is: **a building placed on units pushes them out**, and they walk
   from under it to the nearest free ground as it is placed, pushing those in their way on, so a unit is never
   drawn over a planned building. (RULE — `tests/kept-front.test.ts`) Explore Map's card reads any of them: its words, whose it is, its health now.
-  (RULE — `tests/mission-loop.test.ts`)
-- ***The incoming raid*** (a named pattern: the owner's "explore the map and see what is coming", and
+  (RULE — `tests/kept-front.test.ts`)
+- ***The incoming raid*** (waits with Story, 2026-11-26: only a mission foresaw a raid, so no screen draws it now and
+  its tests left with PERIMETER; the view code stays for Story's return. A named pattern: the owner's "explore the map and see what is coming", and
   "the enemy units should be visible without nexus powers"): what the next round's triggers bring is
   **always** drawn where it will arrive, in the see-through style at a low alpha in its side's colour: a
   wash under near-full glyphs where colours blend, full strength in monochrome, so it
@@ -720,8 +721,8 @@ last or on the round's default, and centres the camera on it. No panel opens.
   for the group, in place of a description. A Commander arriving is bold and never washed. It yields to
   buildings like any unit, and the cursor sets its wash aside. A forecast: it is placed against the map
   without the plan, and a building planned where an arrival would stand moves it when the Battle Round starts.
-  (RULE — `tests/mission-loop.test.ts`, `tests/raid-view.test.ts`)
-- ***The raid's intent*** (a named pattern): in the Build Phase, never during a Battle Round, each coming group has a
+  (was RULE — the retired raid-view test, retired with Story)
+- ***The raid's intent*** (waits with Story, as the incoming raid does; a named pattern): in the Build Phase, never during a Battle Round, each coming group has a
   **trail** to what it targets first, and **that target is marked**. The target is the battle engine's own choice on
   the Battle Round's first tick, worked out on the plan as it stands (`src/match/intent.ts`), so placing, undoing or
   removing a building changes it at once. The trail is the battle engine's own steps, round a ridge, or pressing on it when
@@ -733,8 +734,8 @@ last or on the round's default, and centres the camera on it. No panel opens.
   a new one comes out of the group, and leaves a faint copy on each tile it leaves, gone within half a step (in
   monochrome the arrow's own dim look, then gone), so every depth draws the same glyphs. A popup, reduced motion and a
   committed plan hold it still, as the one beside the target drawn; it moves again from there. The target is underlined
-  under a wash of the raid's colour, never red. Later groups are foreseen against the round's opening. (RULE —
-  `tests/raid-view.test.ts`, `tests/intent.test.ts`)
+  under a wash of the raid's colour, never red. Later groups are foreseen against the round's opening. (was RULE —
+  the retired raid-view test, the retired intent test, retired with Story)
 - ***The build range and a reach*** (named patterns; the owner's "a cool and unobstrussive way to show where the
   turrets will reach ... they also can only be built within the build-range of the other buildings"). Two
   different things get two different marks.
@@ -805,17 +806,16 @@ compositor). What the interface decides:
 - **Nothing the player does changes what the battle did**: it was resolved before the first frame, so
   Replay only restarts the clock; centring on the Nexus is the same named command a key sends.
   (RULE — `tests/pulse-screen.test.ts`)
-- ***The loop***: in a mission, the result says the fight first — `VICTORY`, `DEFEAT`, `DRAW` or
-  `TIME'S UP`, and why — then where the mission stands ("Round 1 of 3 is over. The Nexus stands."), and
+- ***The loop***: the result says the fight first — `VICTORY`, `DEFEAT`, `DRAW` or
+  `TIME'S UP`, and why — then where the battle stands ("Round 1 of 3 is over. The Nexus stands."), and
   the row where Pause was becomes **`[enter] Next round`**: Enter, Space, `n` or a click open the next
   round's Build Phase on what the last one left — the player's buildings standing, the survivors regrouping where they fought,
   the credits not spent, a new Nexus power dealt, the cursor on the Nexus, and the bottom line saying how
   the last round went. **Nothing moves on before the result stands**: a key must never skip the ending.
-  (The Next round Experiment can begin it on its own a moment after the result instead.) When a trigger
-  ends the mission, **the mission's verdict leads** — `MISSION COMPLETE` or `MISSION FAILED`, in the
-  mission's own words ("The perimeter held.") — with the last round's fight and its reason under it, and
-  the row is `[enter] Play again`. Restart, from the game menu, is the mission from round 1.
-  (RULE — `tests/mission-loop.test.ts`)
+  (The Next round Experiment can begin it on its own a moment after the result instead.) When the battle ends, **its
+  end leads**, in the mode's own words (a Skirmish's `BATTLE WON`, its reason, `Same battle again`); a mission's
+  verdict (`MISSION COMPLETE`, `MISSION FAILED`, `[enter] Play again`) waits with Story. Restart, from the game menu,
+  is the battle from round 1. (RULE — `tests/pulse-screen.test.ts`, `tests/skirmish-play.test.ts`)
 - ***A Commander's absence is said where the player is looking.*** On the map she is the one `@`, never a
   letter, in her side's colour. The feed names her and says she **falls** (`5.9s Vasse falls`), not that a
   unit dies. The result says it under Regroup: `Vasse fell: back next round.` for a Commander who sits no round
@@ -826,10 +826,10 @@ compositor). What the interface decides:
   popup says it first. A round a Commander sits out opens on a line saying so, looking at the Nexus. While she is
   out, a Build Phase she sits out and a Battle Round from the moment she falls show her own glyph, dim, on the
   free tile nearest the Nexus: nothing else, no count. Wherever she stands she is drawn **bold at full strength**,
-  arriving included and while a Battle Round plays, so she is never mistaken for the squad around her; a mission
-  introduces her through the dialog, her ring lit (PERIMETER's round 1). The Activity Logs record her life
+  arriving included and while a Battle Round plays, so she is never mistaken for the squad around her; a round whose
+  scene has her speaking introduces her through the dialog, her ring lit. The Activity Logs record her life
   (`commander.fell`, `commander.out`, `commander.restored`), under the Commander filter. (RULE — `tests/commander-screen.test.ts`, `tests/dialog.test.ts`,
-  `tests/raid-view.test.ts`, `tests/commander-moments.test.ts`)
+  `tests/voice.test.ts`, `tests/commander-moments.test.ts`)
 - ***The Commander's moments*** (a named pattern; the owner: "the commander is just another unit ... So I suggest
   highlighting the commander in different ways"): she has no panel of her own, and stands out by what happens to
   her. **She appears**: as a level begins, and the round the Nexus Pulse restores her, she is not on the map for
@@ -842,10 +842,8 @@ compositor). What the interface decides:
   a ring round her, as the dialog's focus does, and her card's icon is her portrait. Under reduced motion she is
   there from the start with a still ring, and her window shows her last face, still, without evaporating. Still
   frames show each finished. (RULE — `tests/commander-moments.test.ts`)
-- **A mission's round is counted in the top bar** — `build phase - round 2 of 3` — because PERIMETER's goal
-  is about rounds (a round counter shows only when the goal is about rounds), and the Battle Round screen
-  is that round's number, in the mission's words for it.
-  (RULE — `tests/mission-loop.test.ts`, `tests/build-start.test.ts`)
+- **A battle's round is counted in the top bar** — `build phase - round 2 of 8` — and the Battle Round screen is
+  that round's number. (RULE — `tests/route-open.test.ts`, `tests/build-start.test.ts`)
 - ***Her voice in battle*** (a named pattern; the owner: "let's experiment with this to see if it gets into
   the battle or enhances the experience even more", and once played, "it looks cool"): Vasse says a short line
   at the moments of a Battle Round that matter — it starts, the first shot, a group of the raid arriving, one

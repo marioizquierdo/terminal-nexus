@@ -1,38 +1,35 @@
-// The army loader: the game's armies and stories, checked and resolved before anything reads them.
+// The army loader: the game's armies, checked and resolved before anything reads them.
 //
-// An army or a story is data a modder can write without TypeScript, so everything is checked here, and every
-// problem is reported at once, by name, the way a mission's own validation reports (`validateMission`). In order:
+// An army is data a modder can write without TypeScript, so everything is checked here, and every problem is reported
+// at once, by name. In order:
 //
 // 1. **read** each file's shape (`read.ts`): a broken item is left out of what follows, never hiding the rest;
-// 2. **see**: each army sees itself and what it requires, directly or through another, and a story sees what it
-//    requires; a circle of `requires` is refused;
-// 3. **index** every id once: content, building cards, Nexus powers, Commanders, levels;
+// 2. **see**: each army sees itself and what it requires, directly or through another; a circle of `requires` is
+//    refused;
+// 3. **index** every id once: content, building cards, Nexus powers, Commanders;
 // 4. **check** that everything a file names is in its sight: a building's structure and units, a power's effect
-//    (`effects.ts`), a Commander's unit and voice, a level's map, unlocks, schedule and mission (made whole first,
-//    `levels.ts`);
-// 5. **resolve** each story's levels into what each offers: everything the story has unlocked by then.
+//    (`effects.ts`), a Commander's unit and voice;
+// 5. **resolve** each army's arsenal: what a Commander leading it may build and be dealt.
 //
-// Pure, like the rest of the rules around the battle engine: no clock, no randomness, nothing read from disk. The files,
-// the content registry and the map table are arguments (`src/armies/index.ts` passes the game's).
+// Pure, like the rest of the rules around the battle engine: no clock, no randomness, nothing read from disk. The files
+// and the content registry are arguments (`src/armies/index.ts` passes the game's).
+//
+// Story's levels and missions were loaded here too until Story stopped (the owner, 2026-11-26): it returns as a
+// scripting layer over a Skirmish (docs/game-design/story.md).
 
 import type { ContentRegistry } from "../content/index.ts"
 import { createRegistry, withFitter } from "../content/index.ts"
 import { definitionOf } from "../content/data.ts"
-import type { MissionDefinition, TriggerAction } from "../mission/types.ts"
-import { MissionError } from "../mission/types.ts"
-import { actionName, validateMission } from "../mission/validate.ts"
-import { missionShape } from "./mission-shape.ts"
 import type { BarkMoment } from "./barks.ts"
 import { BARK_MOMENTS, barkProblem } from "./barks.ts"
 import { EARLIEST_ROUND, LEANS, MAX_LEANS, MAX_TIER } from "./curve.ts"
 import { ACTION_KEYS, ACTION_LABEL_MAX, ORDERS, fitterOf, modeSet } from "./actions.ts"
 import type { EffectKind, EffectSight } from "./effects.ts"
 import { EFFECTS, addsOf, effectParts } from "./effects.ts"
-import { wholeLevels, withCommander } from "./levels.ts"
-import type { ReadArmy, ReadStory } from "./read.ts"
-import { readArmy, readStory } from "./read.ts"
-import type { Armies, BuildingActionCard, BuildingCard, Story, Commander, CommanderEntry, Level, LevelEntry, LevelMap, PowerCard, Schedule } from "./types.ts"
-import { ArmyError, COMMANDER_PLACEHOLDER, PORTRAIT_ROWS, PORTRAIT_WIDTH } from "./types.ts"
+import type { ReadArmy } from "./read.ts"
+import { readArmy } from "./read.ts"
+import type { Armies, BuildingActionCard, BuildingCard, Commander, CommanderEntry, PowerCard, Schedule } from "./types.ts"
+import { ArmyError, PORTRAIT_ROWS, PORTRAIT_WIDTH } from "./types.ts"
 
 // --- Requires: what each file sees, and the circles ----------------------------------------------------------
 
@@ -90,24 +87,6 @@ function loadOrder(armies: ReadonlyMap<string, ReadArmy>): ReadArmy[] {
 
 const quoted = (ids: readonly string[]): string =>
   ids.length === 1 ? `"${ids[0]}"` : `${ids.slice(0, -1).map((id) => `"${id}"`).join(", ")} and "${ids[ids.length - 1]}"`
-
-/** Every content id a mission names: what it spawns, plans, has speak and looks at — but the story's Commander,
- *  which it names as "@commander". */
-function contentOfMission(mission: MissionDefinition, registry: ContentRegistry): string[] {
-  const ids: string[] = []
-  for (const trigger of mission.triggers) {
-    for (const action of trigger.do) {
-      if ("spawn" in action) ids.push(...action.spawn.units.map((entry) => entry.unit).filter((unit) => unit !== COMMANDER_PLACEHOLDER))
-      if ("commitPlan" in action) ids.push(...action.commitPlan.structures.map((structure) => structure.contentId))
-      if ("say" in action) {
-        if (registry.has(action.say.speaker)) ids.push(action.say.speaker)
-        const focus = action.say.focus
-        if (focus !== undefined && "unit" in focus) ids.push(focus.unit)
-      }
-    }
-  }
-  return [...new Set(ids)]
-}
 
 // --- A Commander's own problems ------------------------------------------------------------------------------
 
@@ -186,25 +165,20 @@ function frozen<T>(value: T): T {
 
 // --- The loader ---------------------------------------------------------------------------------------------
 
-/** What the loader checks the files' references against: the content the game has, and the maps a level can name.
- *  The content an army defines as data is added to `registry` where it is not there already. */
+/** What the loader checks the files' references against: the content the game has. The content an army defines as
+ *  data is added to `registry` where it is not there already. */
 export type LoadWorld = Readonly<{
   registry: ContentRegistry
-  maps: Readonly<Record<string, LevelMap>>
 }>
 
-/** The army files and the story files to load. */
-export type GameFiles = Readonly<{ armies: readonly unknown[]; stories?: readonly unknown[] }>
+/** The army files to load. */
+export type GameFiles = Readonly<{ armies: readonly unknown[] }>
 
-/** A file's sight, by name: an army's own and what it requires, or what a story requires. */
+/** A file's sight, by name: an army's own and what it requires. */
 type Viewer = Readonly<{ name: string; sees: ReadonlySet<string> }>
 
-/**
- * The armies and stories, checked and resolved: each story's levels in order, each with what it offers. Throws
- * `ArmyError` listing every problem found in any of them.
- */
+/** The armies, checked and resolved. Throws `ArmyError` listing every problem found in any of them. */
 export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
-  const { maps } = world
   const problems: string[] = []
 
   // 1. The shapes, every file's, and what can be read of each.
@@ -215,14 +189,6 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     if (read.has(army.id)) problems.push(`two armies are called "${army.id}"; the second is left out`)
     else read.set(army.id, army)
   })
-  const storyFiles = new Map<string, ReadStory>()
-  ;(files.stories ?? []).forEach((given, index) => {
-    const story = readStory(copied(given), `story ${index + 1}`, problems)
-    if (story === null) return
-    if (storyFiles.has(story.id)) problems.push(`two stories are called "${story.id}"; the second is left out`)
-    else storyFiles.set(story.id, story)
-  })
-
   // An army may not define what the engine already defines another way.
   for (const army of read.values()) {
     for (const entry of army.entries) {
@@ -245,13 +211,9 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
   for (const loop of circles(read).filter((ids) => ids.length > 1)) {
     problems.push(`armies ${quoted(loop)} require each other in a circle: ${[...loop, loop[0]].join(" -> ")}`)
   }
-  for (const story of storyFiles.values()) {
-    for (const required of story.requires) if (!read.has(required)) problems.push(`story "${story.id}" requires "${required}", which is not an army`)
-  }
   const armyViewer = (id: string): Viewer => ({ name: id, sees: sightOf(read, [id]) })
 
-  // 3. Every id once: content an army brings, cards, Commanders and levels (a level's id is what a route names, so it
-  // is unique across every story).
+  // 3. Every id once: content an army brings, cards and Commanders.
   type Owned<V = object> = Readonly<{ army: string }> & V
   const contentBy = new Map<string, Owned>()
   const buildingsBy = new Map<string, Owned<{ card: BuildingCard }>>()
@@ -269,20 +231,6 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     for (const card of army.powers) once(powersBy, card.id, { ...owned, card }, "Nexus power")
     if (army.commander !== null) once(commandersBy, army.commander.id, { ...owned, entry: army.commander }, "Commander")
   }
-  const levelEntries = new Map<string, LevelEntry>()
-  const levelStory = new Map<string, string>()
-  for (const story of storyFiles.values()) {
-    for (const level of story.levels) {
-      const first = levelStory.get(level.id)
-      if (first !== undefined) {
-        problems.push(first === story.id ? `story "${first}" has the level "${level.id}" twice` : `the level "${level.id}" is in both "${first}" and "${story.id}"`)
-        continue
-      }
-      levelStory.set(level.id, story.id)
-      levelEntries.set(level.id, level)
-    }
-  }
-
   /** Why `id` is not content the viewer can use, or `null` when it is. */
   const unseenContent = (viewer: Viewer, id: string): string | null => {
     if (!registry.has(id)) return `"${id}", which is not content the game has`
@@ -460,10 +408,9 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     return said
   }
 
-  /** What is wrong with a level's own schedule: one that does not start at round 1, an entry that does not come
-   *  after the one before it, a rarity dealt before its act on the power curve, and a power it makes sure of that the
-   *  level does not offer, or that is offered beside every hand anyway. `offered` is every Nexus power the level
-   *  offers, by id. */
+  /** What is wrong with a Commander's schedule: one that does not start at round 1, an entry that does not come
+   *  after the one before it, a rarity dealt before its act on the power curve, and a power it makes sure of that her
+   *  army does not offer, or that is offered beside every hand anyway. `offered` is every Nexus power it offers, by id. */
   const scheduleProblems = (given: Schedule, offered: ReadonlySet<string>): string[] => {
     const said: string[] = []
     if (given.length === 0) said.push(`has a schedule with no entries: leave it out for the default`)
@@ -473,9 +420,9 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
       if (before !== undefined && entry.round <= before.round) said.push(`has a schedule entry for round ${entry.round} after one for round ${before.round}: entries go in order`)
       for (const slot of entry.deal) {
         if (typeof slot !== "string" && "from" in slot) {
-          // A card from another Nexus: the level must offer one, or the slot would always deal nothing.
+          // A card from another Nexus: her army must offer one, or the slot would always deal nothing.
           const any = [...offered].some((id) => powersBy.get(id)?.card.from === slot.from)
-          if (!any) said.push(`deals a card from the ${slot.from} Nexus in round ${entry.round}, and the level offers none`)
+          if (!any) said.push(`deals a card from the ${slot.from} Nexus in round ${entry.round}, and her army offers none`)
           continue
         }
         // A rarity is never dealt before its act on the power curve, whether a slot asks for it or names a power of it.
@@ -485,7 +432,7 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
           said.push(`deals ${what} from round ${entry.round}: the power curve deals a ${rarity} from round ${EARLIEST_ROUND[rarity]}`)
         }
         if (typeof slot === "string") continue
-        if (!offered.has(slot.power)) said.push(`makes sure of the Nexus power "${slot.power}" in round ${entry.round}, which the level does not offer`)
+        if (!offered.has(slot.power)) said.push(`makes sure of the Nexus power "${slot.power}" in round ${entry.round}, which her army does not offer`)
         else if (powersBy.get(slot.power)?.card.always === true) said.push(`makes sure of "${slot.power}" in round ${entry.round}, which is offered beside every hand anyway`)
       }
     })
@@ -569,116 +516,9 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     else problems.push(`the buildings "${first}" and "${card.id}" both give "${card.structure}" actions; one card says what a building can do`)
   }
 
-  // 4b. Stories: a Commander they see, levels made whole, and each level's map, unlocks and mission.
-  const whole = wholeLevels(levelEntries, (level, problem) => problems.push(`story "${levelStory.get(level)}": level "${level}" ${problem}`))
-  const missions = new Map<string, MissionDefinition>()
-  for (const story of storyFiles.values()) {
-    const viewer: Viewer = { name: story.id, sees: sightOf(read, story.requires) }
-    const say = (problem: string): void => {
-      problems.push(`story "${story.id}": ${problem}`)
-    }
-    // What its shape check already refused (no Commander named, no list of levels) is not said again here.
-    const { commander, levels: written } = story.file
-    const owner = typeof commander === "string" ? commandersBy.get(commander) : undefined
-    if (typeof commander === "string" && owner === undefined) say(`it is led by "${commander}", which is not a Commander any army has`)
-    else if (owner !== undefined && !viewer.sees.has(owner.army)) say(`it is led by "${commander}", whom "${owner.army}" has and "${story.id}" does not require`)
-    if (Array.isArray(written) && written.length === 0) say(`it has no levels`)
-    const commanderUnit = owner?.entry.unit
-    const unlocked = { buildings: new Map<string, string>(), powers: new Map<string, string>() }
-
-    for (const written of story.levels) {
-      const made = whole.get(written.id)
-      if (made === undefined || levelStory.get(written.id) !== story.id) continue
-      const level = made.entry
-      const where = `level "${level.id}"`
-      const map = level.map !== undefined && Object.hasOwn(maps, level.map) ? maps[level.map] : undefined
-      if (map === undefined && level.map !== undefined) {
-        say(`${where} is played on the map "${level.map}", which is not one the game has (${Object.keys(maps).map((name) => `"${name}"`).join(", ")})`)
-      }
-
-      for (const [kind, ids, seen] of [
-        ["building", level.unlocks?.buildings ?? [], unlocked.buildings],
-        ["Nexus power", level.unlocks?.powers ?? [], unlocked.powers],
-      ] as const) {
-        const own = new Set<string>()
-        for (const id of ids) {
-          if (own.has(id)) say(`${where} unlocks the ${kind} "${id}" twice`)
-          else if (seen.has(id)) say(`${where} unlocks the ${kind} "${id}", which level "${seen.get(id)}" already unlocked`)
-          own.add(id)
-          const unseen = unseenCard(viewer, kind, id)
-          if (unseen !== null) say(`${where} unlocks ${unseen}`)
-        }
-        for (const id of own) if (!seen.has(id)) seen.set(id, level.id)
-      }
-      // The tree: every building the level offers can be reached — what it requires is offered too, or stands on
-      // the level's map from the start.
-      const onMap = new Set((map?.standing ?? []).map((structure) => structure.contentId))
-      for (const id of unlocked.buildings.keys()) {
-        for (const needed of buildingsBy.get(id)?.card.requires ?? []) {
-          const structure = buildingsBy.get(needed)?.card.structure
-          if (!unlocked.buildings.has(needed) && (structure === undefined || !onMap.has(structure)) && unlocked.buildings.get(id) === level.id) {
-            say(`${where} offers the building "${id}", which requires "${needed}", which the level neither offers nor has standing`)
-          }
-        }
-      }
-      if (level.schedule !== undefined) for (const problem of scheduleProblems(level.schedule, new Set(unlocked.powers.keys()))) say(`${where} ${problem}`)
-
-      // A building spawns one way in a battle: two cards the level offers for one structure may not say two
-      // different things about what it spawns. Said at the level that unlocks the second, once.
-      const spawnsOf = new Map<string, Readonly<{ card: string; spawns: string }>>()
-      for (const [id, unlockedIn] of unlocked.buildings) {
-        const card = buildingsBy.get(id)?.card
-        if (card === undefined) continue
-        const spawns = JSON.stringify(card.spawns ?? null)
-        const first = spawnsOf.get(card.structure)
-        if (first === undefined) spawnsOf.set(card.structure, { card: card.id, spawns })
-        else if (first.spawns !== spawns && unlockedIn === level.id) {
-          say(`${where} offers "${card.structure}" as the buildings "${first.card}" and "${card.id}", which spawn differently; a building spawns one way`)
-        }
-      }
-
-      // Its mission, whole: its shape, then what it names, then against its map.
-      if (!missionShape.check(made.mission, `levels[${level.id}].mission`, say)) continue
-      // A mission that brings "@commander" in a story whose Commander is not found is not checked further: that she
-      // is not found is said, and every line naming her would only say it again.
-      if (commanderUnit === undefined && JSON.stringify(made.mission).includes(`"${COMMANDER_PLACEHOLDER}"`)) continue
-      const mission = commanderUnit === undefined ? made.mission : withCommander(made.mission, commanderUnit)
-      missions.set(level.id, mission)
-      const inMission = `${where}, mission "${mission.id}"`
-      if (map !== undefined) {
-        try {
-          validateMission(mission, map.terrain(), registry)
-        } catch (error) {
-          if (!(error instanceof MissionError)) throw error
-          for (const problem of error.problems) say(`${inMission}: ${problem}`)
-        }
-        for (const id of new Set(map.standing.map((structure) => structure.contentId))) {
-          const unseen = unseenContent(viewer, id)
-          if (unseen !== null) say(`${where} is played on the map "${level.map}", which has standing on it ${unseen}`)
-        }
-      }
-      for (const id of contentOfMission(made.mission, registry)) {
-        const unseen = registry.has(id) ? unseenContent(viewer, id) : null
-        if (unseen !== null) say(`${inMission} uses ${unseen}`)
-      }
-      // The Commander a level brings for the player is its story's: "@commander", or her own id.
-      mission.triggers.forEach((trigger) =>
-        trigger.do.forEach((action: TriggerAction, index) => {
-          if (!("spawn" in action) || action.spawn.side !== "A" || commanderUnit === undefined) return
-          for (const unit of action.spawn.units) {
-            if (!registry.has(unit.unit) || registry.get(unit.unit).commander !== true || unit.unit === commanderUnit) continue
-            say(
-              `${inMission}: trigger "${trigger.id}", action ${index + 1} (${actionName(action)}) brings the Commander "${unit.unit}" for the player, whose story's Commander is "${commanderUnit}": bring "${COMMANDER_PLACEHOLDER}"`,
-            )
-          }
-        }),
-      )
-    }
-  }
-
   if (problems.length > 0) throw new ArmyError(problems)
 
-  // 5. Resolved: each story's levels, each offering what the story has unlocked by then.
+  // 5. Resolved: the Commanders, and each army's arsenal.
   const ordered = loadOrder(read)
   const commanders = new Map<string, Commander>()
   for (const army of ordered) {
@@ -698,41 +538,9 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
       portraitFalls: entry.portraitFalls ?? [],
     })
   }
-  const stories: Story[] = []
-  for (const story of storyFiles.values()) {
-    const commander = commanders.get(story.file.commander) as Commander
-    const levels: Level[] = []
-    let buildings: readonly BuildingCard[] = []
-    let powers: readonly PowerCard[] = []
-    story.levels.forEach((written, index) => {
-      const entry = (whole.get(written.id) as Readonly<{ entry: LevelEntry }>).entry
-      const newBuildings = (entry.unlocks?.buildings ?? []).map((id) => (buildingsBy.get(id) as Readonly<{ card: BuildingCard }>).card)
-      const newPowers = (entry.unlocks?.powers ?? []).map((id) => (powersBy.get(id) as Readonly<{ card: PowerCard }>).card)
-      buildings = [...buildings, ...newBuildings]
-      powers = [...powers, ...newPowers]
-      // The buildings the offered powers can add, once each, in the order the powers name them.
-      const addable = [...new Set(powers.flatMap((card) => addsOf(card.effect) ?? []))].map(
-        (id) => (buildingsBy.get(id) as Readonly<{ card: BuildingCard }>).card,
-      )
-      levels.push({
-        id: entry.id,
-        story: story.id,
-        army: commander.army,
-        number: index + 1,
-        map: entry.map as string,
-        mission: missions.get(entry.id) as MissionDefinition,
-        // The level's own schedule, or else her army's: how her army bends the Nexus Pulse holds in every level.
-        offer: { credits: entry.credits as number, buildings, powers, addable, ...((entry.schedule ?? commander.schedule) === undefined ? {} : { schedule: entry.schedule ?? commander.schedule }) },
-        unlocked: { buildings: newBuildings, powers: newPowers },
-      })
-    })
-    stories.push({ id: story.id, army: commander.army, title: story.file.title, commander, levels })
-  }
   return frozen({
     armies: ordered.map((army) => army.file),
     commanders: [...commanders.values()],
-    stories,
-    levels: stories.flatMap((story) => story.levels),
     arsenals: Object.fromEntries(
       ordered.map((army) => {
         const sees = sightOf(read, [army.id])

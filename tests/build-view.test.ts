@@ -9,9 +9,8 @@ import assert from "node:assert/strict"
 import { buildLayout, cellForTile, constructLines, startRow } from "../src/build/layout.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import type { BuildSessionOptions } from "../src/view/build-session.ts"
-import { STARTER_ALLOTMENT, STARTER_CATALOG } from "../src/build/catalog.ts"
+import { STARTER_ALLOTMENT, STARTER_CATALOG, testBase } from "./starter-fixture.ts"
 import { armedPreview, remaining } from "../src/build/state.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { bottomLine, hint } from "../src/build/help.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
@@ -43,10 +42,10 @@ function readyBuildSession(options: BuildSessionOptions): BuildSession {
   return build
 }
 
-/** `starterContext()`, with the neutral draft baked in from the start so every place that builds a
+/** `testBase()`, with the neutral draft baked in from the start so every place that builds a
  *  session from it and every place that renders from it agree on what was picked. */
-function neutralContext(): ReturnType<typeof starterContext> {
-  return { ...starterContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
+function neutralContext(): ReturnType<typeof testBase> {
+  return { ...testBase(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
 }
 
 

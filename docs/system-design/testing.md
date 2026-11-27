@@ -102,7 +102,7 @@ RULE — `tests/determinism.test.ts`, `tests/architecture.test.ts`, `tests/rng.t
   throw during a real resolve, and by scanning the source of every deterministic folder for them and for
   the terminal.
 - The import graph is held in one place: `src/engine` imports nothing above it but the content definitions;
-  `src/view` never reaches the engine; the simulation never reaches a glyph; missions are data; no
+  `src/view` never reaches the engine; the simulation never reaches a glyph; armies are data; no
   source file imports a package the repository has not pinned.
 - Changing only the cosmetic seed changes nothing about state, events or the log. The gameplay generator
   is checked against published PCG32 vectors.
@@ -128,8 +128,8 @@ An engine rule is asserted through events and hashes from a state on a map: a st
 sandbox named for what it shows (`melee-kill`, `worker-flight`, `hauler-two-tile-gap`, `settle-delay`, the `route-*`
 shapes and the rest of `sandboxes/`). Every sandbox reads as a save, every problem at once, loads with an id that matches
 its name and gives each side that fights somewhere to go; every unit and building the content holds stands alone in a
-slice and runs without failing. The rules between rounds (openings, the regroup, missions) are held by
-`tests/match.test.ts`, `tests/regroup.test.ts` and `tests/mission.test.ts`; routing's own parts are tested alone on small
+slice and runs without failing. The rules between rounds (openings, the regroup, the Commander's return) are held by
+`tests/match.test.ts`, `tests/regroup.test.ts` and `tests/commander.test.ts`; routing's own parts are tested alone on small
 battlefields and mazes, against a plain search (`tests/routing.test.ts`).
 
 ### Structured-cell snapshots across backends
@@ -163,14 +163,21 @@ intent as timed presses and as press, repeat and release events lands on the sam
 names map to the exact bytes a terminal sends, an unknown name fails loudly, and a click goes through
 the mouse adapter wherever the tile is drawn.
 
+### The Build Phase's test base
+
+Most Build Phase tests open on the starter map's Skirmish (`saves/starter.save.json`, `starterContext`) laid out as
+`testBase` (`tests/starter-fixture.ts`): a Barracks standing beside the Nexus, a menu of four and War Chest beside the
+hand, the base the screen's tests were written against. A test that plays the round's battle uses the starter round
+itself, `barracksLevel` when it needs that Barracks in the battle, or the test battle (`tests/pulse-helpers.ts`), whose
+raid and squads it sets. The Commander's fixtures (`tests/commander-fixture.ts`) are a battle she falls in and one she
+fights in.
+
 ### Armies load whole or are refused whole
 
-RULE — `tests/armies.test.ts`, `tests/levels.test.ts`. The shipped armies load, and a broken one is refused
-with every problem at once, each naming where: a card, a Commander or an unlock from an army it does not
-require, a content id that does not exist, a duplicate id, an unlock an earlier level already gave, a mission
-with a bad shape. What a level offers adds up level by level in the order first unlocked, and is what its
-Build Phase offers: the menu, the credits and the Nexus Pulse's hand. PERIMETER and the cadence level are pinned by
-a hash of each, so moving them into data changed nothing they play ([`content.md`](content.md)).
+RULE — `tests/armies.test.ts`. The shipped armies load, and a broken one is refused with every problem at once, each
+naming where: a card or a Commander from an army it does not require, a content id that does not exist, a duplicate
+id, a schedule that deals a rarity before its act ([`content.md`](content.md)). (Story's files and their levels were
+loaded and checked here too until Story stopped, 2026-11-26.)
 
 ### Every route opens where it says
 

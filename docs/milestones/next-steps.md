@@ -38,8 +38,8 @@ A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and
 
 ## Carry-over
 
-Small, none blocking. What rounds on PERIMETER left unfinished moved to
-[the first missions' milestone](milestone-10-first-and-second-missions.md), where PERIMETER is polished.
+Small, none blocking. What rounds on PERIMETER left unfinished is in
+[the first missions' milestone](milestone-10-first-and-second-missions.md), which waits with Story.
 
 - A rarity on a Nexus Pulse card should read at a glance by a mark the monochrome floor keeps, not only by its style
   role (from the retired Nexus Pulse milestone).
@@ -98,14 +98,12 @@ Small, none blocking. What rounds on PERIMETER left unfinished moved to
 
 | Item | Why | Size |
 | --- | --- | --- |
-| **Story stops: PERIMETER and the mission runner leave the game** (the next pull request, on the owner's word of 2026-11-26) | New mechanics are built in Skirmish only; a story map either plays as a Skirmish or is deleted. The Build Phase's test base and the scripted playtest's default move from PERIMETER onto a Skirmish save; the Story row, its routes and `src/match/mission.ts` go; the Story design pages say it waits ([his words](../history/feedback/2026-11-25-rally-point.md)) | large |
+| What only missions fed, still in the view | Story stopped (2026-11-26), and nothing draws these now: the raid forecast (its panel, trail and troops' target, `src/view/raid-panel.ts`, `src/view/troops-post.ts`), a mission's verdict on the result (`MISSION COMPLETE`), the round's own words (`BuildContext.roundText`) and named places (`landmarks`), and the word *mission* in the view's types (`MissionRound`, `MissionEnding`, Settings' `mission` section id). Remove them, or keep them for Story's return and say so | small to medium |
 | Map files still declare a `hold` area | Nothing reads it since the rally point replaced the stance; remove it from the map format, the maps and the docs, or give it a job | small |
 | The Save game test fails on a Mac | It types the temporary folder's path into the game, and macOS's has a capital letter the key script turns into something else; type a lower-case folder or pass the path another way | small |
 | A headless mirror runs past its rounds | `skirmish --map crossing --p1 script:steady --p2 script:steady --commanders all --play-to end` without `--rounds` ran for a day; one battle reported round 100 though the default is 8. Find why, and make a run that cannot end say so | small to medium |
 | The routing timing test on CI | "a tick's worth of fields … fits well inside a frame" (11 ms) failed once on a slow GitHub runner and passed on a re-run; measure its spread on CI before deciding anything, never loosen it blindly | small |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see [`portability.md`](../system-design/portability.md) |
-| The curve levels' empty-base walk is guarded once | The tests of a level's layout now walk it with its battles undecided, so a change to how battles play cannot fail them. Whether a base with nothing built lives to the last round (what a route to a later round plays) is one check over every level, which says how low the Nexus fell each round: at worst 210 of 400, on Averno's level in round 4. If it tips, shape what an empty base faces on that level (a lighter round-4 raid, or a free defender), not the rules | small |
-| `src/cli/pulse-run.ts` still exports PERIMETER's mission connection for seven tests | The game no longer uses it; the tests can reach the mission another way | small |
 | A host-conformance test: run a key script through the terminal path and the page (headless Chromium) and compare frames | Turns the by-hand check we did into a test; Milestone 20 needs it before friends play the page | small to medium |
 
 ## Not measured yet

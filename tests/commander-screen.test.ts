@@ -1,64 +1,40 @@
 // What a player reads of the Commander (pulse.md; the rule itself is tests/commander.test.ts): an `@`
-// among the squads and her own card, the feed when she falls, the result's line saying she is back next round,
-// and the Build Phase after it opening with her back. Played through the real session on PERIMETER and on the
-// Commander's named fixture (`tests/commander-fixture.ts`); and, with a test-only Vasse who sits one round out,
-// the result's line on the round she is out for and the Build Phases after it saying she is out and then that
-// she is back.
+// beside her troops and her own card, the feed when she falls, the result's line saying she is back next round,
+// and the Build Phase after it opening with her back. Played through the real session on the starter map's Skirmish
+// and on a Skirmish she falls in (`commanderFallsLevel`, `tests/commander-fixture.ts`); and, for a Commander who sits
+// rounds out (a path no Commander takes yet), the words the next Build Phase opens with.
 
 import { test } from "node:test"
 import { auraOf } from "../src/engine/abilities/index.ts"
 import assert from "node:assert/strict"
-import {
-  STARTER_ALLOTMENT,
-  STARTER_CATALOG,
-  STARTER_NEXUS_DRAFT,
-  STARTER_STANDING,
-  STARTER_START_CURSOR,
-  starterTerrain,
-} from "../src/build/catalog.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import type { BuildContext } from "../src/build/state.ts"
-import { missionPlay, nextRound, startPulse } from "../src/cli/pulse-run.ts"
-import { starterContext } from "../src/cli/starter.ts"
-import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import type { ContentRegistry } from "../src/content/index.ts"
-import type { MissionDefinition } from "../src/mission/index.ts"
+import { nextRound, startPulse, starterContext } from "../src/cli/starter.ts"
+import { commanderNews } from "../src/cli/skirmish-play.ts"
 import { buildSide, keys, screenText } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
-import { COMMANDER_FALLS, VASSE, sittingOut } from "./commander-fixture.ts"
+import { VASSE, commanderFallsLevel } from "./commander-fixture.ts"
 
 const ENTER = "\r"
+const ESC = "\u001b"
 
-/** PERIMETER's first Build Phase, with the Experiments given. */
-function perimeter(experiments: BuildContext["experiments"] = {}): BuildSide {
+/** The starter map's first Build Phase, with the Experiments given. */
+function starter(experiments: BuildContext["experiments"] = {}): BuildSide {
   return buildSide({ context: starterContext(undefined, { experiments }), cursor: STARTER_START_CURSOR, startPulse, nextRound })
 }
 
-/** The named fixture's first Build Phase, on the starter map — or another mission's, on the same, or with a
- *  Vasse who sits rounds out. */
-function fixture(mission: MissionDefinition = COMMANDER_FALLS, registry: ContentRegistry = FIXTURE_REGISTRY): BuildSide {
-  const play = missionPlay(mission)
-  const context = play.firstRound({
-    terrain: starterTerrain(),
-    registry,
-    catalog: STARTER_CATALOG,
-    standing: STARTER_STANDING,
-    allotment: STARTER_ALLOTMENT,
-    nexusDraft: STARTER_NEXUS_DRAFT,
-  })
-  return buildSide({ context, cursor: STARTER_START_CURSOR, startPulse: play.startPulse, nextRound: play.nextRound })
+/** The Build Phase of the Skirmish she falls in, `rounds` long: its round 2, its scenes played as the game plays them. */
+function fixture(rounds = 8): BuildSide {
+  const level = commanderFallsLevel(rounds)
+  const side = buildSide({ context: level.firstRound(), cursor: STARTER_START_CURSOR, startPulse: level.play.startPulse, nextRound: level.play.nextRound, scenes: true })
+  // The loaded save's line, read past.
+  keys(side, ESC)
+  return side
 }
 
-/** The named fixture cut to two rounds, so the round after the one she falls in is its last. (PERIMETER showed this
- *  once, at 20 health in its second round; since the Barracks's troopers came to arrive in a wave five seconds in,
- *  she comes through PERIMETER's first two rounds at any health, so it no longer can.) */
-function twoRounds(): MissionDefinition {
-  return {
-    ...COMMANDER_FALLS,
-    pulses: 2,
-    triggers: COMMANDER_FALLS.triggers
-      .filter((trigger) => trigger.id !== "probe-3")
-      .map((trigger) => (trigger.id === "hold" ? { ...trigger, when: { event: "pulse.end", pulse: 2 } } : trigger)),
-  }
+/** Where she stands on the round's map: among its field, or arriving with her starting package. */
+function vasseOn(side: BuildSide): Readonly<{ anchor: { x: number; y: number } }> | undefined {
+  return [...(side.build.round.field ?? []), ...(side.build.round.incoming ?? [])].find((entity) => entity.contentId === VASSE)
 }
 
 /** A Nexus power picked and the round's Pulse started, nothing built. */
@@ -99,11 +75,11 @@ const mapText = (side: BuildSide): string =>
     .map((line) => line.slice(30))
     .join("\n")
 
-test("PERIMETER's first round: Vasse is an @ among the squads, and her card names her and her health", () => {
-  const side = perimeter()
+test("the starter map's first round: Vasse is an @ beside her troops, and her card names her and her health", () => {
+  const side = starter()
   assert.match(mapText(side), /@/, "no @ on the map")
-  const vasse = (side.build.round.incoming ?? []).find((entity) => entity.contentId === VASSE)
-  assert.ok(vasse !== undefined, "she is not with the squads")
+  const vasse = vasseOn(side)
+  assert.ok(vasse !== undefined, "she is not with her troops")
   side.build.dispatch({ kind: "look-at", x: vasse.anchor.x, y: vasse.anchor.y })
   side.build.dispatch({ kind: "explore" })
   const card = panelText(side)
@@ -113,9 +89,9 @@ test("PERIMETER's first round: Vasse is an @ among the squads, and her card name
 })
 
 test("her card says what By the Book does in one plain sentence with its range, at the strength the battle will run on", () => {
-  const side = perimeter()
-  const vasse = (side.build.round.incoming ?? []).find((entity) => entity.contentId === VASSE)
-  assert.ok(vasse !== undefined, "she is not with the squads")
+  const side = starter()
+  const vasse = vasseOn(side)
+  assert.ok(vasse !== undefined, "she is not with her troops")
   side.build.dispatch({ kind: "look-at", x: vasse.anchor.x, y: vasse.anchor.y })
   side.build.dispatch({ kind: "explore" })
   const definition = side.build.round.registry.get(VASSE)
@@ -128,7 +104,7 @@ test("her card says what By the Book does in one plain sentence with its range, 
   assert.match(panelText(side), new RegExp(`HEALTH +80 ATTACK +5 RANGE +${attack.range} `))
 })
 
-test("she falls: the feed says so, the result says she is back next round, and round 2 opens with her beside the Nexus", () => {
+test("she falls: the feed says so, the result says she is back next round, and the next round opens with her beside the Nexus", () => {
   const side = fixture()
   startRound(side)
   const pulse = side.build.pulse
@@ -147,9 +123,13 @@ test("she falls: the feed says so, the result says she is back next round, and r
   assert.doesNotMatch(panelText(side), /out for round/)
 
   keys(side, ENTER)
-  assert.equal(side.build.state.pulseNumber, 2)
-  assert.equal(statusLine(side), "Round 1: victory. The Nexus Pulse restores Vasse and deals: [n].")
-  assert.match(mapText(side), /@/, "she is not on round 2's map")
+  assert.equal(side.build.round.round?.number, 3)
+  // The round opens on the dialog saying she is back, looking at her; then the round's own line.
+  assert.deepEqual((side.build.round.scene ?? []).map((line) => line.text), ["The Nexus Pulse restores Vasse beside the Nexus."])
+  assert.match(screenText(side), /The Nexus Pulse restores Vasse beside the/)
+  keys(side, ESC)
+  assert.equal(statusLine(side), "Round 2: time's up. The Nexus Pulse deals a new hand: [n].")
+  assert.match(mapText(side), /@/, "she is not on round 3's map")
   const vasse = (side.build.round.field ?? []).find((entity) => entity.contentId === VASSE)
   assert.ok(vasse !== undefined)
   side.build.dispatch({ kind: "look-at", x: vasse.anchor.x, y: vasse.anchor.y })
@@ -161,75 +141,23 @@ test("she falls: the feed says so, the result says she is back next round, and r
 })
 
 test("she falls with one round to go: the result says she is back next round, and the last round opens with her", () => {
-  const side = fixture(twoRounds())
+  const side = fixture(3)
   startRound(side)
   toResult(side)
   assert.match(panelText(side), /Vasse fell: back next round\./)
   keys(side, ENTER)
-  assert.equal(side.build.state.pulseNumber, 2)
+  assert.deepEqual(side.build.round.round, { number: 3, of: 3 })
   assert.match(mapText(side), /@/, "the last round opened without her")
 })
 
-test("a Commander who sits a round out: the result says the round she is out for, and round 2 is played without her", () => {
-  const side = fixture(COMMANDER_FALLS, sittingOut(1))
-  startRound(side)
-  const pulse = side.build.pulse
-  assert.ok(pulse !== null)
-  const death = pulse.resolved.timeline.events.find((event) => event.kind === "entity.died" && event.contentId === VASSE)
-  assert.ok(death !== undefined, "she did not fall")
-  // The feed, the moment after she falls: by name, as falling, not as a unit dying.
-  side.build.advance(0)
-  side.build.advance(pulse.prelude.lengthMs + Math.ceil(((death.tick + 1) * 1000) / 12))
-  assert.match(panelText(side), /\d+\.\ds Vasse falls/)
-  // Her name everywhere in the feed, never the id's lower-case one.
-  assert.doesNotMatch(panelText(side), /\bvasse\b/)
-
-  toResult(side)
-  assert.match(panelText(side), /Vasse fell: out for round 2, back for round 3\./)
-
-  keys(side, ENTER)
-  assert.equal(side.build.state.pulseNumber, 2)
-  assert.equal(statusLine(side), "Round 1: victory. Vasse is out this round, back for round 3.")
-  assert.doesNotMatch(mapText(side), /@/, "she is on round 2's map")
-  // Her absence is said as the round opens (the line above); Start goes straight to the rally point, no screen
-  // between to say it again.
-  side.build.dispatch({ kind: "pick-nexus", index: 0 })
-  side.build.dispatch({ kind: "open-battle-round" })
-  assert.equal(side.build.state.popup, "banner-place")
-})
-
-test("a Commander who sits a round out: round 3 opens with her back beside the Nexus, at full health, and her card says so", () => {
-  const side = fixture(COMMANDER_FALLS, sittingOut(1))
-  startRound(side)
-  toResult(side)
-  keys(side, ENTER)
-  startRound(side)
-  toResult(side)
-  // Her absence is over: nothing about her in round 2's result.
-  assert.doesNotMatch(panelText(side), /Vasse/)
-  keys(side, ENTER)
-  assert.equal(side.build.state.pulseNumber, 3)
-  assert.equal(statusLine(side), "Round 2: victory. The Nexus Pulse restores Vasse and deals: [n].")
-  assert.match(mapText(side), /@/, "she is not on round 3's map")
-  const vasse = (side.build.round.field ?? []).find((entity) => entity.contentId === VASSE)
-  assert.ok(vasse !== undefined)
-  side.build.dispatch({ kind: "look-at", x: vasse.anchor.x, y: vasse.anchor.y })
-  side.build.dispatch({ kind: "explore" })
-  const card = panelText(side)
-  assert.match(card, /Vasse/)
-  assert.match(card, /Your Commander/)
-  assert.match(card, /HEALTH +80\/80/)
-  side.build.dispatch({ kind: "open-battle-round" })
-  assert.doesNotMatch(screenText(side), /is out this round/)
-})
-
-test("a Commander who sits a round out falls with one round to go: the result says she is out for the last, and the last round opens without her", () => {
-  const side = fixture(twoRounds(), sittingOut(1))
-  startRound(side)
-  toResult(side)
-  assert.match(panelText(side), /Vasse fell: out for round 2, the last\./)
-  keys(side, ENTER)
-  assert.equal(side.build.state.pulseNumber, 2)
-  assert.match(statusLine(side), /^Round 1: \w[\w' ]*\. Vasse is out this round\.$/)
-  assert.doesNotMatch(mapText(side), /@/, "she is on the last round's map")
+test("a Commander who sits rounds out: the next Build Phase says she is out and the round she is back for, then that she is back", () => {
+  // A disadvantage no Commander has yet (`roundsOut`, tests/commander.test.ts holds the rule): what the round after her
+  // fall opens with, and the round she is back, in the same words a Skirmish says them.
+  const out = { player: "A" as const, contentId: VASSE, fellInRound: 1, returnsInRound: 3 }
+  assert.equal(commanderNews([], [out], 2, 8), "Vasse is out this round, back for round 3.")
+  // Out for the last round: no round to be back for.
+  assert.equal(commanderNews([], [out], 2, 2), "Vasse is out this round.")
+  assert.equal(commanderNews([{ player: "A", contentId: VASSE, ordinal: 16, anchor: { x: 20, y: 10 } }], [], 3, 8), "The Nexus Pulse restores Vasse beside the Nexus.")
+  // The enemy's Commander is not the player's to hear about.
+  assert.equal(commanderNews([], [{ ...out, player: "B" }], 2, 8), null)
 })

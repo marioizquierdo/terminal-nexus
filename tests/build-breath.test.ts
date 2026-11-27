@@ -7,12 +7,12 @@
 // function of the time since the popup opened, drawn at rest in every still frame, still under reduced
 // motion and in monochrome, and the frame timer runs for it only while a popup is open.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { popupSpec, placePopup } from "../src/build/popup.ts"
 import type { BuildState } from "../src/build/state.ts"
 import type { Popup } from "../src/build/types.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import type { PopupBorder, PopupBreath } from "../src/view/build.ts"
 import {
   BREATH_DEPTH,
@@ -46,7 +46,7 @@ const OPENING = flashLengthMs(POPUP_FLASH)
 
 /** A Build Phase with the game menu open, as `q` leaves it: a popup that breathes. */
 function gameMenu(experiments: Readonly<{ popupPulseMs?: number }> = {}): Side {
-  const side = buildSide({ context: { ...starterContext(), experiments } })
+  const side = buildSide({ context: { ...testBase(), experiments } })
   keys(side, "q")
   assert.equal(side.build.state.popup, "game-menu")
   return side

@@ -26,7 +26,6 @@ import { runBuildPhase } from "./build-phase.ts"
 import type { Exporter } from "./build-phase.ts"
 import { readLaunch } from "./launch.ts"
 import type { LaunchProblem } from "./launch.ts"
-import { DEFAULT_LEVEL, LEVELS } from "./levels.ts"
 import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, formatRoute, skirmishRoute } from "./route.ts"
 import { ASK_WORDS, readAsk } from "../skirmish/ask.ts"
 import type { LevelDestination } from "./route.ts"
@@ -44,11 +43,10 @@ import { importSettings } from "../build/settings-export.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { TerminalOutput } from "../view/backends/ports.ts"
 
-/** `--help`: the places a route names and the levels come from the route table and the level list, so the
- *  text never names a place or a level the game does not have. */
+/** `--help`: the places a route names come from the route table, so the text never names a place the game does not
+ *  have. */
 function usage(): string {
   const places = PLACE_NAMES.map((name) => `        ${name.padEnd(12)}${PLACES[name]?.opens ?? ""}`).join("\n")
-  const levels = LEVELS.map((level) => `        ${level.id.padEnd(16)}${level.title}, rounds 1 to ${level.rounds}`).join("\n")
   // Quoted only where the shell would read the route itself.
   const example = (route: string, what: string): string =>
     `        --at ${/[?&]/u.test(route) ? `'${route}'` : route}`.padEnd(54) + what
@@ -59,7 +57,7 @@ function usage(): string {
                  [--colors monochrome|color256|truecolor]
                  [--theme dark|light] [--glyphs ascii|unicode] [--reduced-motion]
                  [--backend auto|ansi|opentui]
-      With no --at, opens the title menu: Skirmish, Story, Settings, About, Exit.
+      With no --at, opens the title menu: Skirmish, Settings, About, Exit.
 
   --load <file>
       opens a Skirmish save file at its Build Phase, the plan it was saved with restored: what
@@ -87,15 +85,11 @@ ${places}
       For example:
 ${example("settings", "the title menu's Settings screen")}
 ${example("skirmish?setup=new", "the Skirmish setup screen: map, Commanders, who plays")}
-${example(DEFAULT_LEVEL_ROUTE, `${DEFAULT_LEVEL.title}'s Build Phase, round 1`)}
-${example(`${DEFAULT_LEVEL_ROUTE}&round=3`, "its round 3, reached as a player who")}
-${"".padEnd(54)}builds nothing reaches it
+${example(DEFAULT_LEVEL_ROUTE, "the starter map's Build Phase, round 1")}
 ${example("skirmish?seed=1234", "a Skirmish on seed 1234: Vasse against Dob Hunter")}
 ${example("skirmish?load=mine.save.json", "a save file, at its Build Phase")}
-      round counts Battle Rounds from 1, as the screen does. The missions:
-${levels}
 
-      A Skirmish or a story mission opens its Build Phase on its map and plays from there: a
+      A Skirmish opens its Build Phase on its map and plays from there: a
       battlefield larger than the screen, a cursor that scrolls it, buildings to place by keyboard,
       by mouse or from a script, a Nexus power to pick, then the Battle Round. Esc opens the
       game menu: Settings, in sections - the display settings (saved, like the title menu's)
@@ -106,8 +100,8 @@ ${levels}
       plan so far to a file (~/.terminal-nexus/saves/ unless the name has a folder). Two flags
       only a Build Phase takes:
       --keys "<key script>" opens it already in the state those keys reach, in the scripted
-      playtest's key names: --keys "Esc n 1 1 Enter" skips the intro, picks the first power and
-      places a Barracks. For demos and for reproducing a report; the keyboard is yours after
+      playtest's key names: --keys "Esc n 1 3 Enter" skips the opening line, picks the first
+      power and places a Barracks. For demos and for reproducing a report; the keyboard is yours after
       the last key.
       --scroll-margin <percent> changes how close to the edge of the view the cursor gets
       before the map starts scrolling, as a share of the view's width and height
@@ -135,7 +129,7 @@ function refusal({ part, error }: LaunchProblem): string {
   return `terminal-nexus: --at "${error.route}" is not a place in the game:\n${problems}terminal-nexus --help lists every place, with examples.\n`
 }
 
-/** The flags only a Build Phase reads (a story mission's or a Skirmish's). */
+/** The flags only a Build Phase reads. */
 const BUILD_PHASE_FLAGS = ["keys", "scroll-margin"] as const
 
 /** The flags that name who plays a Skirmish's slots: beside --at, over the route's own. */

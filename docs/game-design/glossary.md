@@ -108,7 +108,8 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   its **Nexus power pool** (never "pool" alone); the player may **keep** one, listed as **ACTIVE**. **draft** is
   choosing from the hand ([`commander-armies.md`](commander-armies.md)).
 - **Nexus Pulse** — the moment each round opens, when the Nexus deals its Commander a hand of Nexus powers.
-- **PERIMETER**, **RIGHT OF SALVAGE** — Vasse's first mission, the tutorial, and her first technology mission.
+- **PERIMETER**, **RIGHT OF SALVAGE** — Vasse's first mission, the tutorial, and her first technology mission: Story's
+  design, waiting with it (PERIMETER left the game on 2026-11-26).
 - **rally point** — where a side's troops head and hold for a Battle Round: a tile, or a named place (`HOME_NEXUS`,
   `ENEMY_NEXUS`; later a map's hotspots); in a plan, `rally`. Placed in the Build Phase as Start Battle Round opens, by
   default in front of the base (the Rally point start Experiment). The banner is only its flag
@@ -142,10 +143,13 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **Skirmish** — one battle against a scripted Commander Army, set up by the player: the centre of the game and of its
   testing ([`game-modes.md`](game-modes.md)).
 - **stance** — retired with the rally point: what was `hold` is a rally point on `HOME_NEXUS`, `attack` on `ENEMY_NEXUS`.
-- **starter map** — the Build Phase's one disposable map and the few buildings it offers; not a mission.
+- **starter map** — the disposable map the Build Phase's tests and the scripted playtest's own default open on, as a
+  Skirmish save (`saves/starter.save.json`); larger than the largest view, so scrolling is unavoidable. Not a battle map
+  the setup screen offers.
 - **Story** — a Commander's story: missions in order, with **technologies** carried from one to the next, ending in a
   final battle; its parts are the tutorial, technology missions, the **endless stand** and the final battle
-  ([`story.md`](story.md)). A story in progress is a **save slot**.
+  ([`story.md`](story.md)). A story in progress is a **save slot**. Waits, with its missions, until Skirmish is solid
+  (2026-11-26).
 - **supply** — the cap on how many units a side may field; supply buildings raise it.
 - **target** — the area the battle engine sends a side's fighting units to (in a battle, its rally point's area): they engage what comes within reach on the way, and stand there
   ([`pulse.md`](../system-design/pulse.md)).
@@ -180,7 +184,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **row**, **hotkey** — one line of a list, and its key shown as `[x]`; a hotkey that is not shown does not exist.
 - **Skirmish screen**, **setup screen** — the title menu's `[1] Skirmish` (`New game`, `Load game`), and the screen that
   picks the map and each slot's Commander and controller.
-- **title menu** — the first screen: Skirmish, Story, Settings, About, Exit.
+- **title menu** — the first screen: Skirmish, Settings, About, Exit (Story's row waits with Story).
 - **top bar**, **side panel**, **map**, **bottom line** — the screen's four regions.
 
 ## The world
@@ -236,7 +240,7 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
   a **report** line with the outcome, losses and hashes; the `skirmish` command prints them (`src/report/`).
 - **lesson** — something learned the hard way, dated in `docs/history/lessons-learned.md`.
 - **measurement** — battles played the same way before and after a change, so the numbers compare: sandboxes, duels
-  (scripted battles over seeds) and missions (`bin/measure.ts`, [`measurement.md`](../system-design/measurement.md)).
+  (scripted battles over seeds) (`bin/measure.ts`, [`measurement.md`](../system-design/measurement.md)).
 - **milestone**, **step** — one question about the game, small enough to play and judge (`PLANNED`, `CURRENT`,
   `COMPLETE`); and one pull request's worth of it, the **current step** the one in scope
   ([`milestones/`](../milestones/README.md)).
@@ -275,7 +279,8 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
   calls them side A and side B.
 - **spectating** — a battle with no player slot: two scripts, watched.
 - **spike** — a small, throwaway build that answers one question reading cannot ([`DEVELOPMENT.md`](../../DEVELOPMENT.md)).
-- **story file** — `stories/<id>/story.json`, a Commander's missions as data; a mission's entry is a **level**.
+- **story file** — a Commander's missions as data, each mission's entry a **level**: Story's, waiting with it (the
+  `stories/` folder left the game on 2026-11-26).
 - **trigger** — a condition and the actions a mission takes when it holds, in the **simulation** band or the
   **presentation** band ([`story.md`](story.md)).
 - **tuned value** — a number set by feel and kept in one place (`src/build/tuning.ts`); never copied into prose.

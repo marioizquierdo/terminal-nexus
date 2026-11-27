@@ -10,7 +10,8 @@ import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { currentCard } from "../src/build/card.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import { createBuildState, withoutScene } from "../src/build/state.ts"
-import { DEFAULT_LEVEL } from "../src/cli/levels.ts"
+import { barracksLevel } from "./starter-fixture.ts"
+const DEFAULT_LEVEL = barracksLevel()
 import { frameToText } from "../src/view/frame.ts"
 import { buildSide, clickCell, compose, keys } from "./build-helpers.ts"
 

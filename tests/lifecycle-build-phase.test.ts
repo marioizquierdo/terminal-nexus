@@ -21,7 +21,7 @@ import { AnsiBackend } from "../src/view/backends/ansi.ts"
 import { KEYBOARD_POP, KEYBOARD_PUSH, KEYBOARD_QUERY } from "../src/terminal/key-events.ts"
 import type { Settings } from "../src/settings/index.ts"
 import { ESC } from "./build-helpers.ts"
-import { DEFENCE_KEYS } from "./pulse-helpers.ts"
+import { DEFENCE_KEYS, testLevel } from "./pulse-helpers.ts"
 
 
 /** The title row's clock, whatever styling sits between the words and the time. */
@@ -94,6 +94,9 @@ async function starterSession(
   void session
   return { stdout, stdin, exits }
 }
+
+/** The test battle on the Build Phase tests' base (tests/pulse-helpers.ts): where a test of the live loop opens. */
+const AT_TEST_BATTLE = { at: { kind: "level" as const, level: testLevel(), round: 1 } }
 
 test("launching enters the alternate screen, raw mode, and turns mouse reporting on", async () => {
   const { stdout, stdin } = await starterSession(() => {})
@@ -231,6 +234,7 @@ test("--keys opens the Build Phase already in the state those keys reach, then h
       exits.push(code)
     },
     startKeys: parseKeyScript("n 1 1 Enter"),
+    ...AT_TEST_BATTLE,
   })
   await new Promise((resolve) => setTimeout(resolve, 30))
   assert.ok(stdout.written.includes("Barracks placed"), "the start keys did not place the Barracks")
@@ -270,9 +274,9 @@ test("--keys that cannot be delivered stops there and says why when the screen c
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-/** A plan that wins PERIMETER's first round: a Nexus power, two Turrets and a Hatchery, the commit and its
- *  yes. */
+/** A plan that wins the test battle's first round: two Turrets and a Hatchery, the commit and its yes. */
 const WINNING_PLAN = `${DEFENCE_KEYS} s s`
+
 
 test("the live loop plays a Battle Round on its own clock: timer, last seconds, result, then idle — and starts over on Restart", async () => {
   let t = 5_000
@@ -292,25 +296,22 @@ test("the live loop plays a Battle Round on its own clock: timer, last seconds, 
     },
     now: () => t,
     startKeys: parseKeyScript(WINNING_PLAN),
+    ...AT_TEST_BATTLE,
   })
   await sleep(80)
   // Opened already in the Pulse the start keys committed, at its very beginning — however many seconds of
   // script clock the keys took, the live clock started the Pulse at zero.
-  // (14 seconds since the march sorts itself on the move and the Commander leads nothing: nobody waits for her; 15
-  // since a unit keeps the target it holds, a battle's last shot comes a second later; 14 again since army groups: the
-  // ranks march closed up, so the fight is over a second sooner.)
-  assert.equal(timerAt(stdout.lastWrite), "0:14", "the Pulse did not open at zero")
+  // (17 seconds: the test battle's raid, beaten by the Turrets and the squads.)
+  assert.equal(timerAt(stdout.lastWrite), "0:17", "the Pulse did not open at zero")
   assert.match(stdout.lastWrite, /battle round/)
 
   t += 3_000
   await sleep(80)
-  assert.equal(timerAt(stdout.lastWrite), "0:11", "the Pulse did not follow the screen's clock")
+  assert.equal(timerAt(stdout.lastWrite), "0:14", "the Pulse did not follow the screen's clock")
 
-  // The last seconds, in the run-up to the stop (PERIMETER's first round ends a little before 15 s with this plan,
-  // Vasse in the squads, the squads holding the line and the Barracks's wave coming out over its roof five seconds
-  // in, the raid heading for the Nexus, and the warning is three seconds; it ran to 24 s when the raid stood behind
-  // the ridge before routes).
-  t += 9_000
+  // The last seconds, in the run-up to the stop (the test battle's first round ends at 16.5 s with this plan, and the
+  // warning is three seconds).
+  t += 11_000
   await sleep(80)
   assert.match(stdout.lastWrite, /about to end/, "no warning before the fight stopped")
 
@@ -352,12 +353,12 @@ test("a Battle Round holds still behind the resize gate and resumes from the sam
     exit: () => {},
     now: () => t,
     startKeys: parseKeyScript(WINNING_PLAN),
+    ...AT_TEST_BATTLE,
   })
   await sleep(60)
   t += 3_000
   await sleep(60)
-  // The same battle's clock as above, 14 seconds at the start since army groups.
-  assert.equal(timerAt(stdout.lastWrite), "0:11")
+  assert.equal(timerAt(stdout.lastWrite), "0:14")
 
   stdout.columns = 60
   stdout.emit("resize")
@@ -368,7 +369,7 @@ test("a Battle Round holds still behind the resize gate and resumes from the sam
   stdout.columns = 80
   stdout.emit("resize")
   await sleep(60)
-  assert.equal(timerAt(stdout.lastWrite), "0:11", "the Pulse ran on behind the gate")
+  assert.equal(timerAt(stdout.lastWrite), "0:14", "the Pulse ran on behind the gate")
   stdin.emit("data", Buffer.from([3]))
   await sleep(30)
 })

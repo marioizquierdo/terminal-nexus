@@ -1,22 +1,15 @@
 // The battles a measurement plays (docs/system-design/measurement.md): a map from `sandboxes/` on a seed, a duel
-// between two Commanders played as a Skirmish (the same save, seating and round loop the `skirmish` command plays by), and a Story level played by a fixed plan. Each comes back as the records of
+// between two Commanders played as a Skirmish (the same save, seating and round loop the `skirmish` command plays by). Each comes back as the records of
 // its battles (`battle.ts`) and what decided it. Pure: the same inputs measure the same on every machine. Reading the
 // maps from disk, the clock and writing the results down are the command's (`bin/measure.ts`).
 
 import { RARITIES } from "../armies/types.ts"
 import type { Rarity } from "../armies/types.ts"
-import type { CurvePlan } from "../cli/curve-measure.ts"
-import { planRound } from "../cli/curve-measure.ts"
-import type { PlayableLevel } from "../cli/levels.ts"
-import { STARTER_START_CURSOR } from "../build/catalog.ts"
-import { buildLayout } from "../build/layout.ts"
-import { createBuildState, withoutScene } from "../build/state.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../engine/events/types.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import type { BattleResult, Side } from "../battle/index.ts"
 import { briefOf } from "../battle/index.ts"
-import { centreTile } from "../match/index.ts"
 import { playOn } from "../skirmish/play.ts"
 import { playSandboxRound } from "../skirmish/sandbox-round.ts"
 import { newBattle, openSave } from "../skirmish/request.ts"
@@ -111,9 +104,7 @@ export function measureDuel(battle: DuelBattle, players: Readonly<Record<Side, s
 /** How lucky a hand kept was: its rarity's place among the rarities, common 1 up to legendary 4; none kept 0. */
 export const luckOf = (kept: Rarity | null): number => (kept === null ? 0 : RARITIES.indexOf(kept) + 1)
 
-/** A plan a Story level is played by: what it buys each round, near the player's Nexus. */
-export type LevelPlan = Readonly<{ name: string; buys: CurvePlan["buys"] }>
-
+/** A Story level as it was played and measured: only in a record written before Story stopped (2026-11-26). */
 export type LevelMeasure = Readonly<{
   level: string
   plan: string
@@ -121,44 +112,3 @@ export type LevelMeasure = Readonly<{
   ended: Readonly<{ round: number; verdict: string }>
   rounds: readonly Readonly<{ round: number; bought: readonly string[]; battle: BattleRecord }>[]
 }>
-
-/** One round of a level as it was played: what the plan bought and the battle's states and events. */
-export type LevelRound = Readonly<{
-  round: number
-  bought: readonly string[]
-  states: readonly MatchState[]
-  events: readonly DomainEvent[]
-  registry: ContentRegistry
-}>
-
-/** Plays `level` by `plan` to its end, handing each round to `each` as it is played; says how it ended. */
-export function playLevel(level: PlayableLevel, plan: LevelPlan, each: (round: LevelRound) => void): LevelMeasure["ended"] {
-  let context = level.firstRound()
-  const nexus = context.standing.find((structure) => context.registry.get(structure.contentId).nexus === true)
-  const near = nexus === undefined ? STARTER_START_CURSOR : centreTile(nexus.anchor, context.registry.get(nexus.contentId).footprint)
-  const curve: CurvePlan = { name: plan.name, buys: plan.buys, near }
-  let ended = { round: 0, verdict: "unplayed" }
-  for (let round = 1; round <= level.rounds; round += 1) {
-    const viewport = buildLayout({ columns: 80, rows: 24 }, context.terrain).viewport
-    const opened = createBuildState(withoutScene(context), STARTER_START_CURSOR, viewport)
-    const planned = planRound(context, opened, curve)
-    const resolved = level.play.startPulse(context, planned.state)
-    if (resolved === null) throw new Error(`level "${level.id}": round ${round} could not start`)
-    const { states, events, registry } = resolved.timeline
-    each({ round, bought: planned.bought, states, events, registry })
-    ended = { round, verdict: resolved.mission?.verdict.kind ?? "none" }
-    const next = level.play.nextRound(context, planned.state, resolved)
-    if (next === null) break
-    context = next
-  }
-  return ended
-}
-
-/** Plays `level` by `plan` to its end, recording every round's battle. */
-export function measureLevel(level: PlayableLevel, plan: LevelPlan): LevelMeasure {
-  const rounds: { round: number; bought: readonly string[]; battle: BattleRecord }[] = []
-  const ended = playLevel(level, plan, ({ round, bought, states, events, registry }) => {
-    rounds.push({ round, bought, battle: recordBattle(states, events, registry) })
-  })
-  return { level: level.id, plan: plan.name, ended, rounds }
-}

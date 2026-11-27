@@ -9,8 +9,9 @@ Terminal Nexus is a terminal strategy game. Each round opens with a Nexus Pulse,
 deals a hand of Nexus powers; players then build a base during a hidden Build Phase and watch
 persistent armies resolve the plan in a deterministic ASCII battle, the Battle Round. It has three
 modes ([`docs/game-design/game-modes.md`](docs/game-design/game-modes.md)): **Skirmish**, one battle
-against a scripted Commander Army and the centre of design and testing; **Story**, a Commander's story
-of missions; and **Versus**, later. The project is at version 0.1 until it is public.
+against a scripted Commander Army, where every new mechanic is built and tested; **Story**, a Commander's
+story of missions, which waits until Skirmish and a few Commander Armies are solid and then returns as a scripting
+layer over a Skirmish; and **Versus**, later. The project is at version 0.1 until it is public.
 
 Every document is on one of three shelves, and the path says which:
 
@@ -114,8 +115,8 @@ session needs:
   schedule it. Waiting for a step of their own: a second resource, visibility, the replay format (the
   Skirmish milestone's session record for playtest notes is not it), a unit route still marked IDEA
   in [`movement.md`](docs/system-design/movement.md) (a second banner, a worker's job), multiplayer,
-  sound, packaging, a mod loader, any mission beyond PERIMETER and RIGHT OF SALVAGE, and a full
-  Commander Army. The Commander Armies in `armies/` are drafts on purpose: a few units each, enough
+  sound, packaging, a mod loader, any Story mission (Story waits: [`story.md`](docs/game-design/story.md)
+  keeps its design), and a full Commander Army. The Commander Armies in `armies/` are drafts on purpose: a few units each, enough
   to test the difference between two armies in a Skirmish; filling one out waits until the gameplay
   is solid.
 
@@ -126,9 +127,9 @@ What the folder names do not say; the rest is in the tree.
 | Path | What it is |
 | --- | --- |
 | `src/engine/` | The battle engine: given a state on a map, it plays a Battle Round tick by tick and records its events. It imports nothing above it but `src/content/`, and `tests/architecture.test.ts` holds which layer may import which. |
-| `src/match/`, `src/mission/` | The rules between rounds: each Battle Round's opening (the regroup, banners, Commanders returning, training), missions and their trigger runner. |
-| `armies/`, `stories/`, `src/armies/` | Armies as data, stacked: `armies/all` (what any Commander may use), the factions (`citizen`, `ravel`), one army per Commander; a Commander's story and missions (`stories/<id>/story.json`); the loader. To write one: [`army-authoring.md`](docs/system-design/army-authoring.md). |
-| `src/battle/`, `src/skirmish/`, `src/cli/skirmish*.ts`, `saves/`, `players/`, `maps/` | The game: the Nexus Pulse, the Build Phase, credits, rounds and who wins, the save file. The Skirmish screen and the `skirmish` command (`bin/skirmish.ts`, the game headless for agents; its manual is `--help`) play it by the same steps. Design: [`battles.md`](docs/system-design/battles.md), [`skirmish-saves.md`](docs/system-design/skirmish-saves.md). |
+| `src/match/` | The rules between rounds: each Battle Round's opening (the regroup, banners, Commanders returning, training). |
+| `armies/`, `src/armies/` | Armies as data, stacked: `armies/all` (what any Commander may use), the factions (`citizen`, `ravel`), one army per Commander; the loader. To write one: [`army-authoring.md`](docs/system-design/army-authoring.md). |
+| `src/battle/`, `src/skirmish/`, `src/cli/skirmish*.ts`, `saves/`, `players/`, `maps/` | The game: the Nexus Pulse, the Build Phase, credits, rounds and who wins, the save file. `saves/starter.save.json` is the starter map, where the Build Phase's tests (`tests/starter-fixture.ts`) and the scripted playtest's own default open. The Skirmish screen and the `skirmish` command (`bin/skirmish.ts`, the game headless for agents; its manual is `--help`) play it by the same steps. Design: [`battles.md`](docs/system-design/battles.md), [`skirmish-saves.md`](docs/system-design/skirmish-saves.md). |
 | `sandboxes/`, `src/measure/` | A sandbox is a save whose `start` sets the battlefield up by hand: one Battle Round of the engine, for one rule, effect, movement or ability, played and drawn by the `skirmish` command; most are the setups of unit tests. `bin/measure.ts` plays the same battles before and after a change ([`measurement.md`](docs/system-design/measurement.md)). |
 | `src/build/all-settings.ts` | Every setting and Experiment, declared once. |
 | `src/log/`, `src/report/` | Two records: the Activity Logs (the structured logger, its declared events and filters) and a battle's levelled log with the report a run ends on. |

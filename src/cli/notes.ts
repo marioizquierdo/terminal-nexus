@@ -1,7 +1,6 @@
 // Notes from a playtest (docs/system-design/skirmish-saves.md, notes; DEVELOPMENT.md, the feedback loop): the `!` key,
 // on every screen, saves one typed line with the moment itself — a note is the moment, not a paragraph describing how
-// to reach it. On a Build Phase that is the round as its Build Phase opened (a Skirmish's save, or a story mission's
-// route at its round), every named command pressed since with its time, the settings and Experiments, the screen as
+// to reach it. On a Build Phase that is the round as its Build Phase opened (a Skirmish's save), every named command pressed since with its time, the settings and Experiments, the screen as
 // text, the line and the last Activity Logs events; on the title menu, the screen's route, its text and the line.
 //
 // `--note <file>` opens it again at its moment, in the game and in the scripted playtest: the round opened as it
@@ -41,7 +40,7 @@ export type NoteFile = Readonly<{
   /** When it was written, as the shell's clock said (ISO 8601), and the build that wrote it. */
   written?: string
   build?: string
-  /** Where it was: a story mission's round, a Skirmish's route, a title menu screen. */
+  /** Where it was: a Skirmish's route, or a title menu screen. */
   at: string
   /** A Skirmish's round as its Build Phase opened, the plan laid then included: what the note opens. */
   save?: SaveFile
@@ -60,14 +59,13 @@ export type NoteFile = Readonly<{
 /** What the shell adds to a moment: the clock, the build, the screen drawn as text, and the log. */
 export type NoteExtras = Readonly<{ written?: string; build?: string; screen: string; activity: readonly LogEntry[]; startedAt: number }>
 
-/** The route a Build Phase round is at: a Skirmish's own (its seed or its file), or a story mission's at its round. */
-export function roundRoute(context: BuildContext, level: Readonly<{ id: string; route?: string }>): string {
-  if (level.route !== undefined) return level.route
-  return `story?mission=${level.id}${context.round === undefined || context.round.number === 1 ? "" : `&round=${context.round.number}`}`
+/** The route a Build Phase round is at: its Skirmish's own (its seed or its file). */
+export function roundRoute(_context: BuildContext, level: Readonly<{ route: string }>): string {
+  return level.route
 }
 
 /** **A Build Phase's note**: the moment, as a note file. */
-export function noteOf(moment: NoteMoment, level: Readonly<{ id: string; route?: string }>, extras: NoteExtras): NoteFile {
+export function noteOf(moment: NoteMoment, level: Readonly<{ id: string; route: string }>, extras: NoteExtras): NoteFile {
   const { opened } = moment
   const skirmish = isSkirmish(opened.context)
   return {
@@ -158,7 +156,7 @@ export function readNote(text: string, profiles?: Profiles): Readonly<{ note: No
   }
 }
 
-/** Where a note opens: a Build Phase (a Skirmish's save, a mission at its round) with what to replay on it, or a title
+/** Where a note opens: a Build Phase (a Skirmish's save) with what to replay on it, or a title
  *  menu screen. Throws for a route that is no place in the game. */
 export type NoteOpening =
   | Readonly<{ kind: "level"; at: LevelDestination; pressed: readonly PressedCommand[]; until: number }>

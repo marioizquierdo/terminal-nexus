@@ -35,10 +35,7 @@ import {
   wholeRows,
 } from "../src/engine/geometry/index.ts"
 import type { Coord, Direction, Footprint, MapTerrain } from "../src/engine/geometry/index.ts"
-import { foreseeIntents, regroup, resolveMissionPulse } from "../src/match/index.ts"
-import type { MissionPulseInput } from "../src/match/index.ts"
-import type { MissionDefinition } from "../src/mission/index.ts"
-import { validateMission } from "../src/mission/index.ts"
+import { regroup } from "../src/match/index.ts"
 import { contextFor, resolvePulse, stepCost, stepTick } from "../src/engine/pulse/index.ts"
 import { fleeTrigger } from "../src/engine/pulse/perception.ts"
 import { visionOf, followsTarget } from "../src/engine/pulse/target.ts"
@@ -525,102 +522,6 @@ test("every battle on file keeps every unit's credit between none and its deares
 })
 
 // --- The rules round a battle --------------------------------------------------------------------------------------
-
-/** A ridge of rock across an open field, a Nexus of the player's south-west of it, and one trooper of the
- *  raid's coming from the north-east to it. */
-function ridgeWalk(): Readonly<{ mission: MissionDefinition; terrain: MapTerrain }> {
-  const width = 40
-  const height = 24
-  const tiles = Array.from({ length: width * height }, (_, index) => {
-    const x = index % width
-    const y = Math.floor(index / width)
-    return y === 9 && x >= 14 && x <= 24 ? ("terrain.rock" as const) : ("terrain.plain" as const)
-  })
-  const terrain: MapTerrain = { width, height, tiles }
-  const mission: MissionDefinition = {
-    id: "rows-walk",
-    name: "rows walk",
-    pulses: 1,
-    pulseTicks: 600,
-    seed: 7,
-    regions: [{ id: "north-east", x: 30, y: 1, width: 1, height: 1 }],
-    triggers: [
-      { id: "raid", when: { pulse: 1, tick: 0 }, do: [{ spawn: { side: "B", units: [{ unit: TROOPER, count: 1 }], at: "north-east", group: "walker" } }] },
-      { id: "end", when: { event: "pulse.end", pulse: 1 }, do: [{ win: true }] },
-    ],
-  }
-  validateMission(mission, terrain, FIXTURE_REGISTRY)
-  return { mission, terrain }
-}
-
-test("the forecast's way is the Pulse's own walk: down the screen's diagonal from the north-east, and round the ridge", () => {
-  const { mission, terrain } = ridgeWalk()
-  const input: MissionPulseInput = {
-    mission,
-    terrain,
-    registry: FIXTURE_REGISTRY,
-    pulse: 1,
-    carried: null,
-    // The bench's passive Nexus: the game's own shoots the walker before its walk is done.
-    structures: [{ contentId: "structure.bench.nexus", anchor: { x: 5, y: 17 } }],
-  }
-  const [group] = foreseeIntents(input)
-  assert.ok(group !== undefined && group.path.length > 0)
-  // Where the raider actually stood, tick by tick, each new tile once.
-  const run = resolveMissionPulse(input)
-  const raider = run.arrivals[0]
-  assert.ok(raider !== undefined)
-  const walked: Coord[] = []
-  let at = raider.anchor
-  for (const state of run.states) {
-    const anchor = state.entities.find((entity) => entity.ordinal === raider.ordinal)?.anchor
-    if (anchor === undefined) break
-    if (anchor.x !== at.x || anchor.y !== at.y) walked.push(anchor)
-    at = anchor
-  }
-  assert.deepEqual(group.path, walked, "the trail drawn is not the way the raider walks")
-  // The Nexus's nearest tile is twenty-three columns across and sixteen rows down, thirty-two columns' worth: the
-  // rows are further, and it heads down first.
-  assert.deepEqual(group.path.slice(0, 2), [
-    { x: 30, y: 2 },
-    { x: 30, y: 3 },
-  ])
-})
-
-test("the forecast's way ends touching what it goes for, straight above or below it, never on it", () => {
-  // An open field, the player's Nexus far to the south-west, a trooper of the player's out on it, and one trooper
-  // of the raid's straight above or below it, within its reach: the raid's turns to it rather than heading on for the
-  // Nexus (`headsForNexus`). Units never block
-  // a forecast's way, so a way that ran on to the target's own tile would stand on it.
-  const terrain: MapTerrain = { width: 40, height: 24, tiles: Array.from({ length: 40 * 24 }, () => "terrain.plain" as const) }
-  const endOfWay = (raidAt: Coord, postAt: Coord): Coord | undefined => {
-    const mission: MissionDefinition = {
-      id: "rows-touch",
-      name: "rows touch",
-      pulses: 1,
-      pulseTicks: 360,
-      seed: 7,
-      regions: [
-        { id: "raid", x: raidAt.x, y: raidAt.y, width: 1, height: 1 },
-        { id: "post", x: postAt.x, y: postAt.y, width: 1, height: 1 },
-      ],
-      triggers: [
-        { id: "squad", when: { pulse: 1, tick: 0 }, do: [{ spawn: { side: "A", units: [{ unit: TROOPER, count: 1 }], at: "post" } }] },
-        { id: "raid", when: { pulse: 1, tick: 0 }, do: [{ spawn: { side: "B", units: [{ unit: TROOPER, count: 1 }], at: "raid", group: "walker" } }] },
-        { id: "end", when: { event: "pulse.end", pulse: 1 }, do: [{ win: true }] },
-      ],
-    }
-    validateMission(mission, terrain, FIXTURE_REGISTRY)
-    const input: MissionPulseInput = { mission, terrain, registry: FIXTURE_REGISTRY, pulse: 1, carried: null, structures: [{ contentId: NEXUS, anchor: { x: 5, y: 17 } }] }
-    const [group] = foreseeIntents(input)
-    assert.equal(group?.target?.contentId, TROOPER, "the raid's trooper does not go for the player's")
-    assert.deepEqual(group?.target?.anchor, postAt)
-    return group?.path.at(-1)
-  }
-  // From the north, the way ends on the tile straight above the player's trooper; from the south, straight below.
-  assert.deepEqual(endOfWay({ x: 20, y: 9 }, { x: 20, y: 12 }), { x: 20, y: 11 })
-  assert.deepEqual(endOfWay({ x: 20, y: 15 }, { x: 20, y: 12 }), { x: 20, y: 13 })
-})
 
 test("the battle with the most rules in it resolves the same way on every run, and on Node and Bun alike", async () => {
   const opening = await loadSandbox("citizens-versus-ravels.save.json")

@@ -3,12 +3,12 @@
 // never consulted: no default-colour code, no "faint" or "reverse" for the terminal to interpret, and a
 // screen bigger than the frame is background to its edges. Monochrome alone leaves the terminal's colours be.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { buildLayout } from "../src/build/layout.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { createMenuList } from "../src/title-menu/list.ts"
 import { TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
 import { AnsiBackend } from "../src/view/backends/ansi.ts"
@@ -30,7 +30,7 @@ const WITH_COLOURS: readonly Exclude<ColorDepth, "monochrome">[] = ["color256", 
 
 /** The opening screens a player sees: the title menu, the map, and a popup over it. */
 function screens(colors: ColorDepth): readonly ReadonlyCellFrame[] {
-  const context = starterContext()
+  const context = testBase()
   const layout = buildLayout({ columns: 80, rows: 24 }, context.terrain)
   const frames: ReadonlyCellFrame[] = [composeMenuFrame({ state: createMenuList(TOP_LEVEL_ITEMS), notice: null }, colors)]
   for (const script of [[], ["n", "1"]]) {

@@ -1,9 +1,9 @@
-// Reading an army file and a story file: the shape each part must have, checked item by item before anything
-// reads it, every problem said by path (`src/content/shape.ts`). A list's item with the wrong shape is left out of
-// everything after, so one broken level, one broken power or one broken unit never hides the problems of the rest.
+// Reading an army file: the shape each part must have, checked item by item before anything reads it, every problem
+// said by path (`src/content/shape.ts`). A list's item with the wrong shape is left out of everything after, so one
+// broken building, one broken power or one broken unit never hides the problems of the rest.
 //
-// What a part *means* — that what it names exists and is in sight, that a tier requires the one below, that a level's
-// mission fits its map — is checked after, once every file has been read (`load.ts`).
+// What a part *means* — that what it names exists and is in sight, that a tier requires the one below — is checked
+// after, once every file has been read (`load.ts`).
 //
 // Pure: the JSON is an argument; nothing is read from disk.
 
@@ -19,16 +19,13 @@ import type {
   BuildingActionCard,
   BuildingCard,
   BuildingSpawns,
-  StoryManifest,
   ChanceModifier,
   CommanderEntry,
-  LevelEntry,
   PowerCard,
   PowerRequirements,
   Schedule,
   ScheduleEntry,
   ScheduleSlot,
-  Unlocks,
 } from "./types.ts"
 import { ACTION_KINDS, RARITIES, ROLES } from "./types.ts"
 
@@ -74,7 +71,7 @@ const powerCard = record<PowerCard>(
     notes: text,
   },
 )
-/** One card of a scheduled hand: a rarity's name, `{ "power": id }` for a power the level makes sure of, or
+/** One card of a scheduled hand: a rarity's name, `{ "power": id }` for a power the schedule makes sure of, or
  *  `{ "from": a Nexus }` for one of the cards from another Nexus. */
 const pinnedPower = record<Readonly<{ power: string }>>({ power: text }, {})
 const otherNexus = record<Readonly<{ from: string }>>({ from: text }, {})
@@ -109,21 +106,6 @@ const armyFields = record<ArmyManifest>(
     powers: anything as Shape<readonly PowerCard[]>,
     commander: anything as Shape<CommanderEntry>,
   },
-)
-
-// --- The shapes of a story's parts ------------------------------------------------------------------------
-
-const unlocks = record<Unlocks>({}, { buildings: list(text), powers: list(text) })
-/** A level's own fields. Its mission is checked after the level it extends is resolved (`levels.ts`), by the
- *  mission's own shape. */
-export const levelShape = record<LevelEntry>(
-  { id: text },
-  { extends: text, map: text, credits: wholeNumber, unlocks, schedule: scheduleShape, mission: anything as Shape<LevelEntry["mission"] & object>, notes: text },
-)
-/** A story file's own fields. Its levels are checked one by one, after. */
-const storyFields = record<StoryManifest>(
-  { id: text, title: text, commander: text, requires: list(text), levels: anything as Shape<readonly LevelEntry[]> },
-  { notes: text },
 )
 
 /** The items of a list that have `shape`, every problem with the others said. */
@@ -190,31 +172,4 @@ export function readArmy(file: unknown, label: string, problems: string[]): Read
   const powers = keep(file["powers"], "powers", powerCard, say)
   const commander = file["commander"] === undefined ? null : commanderEntry.check(file["commander"], "commander", say) ? (file["commander"] as CommanderEntry) : null
   return { file: file as ArmyManifest, id, requires, content, entries, buildings, powers, commander }
-}
-
-// --- A story file, read -------------------------------------------------------------------------------------
-
-/** A story file as far as its shape allows, its levels as written (not yet resolved against what they extend). */
-export type ReadStory = Readonly<{
-  file: StoryManifest
-  id: string
-  requires: readonly string[]
-  levels: readonly LevelEntry[]
-}>
-
-/** A story file as far as its shape allows, or `null` when it has no id to be known by. */
-export function readStory(file: unknown, label: string, problems: string[]): ReadStory | null {
-  const id = idOf(file)
-  const say: Say = (problem) => problems.push(`${id === null ? label : `story "${id}"`}: ${problem}`)
-  storyFields.check(file, "", say)
-  if (!isObject(file) || id === null) return null
-  const requires = Array.isArray(file["requires"]) ? file["requires"].filter((entry): entry is string => typeof entry === "string") : []
-  const levels = keep(file["levels"], "levels", levelShape, say)
-  for (const level of levels) {
-    if (level.extends !== undefined) continue
-    for (const needed of ["map", "credits", "mission"] as const) {
-      if (level[needed] === undefined) say(`${fieldAt(`levels[${level.id}]`, needed)} is needed: the level extends no other`)
-    }
-  }
-  return { file: file as StoryManifest, id, requires, levels }
 }

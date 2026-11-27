@@ -11,14 +11,14 @@ import { RALLY_POINT_LINE } from "../src/build/help.ts"
 import { menuEntries, startEntry } from "../src/build/state.ts"
 import { cellAt } from "../src/view/frame.ts"
 import { BACKSPACE, DOWN, ESC } from "./build-helpers.ts"
-import { MINIMUM, click, frameOf, newSession, screenText } from "./pulse-helpers.ts"
+import { MINIMUM, click, frameOf, newSession, screenText, warChest } from "./pulse-helpers.ts"
 
 type Session = ReturnType<typeof newSession>
 
 /** A session with a Nexus power picked (the War Chest), so Start Battle Round is ready. */
 function ready(size = MINIMUM): Session {
   const session = newSession(size)
-  session.build.dispatch({ kind: "pick-nexus", index: 1 })
+  session.build.dispatch({ kind: "pick-nexus", index: warChest(session.build.round) ?? 0 })
   return session
 }
 

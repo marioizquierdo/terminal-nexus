@@ -273,12 +273,12 @@ test("a Skirmish's round ends without a walk home, and the next Build Phase hold
   }
 })
 
-test("a story's mission keeps the front too: its survivors regroup where they fought, nobody walks home", { timeout: 120_000 }, () => {
+test("the test battle keeps the front too: its survivors regroup where they fought, nobody walks home", { timeout: 120_000 }, () => {
   // The Hatchery alone: once a unit keeps the target it holds (commitment) the first Turret alone leaves nobody to regroup.
   const played = play({ plan: [DEFENCE[2]!] })
   const { regroup } = played.pulse
   assert.equal(played.pulse.mission?.verdict.kind, "continue")
-  assert.ok(regroup.ticks > 0, "the mission goes on, so its survivors regroup")
+  assert.ok(regroup.ticks > 0, "the battle goes on, so its survivors regroup")
   const states = played.pulse.timeline.states
   const last = states[states.length - 1] as MatchState
   // Each walk starts where the fight left the unit.

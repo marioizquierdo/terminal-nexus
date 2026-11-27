@@ -232,6 +232,12 @@ before, worth watching.
 **Scheduled** as the next pull request, on his word (asked 2026-11-26: PERIMETER is the starter map under some forty
 test files and the scripted playtest's default opening). Until then, nothing new is built for missions.
 
+**Built** (2026-11-26). PERIMETER, the mission runner (`src/match/mission.ts`, `src/mission/`), the story files
+(`stories/`), the Story row of the title menu and the `story` routes left the game. The starter map plays as a Skirmish
+save (`saves/starter.save.json`): it is what the Build Phase's tests and the scripted playtest's own default open; the
+tests that played PERIMETER's rounds play the starter map's Skirmish or a small test battle instead. The Story design
+pages say Story waits, their design kept. The Skirmish tallies on both maps are byte for byte what they were.
+
 ### F326 — the eye drawn by the cursor, then four arrows and three flashes
 
 > About the arrows effect that goes from the origin (home nexus) to the placed rally point: The initial circle effect

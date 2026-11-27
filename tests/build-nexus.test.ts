@@ -4,6 +4,7 @@
 // not nag like a forced screen. Committing asks once — docs/system-design/input.md: "the one action that must not
 // fire by accident." — by Start making the cursor the rally point, and Enter placing it.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { NEXUS_ROW, buildLayout, cellForTile, escLabelSpan, escLabel, menuEntryRow } from "../src/build/layout.ts"
@@ -13,7 +14,7 @@ import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, formatMouseEvent } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import type { BuildCommand } from "../src/build/types.ts"
-import { startPulse } from "../src/cli/pulse-run.ts"
+import { startPulse } from "../src/cli/starter.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
@@ -117,7 +118,7 @@ test("the popup picks by Up/Down and Enter too, closes, and lists the pick as ac
 })
 
 test("an open popup draws no placement ghost behind it, and refuses edits sent by a driver", () => {
-  const context = starterContext()
+  const context = testBase()
   const { build, layout } = session()
   build.dispatch({ kind: "arm", index: 2 })
   build.dispatch({ kind: "open-nexus-powers" })
@@ -132,7 +133,7 @@ test("an open popup draws no placement ghost behind it, and refuses edits sent b
 
 test("picking applies its own effect exactly once, and cannot be changed afterward", () => {
   const { build, layout } = session()
-  const context = starterContext()
+  const context = testBase()
   const chest = context.nexusDraft.findIndex((option) => option.name === "War Chest") // beside the dealt hand
   build.dispatch({ kind: "pick-nexus", index: chest }) // War Chest, +2000
   assert.equal(build.state.nexusPick, chest)
@@ -154,7 +155,7 @@ test("the budget on screen counts the picked power's share in what is left, and 
   // The panel once read "130 of 100" — more left than there ever was; it now shows no maximum at all, only what is
   // left, with the map's resource symbol. War Chest adds 2000 to a 100-point allotment; a power that does
   // something else adds nothing.
-  const context = starterContext()
+  const context = testBase()
   const chest = context.nexusDraft.findIndex((option) => option.name === "War Chest")
   const { build, layout } = session()
   build.dispatch({ kind: "pick-nexus", index: chest })
@@ -275,7 +276,7 @@ test("starting the Pulse outside the Battle Round screen — a stray y — chang
 test("keyboard: a digit picks from the Nexus Pulse popup while it is open, and arms the build menu otherwise", () => {
   const side = session()
   side.build.dispatch({ kind: "open-nexus-powers" })
-  const popupContext = { itemCount: 3, armed: false, popup: "nexus-powers" as const, popupSpec: popupSpec(starterContext(), side.build.state) }
+  const popupContext = { itemCount: 3, armed: false, popup: "nexus-powers" as const, popupSpec: popupSpec(testBase(), side.build.state) }
   assert.deepEqual(buildKeyboardCommand("1", popupContext), { kind: "pick-nexus", index: 0 })
   assert.deepEqual(buildKeyboardCommand("2", popupContext), { kind: "pick-nexus", index: 1 })
   // Three dealt, War Chest beside them: a fifth digit picks nothing.
@@ -284,7 +285,7 @@ test("keyboard: a digit picks from the Nexus Pulse popup while it is open, and a
   assert.equal(buildKeyboardCommand("5", popupContext), null, "a fifth popup digit picks nothing")
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
   side.build.dispatch({ kind: "open-nexus-powers" })
-  assert.equal(buildKeyboardCommand("1", { ...popupContext, popupSpec: popupSpec(starterContext(), side.build.state) }), null)
+  assert.equal(buildKeyboardCommand("1", { ...popupContext, popupSpec: popupSpec(testBase(), side.build.state) }), null)
 
   const builtContext = { itemCount: 3, armed: false }
   assert.deepEqual(buildKeyboardCommand("1", builtContext), { kind: "arm", index: 0 })
@@ -375,7 +376,7 @@ test("a Nexus power is picked only in its own popup, or with none open: every ot
 
 /** The click bytes for the menu's Start Battle Round row. */
 function clickStartEntryBytes(layout: ReturnType<typeof buildLayout>): string {
-  const context = starterContext()
+  const context = testBase()
   const start = menuEntries(context).find((entry) => entry.kind === "start")
   assert.ok(start !== undefined)
   const row = menuEntryRow(layout, context.catalog, start)
@@ -494,7 +495,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   assert.deepEqual({ ...byMouse.build.state, highlightHidden: false }, byKeyboard.build.state)
   assert.deepEqual(byDriver.build.state, byKeyboard.build.state)
   const frame = (side: BuildSide): string =>
-    frameToText(composeBuildFrame({ context: starterContext(), state: side.build.state, layout: side.layout }, "monochrome"))
+    frameToText(composeBuildFrame({ context: testBase(), state: side.build.state, layout: side.layout }, "monochrome"))
   assert.equal(frame(byMouse), frame(byKeyboard))
   assert.equal(frame(byDriver), frame(byKeyboard))
 

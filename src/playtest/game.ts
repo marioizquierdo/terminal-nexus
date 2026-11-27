@@ -1,5 +1,5 @@
 // A scripted playtest of the whole game, not one screen: it opens where a route says — the title menu (`menu`, the
-// Skirmish screen `skirmish?setup`, New game, Load game) or a Build Phase (a story mission's, a Skirmish's) — and follows
+// Skirmish screen `skirmish?setup`, New game, Load game) or a Build Phase (a Skirmish's) — and follows
 // the script from screen to screen as a player would: New game's Start or a loaded save's Open hands the rest of the
 // script to that battle's Build Phase (`BuildDriver`, `./build.ts`), and a result's Setup screen hands it back to New
 // game, on the battle's setup. Every step's frame is kept, with which screen drew it.

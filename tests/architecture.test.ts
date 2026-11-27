@@ -104,22 +104,14 @@ test("src/skirmish is a mode, pure: it never reaches the view, the shell or the 
   assertNoDependencyOn("skirmish", ["view", "cli", "web"])
 })
 
-test("src/mission is data: it never reaches the battle engine's tick, the rules layer, the view, the shell or the Build Phase", () => {
-  // A mission is typed literals and the checks on them. The Build Phase and the view may read its
-  // shapes, so it must not bring the battle engine along with it; the runner that steps the battle engine is src/match's.
-  // Nor does it know which missions there are: those are the armies' (src/armies), which read it.
-  assertNoDependencyOn("mission", ["engine/pulse", "match", "view", "report", "cli", "build", "armies"])
-})
-
 test("src/armies is data: it never reaches the battle engine's tick, the rules layer, the view or the shell, and the loader not even the Build Phase", () => {
-  // The Build Phase's catalog reads the armies (what the first level offers), so they must not bring the battle engine
-  // along. The loader takes the content and the maps as arguments; only the game's own list of armies
-  // (src/armies/index.ts) names the map table, which is still code beside the Build Phase (src/build/maps.ts).
+  // The Build Phase's catalog reads the armies (a side's cards), so they must not bring the battle engine along. The
+  // loader takes the content as an argument, and reaches nothing of the Build Phase.
   assertNoDependencyOn("armies", ["engine/pulse", "match", "view", "report", "cli"])
-  for (const loader of ["armies/load.ts", "armies/mission-shape.ts", "armies/types.ts"]) {
+  for (const loader of ["armies/load.ts", "armies/types.ts"]) {
     for (const file of transitiveDependencies(resolve(SRC, loader), { asFile: true })) {
       const path = relative(SRC, file)
-      assert.ok(!path.startsWith("build/"), `src/${loader} reaches src/${path}; the loader is handed the maps, it never imports them`)
+      assert.ok(!path.startsWith("build/"), `src/${loader} reaches src/${path}; the loader never imports the Build Phase`)
     }
   }
 })
@@ -137,7 +129,6 @@ test("the simulation never reaches a glyph", () => {
     "skirmish/opening/index.ts",
     "engine/pulse/index.ts",
     "match/index.ts",
-    "mission/index.ts",
     "engine/state/types.ts",
     "engine/events/types.ts",
     "report/index.ts",
@@ -194,7 +185,7 @@ test("src/view never reaches the battle engine", () => {
 })
 
 test("the deterministic modules name no clock, no Math.random, and no terminal", () => {
-  const engine = ["engine/geometry", "engine/rng", "content", "engine/events", "engine/state", "skirmish", "engine/pulse", "match", "mission", "armies", "engine/abilities", "battle"]
+  const engine = ["engine/geometry", "engine/rng", "content", "engine/events", "engine/state", "skirmish", "engine/pulse", "match", "armies", "engine/abilities", "battle"]
   const forbidden = [
     /\bMath\s*\.\s*random\b/,
     /\bDate\s*\.\s*now\b/,

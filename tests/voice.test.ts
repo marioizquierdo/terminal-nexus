@@ -7,7 +7,8 @@
 // event stream, at most a few lines a round with a quiet gap between them, her fall and the round won cutting in,
 // the line picked by a hash of the moment's identity. It shows beside her on the map — the owner settled it there:
 // "it looks cool when they "speak" during battle" — and in the panel while she is out of view, and none of it
-// can change what resolves. Played through the real session on PERIMETER, the screen's clock handed in as a
+// can change what resolves. Played through the real session on Skirmishes she fights and falls in
+// (`tests/commander-fixture.ts`), the screen's clock handed in as a
 // number.
 
 import { BUILD_MOMENTS } from "../src/view/commander-moments.ts"
@@ -17,18 +18,9 @@ import { auraOf } from "../src/engine/abilities/index.ts"
 import { BARK_MOMENTS, BARK_ROOM, barkProblem, quoted } from "../src/armies/barks.ts"
 import type { Barks } from "../src/armies/barks.ts"
 import { ARMIES } from "../src/armies/index.ts"
-import {
-  STARTER_ALLOTMENT,
-  STARTER_CATALOG,
-  STARTER_NEXUS_DRAFT,
-  STARTER_STANDING,
-  STARTER_START_CURSOR,
-  starterTerrain,
-} from "../src/build/catalog.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { cellForTile } from "../src/build/layout.ts"
-import { missionPlay, nextRound, startPulse } from "../src/cli/pulse-run.ts"
-import { starterContext } from "../src/cli/starter.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/engine/events/types.ts"
 import { footprintWithin } from "../src/engine/geometry/coords.ts"
@@ -48,7 +40,8 @@ import { COLOR_DEPTHS } from "../src/view/roles.ts"
 import type { ColorDepth } from "../src/view/roles.ts"
 import { MINIMUM, buildSide, compose, panelLines } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
-import { COMMANDER_FALLS } from "./commander-fixture.ts"
+import { commanderFallsLevel, commanderFightsLevel } from "./commander-fixture.ts"
+import type { PlayableLevel } from "../src/cli/levels.ts"
 
 const VASSE = "unit.citizen.vasse"
 const TICK_MS = 1000 / 12
@@ -65,7 +58,7 @@ function statesOf(cast: readonly EntityState[], gone: ReadonlyMap<number, number
   return Array.from({ length: last + 1 }, (_, tick) => ({ tick, entities: cast.filter((each) => (gone.get(each.ordinal) ?? Number.POSITIVE_INFINITY) > tick) }) as unknown as MatchState)
 }
 
-/** A round on PERIMETER's content: her Nexus, Vasse, a trooper beside her and one far off, a Barracks, a raider. */
+/** A round on the game's content: her Nexus, Vasse, a trooper beside her and one far off, a Barracks, a raider. */
 const NEXUS = entity(0, "A", "structure.citizen.nexus", { x: 5, y: 10 }, 400)
 const HER = entity(1, "A", VASSE, { x: 10, y: 10 }, 80)
 const BESIDE = entity(2, "A", "unit.citizen.trooper", { x: 11, y: 10 })
@@ -268,15 +261,15 @@ test("which line she says is a hash of the moment's identity: the same every tim
 
 // --- On screen, through the real session ------------------------------------------------------------------
 
-/** PERIMETER's first round, the Nexus power picked and nothing built, its Pulse started and its clock at zero —
- *  Vasse with her own lines, or, `silent`, with none at all: the test's own way to quiet her, since the player
- *  has no switch for it. */
-function perimeter(extra: Partial<BuildContext> = {}, silent = false): BuildSide {
+/** A round she fights in (`commanderFightsLevel`, the starter map's battle with Dob Hunter's army beside her line), the
+ *  Nexus power picked and nothing built, its Pulse started and its clock at zero — Vasse with her own lines, or,
+ *  `silent`, with none at all: the test's own way to quiet her, since the player has no switch for it. */
+function fighting(extra: Partial<BuildContext> = {}, silent = false, level: PlayableLevel = commanderFightsLevel()): BuildSide {
   const side = buildSide({
-    context: starterContext(undefined, extra),
+    context: level.firstRound(undefined, extra),
     cursor: STARTER_START_CURSOR,
-    startPulse,
-    nextRound,
+    startPulse: level.play.startPulse,
+    nextRound: level.play.nextRound,
     ...(silent ? { barksOf: (): Barks => ({}) } : {}),
   })
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
@@ -300,13 +293,16 @@ const panelOf = (frame: ReadonlyCellFrame, side: BuildSide): string => panelLine
 /** The first line of the round, whole on screen: typed in, and not yet thinning out. */
 function firstLineShowing(side: BuildSide): SpokenLine {
   const line = spokenIn(side.build)[0]
-  assert.ok(line !== undefined, "she says nothing in PERIMETER's first round")
+  assert.ok(line !== undefined, "she says nothing in the round she fights")
   side.build.advance(line.startMs + lineLength(line.text).typeMs + 50)
   return line
 }
 
-test("PERIMETER's first round: she speaks a few times, in order, each line hers, and the raid breaking last when it breaks", () => {
-  const side = perimeter()
+test("a round she fights: she speaks a few times, in order, each line hers, and the enemy breaking last when it breaks", () => {
+  // The round she falls in: since army groups her troopers' ranks keep Dob Hunter's runners off her in the round she
+  // only fights (`commanderFightsLevel`), where she says her first line and nothing more; found wounded in their way,
+  // she is hurt and falls, and says so.
+  const side = fighting({}, false, commanderFallsLevel())
   const spoken = spokenIn(side.build)
   assert.ok(spoken.length >= 2 && spoken.length <= VOICE.perRound + CUTS_IN.size, `she says ${spoken.length} lines`)
   const barks = ARMIES.commanders.find((commander) => commander.unit === VASSE)?.barks ?? {}
@@ -318,7 +314,7 @@ test("PERIMETER's first round: she speaks a few times, in order, each line hers,
 })
 
 test("beside her: the line on the map, a few rows from her and whole, and the panel keeps only the feed", () => {
-  const side = perimeter()
+  const side = fighting()
   const line = firstLineShowing(side)
   const words = quoted(line.text)
   // Whole while it is read: placed where least stands while it shows, it can still have a unit walk across it, and a
@@ -343,7 +339,7 @@ test("beside her: the line on the map, a few rows from her and whole, and the pa
 })
 
 test("beside her, out of view: the words go to the panel under the feed, so a line is never lost to the camera", () => {
-  const side = perimeter()
+  const side = fighting()
   const line = firstLineShowing(side)
   // The view slides to the far corner of the map, away from her and the base.
   side.build.dispatch({ kind: "look-at", x: 95, y: 39 })
@@ -383,7 +379,7 @@ function showsBehindUnits(map: string, words: string): boolean {
 }
 
 test("she types her line in beside her, holds it, and it thins out before it goes; reduced motion shows it whole and steady", () => {
-  const side = perimeter()
+  const side = fighting()
   const line = spokenIn(side.build)[0]
   assert.ok(line !== undefined)
   const words = quoted(line.text)
@@ -400,7 +396,7 @@ test("she types her line in beside her, holds it, and it thins out before it goe
   assert.ok(!shown().includes(words), "the line outstays its time")
 
   // Reduced motion: the whole line from its first frame to its last, never dim; the light on her is the steady one.
-  const still = perimeter({ settings: { ...DEFAULT_SETTINGS, reducedMotion: true } })
+  const still = fighting({ settings: { ...DEFAULT_SETTINGS, reducedMotion: true } })
   const first = spokenIn(still.build)[0]
   assert.ok(first !== undefined)
   still.build.advance(first.startMs + 1)
@@ -417,7 +413,7 @@ const pulseFrameOf = (side: BuildSide): PulseFrame => {
 }
 
 test("a light on her marks the moment she speaks: the effect library's own, on her tile, and none when she has nothing to say", () => {
-  const side = perimeter()
+  const side = fighting()
   const line = spokenIn(side.build)[0]
   assert.ok(line !== undefined)
   side.build.advance(line.startMs + 50)
@@ -430,7 +426,7 @@ test("a light on her marks the moment she speaks: the effect library's own, on h
   side.build.advance(line.startMs + VOICE.lightMs + 1)
   assert.ok(!pulseFrameOf(side).sample.effects.some((effect) => effect.instance.recipe === "fx.light.flash"))
   // The light belongs to her words, not to her standing there: a Commander with no lines is never lit.
-  const silent = perimeter({}, true)
+  const silent = fighting({}, true)
   assert.deepEqual(spokenIn(silent.build), [])
   silent.build.advance(line.startMs + 50)
   assert.ok(!pulseFrameOf(silent).sample.effects.some((effect) => effect.instance.recipe === "fx.light.flash"), "a light with nothing said")
@@ -438,7 +434,7 @@ test("a light on her marks the moment she speaks: the effect library's own, on h
 })
 
 test("her voice changes nothing that resolves: the same round, the same states, events and regroup whether she speaks or not", () => {
-  const sides = [perimeter(), perimeter({}, true)]
+  const sides = [fighting(), fighting({}, true)]
   const fingerprint = (side: BuildSide) => {
     const resolved = side.build.pulse?.resolved
     assert.ok(resolved !== undefined)
@@ -458,20 +454,20 @@ test("her voice changes nothing that resolves: the same round, the same states, 
 
 test("the Activity Logs record what she said and when, once a line, and where it showed: beside her, or in the panel while she was out of view", () => {
   const lines = (side: BuildSide) => side.activity.entries().filter((entry) => entry.event === "voice.line").map((entry) => entry.props)
-  const side = perimeter()
+  const side = fighting()
   const end = side.build.pulse?.times.homeMs ?? 0
   for (let ms = 0; ms <= end + 3000; ms += 250) side.build.advance(ms)
   const spoken = spokenIn(side.build)
   assert.deepEqual(
     lines(side),
-    spoken.map((line) => ({ speaker: "Vasse", round: 1, second: Math.round(line.startMs / 100) / 10, moment: line.moment, line: line.text, shown: "beside" })),
+    spoken.map((line) => ({ speaker: "Vasse", round: side.build.round.round?.number, second: Math.round(line.startMs / 100) / 10, moment: line.moment, line: line.text, shown: "beside" })),
   )
   // Watching it again says it all again on screen, and records nothing new.
   side.build.dispatch({ kind: "pulse", control: "restart" })
   for (let ms = end + 3250; ms <= 2 * end + 6000; ms += 250) side.build.advance(ms)
   assert.equal(lines(side).length, spoken.length)
   // With the view far from her as a line begins, it was shown in the panel, and is recorded so.
-  const away = perimeter()
+  const away = fighting()
   away.build.dispatch({ kind: "look-at", x: 95, y: 39 })
   for (let ms = 0; ms <= end + 3000; ms += 250) away.build.advance(ms)
   assert.equal(lines(away)[0]?.["shown"], "panel")
@@ -484,7 +480,7 @@ test("the Activity Logs record what she said and when, once a line, and where it
 // --- At the floor --------------------------------------------------------------------------------------------
 
 test("at 80 x 24: the room the armies' lines are checked against is the screen's, and every line she has fits it", () => {
-  const side = perimeter()
+  const side = fighting()
   assert.deepEqual([side.layout.frame.width, side.layout.frame.height], [MINIMUM.columns, MINIMUM.rows])
   // The panel's prose width, one column in from the divider; the map's width, a column a tile.
   assert.equal(side.layout.panelLimit - 1, BARK_ROOM.panelColumns)
@@ -506,7 +502,7 @@ test("at 80 x 24: the room the armies' lines are checked against is the screen's
 // A whole round's frames twice over: its cost grows with the round, so Bun's per-test limit is lifted.
 test("at 80 x 24, her line in the panel stops above the controls, and beside her it stays on the map", { timeout: 120_000 }, () => {
   for (const away of [true, false]) {
-    const side = perimeter()
+    const side = fighting()
     // Looking far from her, her lines go to the panel until the view comes back for the round's last seconds.
     if (away) side.build.dispatch({ kind: "look-at", x: 95, y: 39 })
     const end = side.build.pulse?.times.homeMs ?? 0
@@ -518,10 +514,11 @@ test("at 80 x 24, her line in the panel stops above the controls, and beside her
       const controls = text.slice(side.layout.panelLastRow - 1, side.layout.panelLastRow + 1).map((row) => row.slice(side.layout.panelColumn, side.layout.dividerColumn).trim())
       assert.match(controls[0] ?? "", /^\[(space|enter)\] (Pause|Resume|Next round)$/, `at ${ms} ms the controls read "${controls[0]}"`)
       assert.match(controls[1] ?? "", /^\[r\] Replay$/)
-      // The frame's own lines are untouched: the map's border and the panel's divider.
+      // The frame's own lines are untouched: the map's border and the panel's divider. Where the view reaches the
+      // battlefield's east edge, the map's own edge is drawn on that column (a solid, inverse-video cell: a blank as text).
       for (let row = side.layout.mapBox.top; row <= side.layout.mapBox.bottom; row += 1) {
-        assert.match(text[row]?.[side.layout.mapBox.right] ?? "", /[|+]/, `at ${ms} ms something covers the map's east side`)
-        assert.match(text[row]?.[side.layout.dividerColumn] ?? "", /[|+]/, `at ${ms} ms something covers the divider`)
+        assert.match((text[row] ?? "").padEnd(side.layout.frame.width)[side.layout.mapBox.right] ?? "", /[|+ ]/, `at ${ms} ms something covers the map's east side`)
+        assert.match((text[row] ?? "").padEnd(side.layout.frame.width)[side.layout.dividerColumn] ?? "", /[|+ ]/, `at ${ms} ms something covers the divider`)
       }
     }
   }
@@ -531,7 +528,7 @@ test("at 80 x 24, her line in the panel stops above the controls, and beside her
 
 test("her aura's reach: a diamond of the content's radius around her, washed on the ground under everything, while the fight is on", () => {
   // Silent, so no line of hers is drawn over the ground her aura reaches.
-  const side = perimeter({}, true)
+  const side = fighting({}, true)
   // Past the rally arrows, which run as the round begins and are drawn on the ground too.
   side.build.advance(5000)
   const pulse = pulseFrameOf(side)
@@ -588,19 +585,13 @@ test("her aura's reach: a diamond of the content's radius around her, washed on 
 })
 
 test("her aura goes when she falls, and so does every line but her last words", () => {
-  // The Commander's cadence level: she stands alone out in front, and the ambush beside her fells her in round 1.
-  const play = missionPlay(COMMANDER_FALLS)
-  const context = play.firstRound({
-    terrain: starterTerrain(),
-    registry: FIXTURE_REGISTRY,
-    catalog: STARTER_CATALOG,
-    standing: STARTER_STANDING,
-    allotment: STARTER_ALLOTMENT,
-    nexusDraft: STARTER_NEXUS_DRAFT,
-  })
-  const side = buildSide({ context, cursor: STARTER_START_CURSOR, startPulse: play.startPulse, nextRound: play.nextRound })
+  // A Skirmish she falls in: found wounded beside Dob Hunter's army, she falls in the round the screen opens on.
+  const play = commanderFallsLevel().play
+  const side = buildSide({ context: commanderFallsLevel().firstRound(), cursor: STARTER_START_CURSOR, startPulse: play.startPulse, nextRound: play.nextRound })
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
   side.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])
+  // The view on where she stands, so what she says is said beside her.
+  side.build.dispatch({ kind: "look-at", x: 64, y: 21 })
   side.build.advance(0)
   const spoken = spokenIn(side.build)
   const last = spoken.at(-1)
@@ -611,7 +602,14 @@ test("her aura goes when she falls, and so does every line but her last words", 
   // Her last words are said where she fell, and no light marks them: she is gone from the tile.
   assert.equal(pulse.voice?.text, last.text)
   assert.ok(!pulse.sample.effects.some((effect) => effect.instance.recipe === "fx.light.flash"))
+  // Whole on the map at some moment it is held up to be read: she fell in the thick of it, and a letter a unit stands on
+  // is left out (the corruption law), so it is looked for a tenth of a second at a time.
   for (const colors of ["monochrome", "truecolor"] as const satisfies readonly ColorDepth[]) {
-    assert.ok(mapOf(compose(side, {}, colors), side).includes(quoted(last.text)))
+    let whole = false
+    for (let at = last.startMs + lineLength(last.text).typeMs + 50; at < last.endMs - 400 && !whole; at += 100) {
+      side.build.advance(at)
+      whole = mapOf(compose(side, {}, colors), side).includes(quoted(last.text))
+    }
+    assert.ok(whole, `her last words are never whole on the map (${colors})`)
   }
 })

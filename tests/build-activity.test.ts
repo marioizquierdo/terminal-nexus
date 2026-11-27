@@ -3,6 +3,8 @@
 // the session records what happens, schema-valid, without ever changing what the reducer does. Driven
 // through raw bytes into the real adapters where an adapter is what is claimed.
 
+import { testBasePlaytest } from "./starter-fixture.ts"
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
@@ -20,7 +22,7 @@ import { settingColumns, wrapWords } from "../src/build/popup.ts"
 import { ACTIVITY_DESCRIPTION, GAME_MENU_ROWS } from "../src/build/settings.ts"
 import type { BuildState } from "../src/build/state.ts"
 import type { BuildCommand, ExportKind } from "../src/build/types.ts"
-import { startPulse } from "../src/cli/pulse-run.ts"
+import { startPulse } from "../src/cli/starter.ts"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { ACTIVITY_EVENTS, ACTIVITY_FILTERS, createLogger, entryProblems, formatActivityExport, parseLogLine } from "../src/log/index.ts"
@@ -378,7 +380,7 @@ test("export hands the shell the filter's frozen entries, oldest first, and says
 })
 
 test("the export's message names where the text went, when the shell says", () => {
-  const side = buildSide({ context: { ...starterContext(), activityExportDestination: "Copied to the clipboard." } })
+  const side = buildSide({ context: { ...testBase(), activityExportDestination: "Copied to the clipboard." } })
   keys(side, ESC, "a", "e")
   assert.match(side.build.state.message?.text ?? "", /Copied to the clipboard\.$/)
   // Outside the window, the command does nothing: a driver cannot export what nobody saw.
@@ -575,10 +577,10 @@ test("what the reducer does never depends on what was logged", () => {
 
 test("a session given no log of its own records into the game's global one", async () => {
   const { activity } = await import("../src/log/activity.ts")
-  const side = buildSide({ context: starterContext() })
+  const side = buildSide({ context: testBase() })
   // buildSide gives every test session a log of its own; a bare session uses the global.
   const { BuildSession } = await import("../src/view/build-session.ts")
-  const bare = new BuildSession({ context: starterContext(), cursor: STARTER_START_CURSOR, viewport: side.layout.viewport })
+  const bare = new BuildSession({ context: testBase(), cursor: STARTER_START_CURSOR, viewport: side.layout.viewport })
   const before = activity.lastSeq
   bare.dispatch({ kind: "focus", target: "map" } satisfies BuildCommand)
   assert.equal(activity.lastSeq, before + 1)
@@ -588,7 +590,7 @@ test("a session given no log of its own records into the game's global one", asy
 // --- A scripted playtest ----------------------------------------------------------------------------
 
 test("a scripted playtest records on the script's own clock, and its window shows that log", () => {
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("1 Enter Esc a") })
+  const run = runBuildPlaytest({ ...testBasePlaytest(), scenes: false, steps: parseKeyScript("1 Enter Esc a") })
   const placedEntry = run.activity.entries().find((entry) => entry.event === "build.placed")
   // The second step, a second after the first: the time is the step's, the same on every run.
   assert.equal(placedEntry?.time, 2000)
@@ -596,7 +598,7 @@ test("a scripted playtest records on the script's own clock, and its window show
   const last = run.frames[run.frames.length - 1]
   assert.equal(last?.state.popup, "activity-logs")
   assert.ok(frameToText(last?.frame ?? compose(buildSide())).includes("00:02.000 info  build.placed building=Ba"))
-  assert.deepEqual(runBuildPlaytest({ scenes: false, steps: parseKeyScript("1 Enter Esc a") }).activity.entries(), run.activity.entries())
+  assert.deepEqual(runBuildPlaytest({ ...testBasePlaytest(), scenes: false, steps: parseKeyScript("1 Enter Esc a") }).activity.entries(), run.activity.entries())
 })
 
 // --- The live screen --------------------------------------------------------------------------------
@@ -658,7 +660,7 @@ test("the live screen records where it started, and hands an Activity Logs expor
     columns: 80,
     rows: 24,
     colors: "monochrome",
-    at: "story?mission=vasse-test-1",
+    at: "skirmish?load=saves/starter.save.json",
   })
   const resized = log.entries().filter((entry) => entry.event === "session.resize")
   assert.deepEqual(resized.map((entry) => entry.props), [{ columns: 104, rows: 32 }])
