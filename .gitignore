@@ -1,5 +1,5 @@
 # Dependencies and build output
-node_modules/
+node_modules
 dist/
 # Anchored on purpose: an unanchored `build/` would also ignore src/build/, the Build Phase module.
 /build/
