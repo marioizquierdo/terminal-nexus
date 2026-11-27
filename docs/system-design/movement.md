@@ -213,8 +213,9 @@ range at full speed, and the line forms on its own as melee closes and guns stop
 **Forming up at the rally point** (`src/engine/pulse/army-groups.ts`, the owner, 2026-11-26: "Units should know when
 their group already arrived at the banner, and change into formation"). Once an army group has arrived (above), each of
 its units walks to its slot and stands on it: the front rank on the rally point's middle (on a building, a Nexus
-included, the ring just in front of it), facing its nearest enemy army group rounded to a quarter (east, west, north or
-south), each rank about twice as wide as it is deep, the next two columns (or rows) behind. The ranks are laid out
+included, the ring just in front of it), facing the enemy army group nearest the rally point (measured from the rally point,
+which stands still, so the troops' own steps never swing the ranks between two enemies about as far off), rounded to a
+quarter (east, west, north or south), each rank about twice as wide as it is deep, the next two columns (or rows) behind. The ranks are laid out
 again only when a member joins or leaves or that enemy moves into another quarter, so they hold still while an enemy
 column walks in. An engaged army group does not form up: it fights, or holds where it stands.
 

@@ -24,8 +24,10 @@
 // side's rally point and it is not **engaged**: none of its members has an enemy in its vision or stands where an
 // enemy's attack reaches it (a mortar shells from beyond sight). An engaged group holds where it stands, as before. Then each of its units walks to its slot in the
 // army group formation (`formation.ts`): the front rank on the rally point's middle, the ranks across the line toward
-// its nearest enemy army group, rounded to a quarter (`quarterLine`), so the ranks hold still while that enemy moves
-// and are laid out again only when a member joins or leaves or the enemy is in another quarter.
+// the enemy army group nearest the rally point (`nearestEnemyToArea`: measured from the rally point, which stands still,
+// so the troops' own steps never swing the ranks between two enemies about as far off), rounded to a quarter
+// (`quarterLine`), so the ranks hold still while that enemy moves and are laid out again only when a member joins or
+// leaves or the enemy is in another quarter.
 
 import type { ContentDef } from "../../content/types.ts"
 import { formationRank } from "../../content/types.ts"
@@ -214,6 +216,28 @@ function boxGap(a: Box, b: Box): number {
   return Math.max(0, b.left - a.right, a.left - b.right) + 2 * Math.max(0, b.top - a.bottom, a.top - b.bottom)
 }
 
+/** The enemy army group nearest a side's rally point: the smallest distance from the area to one of its members' bodies
+ *  (`distanceToArea`); of two as near, the one whose centre is nearer the area's middle; then the one listed first.
+ *  What an army group that has arrived faces. `null` with no enemy army group. */
+export function nearestEnemyToArea<T extends Body>(player: PlayerId, area: TargetArea, groups: readonly ArmyGroup<T>[]): ArmyGroup<T> | null {
+  const middle = areaMiddle(area)
+  let best: ArmyGroup<T> | null = null
+  let bestGap = Number.POSITIVE_INFINITY
+  let bestCentre = Number.POSITIVE_INFINITY
+  for (const other of groups) {
+    if (other.player === player) continue
+    let gap = Number.POSITIVE_INFINITY
+    for (const member of other.members) gap = Math.min(gap, distanceToArea(member.anchor, member.definition.footprint, area))
+    const centre = halfDistance(middle, centreMiddle(other))
+    if (gap < bestGap || (gap === bestGap && centre < bestCentre)) {
+      best = other
+      bestGap = gap
+      bestCentre = centre
+    }
+  }
+  return best
+}
+
 /** The middle of a rally point's area, in half tiles. */
 export function areaMiddle(area: TargetArea): Coord {
   return { x: 2 * area.x + area.width - 1, y: 2 * area.y + area.height - 1 }
@@ -339,8 +363,11 @@ export class TickArmyGroups {
   private layOut(group: ArmyGroup<Actor>): ReadonlyMap<number, Coord> {
     const slots = new Map<number, Coord>()
     const area = this.context.targets[group.player]
-    const enemy = this.enemyOf(group)
-    if (area === undefined || enemy === null) return slots
+    if (area === undefined) return slots
+    // Faced from the rally point, which stands still, not from the members, who are walking to their slots: measured from
+    // them, two enemy groups about as far off swap places as the ranks form, and the ranks would swing between them.
+    const enemy = nearestEnemyToArea(group.player, area, this.groups)
+    if (enemy === null) return slots
     const rally = areaMiddle(area)
     const line = quarterLine(rally, centreMiddle(enemy))
     if (line === null) return slots

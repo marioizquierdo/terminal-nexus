@@ -349,6 +349,24 @@ test("army-group-forms-up: an army group that arrives at its rally point forms u
   assert.ok(!events.some((event) => event.kind === "move.blocked" && event.tick > last))
 })
 
+test("army-group-faces-turret: a lone turret nearer the rally point than the enemy's Nexus turns the ranks toward it, and they stand still", async () => {
+  // Faced from the rally point: measured from the units as they walk, the turret (north) and B's Nexus (east), about as
+  // far off, swapped places every few ticks and the ranks swung between them without end.
+  const { states, events } = await play("army-group-faces-turret")
+  const end = states.at(-1) as MatchState
+  const ysOf = (contentId: string): number[] => of(end, "A", contentId).map((entity) => entity.anchor.y)
+  const troopers = ysOf("unit.citizen.trooper")
+  const marksmen = ysOf("unit.citizen.marksman")
+  const mortar = ysOf("unit.citizen.mortar")
+  // The rally point is rows 9-11: the front rank on its middle row, 10, and north is forward.
+  assert.equal(Math.min(...troopers), 10, `troopers at rows ${troopers}`)
+  assert.equal(troopers.filter((y) => y === 10).length, 5, `a front rank of five troopers: ${troopers}`)
+  assert.ok(Math.min(...marksmen) >= Math.max(...troopers.filter((y) => y === 10)), `troopers ${troopers}, marksmen ${marksmen}`)
+  assert.ok(Math.min(...mortar) > Math.max(...marksmen), `marksmen ${marksmen}, mortar ${mortar}`)
+  const last = events.filter((event) => event.kind === "entity.moved").reduce((latest, event) => Math.max(latest, event.tick), 0)
+  assert.ok(last < end.tick - 60, `still moving at tick ${last} of ${end.tick}: the ranks swing`)
+})
+
 test("a march with its sides' names swapped is the same march: nothing favours A for being A", async () => {
   const opening = await loadSandbox("march-lines.save.json")
   const swapped: BattleOpening = {

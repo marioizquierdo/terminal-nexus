@@ -82,6 +82,17 @@ the regroup lays out the slots it already stands on.
   where an enemy's attack reaches it.
 - **A rally point on a building** (a Nexus) put the front rank inside the building: the front rank now stands on the
   ring just in front of it.
+- **Two armies back to back walked home** (found preparing the owner's playtest): the rule that holds two facing fronts
+  6 columns apart read an army at the enemy's Nexus and the enemy's raid in its own base as overlapping fronts, and
+  pushed both 22 columns back between rounds. Fronts are now held apart only when each side's main army group faces the
+  other's (`tests/regroup.test.ts`).
+- **Ranks swung between two enemies** (found the same way): an arrived group faced the enemy group nearest its members,
+  and with a turret to the north and the enemy Nexus to the east about as far off, the troops' own steps toward their
+  slots swapped which was nearer, and the ranks rocked without end. A formed group now faces the enemy group nearest its
+  rally point, which stands still (`sandboxes/movement/army-group-faces-turret.save.json`).
+
+After both fixes, the same tallies: the Crossing 35-37 (50 by a Nexus falling, 6.6 rounds), the Pocket 34-38 (Vasse
+against Averno 10-14, Vasse against Dob 21-3, Averno against Dob 23-1). The kept quick and maps runs predate them.
 
 ## What scripted players cannot say
 
