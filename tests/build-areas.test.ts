@@ -5,6 +5,7 @@
 // monochrome shows both, and neither drawn over the raid's trail. The rule they show is
 // tests/build-territory.test.ts's.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { setting } from "../src/build/all-settings.ts"

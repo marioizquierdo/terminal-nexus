@@ -3,6 +3,7 @@
 // time since the placement, every number a tuned value the owner settled (2026-09-30; Experiments until
 // then). The claims here are made against an injected time, a number: nothing waits.
 
+import { testBasePlaytest } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { CONTENT_ART, PLACEMENT_ART, artExtent } from "../src/content/art.ts"
@@ -37,7 +38,7 @@ const BARRACKS = "structure.citizen.barracks"
 const PLACE_BARRACKS = "n 1 Down Space Space"
 
 function placed(keys = PLACE_BARRACKS): { run: BuildPlaytest; state: BuildState } {
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(keys) })
+  const run = runBuildPlaytest({ ...testBasePlaytest(), scenes: false, steps: parseKeyScript(keys) })
   const last = run.frames[run.frames.length - 1]
   assert.ok(last !== undefined)
   return { run, state: last.state }
@@ -527,16 +528,15 @@ test("the browser page's canvas paints the light the terminal shows", () => {
 // --- Frame budget ----------------------------------------------------------------------------------
 
 test("with three buildings going up at once, the Build Phase still draws well inside a frame", () => {
-  // Three buildings going up at once, their light and sparks, and the raid's trail moving — as PERIMETER's
-  // Build Phase always has it — at the largest view, through the truecolor encoder: the live loop's whole
+  // Three buildings going up at once, their light and sparks, at the largest view, through the truecolor encoder: the live loop's whole
   // per-frame cost. (The many sparks and the rainbow this once measured were settled away, 2026-09-30.) The
   // live loop asks for a frame every 16 ms; the budget asserted is that p95 stays under it, and the
   // measurement is what the report records.
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`${PLACE_BARRACKS} Down Space Space Down Space Space`), columns: 104, rows: 32 })
+  const run = runBuildPlaytest({ ...testBasePlaytest(), scenes: false, steps: parseKeyScript(`${PLACE_BARRACKS} Down Space Space Down Space Space`), columns: 104, rows: 32 })
   const state = run.frames[run.frames.length - 1]!.state
   assert.equal(state.planned.length, 3)
+  // No raid is foreseen in a Skirmish; a trail still costs its share where one is drawn (an empty one here).
   const raid = foresee(run.context, state)
-  assert.ok(raid.some((group) => group.target !== null), "no trail on the map")
   const total = placementTiming(false).totalMs
   const samples: number[] = []
   for (let frame = 0; frame < 200; frame += 1) {

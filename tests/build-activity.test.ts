@@ -3,6 +3,7 @@
 // the session records what happens, schema-valid, without ever changing what the reducer does. Driven
 // through raw bytes into the real adapters where an adapter is what is claimed.
 
+import { testBasePlaytest } from "./starter-fixture.ts"
 import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -589,7 +590,7 @@ test("a session given no log of its own records into the game's global one", asy
 // --- A scripted playtest ----------------------------------------------------------------------------
 
 test("a scripted playtest records on the script's own clock, and its window shows that log", () => {
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("1 Enter Esc a") })
+  const run = runBuildPlaytest({ ...testBasePlaytest(), scenes: false, steps: parseKeyScript("1 Enter Esc a") })
   const placedEntry = run.activity.entries().find((entry) => entry.event === "build.placed")
   // The second step, a second after the first: the time is the step's, the same on every run.
   assert.equal(placedEntry?.time, 2000)
@@ -597,7 +598,7 @@ test("a scripted playtest records on the script's own clock, and its window show
   const last = run.frames[run.frames.length - 1]
   assert.equal(last?.state.popup, "activity-logs")
   assert.ok(frameToText(last?.frame ?? compose(buildSide())).includes("00:02.000 info  build.placed building=Ba"))
-  assert.deepEqual(runBuildPlaytest({ scenes: false, steps: parseKeyScript("1 Enter Esc a") }).activity.entries(), run.activity.entries())
+  assert.deepEqual(runBuildPlaytest({ ...testBasePlaytest(), scenes: false, steps: parseKeyScript("1 Enter Esc a") }).activity.entries(), run.activity.entries())
 })
 
 // --- The live screen --------------------------------------------------------------------------------
@@ -659,7 +660,7 @@ test("the live screen records where it started, and hands an Activity Logs expor
     columns: 80,
     rows: 24,
     colors: "monochrome",
-    at: "story?mission=vasse-test-1",
+    at: "skirmish?load=saves/starter.save.json",
   })
   const resized = log.entries().filter((entry) => entry.event === "session.resize")
   assert.deepEqual(resized.map((entry) => entry.props), [{ columns: 104, rows: 32 }])

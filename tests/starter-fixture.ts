@@ -78,3 +78,9 @@ export function barracksLevel(): PlayableLevel {
   if (standing !== true) throw new Error("round 1 did not build the Barracks at 25,10")
   return skirmishLevel(saveOf(setup, built, { name: "The starter map, a Barracks built" }), { route: "skirmish?load=starter-barracks.save.json" })
 }
+
+import { STARTER_LEVEL } from "../src/cli/starter.ts"
+
+/** The test base as the scripted playtest opens it (`runBuildPlaytest`'s `context` and `play`): its round, played as the
+ *  starter map's Skirmish. */
+export const testBasePlaytest = () => ({ context: testBase(), play: STARTER_LEVEL.play })

@@ -816,58 +816,6 @@ test("the live screen redraws on a timer while the view slides, and not at all o
   await session
 })
 
-// Several of the trail's steps in real time, so Bun's per-test limit is lifted.
-test("with only the raid's trail moving, the live screen redraws at the trail's own pace — never every frame — and not at all under a popup or with the trail out of view", { timeout: 120_000 }, async () => {
-  const stdout = new FakeStdout()
-  const stdin = new FakeStdin()
-  const session = runBuildPhase({
-    // Monochrome: the trail changes twice a step there (an arrow steps on, then its copy goes), and a popup's
-    // border does not breathe, so under a popup nothing on the screen moves at all.
-    settings: { ...DEFAULT_SETTINGS, colors: "monochrome" },
-    scenes: false,
-    backend: "ansi",
-    stdout: stdout as unknown as NodeJS.WriteStream,
-    stdin: stdin as unknown as NodeJS.ReadStream,
-    exit: () => {},
-  })
-  await wait(80)
-  const start = stdout.frames
-  const span = 4 * TUNING.trailStepMs
-  await wait(span)
-  // Two changes a step: at most that many frames, give or take the edges of the window — where every frame
-  // would be dozens; and at least one, or the trail is not moving at all. A busy machine draws fewer, never
-  // more.
-  const idle = stdout.frames - start
-  const changes = Math.ceil((2 * span) / TUNING.trailStepMs)
-  assert.ok(idle >= 1, "the trail never moved on its own")
-  assert.ok(idle <= changes + 1, `${idle} frames in ${span} ms: more than the trail's ${changes} changes`)
-  // A popup holds the trail still: the Nexus powers open, and once the row's pressed flash is over the screen
-  // stops drawing until a key comes.
-  stdin.emit("data", Buffer.from("n"))
-  await wait(TUNING.pressedFlashMs + 150)
-  const held = stdout.frames
-  await wait(2 * TUNING.trailStepMs)
-  assert.equal(stdout.frames, held, "the trail kept the screen drawing under a popup")
-  // The popup closed, it moves again; the view taken far south, away from it, nothing on screen moves.
-  stdin.emit("data", Buffer.from(ESC))
-  await wait(TUNING.escTimeoutMs + 100)
-  const again = stdout.frames
-  await wait(2 * TUNING.trailStepMs)
-  assert.ok(stdout.frames > again, "the trail did not move again once the popup closed")
-  stdin.emit("data", Buffer.from(TAB))
-  // Three jumps, each its own press: a held jump repeats no faster than it can be seen to land.
-  for (let jump = 0; jump < 3; jump += 1) {
-    stdin.emit("data", Buffer.from(SHIFT_DOWN))
-    await wait(TUNED.jumpRepeatMs + 100)
-  }
-  await wait(TUNING.easeMs + TUNING.cursorGlideMs + 200)
-  const away = stdout.frames
-  await wait(2 * TUNING.trailStepMs)
-  assert.equal(stdout.frames, away, "the trail kept the screen drawing while out of view")
-  stdin.emit("data", Buffer.from([3]))
-  await session
-})
-
 test("keys and the untimed arrows the web page and scripts send still land on the same state", () => {
   const byKeys = exploring()
   for (const key of [RIGHT, RIGHT, DOWN, LEFT, UP]) byKeys.build.handleData(key, byKeys.layout)

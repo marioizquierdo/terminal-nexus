@@ -4,6 +4,7 @@
 // checked is the rule every style a map may name keeps — **the same weight on all four sides**, in
 // both glyph packs — and that drawing and hit-testing read one geometry with the shared west side.
 
+import { starterContext } from "../src/cli/starter.ts"
 import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -160,7 +161,7 @@ test("the edge style changes only the sides where the map ends: in the middle of
 
 test("the map's own edge is the style the map names, and the solid bar for a map that names none", () => {
   // No Skirmish map names one yet: the starter map's battle draws the solid bar.
-  assert.equal(testBase().edgeStyle, undefined)
+  assert.equal(starterContext().edgeStyle, undefined)
   const own = screen(contextFor(wholeMap()), "unicode")
   assert.equal(cellAt(own.frame, own.layout.mapBox.left + 3, own.layout.mapBox.top).glyph, "┅")
   const none = screen(contextFor(wholeMap(), null), "unicode")

@@ -4,6 +4,7 @@
 // the cursor, and finishing going back to where it began. Driven through raw bytes into the real
 // adapters where an adapter is what is being claimed, and through commands where the reducer is.
 
+import { STARTER_LEVEL } from "../src/cli/starter.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
@@ -508,7 +509,7 @@ test("with nothing in reach, arming steps one tile right and down, drawn as the 
 test("the cursor opens on the Nexus, and the first building armed finds the nearest good spot around it", () => {
   const context = testBase()
   assert.deepEqual(nexusTile(context), STARTER_START_CURSOR)
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("1") })
+  const run = runBuildPlaytest({ context, play: STARTER_LEVEL.play, scenes: false, steps: parseKeyScript("1") })
   assert.deepEqual(run.frames[0]?.state.cursor, STARTER_START_CURSOR)
   const armed = run.frames[1]?.state
   assert.ok(armed !== undefined)

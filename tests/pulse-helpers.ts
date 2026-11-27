@@ -138,7 +138,18 @@ export function testPlay(setup: TestSetup = {}): Pick<LevelPlay, "startPulse" | 
       const field: FieldEntity[] = []
       for (const entity of carried.entities) {
         if (entity.player === "A" && context.registry.get(entity.contentId).layer === "obstacles") standing.push({ contentId: entity.contentId, anchor: entity.anchor })
-        else field.push({ contentId: entity.contentId, anchor: entity.anchor, ordinal: entity.ordinal, player: entity.player, hp: entity.hp })
+        else {
+          // A survivor walks to where it stands as the Build Phase opens: its regroup, played on the map.
+          const walk = resolved.regroup.paths.find((path) => path.ordinal === entity.ordinal)
+          field.push({
+            contentId: entity.contentId,
+            anchor: entity.anchor,
+            ordinal: entity.ordinal,
+            player: entity.player,
+            hp: entity.hp,
+            ...(walk === undefined || walk.steps.length === 0 ? {} : { walk: { from: walk.from, steps: walk.steps } }),
+          })
+        }
       }
       const number = (context.round?.number ?? 1) + 1
       return { ...withoutScene(context), standing, field, carried, incoming: [], round: { number, of: rounds }, allotment: remaining(context, state), callups: [] }

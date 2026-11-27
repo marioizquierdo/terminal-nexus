@@ -158,11 +158,11 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
     [(side) => keys(side, ESC, "a"), /^Left\/right change the filter, \[e\] exports, up\/down read\. \[esc\] goes back\.$/],
     [(side) => side.build.run([{ kind: "open-activity-logs" }]), /^Left\/right change the filter, \[e\] exports, up\/down read\. \[esc\] closes\.$/],
   ],
-  // PERIMETER's intro, its first and last lines: these sessions play no scenes, so the dialog is put up by
+  // The starter map's opening lines, its first and last: these sessions play no scenes, so the dialog is put up by
   // hand on the round's own scene (tests/dialog.test.ts plays it).
   dialog: [
-    [(side) => ({ ...side.build.state, popup: "dialog", dialog: { line: 0, cursor: side.build.state.cursor, camera: side.build.state.camera } }), /^Line 1 of 4\. \[enter\] next line, \[esc\] skips the rest\.$/],
-    [(side) => ({ ...side.build.state, popup: "dialog", dialog: { line: 3, cursor: side.build.state.cursor, camera: side.build.state.camera } }), /^Line 4 of 4\. \[enter\] or \[esc\] closes it\.$/],
+    [(side) => ({ ...side.build.state, popup: "dialog", dialog: { line: 0, cursor: side.build.state.cursor, camera: side.build.state.camera } }), /^Line 1 of 2\. \[enter\] next line, \[esc\] skips the rest\.$/],
+    [(side) => ({ ...side.build.state, popup: "dialog", dialog: { line: 1, cursor: side.build.state.cursor, camera: side.build.state.camera } }), /^Line 2 of 2\. \[enter\] or \[esc\] closes it\.$/],
   ],
   // Save game is put up by hand, as the dialog is: these sessions are on a story mission, where it is dimmed (it opens on
   // a Skirmish: tests/skirmish-play.test.ts).

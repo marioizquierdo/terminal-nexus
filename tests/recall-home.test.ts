@@ -7,6 +7,7 @@
 // regroup (src/match/regroup.ts, tests/regroup.test.ts), and the tests of the walk home went with it. The file keeps
 // its name while the design documents cite it.
 
+import { testBase } from "./starter-fixture.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY, withProduction } from "../src/content/index.ts"
@@ -252,8 +253,8 @@ test("the Battle Round says how many wait to come out: for room on a roof, or fo
 // --- On screen ------------------------------------------------------------------------------------
 
 test("the Build Phase draws survivors on their own roof, and the building's card says how many stand there", () => {
-  const context = starterContext()
-  // The starter Barracks at 25,10: three of yours home on its roof, one beside it.
+  const context = testBase()
+  // The test base's Barracks at 25,10: three of yours home on its roof, one beside it.
   const field = [
     { contentId: TROOPER, anchor: { x: 25, y: 10 }, player: "A" as const, hp: 40 },
     { contentId: TROOPER, anchor: { x: 26, y: 10 }, player: "A" as const, hp: 40 },
