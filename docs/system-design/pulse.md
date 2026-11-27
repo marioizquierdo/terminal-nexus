@@ -385,7 +385,7 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   walk to. **An army group that arrives at its rally point forms up there** (the owner, 2026-11-26): its centre within 5
   tiles of the rally point and no member with an enemy in its vision or within an enemy's attack reach, each of its
   units walks to its slot in ranks (`src/engine/pulse/formation.ts`), the front rank on the rally point's middle (on a
-  building, the ring in front of it), facing its nearest enemy army group by a quarter, and stands there.
+  building, the ring in front of it), facing the enemy army group nearest the rally point by a quarter, and stands there.
 - **Slow ground** (`TerrainKind.stepWeight`): a step onto scrub costs twice its length, in credit and in a route, so
   a unit crosses it at half pace and a route goes round it when that is quicker. Credit is capped at the dearest step
   from where a unit stands, so it can save up for a step onto scrub ([`battlefield.md`](battlefield.md), terrain).

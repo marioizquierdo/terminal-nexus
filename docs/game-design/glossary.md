@@ -120,7 +120,8 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
   the panel ([`scripted-opponent.md`](scripted-opponent.md)).
 - **marching** — troops walking toward their rally point, keeping the formation's order and facing the enemy; an army
   group has **arrived** when its centre is within 5 tiles of the rally point and it is not **engaged** (no member has
-  an enemy in its vision or stands where an enemy's attack reaches it), and then forms up there in ranks.
+  an enemy in its vision or stands where an enemy's attack reaches it), and then forms up there in ranks facing the
+  enemy army group nearest the rally point.
 - **engaging** (in combat) — a unit with an enemy in its vision leaves the march and fights; where the sides fight is an
   **engagement**. **Re-targeting** is a unit choosing a new enemy to attack: its target fell, or a better one came within
   reach.
