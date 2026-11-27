@@ -10,9 +10,10 @@
 // *retreats* when it runs (a worker from a threat).
 //
 // **The formation's one rule.** A unit that is marching, and walking, takes half speed while a marching and walking
-// ally of strictly higher priority (`formationRank`, content/types.ts: flanker, melee, ranged; shorter range first;
-// tank, fighter, support, siege) is within its vision (`vision`, for now): it accrues movement credit on every second
-// tick only (`accrueSlowedCredit`, movement.ts). Nothing else: it never stops, equal priority never slows, and a unit
+// ally of its army group (`army-groups.ts`) of strictly higher priority (`formationRank`, content/types.ts: flanker,
+// melee, ranged; shorter range first; tank, fighter, support, siege) is not ahead of it, ahead meaning nearer the army
+// group's nearest enemy army group along the formation's axis (the owner, 2026-11-26, F337): it accrues movement credit
+// on every second tick only (`accrueSlowedCredit`, movement.ts). Nothing else: it never stops, equal priority never slows, and a unit
 // in battle neither slows nor is slowed, so the ranged walk up into range at full speed behind a front that has stopped
 // to fight. Because it only slows, an army sorts itself on the move and no unit can wait on itself. The Commander is a
 // regular troop: she slows and is slowed by her own priority, and leads nothing.

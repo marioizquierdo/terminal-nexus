@@ -366,6 +366,13 @@ middle of the enemy's fighting units nearest it (else the enemy Nexus); one that
 to it, one short of it forms where it stands. Measured (seeds 1-6, 8 rounds): the Crossing 18-18 before and after; the
 Pocket 21-15 before, 18-18 after.
 
+**Army groups built** (2026-11-27, the pull request after the rally point's; the owner's answers to its questions the
+day before): a side's units that fight and its buildings that shoot, chained within 5 tiles, worked out every tick; the
+half-speed rule within an army group, ahead meaning nearer its nearest enemy army group (the smallest gap); the regroup
+forms the main army group facing its nearest enemy army group, and reinforcement units join it if they can walk there in
+time, else fall back beside the building that trained them. Measured in
+[army groups, measured](../reports/2026-11-27-army-groups.md).
+
 ### F338 — the troops always march to the rally point
 
 > Another round, my troops ignored the rally point and staid back in my base. That is not acceptable; if the UX shows
@@ -380,8 +387,9 @@ Pocket 21-15 before, 18-18 after.
 the same round, and when its new buildings filled the rally point's area (a ring round its Nexus) the round refused the
 spot and quietly sent the troops to the default in front of the base (424 such spots in rounds 5-8 of 35 battles;
 none after). Now the round refuses only a spot off the battlefield; rock becomes its nearest open ground; anything else
-stays the target, and the troops walk as near as they can and breach. Arriving and forming up by army group waits for
-army groups.
+stays the target, and the troops walk as near as they can and breach. Arriving and forming up by army group: built
+2026-11-27, an army group whose centre is within 5 tiles of the rally point with no enemy in sight or in reach forms
+up there in ranks facing its nearest enemy army group.
 ### F339 — fast-forward a settled round
 
 > During the first rounds, if I am playing defensive, the unit groups arrive at the rally point, and nothing happens

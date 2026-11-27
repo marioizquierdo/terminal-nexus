@@ -18,23 +18,29 @@
 // - **The step back, 2 seconds** (`STEP_BACK_TICKS`): a survivor in a fight — an enemy unit or building within
 //   `FIGHT_REACH` of it — walks toward its own Nexus. One not in a fight stands.
 // - **The formation, 6 seconds** (`FORM_TICKS`), then **2 seconds standing formed** (`STAND_TICKS`), in which the
-//   slowest still walk in. **Each side forms up on its rally point, or falls back to it, facing the enemy** (the owner,
-//   2026-11-26, F337: "The formation should be facing the enemy, not necesarily the lines towards the banner"): in ranks
-//   across a line from its rally point (its target, `MatchState.targets`; with none, from its Commander while she stands
-//   on the battlefield, else its own Nexus) toward the enemy it faces — the middle of the enemy's surviving fighting units
-//   nearest the rally point, those within `ARMY_REACH` of the nearest; else the enemy's Nexus; with neither, the line
-//   runs from the Commander (else the Nexus) to the rally point, or the battlefield's middle — along the line's main
-//   axis. The front rank stands where the side's front stands after stepping back (where its first rank's worth of units
-//   stands, so a straggler left forward does not pull the rest up to it), but never past the rally point: a side that
-//   fought past it (nearer the enemy along that line) falls back, its front rank on the rally point's middle; one short of
-//   it forms where it stands and marches on next round. The ranks go by the formation's priority list (movement.md,
-//   troop formation) front to back — flankers, melee, ranged, shorter range first, tank to siege — and units with no
-//   attack behind; the Commander takes the place her attack gives her. A side with neither a Commander nor a Nexus of
-//   its own (a mission's raid) has no line, and its survivors stand where the round left them. Survivors more than
-//   `BEHIND` columns behind that front (units that never left the base) form a group of their own where they stand. Each slot is
-//   claimed on free ground (`nearestFit`), never within `KEEP_APART` of a slot the enemy claimed, and two facing fronts
-//   are held `FRONT_GAP` columns apart; a slot is given to the unit whose place across the line is nearest it, so the
-//   ranks form without crossing.
+//   slowest still walk in. **Each side's main army group forms up on its rally point, or falls back to it, facing the
+//   enemy** (the owner, 2026-11-26, F337: "The formation should be facing the enemy, not necesarily the lines towards
+//   the banner"). Army groups are read as the round ended (`armyGroupsOf`, `src/engine/pulse/army-groups.ts`): the
+//   side's **main army group** is the one nearest its rally point (`mainGroupOf`). It forms in ranks across a line from
+//   its rally point (its target, `MatchState.targets`; with none, from its Commander while she stands on the
+//   battlefield, else its own Nexus) toward the centre of its nearest enemy army group (`nearestEnemyGroup`; a Nexus, or
+//   a lone building that shoots, is one); with no main army group, the enemy's Nexus; with neither, the line runs from
+//   the Commander (else the Nexus) to the rally point, or the battlefield's middle — along the line's main axis. The
+//   front rank stands where the main army group's front stands after stepping back (where its first rank's worth of
+//   units stands, so a straggler left forward does not pull the rest up to it), but never past the rally point
+//   (`rallyFront`: its middle, or on a building the ring in front of it): a side that fought past it falls back to it;
+//   one short of it forms where it stands and marches on next round. The ranks are the engine's own
+//   (`formationPlaces`, `src/engine/pulse/formation.ts`), the ones an army group that arrives forms mid-round: the
+//   formation's priority list front to back, units with no attack behind, the Commander in the middle of her rank.
+//   **Reinforcement units** (the owner, 2026-11-26), the side's units in its other army groups, join those ranks if they
+//   can walk to the front rank's middle within the forming up and the standing formed; the rest fall back beside the
+//   building that trained them (`EntityState.home`), else their own Nexus, "so they will join the next wave of spawned
+//   units". A survivor in no army group (a worker) joins the ranks when it stands within `BEHIND` columns of the front,
+//   and otherwise forms a group of its own where it stands. A side with neither a Commander nor a Nexus of its own (a
+//   mission's raid) has no line, and its survivors stand where the round left them. Each slot is claimed on free ground
+//   (`nearestFit`), never within `KEEP_APART` of a slot the enemy claimed, and two facing fronts are held `FRONT_GAP`
+//   columns apart; a slot is given to the unit whose place across the line is nearest it, so the ranks form without
+//   crossing.
 // - **Mirror-fair**: every tie goes by what a side faces (forward, back, north, south), never by a compass order or an
 //   ordinal read in reading order; the sides claim slots and step in turns that alternate.
 // - What a round's end resets, the regroup resets: every entity's transient fields (`freshEntityFields`), a structure that

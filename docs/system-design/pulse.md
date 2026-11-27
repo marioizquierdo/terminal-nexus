@@ -375,13 +375,17 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   its own roof, has a place in one priority list (`formationRank`, `src/content/types.ts`): its type (flanker, melee,
   ranged), then its attack's range, shorter first, then its class (tank, fighter, support, siege). **The one rule: a
   marching unit walks at half speed — it accrues its movement credit on every second tick only — while a marching ally
-  of strictly higher priority is within its vision** (`vision`, measured as range is). It slows and never stops,
+  of its army group of strictly higher priority is not ahead of it** (ahead: nearer the army group's nearest enemy army
+  group along the formation's axis; `src/engine/pulse/army-groups.ts`, `tests/army-groups.test.ts`). It slows and never stops,
   equals never slow each other, and a unit in battle neither slows nor is slowed. An ally of higher priority held up
   behind a slower one swaps tiles with it (`march.made-way`), the slower stepping back onto its tile, so an army
   sorts itself on the march and a one-wide corridor never jams. The Commander is a regular troop: she leads nothing. A
   marcher more than 6 columns off the line from its side's own Nexus to its goal breaks a tie between equally good steps
   toward the line. A flanker chooses first among the enemies within its reach that are not melee, the nearest it can
-  walk to.
+  walk to. **An army group that arrives at its rally point forms up there** (the owner, 2026-11-26): its centre within 5
+  tiles of the rally point and no member with an enemy in its vision or within an enemy's attack reach, each of its
+  units walks to its slot in ranks (`src/engine/pulse/formation.ts`), the front rank on the rally point's middle (on a
+  building, the ring in front of it), facing its nearest enemy army group by a quarter, and stands there.
 - **Slow ground** (`TerrainKind.stepWeight`): a step onto scrub costs twice its length, in credit and in a route, so
   a unit crosses it at half pace and a route goes round it when that is quicker. Credit is capped at the dearest step
   from where a unit stands, so it can save up for a step onto scrub ([`battlefield.md`](battlefield.md), terrain).
@@ -447,12 +451,14 @@ result (RULE — `tests/pulse-run.test.ts`).
 style, leaving troops on the map"; `src/match/regroup.ts`, `tests/regroup.test.ts`, `tests/kept-front.test.ts`). The
 Nexus announces a pause and the troops respect it: nothing attacks or trains, and for 10 seconds (120 ticks, the
 Build Phase's first 10 seconds on screen) they move. For 2 seconds those within 12 of an enemy step back toward their
-own Nexus; for 6 more each side forms up in ranks across its march line — from its Commander, or its own Nexus
-while she is out, toward its level's target, else the enemy Nexus — in the formation's priority list, front to back:
+own Nexus; for 6 more each side's main army group (the one nearest its rally point) forms up in ranks on its rally
+point, or back to it, across the line to its nearest enemy army group (with no rally point, from its Commander, or its
+own Nexus while she is out) — in the formation's priority list, front to back:
 flankers, melee, then ranged by range, tank to siege within a range, then what does not fight (the Commander takes the
-place her attack gives her, in the middle of her rank); the last 2 seconds let the slowest arrive. Survivors more
-than 24 columns behind the front form their own group where they stand; facing fronts are held at least 6 columns
-apart. A side with neither a Commander nor a Nexus (a mission's raid) stands where it is. Units walk on the routes'
+place her attack gives her, in the middle of her rank); the last 2 seconds let the slowest arrive. A reinforcement
+unit (outside the main army group) joins the ranks if it can walk there in the time left, and otherwise falls back
+beside the building that trained it, else its Nexus; a survivor in no army group (a worker) more than 24 columns behind
+the front forms a group of its own where it stands; facing fronts are held at least 6 columns apart. A side with neither a Commander nor a Nexus (a mission's raid) stands where it is. Units walk on the routes'
 distance fields at their own pace, never through one another, rock or an enemy's building; the sides alternate who
 moves and who claims a slot first, and ties go by what a side faces, so a mirrored end gives a mirrored regroup. It is
 worked out from the round's last state and the content alone, never from the Build Phase, so a scripted battle plays

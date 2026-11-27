@@ -735,6 +735,28 @@ default failed only when an agent ran the whole suite. A default is read in more
 A tally on the Crossing with no `--rounds` ran for over a day: one mirror battle went on to round 100. Give every
 measurement `--rounds` and a time limit, and kill a run that passes it.
 
+### "Engaged" has to mean more than "an enemy in sight"
+
+The first build of army groups called a group engaged only while a member saw an enemy. A Citizen mortar shoots from
+beyond sight, so a block under its fire counted as arrived and formed up; each trooper that burned to death changed the
+group, the ranks were laid out again, and the block kept shuffling inside the fire. The engine warned ("stuck,
+circling") and a pinned battle's result moved, which is how it was found. A state that turns a fight off (arrived,
+settled, safe) must count every way the enemy can reach a unit: its sight and the enemy's reach.
+
+### A per-tick reading is memoized per tick, or it runs once per question
+
+Army groups' arrival was a method asked by every unit's purpose, and a purpose is asked several times a tick: the
+battles took twice as long until arrival, the forward line and the nearest enemy group were kept for the tick. Profile
+before and after against the same battles (`node --cpu-prof`, inclusive time by function); a pinned battle's hash
+proves the speed-up changed nothing.
+
+### A pinned test's inputs can stop reaching it when a change makes the world calmer
+
+Three tests failed after army groups because nothing happened any more: an army that held at home formed up mid-round
+on the very slots the regroup gives, so "the next Build Phase holds the regroup's walks" had no walk to hold. The claim
+was right and the inputs were stale: a side that attacks gives it walks again. Read a failure for what it can no longer
+see before reading it as a broken rule.
+
 ### `git checkout <file>` undoes everything uncommitted in it
 
 Undoing a probe edit (a bad line put in to test the validator) with `git checkout` also threw away a whole uncommitted

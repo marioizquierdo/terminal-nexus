@@ -34,10 +34,11 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **army** — every unit a side has on the battlefield, its Commander included; what a Commander brings to a battle as
   a package is the **Commander Army** ([`movement.md`](../system-design/movement.md), its words).
 - **army group** — a side's units that can fight together: each within 5 tiles of another in it, chained (the
-  **engagement**'s reach, so a round's report and the troops' aiming share one rule); worked out about once an in-game
-  second; its centre is the Commander when she is in it, else the unit nearest its middle; a side's Nexus is always an
-  army group of its own, and a building that shoots joins the army group within reach. Its **front** faces its nearest
-  enemy army group. Designed; built in the pull request after the rally point's ([`movement.md`](../system-design/movement.md)).
+  **engagement**'s reach, so a round's report and the troops' aiming share one rule); its units that fight, on the
+  ground or in the air, and its buildings that shoot, never a worker or a building that only trains; worked out every
+  tick; its centre is the Commander when she is in it, else the unit nearest its middle; a side's Nexus is always an
+  army group of its own. Its **front** faces its **nearest enemy army group**, the one with a member nearest one of its
+  own. A side's **main army group** is the one nearest its rally point ([`movement.md`](../system-design/movement.md)).
 - **army group formation** — an army group's ranks across the line to its nearest enemy army group, the formation's
   priority list front to back.
 - **army value** — what an army cost, in credits: each unit valued at what its building pays for one unit, its card's
@@ -117,12 +118,17 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **raid** — a group a mission's opponent sends, with its **intention**: one line saying what it means to do, shown in
   the panel ([`scripted-opponent.md`](scripted-opponent.md)).
 - **marching** — troops walking toward their rally point, keeping the formation's order and facing the enemy; an army
-  group has **arrived** when its centre is near the rally point and it is not engaged, and then forms up there.
+  group has **arrived** when its centre is within 5 tiles of the rally point and it is not **engaged** (no member has
+  an enemy in its vision or stands where an enemy's attack reaches it), and then forms up there in ranks.
 - **engaging** (in combat) — a unit with an enemy in its vision leaves the march and fights; where the sides fight is an
   **engagement**. **Re-targeting** is a unit choosing a new enemy to attack: its target fell, or a better one came within
   reach.
-- **regroup** — what happens when a Battle Round ends: survivors step back and form up on their rally point (or back to it), facing the enemy, so the
-  next round starts from **the kept front** ([`movement.md`](../system-design/movement.md)).
+- **regroup** — what happens when a Battle Round ends: survivors step back and the main army group forms up on its
+  rally point (or back to it), facing its nearest enemy army group, so the next round starts from **the kept front**
+  ([`movement.md`](../system-design/movement.md)).
+- **reinforcement unit** — a unit of a side outside its main army group: between rounds it joins the main army group's
+  ranks if it can walk there in the regroup's time, and otherwise falls back beside the building that trained it, to
+  come out with its next wave (the owner, 2026-11-26).
 - **result** — how a battle ends: `BATTLE WON`, `BATTLE LOST`, `BATTLE DRAWN` (`<COMMANDER> WINS` when two scripts
   play); a Battle Round's own end reads `VICTORY`, `DEFEAT`, `DRAW` or `TIME'S UP`.
 - **rock**, **scrub**, **burning ground** — ground nothing walks through (air flies over it); ground that weighs two
