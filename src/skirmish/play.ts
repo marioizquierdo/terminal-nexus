@@ -109,11 +109,13 @@ export function playOn(
   profiles?: Profiles,
   each?: (round: RoundPlayed) => void,
   watch?: RoundWatch,
+  /** A condition the run stops on, read at each Build Phase before playing it: a stalled battle (`stall.ts`). */
+  stopWhen?: (state: BattleState) => boolean,
 ): Ran {
   const first = start.round
   let state = start
   let played = 0
-  while (state.result === null && state.round < stop) {
+  while (state.result === null && state.round < stop && stopWhen?.(state) !== true) {
     const { actions, missing } = actionsAt(setup, builds, state.round, first)
     if (missing.length > 0) return { state, played, waiting: missing }
     const result = playNext(setup, state, actions, profiles, watch)

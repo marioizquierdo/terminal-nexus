@@ -97,7 +97,7 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **battlefield** — the rectangle of tiles a battle is fought on; the map draws it on screen ([`battlefield.md`](../system-design/battlefield.md)).
 - **group** — units a mission trigger brings onto the battlefield together, at a chosen tick, with a name and an intention;
   never a wave.
-- **map** — the ground and its slots: where each Nexus stands and where its troops hold. The built-in maps are the
+- **map** — the ground and its slots: where each Nexus stands. The built-in maps are the
   Crossing and the Pocket, each with a note on what it is good and bad for testing
   ([`battles.md`](../system-design/battles.md)); a map file is the same as JSON (`BattleMap`).
 - **mission** — a battle with a script, words and a goal, played in rounds driven by triggers; only inside Story. Won

@@ -21,7 +21,7 @@ headless with scripts on either side.
 
 | Word | Means |
 | --- | --- |
-| **Map** | The ground and its **slots**: where each Nexus stands and where its troops hold. A map fixes how many sides a battle has (two today) |
+| **Map** | The ground and its **slots**: where each Nexus stands. A map fixes how many sides a battle has (two today) |
 | **Slot** | One side of the battle, by number (`p1` west, `p2` east): its Commander and its **controller**. The battle's own state calls them side A and side B |
 | **Controller** | Who plans a slot each round: `player` (a person, at the screen or through a build file; `player:<name>` names them), `script:<profile>` (a scripted player), `agent:<profile>` (a language model, later) |
 | **Script profile** | A named scripted player and its options, a file in `players/scripts/` (`agro.json`). The same scripts the battles and the measurements play |
@@ -134,7 +134,7 @@ on any slot: there is no difficulty setting, and both sides start on equal groun
 
 - **`setup`** is exactly what the setup screen chooses, under the same names. A file with only `format` and `setup` is
   a new battle. `map` is a built-in map's id (`crossing`, `pocket`) or a map drawn in full (`id`, `name`, `rows`, and
-  `nexus` and `hold` by slot; a `legend` only in a sandbox), as a map file is. A slot may carry `options`
+  `nexus` by slot; a `legend` only in a sandbox), as a map file is. A slot may carry `options`
   (`credits`, its share of the income). Elimination is the only goal.
 - **`state`** is written by the game: the battle's own state between rounds (`BattleState`, `src/battle/types.ts`), in the
   engine's words, where side A is `p1` and side B is `p2`: the round to play, each side's credits, kept powers and

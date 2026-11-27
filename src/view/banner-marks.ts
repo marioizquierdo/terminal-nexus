@@ -61,7 +61,7 @@ export const REMIND_AFTER_MS = 1000
 export const REMIND_EVERY_MS = 5000
 
 /** The call's timings: the flight before it (the hand-off's, the "Focus arrow" milliseconds; 0 under reduced motion),
- *  each flash's on and off beats (the "Battle Round flash" Experiment's length, the popup flash's gap), how long the
+ *  each flash's on and off beats (the "Rally point flash" Experiment's length, the popup flash's gap), how long the
  *  arrows light after the banner (`lagMs`), and whether motion is reduced. */
 export type RallyCallTiming = Readonly<{ flightMs: number; flashMs: number; lagMs: number; gapMs: number; reducedMotion: boolean }>
 

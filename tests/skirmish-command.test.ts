@@ -179,3 +179,16 @@ test("no turns: either slot's build actions may be handed in alone, in any order
     assert.throws(() => run(["-f", save, "--wait", "p1"]), /no option --wait/)
   })
 })
+
+test("until the end, a battle in which neither Nexus changes for 10 rounds stops as stalled, and a tally counts it apart", { timeout: 120_000 }, () => {
+  // Rounds of 24 ticks: nobody reaches the other Nexus, so nothing ever touches one.
+  const one = run(["--map", "crossing", "--ticks", "24", "--p1", "script:steady", "--p2", "script:steady", "--play-to", "end"])
+  assert.match(one.out, /stalled at round 11: neither Nexus has changed since round 1 \(10 rounds\); --rounds 21 plays on/u, one.out)
+  assert.doesNotMatch(one.out, /round 12:/u, "it played past the stall")
+  const many = run(["--map", "crossing", "--ticks", "24", "--p1", "script:steady", "--p2", "script:steady", "--play-to", "end", "--seeds", "1-2"])
+  assert.match(many.out, /2 seeds: p1 won 0, p2 won 0, 0 drawn, 2 stalled;/u, many.out)
+  // With --rounds the limit is the run's own: no stall stops it.
+  const bounded = run(["--map", "crossing", "--ticks", "24", "--p1", "script:steady", "--p2", "script:steady", "--play-to", "end", "--rounds", "12"])
+  assert.doesNotMatch(bounded.out, /stalled/u, bounded.out)
+  assert.match(bounded.out, /over: .* in round 12/u, bounded.out)
+})
