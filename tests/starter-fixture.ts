@@ -58,7 +58,7 @@ export const starterTerrain = (): MapTerrain => ({ ...BASE.terrain, tiles: [...B
 
 // --- A battle with that Barracks standing ---------------------------------------------------------------------------
 
-import { readFileSync } from "node:fs"
+import starterSave from "../saves/starter.save.json" with { type: "json" }
 import { playRound } from "../src/battle/index.ts"
 import { battleOf, readSave, saveOf } from "../src/skirmish/save.ts"
 import type { PlayableLevel } from "../src/cli/levels.ts"
@@ -70,7 +70,8 @@ import { skirmishLevel } from "../src/cli/skirmish-play.ts"
  * Phase this opens on is round 2, the Barracks standing at 25,10 in the battle as on the screen.
  */
 export function barracksLevel(): PlayableLevel {
-  const read = readSave(readFileSync(new URL("../saves/starter.save.json", import.meta.url), "utf8"))
+  // Read as the game reads a file (the JSON imported, so the browser bundle reaches no Node module).
+  const read = readSave(JSON.stringify(starterSave))
   if (read.save === null) throw new Error(read.problems.join("; "))
   const { setup } = read.save
   const built = playRound(battleOf(read.save), { A: { build: [{ building: "barracks", x: TEST_BARRACKS.anchor.x, y: TEST_BARRACKS.anchor.y }, { building: "depot", x: 13, y: 13 }] }, B: { build: [] } }).state
